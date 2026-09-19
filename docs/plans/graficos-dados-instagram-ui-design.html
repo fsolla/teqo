@@ -201,6 +201,7 @@
         grid-template-columns: 1fr auto;
         align-items: end;
         gap: 30px;
+        min-height: 171px;
       }
       .source-line {
         margin: 0;
@@ -212,23 +213,33 @@
         color: var(--ink);
         font-weight: 750;
       }
-      /* Ativo oficial do kit (jorge-solla-positivo.png): exibido inteiro, sem recorte e sem
-         distorção. O arquivo é o lockup do nome; nunca recriar o lockup com tipografia. */
+      /* C206 · ativo oficial 1037×595 (≈1,743:1). A moldura abraça a razão do PNG para eliminar
+         o letterbox criado pela antiga caixa 286×90. A transparência interna do próprio ativo é
+         preservada: sem crop, sem scale desproporcional e sem lockup tipográfico recriado. */
       .brand-logo-frame {
-        width: 286px;
-        height: 90px;
-        flex: 0 0 286px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
+        width: 251px;
+        height: 144px;
+        flex: 0 0 251px;
       }
       .brand-logo-frame img {
         display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
+      }
+
+      /* Porte por canvas do template exportado. Feed é o default acima. */
+      .square-canvas .chart-footer {
+        min-height: 128px;
+        padding-top: 16px;
+      }
+      .square-canvas .source-line {
+        font-size: 25px;
+      }
+      .square-canvas .brand-logo-frame {
+        width: 192px;
+        height: 110px;
+        flex-basis: 192px;
       }
 
       .mini-canvas {
@@ -285,19 +296,14 @@
         line-height: 1.2;
       }
       .mini-logo-frame {
-        width: 70px;
-        height: 23px;
-        flex: 0 0 70px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
+        width: 63px;
+        height: 36px;
+        flex: 0 0 63px;
       }
       .mini-logo-frame img {
         display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
       }
       .mini-bars {
@@ -447,6 +453,60 @@
         fill: var(--ink);
         font-size: 28px;
         font-weight: 750;
+      }
+      /* ------------------------------------------------------------------ */
+      /* CENA 02D · C205 — revisão da extensão para três séries observadas.  */
+      /* C204 é superada: bom + neutro + neutro escuro; a 02B não muda.      */
+      /* ------------------------------------------------------------------ */
+      .feed-canvas.triple-series .chart-headline {
+        max-width: 900px;
+        font-size: 56px;
+      }
+      .feed-canvas.triple-series .chart-subtitle {
+        max-width: 900px;
+        margin-top: 18px;
+        font-size: 27px;
+      }
+      .feed-canvas.triple-series .source-line {
+        max-width: 570px;
+        font-size: 25px;
+      }
+      .triple-line-plot {
+        flex: none;
+        width: 880px;
+        height: 650px;
+        margin-top: 16px;
+      }
+      .triple-line-plot svg {
+        display: block;
+        width: 880px;
+        height: 650px;
+      }
+      .triple-axis-label {
+        fill: #78716c;
+        font-size: 30px;
+        font-weight: 650;
+      }
+      .triple-end-name {
+        fill: var(--ink);
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .triple-end-metric {
+        fill: var(--ink);
+        font-size: 34px;
+        font-weight: 850;
+        font-variant-numeric: tabular-nums;
+      }
+      .triple-end-valence {
+        font-size: 30px;
+        font-weight: 850;
+      }
+      .triple-end-leader {
+        fill: none;
+        stroke-width: 3px;
+        stroke-linecap: square;
+        stroke-linejoin: round;
       }
       .rule-code {
         display: inline-flex;
@@ -781,12 +841,18 @@
         align-items: end;
         justify-content: space-between;
         gap: 28px;
+        min-height: 190px;
       }
       .story-source {
         max-width: 570px;
         color: #57534e;
         font-size: 27px;
         line-height: 1.3;
+      }
+      .story-canvas .brand-logo-frame {
+        width: 279px;
+        height: 160px;
+        flex-basis: 279px;
       }
 
       .state-piece {
@@ -874,19 +940,14 @@
         font-size: 11px;
       }
       .state-logo-frame {
-        width: 116px;
-        height: 36px;
-        flex: 0 0 116px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
+        width: 87px;
+        height: 50px;
+        flex: 0 0 87px;
       }
       .state-logo-frame img {
         display: block;
-        max-width: 100%;
-        max-height: 100%;
-        width: auto;
-        height: auto;
+        width: 100%;
+        height: 100%;
         object-fit: contain;
       }
 
@@ -937,21 +998,23 @@
       <div
         class="mb-6 rounded-2xl border border-[#184e92]/30 bg-[#184e92]/[0.05] p-5 sm:p-6"
         role="note"
-        aria-label="Design aprovado no gate em 2026-09-19"
+        aria-label="Base C203 aprovada e revisões C205 e C206 aprovadas no gate de 2026-09-19"
       >
         <div class="flex flex-wrap items-start gap-x-5 gap-y-3">
           <span
             class="inline-flex items-center rounded-md bg-[#184e92] px-3 py-1 text-sm font-black tracking-[0.14em] text-white"
-            >APROVADO</span
+            >BASE C203 APROVADA · C205/C206 APROVADAS</span
           >
           <div class="max-w-3xl">
             <p class="text-sm font-extrabold text-[#184e92]">
-              Aprovado no gate em 2026-09-19 — revisão C203 (marca e paleta oficiais do kit 1313).
+              Base C203 aprovada em 2026-09-19 · revisões C205 e C206 aprovadas no gate em
+              2026-09-19.
             </p>
             <p class="mt-1 text-sm leading-6 text-stone-700">
-              O humano validou a substituição do lockup tipográfico pelo ativo oficial e o
-              mapeamento de cor fixado aqui; este artefato é o registro do aceite visual e a fonte
-              de verdade do port.
+              O aceite C203 permanece intacto. A C205 revisa no lugar a CENA 02D — linha temporal de
+              três séries — e supera a C204, que nunca foi certificada. A C206 revisa somente o
+              rodapé compartilhado para ampliar a marca oficial. As duas são a fonte de verdade do
+              port desde o gate humano de 2026-09-19.
             </p>
           </div>
         </div>
@@ -960,9 +1023,9 @@
       <header class="max-w-4xl">
         <div class="flex flex-wrap items-center gap-2">
           <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
-            >Revisão C203 · marca oficial do kit 1313</span
+            >Revisões C205 + C206 · aprovadas no gate</span
           >
-          <span class="scene-label">Aprovado no gate · 2026-09-19</span>
+          <span class="scene-label">Base C203 aprovada · C205/C206 aprovadas</span>
           <span class="scene-label">Instagram feed + Stories</span>
         </div>
         <h1 class="mt-5 max-w-3xl text-3xl font-extrabold tracking-[-0.035em] text-ink sm:text-4xl">
@@ -1023,6 +1086,91 @@
             >APROVADA · GATE 2026-09-19</span
           >
         </div>
+      </section>
+
+      <section
+        class="mt-4 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 sm:p-6"
+        aria-labelledby="revision-c205-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-3xl">
+            <p class="text-xs font-extrabold tracking-[0.08em] text-[#184e92]">
+              REVISÃO VISÍVEL · C205 · APROVADA NO GATE 2026-09-19
+            </p>
+            <h2 id="revision-c205-title" class="mt-1 text-lg font-bold tracking-tight">
+              Três séries observadas: semântica neutra e gutter com mais respiro
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-stone-700">
+              A <strong>CENA 02D</strong> troca bom/médio/neutro por
+              <strong>bom/neutro/neutro escuro</strong>, usando apenas neutros oficiais além do
+              vermelho do melhor resultado. A gutter passa de quatro para três linhas por bloco, com
+              valor + variação na mesma linha e faixas mais arejadas. O último ponto segue
+              <strong>jul/2026 observado</strong>, sem qualquer artefato de projeção. A CENA 02B
+              preserva integralmente o par bom/ruim aprovado.
+            </p>
+          </div>
+          <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
+            >APROVADA · GATE 2026-09-19</span
+          >
+        </div>
+      </section>
+
+      <section
+        class="mt-4 rounded-2xl border border-blue-200 bg-blue-50/70 p-5 sm:p-6"
+        aria-labelledby="revision-c206-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-3xl">
+            <p class="text-xs font-extrabold tracking-[0.08em] text-[#184e92]">
+              REVISÃO VISÍVEL · C206 · APROVADA NO GATE 2026-09-19
+            </p>
+            <h2 id="revision-c206-title" class="mt-1 text-lg font-bold tracking-tight">
+              Marca oficial maior, sem caixa vazia artificial no rodapé
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-stone-700">
+              O ativo oficial <strong>1037×595</strong> permanece inteiro. A antiga moldura
+              <strong>286×90</strong> era larga demais para a razão do PNG e fazia a imagem ocupar
+              só cerca de 157×90 px. A C206 troca a moldura por caixas na mesma razão do ativo:
+              <strong>251×144 no feed</strong>, <strong>192×110 no quadrado</strong> e
+              <strong>279×160 no story</strong>. O PNG passa a ocupar 100% dessas caixas com
+              <span class="rule-code">object-fit: contain</span>; só a transparência nativa do
+              arquivo permanece.
+            </p>
+          </div>
+          <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
+            >APROVADA · GATE 2026-09-19</span
+          >
+        </div>
+        <div class="mt-4 grid gap-3 md:grid-cols-3">
+          <div class="rounded-xl border border-amber-200 bg-white p-4">
+            <p class="text-sm font-bold">Feed · 1080×1350</p>
+            <p class="mt-1 text-sm leading-5 text-stone-600">
+              <span class="rule-code">brand-logo-frame 251×144</span>; rodapé mínimo 171 px,
+              padding-top 25 px, gap 30 px. Fonte/nota 27 px; nas linhas densas 02B/02D, 25 px.
+            </p>
+          </div>
+          <div class="rounded-xl border border-amber-200 bg-white p-4">
+            <p class="text-sm font-bold">Quadrado · 1080×1080</p>
+            <p class="mt-1 text-sm leading-5 text-stone-600">
+              <span class="rule-code">brand-logo-frame 192×110</span>; rodapé mínimo 128 px,
+              padding-top 16 px, gap 30 px. Fonte/nota 25 px. O porte menor protege a altura útil do
+              canvas mais curto sem voltar à marca miúda da C203.
+            </p>
+          </div>
+          <div class="rounded-xl border border-amber-200 bg-white p-4">
+            <p class="text-sm font-bold">Story · 1080×1920</p>
+            <p class="mt-1 text-sm leading-5 text-stone-600">
+              <span class="rule-code">brand-logo-frame 279×160</span>; rodapé mínimo 190 px,
+              padding-top 28 px, gap 28 px. Fonte/nota 27 px; tudo termina acima da safe zone.
+            </p>
+          </div>
+        </div>
+        <p class="mt-4 border-t border-amber-200 pt-4 text-sm leading-6 text-stone-700">
+          <strong>Compatibilidade:</strong> o crescimento é absorvido pelo espaço flexível antes do
+          rodapé; não se altera headline, subtítulo, plot, escala, eixo ou gutter das CENAS 01, 02,
+          02B e 02D. O rodapé segue off-white, com filete <strong>#e7e5e4</strong> e texto
+          <strong>#57534e</strong>; o contraste e as margens laterais de 84 px permanecem.
+        </p>
       </section>
 
       <section class="scene-card mt-9 p-4 sm:p-6 lg:p-8" aria-labelledby="main-scene-title">
@@ -1226,7 +1374,7 @@
           <div>
             <p class="text-xs font-bold text-brand-dark">CENA 02 · SISTEMA</p>
             <h2 id="variations-title" class="mt-1 text-xl font-bold tracking-tight">
-              Cinco variações, um mesmo template
+              Cinco variações-base + duas extensões, um mesmo template
             </h2>
           </div>
           <p class="max-w-xl text-sm leading-5 text-stone-600">
@@ -2130,10 +2278,447 @@
       </section>
 
       <!-- ================================================================== -->
+      <!-- CENA 02D · C205 — REVISÃO DA EXTENSÃO, NÃO DA CENA 02B.           -->
+      <!-- Três séries; todos os 36 pontos são observados. Gate humano pendente. -->
+      <!-- ================================================================== -->
+      <section
+        class="scene-card mt-10 border-2 border-blue-200 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="triple-line-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02D · REVISÃO C205 · C204 SUPERADA · APROVADA NO GATE 2026-09-19
+            </p>
+            <h2 id="triple-line-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · linha temporal de três séries observadas
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">Plot SVG · viewBox 880 × 650</span>
+            <span class="measure-tag">36 marcas · sem projeção</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas triple-series"
+                aria-label="Hospital estadual puxa a ampliação de leitos de internação em Vitória da Conquista entre 2015 e julho de 2026; todos os pontos são observados"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Comparação no tempo</p>
+                  <h3 class="chart-headline">
+                    Hospital estadual puxa a ampliação de leitos de internação
+                  </h3>
+                  <p class="chart-subtitle">
+                    Vitória da Conquista (BA) · leitos existentes · 2015–2026
+                  </p>
+
+                  <div class="triple-line-plot tabular">
+                    <svg
+                      viewBox="0 0 880 650"
+                      role="img"
+                      aria-label="Hospital Estadual: 235 leitos em 2015 e 369 em julho de 2026, aumento de 57 por cento. Rede municipal: 93 e 113, aumento de 22 por cento. Rede privada, soma dos leitos empresariais e sem fins lucrativos: 832 e 510, diminuição de 39 por cento. Todos os doze pontos de cada série são observados."
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      <line
+                        x1="52"
+                        y1="56"
+                        x2="560"
+                        y2="56"
+                        stroke="#a8a29e"
+                        stroke-opacity="0.32"
+                        stroke-width="2"
+                      />
+                      <line
+                        x1="52"
+                        y1="300"
+                        x2="560"
+                        y2="300"
+                        stroke="#a8a29e"
+                        stroke-opacity="0.32"
+                        stroke-width="2"
+                      />
+                      <line x1="52" y1="544" x2="560" y2="544" stroke="#a8a29e" stroke-width="2" />
+                      <text x="42" y="538" text-anchor="end" class="triple-axis-label">0</text>
+
+                      <polyline
+                        class="triple-series triple-series-good"
+                        points="52,429 98,429 144,419 191,419 237,419 283,419 329,419 375,419 421,364 468,364 514,364 560,364"
+                        fill="none"
+                        stroke="#e4102f"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <polyline
+                        class="triple-series triple-series-neutral"
+                        points="52,499 98,499 144,493 191,499 237,499 283,499 329,499 375,499 421,489 468,489 514,489 560,489"
+                        fill="none"
+                        stroke="#78716c"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <polyline
+                        class="triple-series triple-series-neutral-dark"
+                        points="52,138 98,191 144,199 191,230 237,290 283,302 329,320 375,305 421,296 468,282 514,300 560,295"
+                        fill="none"
+                        stroke="#1c1917"
+                        stroke-width="7"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+
+                      <g class="triple-markers-good" fill="#e4102f">
+                        <circle cx="52" cy="429" r="8" />
+                        <circle cx="98" cy="429" r="8" />
+                        <circle cx="144" cy="419" r="8" />
+                        <circle cx="191" cy="419" r="8" />
+                        <circle cx="237" cy="419" r="8" />
+                        <circle cx="283" cy="419" r="8" />
+                        <circle cx="329" cy="419" r="8" />
+                        <circle cx="375" cy="419" r="8" />
+                        <circle cx="421" cy="364" r="8" />
+                        <circle cx="468" cy="364" r="8" />
+                        <circle cx="514" cy="364" r="8" />
+                        <circle cx="560" cy="364" r="8" />
+                      </g>
+                      <g class="triple-markers-neutral" fill="#78716c">
+                        <rect x="45" y="492" width="14" height="14" transform="rotate(45 52 499)" />
+                        <rect x="91" y="492" width="14" height="14" transform="rotate(45 98 499)" />
+                        <rect
+                          x="137"
+                          y="486"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 144 493)"
+                        />
+                        <rect
+                          x="184"
+                          y="492"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 191 499)"
+                        />
+                        <rect
+                          x="230"
+                          y="492"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 237 499)"
+                        />
+                        <rect
+                          x="276"
+                          y="492"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 283 499)"
+                        />
+                        <rect
+                          x="322"
+                          y="492"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 329 499)"
+                        />
+                        <rect
+                          x="368"
+                          y="492"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 375 499)"
+                        />
+                        <rect
+                          x="414"
+                          y="482"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 421 489)"
+                        />
+                        <rect
+                          x="461"
+                          y="482"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 468 489)"
+                        />
+                        <rect
+                          x="507"
+                          y="482"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 514 489)"
+                        />
+                        <rect
+                          x="553"
+                          y="482"
+                          width="14"
+                          height="14"
+                          transform="rotate(45 560 489)"
+                        />
+                      </g>
+                      <g class="triple-markers-neutral-dark" fill="#1c1917">
+                        <path d="M42 130 L62 130 L52 148 Z" />
+                        <path d="M88 183 L108 183 L98 201 Z" />
+                        <path d="M134 191 L154 191 L144 209 Z" />
+                        <path d="M181 222 L201 222 L191 240 Z" />
+                        <path d="M227 282 L247 282 L237 300 Z" />
+                        <path d="M273 294 L293 294 L283 312 Z" />
+                        <path d="M319 312 L339 312 L329 330 Z" />
+                        <path d="M365 297 L385 297 L375 315 Z" />
+                        <path d="M411 288 L431 288 L421 306 Z" />
+                        <path d="M458 274 L478 274 L468 292 Z" />
+                        <path d="M504 292 L524 292 L514 310 Z" />
+                        <path d="M550 287 L570 287 L560 305 Z" />
+                      </g>
+
+                      <polyline
+                        class="triple-end-leader"
+                        points="570,295 580,295 590,108 594,108"
+                        stroke="#1c1917"
+                      />
+                      <text x="600" y="62" class="triple-end-name">Rede privada</text>
+                      <text x="600" y="108" class="triple-end-metric">510 · −39%</text>
+                      <text x="600" y="150" class="triple-end-valence" fill="#1c1917">
+                        ↘ diminui
+                      </text>
+
+                      <polyline
+                        class="triple-end-leader"
+                        points="570,364 580,364 590,304 594,304"
+                        stroke="#e4102f"
+                      />
+                      <text x="600" y="258" class="triple-end-name">Hospital Estadual</text>
+                      <text x="600" y="304" class="triple-end-metric">369 · +57%</text>
+                      <text x="600" y="346" class="triple-end-valence" fill="#e4102f">
+                        ↑ amplia
+                      </text>
+
+                      <polyline
+                        class="triple-end-leader"
+                        points="570,489 580,489 590,500 594,500"
+                        stroke="#78716c"
+                      />
+                      <text x="600" y="454" class="triple-end-name">Rede municipal</text>
+                      <text x="600" y="500" class="triple-end-metric">113 · +22%</text>
+                      <text x="600" y="542" class="triple-end-valence" fill="#78716c">
+                        ↗ cresce
+                      </text>
+
+                      <g class="triple-axis-label" text-anchor="middle">
+                        <text x="52" y="636">2015</text>
+                        <text x="144" y="636">2017</text>
+                        <text x="237" y="636">2019</text>
+                        <text x="329" y="636">2021</text>
+                        <text x="421" y="636">2023</text>
+                        <text x="560" y="636">2026</text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> Ministério da Saúde — CNES · leitos de internação por
+                      esfera jurídica<br />Nota: Último ponto: jul/2026. Rede privada = leitos
+                      empresariais + sem fins lucrativos.
+                    </p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">BOM + DOIS NEUTROS · QUATRO PISTAS</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Melhor = vermelho + círculo + ↑ + “amplia”. Neutro = cinza + losango + ↗ + “cresce”.
+                Neutro escuro = tinta + triângulo para baixo + ↘ + “diminui”. Cor, forma, seta e
+                palavra trabalham juntas; o azul deixa completamente os dados.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">DIREÇÃO FACTUAL, SEM JUÍZO INVENTADO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                O municipal sobe pouco e recebe <strong>“↗ cresce”</strong>; a rede privada cai e
+                recebe <strong>“↘ diminui”</strong>. São descrições do movimento, não “bom/ruim”. O
+                par valorativo da CENA 02B continua usando “↑ amplia” e “↓ recua”.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">
+                PAR CLARO × ESCURO · SÓ NEUTROS OFICIAIS
+              </p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Municipal usa <span class="rule-code">#78716c</span>; privada usa
+                <span class="rule-code">#1c1917</span>. O salto de cinza de eixo para tinta separa
+                as linhas sem criar cor nova; losango/triângulo, ↗/↘ e as palavras preservam a
+                leitura quando a diferença tonal não estiver disponível.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">2026 É OBSERVADO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                O eixo mostra “2026”; o subtítulo fecha 2015–2026 e a nota especifica jul/2026. Não
+                há faixa, tracejado, marcador vazado nem “projeção”: inventar qualquer um desses
+                sinais mudaria a natureza do dado.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-7 border-t border-stone-200 pt-6" aria-labelledby="triple-rules-title">
+          <p class="text-xs font-bold text-brand-dark">REGRAS DA LINHA DE 3 SÉRIES · C205</p>
+          <h3 id="triple-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato visual da extensão para o porte classe-a-classe
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Extensão, entrada e teto</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Esta variante <strong>estende</strong> a CENA 02B; não a substitui. Exatamente 3
+                séries, mesmos períodos e mesma ordem. Teto aprovado:
+                <strong>12 pontos por série no feed</strong> (36 marcas). É o limite exibido nesta
+                cena: linha 7 px + passo mínimo 46 px deixam ≥26 px livres entre marcadores de 20
+                px. Acima de 12, período desalinhado ou valor ausente → perguntar; nunca apertar,
+                interpolar ou omitir. Esta extensão não certifica quadrado nem story.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Mapa de tons · sem depender de cor</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Bom/melhor =
+                <span class="rule-code">#e4102f + círculo r=8 + ↑ “amplia”</span>. Neutro =
+                <span class="rule-code">#78716c + losango 14×14 rotado 45° + ↗ “cresce”</span>.
+                Neutro escuro =
+                <span class="rule-code">#1c1917 + triângulo ▼ 20×18 + ↘ “diminui”</span>. Marcadores
+                são preenchidos porque os 36 pontos são observados. Azul
+                <span class="rule-code">#184e92</span> fica só na marca/kicker/régua, nunca em dado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Convivência com a CENA 02B</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                O contrato de 2 séries não muda: bom = vermelho/círculo/“↑ amplia”; ruim =
+                <span class="rule-code">#78716c + quadrado + ↓ “recua”</span>; comparação sem tons
+                também permanece. Na variante de 3 séries, losango + ↗ “cresce” distinguem o neutro
+                municipal, e triângulo + ↘ “diminui” distinguem o neutro escuro privado. Não
+                converter direção em juízo nem reaproveitar “recua” fora do tom ruim da CENA 02B.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Plot e escala · feed 1080×1350</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Canvas padding <span class="rule-code">76 / 84 / 58</span>; headline 56 px;
+                subtítulo 27 px; plot margin-top 16. SVG
+                <span class="rule-code">viewBox 0 0 880 650</span>. Dados: x=52…560, y=56…544; topo
+                y=56; baseline y=544; grid y=56/300/544; domínio compartilhado 0…1.000. Gutter de
+                texto <span class="rule-code">x=600…880</span> (280 px), começando 40 px após o
+                último ponto. Linhas 7 px. O corredor x=560…600 pertence só aos leaders; texto nunca
+                invade o plot.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Gutter, leading e colisão</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Cada bloco cai de quatro para <strong>três linhas</strong>: nome; valor + variação;
+                seta + palavra. Fontes/line-box: nome <span class="rule-code">30/36 px</span>;
+                métrica <span class="rule-code">34/40 px</span>; valência
+                <span class="rule-code">30/36 px</span>. Baselines: Privada
+                <span class="rule-code">62/108/150</span>, Estadual
+                <span class="rule-code">258/304/346</span>, Municipal
+                <span class="rule-code">454/500/542</span>. O pitch é 196 px; descontados os
+                line-boxes, sobram 70+ px entre blocos. Ordenar pelo y do ponto final e alocar,
+                nessa ordem, as três lanes fixas; nunca aproximar blocos para seguir o ponto.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Leaders e rótulos finais</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Texto começa em <span class="rule-code">x=600</span>. Leader 3 px sai de x=570 no y
+                do ponto, passa pelo trilho x=580, dobra em x=590 até o baseline da métrica e
+                termina em x=594; sobra um respiro de 6 px antes do texto. Alvos:
+                <span class="rule-code">y=108/304/500</span>. Como finais e blocos têm a mesma
+                ordem, leaders não se cruzam. Nome em uma linha; se exceder 280 px, pedir forma
+                curta — nunca reduzir abaixo de 30 px, quebrar ou abreviar sozinho. A métrica usa
+                tabular-nums no formato literal “valor · ±N%”.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Eixo X · 12 pontos observados</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Pontos em x=
+                <span class="rule-code">52/98/144/191/237/283/329/375/421/468/514/560</span>
+                (passo ≈46 px). Fonte 30 px. Para 9–12 pontos, manter a regra da 02B: alternar desde
+                o primeiro; se o último não cair na alternância, remover o penúltimo exibido e fixar
+                o último. Aqui: <strong>2015, 2017, 2019, 2021, 2023, 2026</strong>. “2026” continua
+                simples no eixo; “último ponto: jul/2026” fica na nota. Nunca anexar “projeção”.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Variação observada e ausência de projeção</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                A variação compara 2015 ao último ponto observado, jul/2026: Estadual
+                <strong>235→369 · +57%</strong>; Municipal <strong>93→113 · +22%</strong>; Privada
+                <strong>832→510 · −39%</strong>. A gutter funde valor e variação e remove a palavra
+                “observado”; a nota carrega a precisão mensal. Proibidos nesta cena:
+                <span class="rule-code">projection-band</span>, tracejado, marcador vazado e label
+                “projeção”.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Copy e fonte · literais desta cena</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Manchete: “Hospital estadual puxa a ampliação de leitos de internação”. Subtítulo:
+                “Vitória da Conquista (BA) · leitos existentes · 2015–2026”. Fonte: “Ministério da
+                Saúde — CNES · leitos de internação por esfera jurídica”. Nota: “Último ponto:
+                jul/2026. Rede privada = leitos empresariais + sem fins lucrativos.”
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-stone-200 bg-white p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Mapa de classes da extensão</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Chassi: <span class="rule-code">triple-line-plot</span>,
+                <span class="rule-code">triple-axis-label</span>. Séries/marcadores:
+                <span class="rule-code">triple-series-good / triple-markers-good</span>,
+                <span class="rule-code">triple-series-neutral / triple-markers-neutral</span> e
+                <span class="rule-code"
+                  >triple-series-neutral-dark / triple-markers-neutral-dark</span
+                >. Saída: <span class="rule-code">triple-end-leader</span>,
+                <span class="rule-code">triple-end-name</span>,
+                <span class="rule-code">triple-end-metric</span> e
+                <span class="rule-code">triple-end-valence</span>. Reusar sem alteração no corpo:
+                <span class="rule-code">top-rule</span>,
+                <span class="rule-code">chart-context</span>,
+                <span class="rule-code">chart-headline</span>,
+                <span class="rule-code">chart-subtitle</span>,
+                <span class="rule-code">chart-footer</span>. No rodapé, aplicar a C206:
+                <span class="rule-code">source-line ≥25 px</span> e
+                <span class="rule-code">brand-logo-frame 251×144</span> no feed.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================== -->
       <!-- CENA 02C · PROPOSTA DEGRADED — variante "delta" (barra de          -->
       <!-- variação por categoria). NÃO CERTIFICADA. Escrita no tier          -->
-      <!-- degradado; exige sign-off humano antes do porte. As cenas          -->
-      <!-- certificadas acima e abaixo permanecem intactas.                   -->
+      <!-- degradado; exige sign-off humano antes do porte. A base C203 e     -->
+      <!-- todas as demais cenas permanecem intactas.                         -->
       <!-- ================================================================== -->
       <section
         class="scene-card mt-10 border-2 border-dashed border-solla/60 p-4 sm:p-6 lg:p-8"
@@ -2258,16 +2843,14 @@
                       <strong>Fonte:</strong> Ministério da Saúde — CNES<br />Nota: sem variação:
                       EMAD, EMAP, ENASF-AB e ECR.
                     </p>
-                    <div class="brand-lockup" aria-label="Marca provisória do mandato">
-                      <span class="brand-signal"></span>
-                      <div>
-                        <div class="brand-name">JORGE SOLLA</div>
-                        <div class="brand-office">MANDATO DEPUTADO FEDERAL</div>
-                      </div>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
                     </div>
                   </footer>
                 </div>
-                <span class="asset-flag">NEEDS ASSET · LOGO OFICIAL</span>
               </article>
             </div>
           </div>
@@ -2419,10 +3002,14 @@
                     <strong>Fonte:</strong> Ministério da Saúde — CNES · Nota: sem variação: EMAD,
                     EMAP, ENASF-AB e ECR.
                   </div>
-                  <div class="brand-name">JORGE SOLLA</div>
+                  <div class="brand-logo-frame">
+                    <img
+                      src="../../public/campaign-kit/jorge-solla-positivo.png"
+                      alt="Jorge Solla — Deputado Federal"
+                    />
+                  </div>
                 </footer>
               </div>
-              <span class="asset-flag" style="bottom: 270px">NEEDS ASSET · LOGO OFICIAL</span>
             </article>
           </div>
         </div>
@@ -2529,8 +3116,7 @@
                 <span class="rule-code">chart-subtitle</span>,
                 <span class="rule-code">chart-footer</span>,
                 <span class="rule-code">source-line</span>,
-                <span class="rule-code">brand-lockup</span> e
-                <span class="rule-code">asset-flag</span>.
+                <span class="rule-code">brand-logo-frame</span> e o PNG oficial inteiro.
               </p>
             </div>
           </div>
@@ -2787,7 +3373,9 @@
               <p class="text-sm font-bold">Densidade</p>
               <p class="mt-1 text-sm leading-5 text-stone-600">
                 Barra, coluna e linha simples: até 7 pontos. Exceção aprovada: linha de 2 séries,
-                até 12 pontos alinhados por série; story mantém 5 apenas para barra/coluna.
+                até 12 pontos alinhados por série. Revisão C205 aprovada: linha de 3 séries no feed,
+                até 12 pontos alinhados por série (36 marcas). Story mantém 5 apenas para
+                barra/coluna; C205 não certifica quadrado nem story.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
@@ -2796,6 +3384,15 @@
                 Off-white #faf9f7. Vermelho oficial #e4102f ocupa no máximo ~10% da peça; a régua de
                 marca usa azul #184e92. Exceção estrita, ainda em gate: a cena 02A usa duas colunas
                 vermelhas quando as duas categorias forem explicitamente positivas.
+              </p>
+            </div>
+            <div class="rounded-xl border border-amber-300 bg-amber-50/70 p-4">
+              <p class="text-sm font-bold">Rodapé e marca · C206 aprovada</p>
+              <p class="mt-1 text-sm leading-5 text-stone-600">
+                Fonte/nota: 27 px no feed/story; 25 px no quadrado e nas cenas densas 02B/02D. Marca
+                oficial inteira: 251×144 (feed), 192×110 (quadrado), 279×160 (story). Rodapé mínimo:
+                171/128/190 px, respectivamente. Sem recorte, distorção, recoloração ou lockup
+                recriado.
               </p>
             </div>
           </div>
@@ -2807,9 +3404,10 @@
       >
         <span
           >base C203 <strong>aprovada</strong> · extensão C191
-          <strong>certificada pelo designer e aprovada pelo humano</strong> · 2026-09-19</span
+          <strong>certificada pelo designer e aprovada pelo humano</strong> · C205 (supera a C204) +
+          C206 <strong>aprovadas no gate de 2026-09-19</strong></span
         >
-        <span>Kit 1313 oficial · valência redundante · NEEDS ASSET resolvido</span>
+        <span>Kit 1313 oficial · valência redundante · marca ampliada · NEEDS ASSET resolvido</span>
       </footer>
     </main>
   </body>

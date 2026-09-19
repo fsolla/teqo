@@ -26,6 +26,7 @@ import {
   MAX_POINTS,
   MAX_POINTS_LINE,
   MAX_POINTS_STORY,
+  MAX_SERIES,
   RELATION_LABEL,
   SIZES,
   classifyRelation,
@@ -59,25 +60,49 @@ const slugify = (value) =>
 const today = () => new Date().toISOString().slice(0, 10)
 
 /**
- * `--good`/`--bad` name the series that carry each tone of the approved
- * two-series variant; the pair itself is validated by `validateSpec`.
+ * `--good`/`--bad` name the series that carry the pair of the approved
+ * two-series variant; `--good`/`--neutral`/`--neutral-dark` name the triad of
+ * the three-series extension (C205). The vocabularies never mix: the tone flags
+ * enter together (the whole pair or the whole triad) or not at all, and
+ * `validateSpec` re-checks the contract.
  */
 const applyTones = (series, flags, die) => {
-  const good = flags.good ? String(flags.good) : null
-  const bad = flags.bad ? String(flags.bad) : null
-  if (good && bad && good === bad) {
-    die(`--good e --bad apontam para a mesma série: ${JSON.stringify(good)}.`)
+  const triad = series.length === MAX_SERIES
+  const allowed = triad ? ['good', 'neutral', 'neutral-dark'] : ['good', 'bad']
+  const informed = ['good', 'bad', 'medium', 'neutral', 'neutral-dark'].filter(
+    (tone) => flags[tone],
+  )
+  if (informed.length === 0) return series
+  if (informed.includes('medium')) {
+    die(
+      'o tom --medium saiu na revisão C205: use --neutral (neutro) e --neutral-dark (neutro escuro).',
+    )
+  }
+  for (const tone of informed) {
+    if (!allowed.includes(tone)) {
+      die(
+        triad
+          ? `--${tone} é do par de duas séries: a linha de três séries usa --good, --neutral e --neutral-dark.`
+          : `--${tone} é do trio de três séries: a linha de duas séries usa --good e --bad.`,
+      )
+    }
+  }
+  if (informed.length !== allowed.length) {
+    die(`informe os tons juntos (${allowed.map((tone) => `--${tone}`).join(', ')}) ou nenhum.`)
+  }
+  const names = informed.map((tone) => String(flags[tone]))
+  if (new Set(names).size !== names.length) {
+    die(`os tons apontam para a mesma série: ${names.join(', ')}.`)
   }
   const known = series.map((serie) => serie.name)
-  for (const name of [good, bad].filter(Boolean)) {
+  for (const name of names) {
     if (!known.includes(name)) {
       die(`série ${JSON.stringify(name)} não existe nos dados (nomes: ${known.join(', ')}).`)
     }
   }
   return series.map((serie) => {
-    if (good && serie.name === good) return { ...serie, tone: 'good' }
-    if (bad && serie.name === bad) return { ...serie, tone: 'bad' }
-    return serie
+    const tone = allowed.find((candidate) => String(flags[candidate]) === serie.name)
+    return tone ? { ...serie, tone } : serie
   })
 }
 

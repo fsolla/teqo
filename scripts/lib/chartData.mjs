@@ -24,12 +24,20 @@ export const MAX_POINTS = 7
 export const MAX_POINTS_STORY = 5
 
 /**
- * Two-series time comparison (approved variant): an annual series carries more
- * points than a ranking, per series. One tone per series encodes good/bad.
+ * Two-series and three-series time comparison (approved variants): an annual
+ * series carries more points than a ranking, per series. One tone per series
+ * encodes the valence — the pair of C191 (good/bad) or the triad of the C205
+ * extension (good/neutral/neutral-dark, feed only, no projection and no
+ * crossing).
  */
-export const MAX_SERIES = 2
+export const MIN_SERIES = 2
+export const MAX_SERIES = 3
 export const MAX_POINTS_LINE = 12
-const SERIES_TONES = ['good', 'bad']
+const PAIR_TONES = ['good', 'bad']
+const TRIAD_TONES = ['good', 'neutral', 'neutral-dark']
+
+/** Allowed tone vocabulary of the informed series count (never a cross-vocabulary). */
+const tonesFor = (count) => (count === MAX_SERIES ? TRIAD_TONES : PAIR_TONES)
 
 /** Output canvases: feed 4:5 (default), square, stories/reels 9:16 with safe bands. */
 export const SIZES = {
@@ -157,7 +165,7 @@ const cleanMatrix = (matrix) =>
  * turns into a series in silence.
  */
 const looksLikeSeriesHeader = (header) =>
-  header.length >= MAX_SERIES + 1 &&
+  header.length >= MIN_SERIES + 1 &&
   header.every((cell) => cell !== '' && parseNumber(cell) === null)
 
 const detectSeries = (cleaned) => {
@@ -413,22 +421,34 @@ export const classifyRelation = (rows, forcedType = null) => {
 }
 
 /**
- * Guardrails of the two-series time line (approved variant): aligned periods,
- * at most `MAX_POINTS_LINE` per series, honest zero base, good/bad tones paired
- * and the projection only on the last period.
+ * Guardrails of the multi-series time line (approved variants): aligned
+ * periods, at most `MAX_POINTS_LINE` per series, honest zero base, the tone
+ * pair (2 series) or triad (3 series, C204 — feed only, no projection, no
+ * crossing) informed together and the projection only on the last period.
  */
 const validateSeries = (spec) => {
   const { series } = spec
   if (spec.chartType !== 'line') {
-    throw new Error('a comparação de duas séries exige o tipo linha (série de tempo).')
+    throw new Error('a comparação de séries exige o tipo linha (série de tempo).')
   }
   if (spec.highlight) {
-    throw new Error('a linha de duas séries marca bom/ruim pelos tons — não use --highlight.')
+    throw new Error('a linha multi-série marca a valência pelos tons — não use --highlight.')
   }
-  if (series.length !== MAX_SERIES) {
+  if (series.length < MIN_SERIES || series.length > MAX_SERIES) {
     throw new Error(
-      `a linha multi-série desenha ${MAX_SERIES} séries (${series.length} recebidas).`,
+      `a linha multi-série desenha ${MIN_SERIES} ou ${MAX_SERIES} séries (${series.length} recebidas).`,
     )
+  }
+  if (series.length === MAX_SERIES) {
+    if (spec.projectedLabel) {
+      throw new Error('a linha de três séries não certifica projeção — remova --projected.')
+    }
+    if (spec.crossingLabel) {
+      throw new Error('a linha de três séries não certifica cruzamento — remova --crossing.')
+    }
+    if (spec.size && spec.size !== 'feed') {
+      throw new Error('a linha de três séries só está certificada no feed (1080×1350).')
+    }
   }
   const names = new Set()
   for (const serie of series) {
@@ -454,27 +474,38 @@ const validateSeries = (spec) => {
       }
     }
   }
-  const [first, second] = series
-  const aligned =
-    first.rows.length === second.rows.length &&
-    first.rows.every((row, index) => row.label === second.rows[index].label)
+  const [first] = series
+  const aligned = series.every(
+    (serie) =>
+      serie.rows.length === first.rows.length &&
+      serie.rows.every((row, index) => row.label === first.rows[index].label),
+  )
   if (!aligned)
     throw new Error('as séries precisam compartilhar os mesmos períodos, na mesma ordem.')
   if (!first.rows.every((row) => isTemporalLabel(row.label))) {
-    throw new Error('a linha de duas séries exige períodos no eixo (ex.: anos) — sem categorias.')
+    throw new Error('a linha multi-série exige períodos no eixo (ex.: anos) — sem categorias.')
   }
+  const allowedTones = tonesFor(series.length)
   const tones = series.map((serie) => serie.tone ?? null)
   const informed = tones.filter(Boolean)
   if (informed.length > 0 && informed.length !== series.length) {
-    throw new Error('informe o tom das duas séries (bom e ruim) ou de nenhuma.')
+    throw new Error(
+      allowedTones === TRIAD_TONES
+        ? 'informe os três tons (melhor, neutro e neutro escuro) ou de nenhum.'
+        : 'informe o tom das duas séries (bom e ruim) ou de nenhuma.',
+    )
   }
   for (const tone of informed) {
-    if (!SERIES_TONES.includes(tone)) {
-      throw new Error(`tom inválido: ${JSON.stringify(tone)} (use ${SERIES_TONES.join(', ')}).`)
+    if (!allowedTones.includes(tone)) {
+      throw new Error(`tom inválido: ${JSON.stringify(tone)} (use ${allowedTones.join(', ')}).`)
     }
   }
-  if (informed.length === series.length && tones[0] === tones[1]) {
-    throw new Error('as duas séries não podem compartilhar o mesmo tom (bom × ruim).')
+  if (informed.length === series.length && new Set(tones).size !== series.length) {
+    throw new Error(
+      allowedTones === TRIAD_TONES
+        ? 'os três tons precisam ser distintos (melhor, neutro e neutro escuro).'
+        : 'as duas séries não podem compartilhar o mesmo tom (bom × ruim).',
+    )
   }
   if (spec.projectedLabel) {
     const last = first.rows[first.rows.length - 1].label

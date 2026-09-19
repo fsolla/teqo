@@ -245,9 +245,10 @@ const niceMax = (value) => {
 /**
  * 9–12 annual points alternate their axis labels, always keeping the first and
  * the last; the penultimate is dropped when it would collide with the last
- * (design: "2017, 2019, 2021, 2023 e 2026").
+ * (design: "2017, 2019, 2021, 2023 e 2026"). Shared by the two- and the
+ * three-series lines.
  */
-const dualAxisIndices = (count) => {
+const axisLabelIndices = (count) => {
   if (count < 9) return [...Array(count).keys()]
   const shown = new Set()
   for (let index = 0; index < count; index += 2) shown.add(index)
@@ -458,7 +459,7 @@ export const dualLineChart = ({
       })()
     : ''
 
-  const axis = dualAxisIndices(count)
+  const axis = axisLabelIndices(count)
     .map(
       (index) =>
         `<text x="${xAt(index)}" y="${cfg.height - 14}" text-anchor="middle" class="dual-axis-label" font-size="${cfg.axisSize}">${htmlEscape(series[0].rows[index].label)}</text>`,
@@ -537,4 +538,159 @@ export const lineChart = ({
       )
       .join('')}
   </svg>`
+}
+
+/**
+ * Geometry of the approved three-series time line (C205 extension, feed only).
+ * The data box is narrower than the two-series one (x=52…560) so the wider end
+ * gutter (x=600…880, 280px) holds three three-line blocks; x=560…600 belongs to
+ * the leaders only. Lanes: name / metric / valence with 30–40px line boxes and
+ * a 196px pitch (design: 62/108/150 · 258/304/346 · 454/500/542).
+ */
+const TRIPLE_GEOMETRY = {
+  feed: {
+    width: 880,
+    height: 650,
+    left: 52,
+    right: 560,
+    top: 56,
+    baseline: 544,
+    stroke: 7,
+    dotRadius: 8,
+    diamondSize: 14,
+    triangleWidth: 20,
+    triangleTop: 8,
+    triangleApex: 10,
+    axisSize: 30,
+    axisY: 636,
+    zeroX: 42,
+    zeroY: 538,
+    nameSize: 30,
+    metricSize: 34,
+    valenceSize: 30,
+    textX: 600,
+    leader: { start: 570, rail: 580, bend: 590, end: 594 },
+    laneOffsets: [62, 108, 150],
+    lanePitch: 196,
+  },
+}
+
+/**
+ * Three-series time line (C205 extension of the two-series variant): three
+ * observed series on a shared zero-based scale and the triad of redundant tones
+ * (melhor = red circle ↑ "amplia"; neutro = gray diamond ↗ "cresce"; neutro
+ * escuro = ink triangle ↘ "diminui") with a three-line end gutter. Every point
+ * is observed — no band, no dash, no hollow marker, no "projeção".
+ *
+ * `series` items are `{ name, tone: 'good'|'neutral'|'neutral-dark', rows }`;
+ * the caller owns the palette and the valence words (never color alone).
+ */
+export const tripleLineChart = ({ series, size = 'feed', colors, valence, format }) => {
+  const cfg = TRIPLE_GEOMETRY[size] ?? TRIPLE_GEOMETRY.feed
+  const count = series[0].rows.length
+  const max = niceMax(Math.max(...series.flatMap((serie) => serie.rows.map((row) => row.value))))
+  const step = count > 1 ? (cfg.right - cfg.left) / (count - 1) : 0
+  const xAt = (index) => Math.round(cfg.left + index * step)
+  const yAt = (value) => cfg.baseline - Math.round((value / max) * (cfg.baseline - cfg.top))
+  const lastIndex = count - 1
+
+  const marker = (tone, x, y) => {
+    if (tone === 'neutral') {
+      const half = cfg.diamondSize / 2
+      return `<rect x="${x - half}" y="${y - half}" width="${cfg.diamondSize}" height="${cfg.diamondSize}" transform="rotate(45 ${x} ${y})" />`
+    }
+    if (tone === 'neutral-dark') {
+      const half = cfg.triangleWidth / 2
+      return `<path d="M${x - half} ${y - cfg.triangleTop} L${x + half} ${y - cfg.triangleTop} L${x} ${y + cfg.triangleApex} Z" />`
+    }
+    return `<circle cx="${x}" cy="${y}" r="${cfg.dotRadius}" />`
+  }
+
+  const gridLines = `<line class="triple-grid-line" x1="${cfg.left}" y1="${cfg.top}" x2="${cfg.right}" y2="${cfg.top}" stroke="${colors.grid}" stroke-opacity="0.32" stroke-width="2" />
+      <line class="triple-grid-line" x1="${cfg.left}" y1="${Math.round((cfg.top + cfg.baseline) / 2)}" x2="${cfg.right}" y2="${Math.round((cfg.top + cfg.baseline) / 2)}" stroke="${colors.grid}" stroke-opacity="0.32" stroke-width="2" />
+      <line class="triple-zero-line" x1="${cfg.left}" y1="${cfg.baseline}" x2="${cfg.right}" y2="${cfg.baseline}" stroke="${colors.grid}" stroke-width="2" />
+      <text x="${cfg.zeroX}" y="${cfg.zeroY}" text-anchor="end" class="triple-axis-label" font-size="${cfg.axisSize}">0</text>`
+
+  const lines = series
+    .map((serie) => {
+      const color = colors[serie.tone] ?? colors.neutral
+      const points = serie.rows.map((row, index) => ({ x: xAt(index), y: yAt(row.value) }))
+      return `<polyline class="triple-series triple-series-${serie.tone}" points="${points.map((point) => `${point.x},${point.y}`).join(' ')}" fill="none" stroke="${color}" stroke-width="${cfg.stroke}" stroke-linecap="round" stroke-linejoin="round" />
+      <g class="triple-markers-${serie.tone}" fill="${color}">${points.map((point) => marker(serie.tone, point.x, point.y)).join('')}</g>`
+    })
+    .join('')
+
+  const changeOf = (serie) => {
+    const firstValue = serie.rows[0].value
+    const observed = serie.rows[lastIndex].value
+    if (!(firstValue > 0) || !Number.isFinite(observed)) return null
+    const percent = Math.round(((observed - firstValue) / firstValue) * 100)
+    const sign = percent > 0 ? '+' : percent < 0 ? '−' : ''
+    return { percent, percentLabel: `${sign}${Math.abs(percent)}%` }
+  }
+
+  const blocks = series
+    .map((serie) => ({
+      serie,
+      color: colors[serie.tone] ?? colors.neutral,
+      change: changeOf(serie),
+      point: { y: yAt(serie.rows[lastIndex].value) },
+    }))
+    .sort((a, b) => a.point.y - b.point.y)
+    .map((block, lane) => ({
+      ...block,
+      baselines: cfg.laneOffsets.map((offset) => offset + lane * cfg.lanePitch),
+    }))
+
+  const endBlocks = blocks
+    .map((block) => {
+      const { baselines, point } = block
+      const metric = `${format(block.serie.rows[lastIndex])}${
+        block.change ? ` · ${block.change.percentLabel}` : ''
+      }`
+      const text = (className, size, fill, value, index) =>
+        `<text x="${cfg.textX}" y="${baselines[index]}" class="${className}" font-size="${size}"${fill ? ` fill="${fill}"` : ''}>${htmlEscape(value)}</text>`
+      return [
+        `<polyline class="triple-end-leader" points="${cfg.leader.start},${point.y} ${cfg.leader.rail},${point.y} ${cfg.leader.bend},${baselines[1]} ${cfg.leader.end},${baselines[1]}" fill="none" stroke="${block.color}" stroke-width="3" />`,
+        text('triple-end-name', cfg.nameSize, null, block.serie.name, 0),
+        text('triple-end-metric', cfg.metricSize, null, metric, 1),
+        text(
+          'triple-end-valence',
+          cfg.valenceSize,
+          block.color,
+          valence[block.serie.tone] ?? '',
+          2,
+        ),
+      ].join('')
+    })
+    .join('')
+
+  const axis = axisLabelIndices(count)
+    .map(
+      (index) =>
+        `<text x="${xAt(index)}" y="${cfg.axisY}" text-anchor="middle" class="triple-axis-label" font-size="${cfg.axisSize}">${htmlEscape(series[0].rows[index].label)}</text>`,
+    )
+    .join('')
+
+  const ariaLabel = `${series
+    .map((serie) => {
+      const change = changeOf(serie)
+      const direction = !change
+        ? ''
+        : change.percent > 0
+          ? 'aumento'
+          : change.percent < 0
+            ? 'diminuição'
+            : 'sem variação'
+      const trend = change ? `, ${direction} de ${Math.abs(change.percent)} por cento` : ''
+      return `${serie.name}: de ${format(serie.rows[0])} em ${serie.rows[0].label} para ${format(serie.rows[lastIndex])} em ${serie.rows[lastIndex].label}${trend}`
+    })
+    .join('. ')}. Todos os pontos de cada série são observados.`
+
+  return `<svg class="chart triple-chart" viewBox="0 0 ${cfg.width} ${cfg.height}" role="img" aria-label="${htmlEscape(ariaLabel)}" preserveAspectRatio="xMidYMid meet">
+      ${gridLines}
+      ${lines}
+      ${endBlocks}
+      ${axis}
+    </svg>`
 }

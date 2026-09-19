@@ -10,7 +10,12 @@
  */
 
 import { RELATION_LABEL, SERIES_RELATION_LABEL, SIZES } from './chartData.mjs'
-import { dualLineChart, lineChart, proportionalPercent } from './chartPrimitives.mjs'
+import {
+  dualLineChart,
+  lineChart,
+  proportionalPercent,
+  tripleLineChart,
+} from './chartPrimitives.mjs'
 import { htmlEscape } from './reportText.mjs'
 
 /** Official kit 1313 palette, mapped by role (C203). */
@@ -180,9 +185,37 @@ const dualBody = (spec) => {
   })}</div>`
 }
 
+/**
+ * Three-series time line (approved C205 extension of the two-series variant,
+ * feed only): melhor = red + circle + "↑ amplia"; neutro = gray + diamond +
+ * "↗ cresce"; neutro escuro = ink + triangle + "↘ diminui" (factual direction,
+ * never the bad valence "↓ recua"). Every tone travels by word + arrow + shape
+ * + color, and the brand blue leaves the data entirely.
+ */
+const TRIPLE_COLORS = {
+  good: SOLLA_PALETTE.highlight,
+  neutral: SOLLA_PALETTE.axis,
+  'neutral-dark': SOLLA_PALETTE.ink,
+  grid: SOLLA_PALETTE.barStrong,
+  ink: SOLLA_PALETTE.ink,
+}
+
+const TRIPLE_VALENCE = { good: '↑ amplia', neutral: '↗ cresce', 'neutral-dark': '↘ diminui' }
+
+const tripleBody = (spec) =>
+  `<div class="triple-line-plot">${tripleLineChart({
+    series: spec.series,
+    size: 'feed',
+    colors: TRIPLE_COLORS,
+    valence: TRIPLE_VALENCE,
+    format: (row) => formatValue(row.value),
+  })}</div>`
+
 const plotBody = (spec) => {
   if (spec.chartType === 'delta') return deltaBody(spec)
-  if (Array.isArray(spec.series) && spec.series.length > 0) return dualBody(spec)
+  const seriesCount = Array.isArray(spec.series) ? spec.series.length : 0
+  if (seriesCount === 3) return tripleBody(spec)
+  if (seriesCount > 0) return dualBody(spec)
   if (spec.chartType === 'anchor') return anchorBody(spec)
   if (spec.chartType === 'column') return columnBody(spec)
   if (spec.chartType === 'line') {
@@ -316,22 +349,28 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
 .dual-crossing-box { fill: ${SOLLA_PALETTE.paper}; stroke: ${SOLLA_PALETTE.barStrong}; stroke-width: 2; }
 .dual-crossing-year { fill: ${SOLLA_PALETTE.highlight}; font-weight: 850; }
 .dual-crossing-copy { fill: ${SOLLA_PALETTE.ink}; font-weight: 750; }
+.triple-line-plot { flex: none; }
+.triple-line-plot svg { display: block; width: 880px; height: auto; }
+.triple-grid-line { stroke: ${SOLLA_PALETTE.barStrong}; stroke-opacity: 0.32; stroke-width: 2; }
+.triple-zero-line { stroke: ${SOLLA_PALETTE.barStrong}; stroke-width: 2; }
+.triple-axis-label { fill: ${SOLLA_PALETTE.axis}; font-weight: 650; }
+.triple-end-name { fill: ${SOLLA_PALETTE.ink}; font-weight: 700; }
+.triple-end-metric { fill: ${SOLLA_PALETTE.ink}; font-weight: 850; font-variant-numeric: tabular-nums; }
+.triple-end-valence { font-weight: 850; }
+.triple-end-leader { fill: none; stroke-width: 3; stroke-linecap: square; stroke-linejoin: round; }
 .anchor { padding-top: 20px; }
 .anchor-number { color: ${SOLLA_PALETTE.highlight}; font-size: 300px; line-height: 0.86; letter-spacing: -0.065em; font-weight: 900; font-variant-numeric: tabular-nums; }
 .anchor-copy { max-width: 760px; margin: 40px 0 0; font-size: 52px; line-height: 1.12; font-weight: 750; }
 .footer {
   margin-top: auto; padding-top: 25px; border-top: 2px solid ${SOLLA_PALETTE.hairline};
   display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 30px;
+  min-height: 171px;
 }
 .source { margin: 0; color: ${SOLLA_PALETTE.label}; font-size: 27px; line-height: 1.32; }
 .source strong { color: ${SOLLA_PALETTE.ink}; font-weight: 750; }
-.brand-logo-frame {
-  width: 286px; height: 90px; flex: 0 0 286px;
-  display: flex; align-items: center; justify-content: flex-end;
-}
+.brand-logo-frame { width: 251px; height: 144px; flex: 0 0 251px; }
 .brand-logo-frame img {
-  display: block; max-width: 100%; max-height: 100%; width: auto; height: auto;
-  object-fit: contain;
+  display: block; width: 100%; height: 100%; object-fit: contain;
 }`
 
 /** Per-size vertical rhythm of the template (feed 4:5, square, stories 9:16). */
@@ -384,19 +423,30 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
   const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
   const canvas = SIZES[sizeKey]
   const layout = layoutFor(sizeKey)
-  const dual = Array.isArray(spec.series) && spec.series.length > 0
+  const seriesCount = Array.isArray(spec.series) ? spec.series.length : 0
+  const dual = seriesCount === 2
+  const triple = seriesCount === 3
   const dualPositive = Boolean(spec.dualPositive)
   const dualPositiveStyles =
     !dualPositive || sizeKey !== 'feed'
       ? ''
       : '.headline { font-size: 60px; max-width: 900px; } .subtitle { margin-top: 18px; font-size: 28px; }'
-  const dualStyles = !dual
-    ? ''
-    : sizeKey === 'feed'
-      ? '.headline { font-size: 60px; max-width: 900px; } .subtitle { font-size: 28px; } .source { font-size: 25px; } .plot { margin-top: 28px; }'
-      : sizeKey === 'square'
-        ? '.inner { padding: 56px 84px 48px; } .headline { font-size: 54px; } .plot { margin-top: 20px; }'
-        : '.headline { font-size: 64px; } .plot { margin-top: 28px; }'
+  const dualStyles =
+    !dual && !triple
+      ? ''
+      : triple
+        ? '.headline { font-size: 56px; max-width: 900px; } .subtitle { margin-top: 18px; font-size: 27px; } .source { max-width: 570px; font-size: 25px; } .plot { margin-top: 16px; }'
+        : sizeKey === 'feed'
+          ? '.headline { font-size: 60px; max-width: 900px; } .subtitle { font-size: 28px; } .source { font-size: 25px; } .plot { margin-top: 28px; }'
+          : sizeKey === 'square'
+            ? '.inner { padding: 56px 84px 48px; } .headline { font-size: 54px; } .plot { margin-top: 20px; }'
+            : '.headline { font-size: 64px; } .plot { margin-top: 28px; }'
+  const footerStyles =
+    sizeKey === 'square'
+      ? '.footer { min-height: 128px; padding-top: 16px; } .source { font-size: 25px; } .brand-logo-frame { width: 192px; height: 110px; flex-basis: 192px; }'
+      : sizeKey === 'story'
+        ? '.footer { min-height: 190px; padding-top: 28px; gap: 28px; } .brand-logo-frame { width: 279px; height: 160px; flex-basis: 279px; }'
+        : ''
   const delta = spec.chartType === 'delta'
   const deltaStyles = !delta
     ? ''
@@ -406,7 +456,8 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
         ? '.inner { padding: 56px 84px 48px; } .plot { margin-top: 0; } .headline { font-size: 54px; } .subtitle { font-size: 28px; } .delta-grade { margin-top: 24px; --delta-bar-h: 42px; --delta-gap: 12px; --delta-v1-w: 84px; --delta-v2-w: 104px; } .delta-value { font-size: 30px; }'
         : '.plot { margin-top: 0; } .headline { font-size: 64px; } .delta-grade { margin-top: 40px; --delta-gap: 22px; --delta-bar-h: 52px; }'
   const kicker =
-    spec.kicker ?? (dual ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico'))
+    spec.kicker ??
+    (dual || triple ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico'))
   const anchorUsesSubtitle = spec.chartType === 'anchor' && !spec.rows[0]?.label
   const showSubtitle = Boolean(spec.subtitle) && !anchorUsesSubtitle
   return `<!doctype html>
@@ -422,13 +473,14 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
       .headline { font-size: ${layout.headline}px; max-width: ${canvas.width - 200}px; }
       .subtitle { margin-top: ${Math.round(layout.gapAfterContext * 1.28)}px; font-size: ${layout.subtitle}px; max-width: ${canvas.width - 260}px; }
       .plot { margin-top: ${layout.plotGap}px; }
+      ${footerStyles}
       ${dualStyles}
       ${deltaStyles}
       ${dualPositiveStyles}
     </style>
   </head>
   <body>
-    <article class="canvas${dual ? ' dual-series' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
+    <article class="canvas${dual ? ' dual-series' : ''}${triple ? ' triple-series' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
       <div class="inner">
         <div class="top-rule"></div>
         <p class="context">${htmlEscape(kicker)}</p>
