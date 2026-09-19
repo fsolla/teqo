@@ -366,6 +366,106 @@
         font-weight: 750;
       }
 
+      .mini-dual-line {
+        width: 100%;
+        height: 100%;
+      }
+      .mini-dual-label {
+        fill: var(--ink);
+        font-size: 7px;
+        font-weight: 800;
+      }
+
+      .feed-canvas.dual-series .chart-headline {
+        max-width: 900px;
+        font-size: 60px;
+      }
+      .feed-canvas.dual-series .chart-subtitle {
+        margin-top: 18px;
+        font-size: 28px;
+      }
+      .feed-canvas.dual-series .source-line {
+        font-size: 25px;
+      }
+      .dual-line-plot {
+        flex: none;
+        width: 880px;
+        height: 620px;
+        margin-top: 28px;
+      }
+      .dual-line-plot svg {
+        display: block;
+        width: 880px;
+        height: 620px;
+      }
+      .dual-axis-label {
+        fill: #78716c;
+        font-size: 30px;
+        font-weight: 650;
+      }
+      .dual-projection-label {
+        fill: #78716c;
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .dual-end-name {
+        fill: var(--ink);
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .dual-end-value {
+        fill: var(--ink);
+        font-size: 34px;
+        font-weight: 850;
+        font-variant-numeric: tabular-nums;
+      }
+      .dual-end-valence {
+        font-size: 30px;
+        font-weight: 850;
+      }
+      .dual-end-change {
+        fill: #57534e;
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .dual-crossing-guide {
+        stroke: var(--solla);
+        stroke-width: 2px;
+        stroke-dasharray: 8 8;
+        opacity: 0.45;
+      }
+      .dual-crossing-ring {
+        fill: var(--paper);
+        stroke: var(--solla);
+        stroke-width: 4px;
+      }
+      .dual-crossing-box {
+        fill: var(--paper);
+        stroke: #a8a29e;
+        stroke-width: 2px;
+      }
+      .dual-crossing-year {
+        fill: var(--solla);
+        font-size: 30px;
+        font-weight: 850;
+      }
+      .dual-crossing-copy {
+        fill: var(--ink);
+        font-size: 28px;
+        font-weight: 750;
+      }
+      .rule-code {
+        display: inline-flex;
+        padding: 2px 6px;
+        border: 1px solid #d6d3d1;
+        border-radius: 5px;
+        color: #44403c;
+        background: #fafaf9;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
       .story-stage {
         width: 351px;
         height: 624px;
@@ -626,16 +726,16 @@
     <main class="mx-auto max-w-[1240px] px-4 py-8 sm:px-7 lg:py-12">
       <header class="max-w-4xl">
         <div class="flex flex-wrap items-center gap-2">
-          <span class="scene-label">Gate visual · template v1</span>
+          <span class="scene-label">Design certificado · C191</span>
           <span class="scene-label">Instagram feed + Stories</span>
         </div>
         <h1 class="mt-5 max-w-3xl text-3xl font-extrabold tracking-[-0.035em] text-ink sm:text-4xl">
           Gráficos claros, sóbrios e prontos para a comunicação
         </h1>
         <p class="mt-4 max-w-3xl text-[15px] leading-6 text-stone-600">
-          A superfície desenhada é a imagem exportada — não uma tela de app. Os dados abaixo são
-          deliberadamente genéricos; as peças fixam hierarquia, grid, tratamento de marca e limites
-          do gerador.
+          A superfície desenhada é a imagem exportada — não uma tela de app. Os exemplos-base são
+          deliberadamente genéricos; a variante de duas séries usa o caso fornecido de Vitória da
+          Conquista. As peças fixam hierarquia, grid, tratamento de marca e limites do gerador.
         </p>
       </header>
 
@@ -767,7 +867,7 @@
           <div>
             <p class="text-xs font-bold text-brand-dark">CENA 02 · SISTEMA</p>
             <h2 id="variations-title" class="mt-1 text-xl font-bold tracking-tight">
-              Quatro relações, um mesmo template
+              Cinco variações, um mesmo template
             </h2>
           </div>
           <p class="max-w-xl text-sm leading-5 text-stone-600">
@@ -902,6 +1002,558 @@
             <p class="mt-1 text-xs leading-4 text-stone-600">
               Um valor grande + frase que explica.
             </p>
+          </div>
+
+          <div class="scene-card p-3">
+            <article class="mini-canvas">
+              <div class="mini-rule"></div>
+              <div class="mini-kicker">Comparação no tempo</div>
+              <h3 class="mini-title">Estadual cresce e supera o municipal</h3>
+              <p class="mini-sub">Internações em Vitória da Conquista, 2017–2026.</p>
+              <div class="mini-plot">
+                <svg
+                  class="mini-dual-line"
+                  viewBox="0 0 220 130"
+                  role="img"
+                  aria-label="Duas séries de internações: hospital estadual cresce e supera o municipal em 2024; 2026 é projeção"
+                >
+                  <line x1="8" y1="111" x2="151" y2="111" stroke="#a8a29e" stroke-width="1" />
+                  <line x1="8" y1="61" x2="151" y2="61" stroke="#e7e5e4" stroke-width="1" />
+                  <polyline
+                    points="10,72 26,68 42,61 58,66 74,55 90,47 106,49 122,28 138,23"
+                    fill="none"
+                    stroke="#c51414"
+                    stroke-width="3.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <line
+                    x1="138"
+                    y1="23"
+                    x2="151"
+                    y2="16"
+                    stroke="#c51414"
+                    stroke-width="3.5"
+                    stroke-dasharray="6 4"
+                  />
+                  <polyline
+                    points="10,13 26,11 42,20 58,29 74,23 90,28 106,31 122,32 138,38"
+                    fill="none"
+                    stroke="#78716c"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                  <line
+                    x1="138"
+                    y1="38"
+                    x2="151"
+                    y2="50"
+                    stroke="#78716c"
+                    stroke-width="3"
+                    stroke-dasharray="6 4"
+                  />
+                  <g fill="#c51414">
+                    <circle cx="10" cy="72" r="2.5" />
+                    <circle cx="26" cy="68" r="2.5" />
+                    <circle cx="42" cy="61" r="2.5" />
+                    <circle cx="58" cy="66" r="2.5" />
+                    <circle cx="74" cy="55" r="2.5" />
+                    <circle cx="90" cy="47" r="2.5" />
+                    <circle cx="106" cy="49" r="2.5" />
+                    <circle cx="122" cy="28" r="2.5" />
+                    <circle cx="138" cy="23" r="2.5" />
+                  </g>
+                  <g fill="#78716c">
+                    <rect x="7.5" y="10.5" width="5" height="5" />
+                    <rect x="23.5" y="8.5" width="5" height="5" />
+                    <rect x="39.5" y="17.5" width="5" height="5" />
+                    <rect x="55.5" y="26.5" width="5" height="5" />
+                    <rect x="71.5" y="20.5" width="5" height="5" />
+                    <rect x="87.5" y="25.5" width="5" height="5" />
+                    <rect x="103.5" y="28.5" width="5" height="5" />
+                    <rect x="119.5" y="29.5" width="5" height="5" />
+                    <rect x="135.5" y="35.5" width="5" height="5" />
+                  </g>
+                  <circle
+                    cx="151"
+                    cy="16"
+                    r="4"
+                    fill="#faf9f7"
+                    stroke="#c51414"
+                    stroke-width="2.5"
+                  />
+                  <rect
+                    x="147"
+                    y="46"
+                    width="8"
+                    height="8"
+                    fill="#faf9f7"
+                    stroke="#78716c"
+                    stroke-width="2"
+                  />
+                  <text x="159" y="8" class="mini-dual-label">Estadual</text>
+                  <text x="159" y="17" class="mini-dual-label" style="fill: #c51414">
+                    23.294 · ↑ amplia
+                  </text>
+                  <text x="159" y="42" class="mini-dual-label">Municipal</text>
+                  <text x="159" y="51" class="mini-dual-label" style="fill: #78716c">
+                    15.948 · ↓ recua
+                  </text>
+                  <text
+                    x="151"
+                    y="126"
+                    text-anchor="middle"
+                    fill="#57534e"
+                    font-size="6.5"
+                    font-weight="700"
+                  >
+                    2026 · projeção
+                  </text>
+                </svg>
+              </div>
+              <footer class="mini-footer">
+                <span>Fonte: SIH/SUS</span><span class="mini-mark">JORGE SOLLA</span>
+              </footer>
+            </article>
+            <p class="mt-3 text-sm font-bold">Linha · duas séries</p>
+            <p class="mt-1 text-xs leading-4 text-stone-600">
+              Tendências, valência redundante e projeção explícita.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="scene-card mt-10 p-4 sm:p-6 lg:p-8" aria-labelledby="dual-line-title">
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">CENA 02B · VARIAÇÃO CERTIFICADA</p>
+            <h2 id="dual-line-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · linha temporal de duas séries
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">Plot SVG · viewBox 880 × 620</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas dual-series"
+                aria-label="Internações crescem no hospital estadual e recuam no municipal em Vitória da Conquista, de 2017 a 2026; o ponto de 2026 é projeção"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Comparação no tempo</p>
+                  <h3 class="chart-headline">
+                    Internações crescem no hospital estadual e recuam no municipal
+                  </h3>
+                  <p class="chart-subtitle">
+                    AIH aprovadas por ano · Vitória da Conquista (BA) · 2017–2026
+                  </p>
+
+                  <div class="dual-line-plot tabular">
+                    <svg
+                      viewBox="0 0 880 620"
+                      role="img"
+                      aria-label="Hospital Estadual: de 9.807 internações em 2017 para projeção de 23.294 em 2026, alta observada de 121 por cento até 2025. Hospital Municipal: de 24.002 para projeção de 15.948, queda observada de 23 por cento até 2025. O estadual ultrapassa o municipal em 2024."
+                      preserveAspectRatio="xMidYMid meet"
+                    >
+                      <rect
+                        class="dual-projection-band"
+                        x="570"
+                        y="0"
+                        width="63"
+                        height="544"
+                        fill="#a8a29e"
+                        fill-opacity="0.16"
+                      />
+                      <line
+                        class="dual-grid-line"
+                        x1="52"
+                        y1="56"
+                        x2="600"
+                        y2="56"
+                        stroke="#a8a29e"
+                        stroke-opacity="0.32"
+                        stroke-width="2"
+                      />
+                      <line
+                        class="dual-grid-line"
+                        x1="52"
+                        y1="300"
+                        x2="600"
+                        y2="300"
+                        stroke="#a8a29e"
+                        stroke-opacity="0.32"
+                        stroke-width="2"
+                      />
+                      <line
+                        class="dual-zero-line"
+                        x1="52"
+                        y1="544"
+                        x2="600"
+                        y2="544"
+                        stroke="#a8a29e"
+                        stroke-width="2"
+                      />
+                      <text x="42" y="538" text-anchor="end" class="dual-axis-label">0</text>
+                      <text x="624" y="45" text-anchor="end" class="dual-projection-label">
+                        projeção
+                      </text>
+
+                      <line class="dual-crossing-guide" x1="478" y1="160" x2="478" y2="398" />
+
+                      <polyline
+                        class="dual-series dual-series-good"
+                        points="52,352 113,336 174,314 235,331 296,288 356,256 417,261 478,144 539,122"
+                        fill="none"
+                        stroke="#c51414"
+                        stroke-width="8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <line
+                        class="dual-series-projection dual-series-good"
+                        x1="539"
+                        y1="122"
+                        x2="600"
+                        y2="89"
+                        stroke="#c51414"
+                        stroke-width="8"
+                        stroke-linecap="round"
+                        stroke-dasharray="18 12"
+                      />
+                      <polyline
+                        class="dual-series dual-series-bad"
+                        points="52,75 113,67 174,109 235,148 296,123 356,142 417,154 478,159 539,181"
+                        fill="none"
+                        stroke="#78716c"
+                        stroke-width="8"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <line
+                        class="dual-series-projection dual-series-bad"
+                        x1="539"
+                        y1="181"
+                        x2="600"
+                        y2="233"
+                        stroke="#78716c"
+                        stroke-width="8"
+                        stroke-linecap="round"
+                        stroke-dasharray="18 12"
+                      />
+
+                      <g class="dual-markers-good" fill="#c51414">
+                        <circle cx="52" cy="352" r="8" />
+                        <circle cx="113" cy="336" r="8" />
+                        <circle cx="174" cy="314" r="8" />
+                        <circle cx="235" cy="331" r="8" />
+                        <circle cx="296" cy="288" r="8" />
+                        <circle cx="356" cy="256" r="8" />
+                        <circle cx="417" cy="261" r="8" />
+                        <circle cx="478" cy="144" r="8" />
+                        <circle cx="539" cy="122" r="8" />
+                      </g>
+                      <g class="dual-markers-bad" fill="#78716c">
+                        <rect x="44" y="67" width="16" height="16" />
+                        <rect x="105" y="59" width="16" height="16" />
+                        <rect x="166" y="101" width="16" height="16" />
+                        <rect x="227" y="140" width="16" height="16" />
+                        <rect x="288" y="115" width="16" height="16" />
+                        <rect x="348" y="134" width="16" height="16" />
+                        <rect x="409" y="146" width="16" height="16" />
+                        <rect x="470" y="151" width="16" height="16" />
+                        <rect x="531" y="173" width="16" height="16" />
+                      </g>
+                      <circle
+                        class="dual-marker-projected dual-marker-projected-good"
+                        cx="600"
+                        cy="89"
+                        r="11"
+                        fill="#faf9f7"
+                        stroke="#c51414"
+                        stroke-width="5"
+                      />
+                      <rect
+                        class="dual-marker-projected dual-marker-projected-bad"
+                        x="590"
+                        y="223"
+                        width="20"
+                        height="20"
+                        fill="#faf9f7"
+                        stroke="#78716c"
+                        stroke-width="5"
+                      />
+
+                      <circle class="dual-crossing-ring" cx="478" cy="144" r="14" />
+                      <circle cx="478" cy="144" r="7" fill="#c51414" />
+                      <rect
+                        class="dual-crossing-box"
+                        x="351"
+                        y="398"
+                        width="254"
+                        height="118"
+                        rx="8"
+                      />
+                      <text x="478" y="431" text-anchor="middle" class="dual-crossing-year">
+                        2024
+                      </text>
+                      <text x="478" y="465" text-anchor="middle" class="dual-crossing-copy">
+                        Estadual
+                      </text>
+                      <text x="478" y="497" text-anchor="middle" class="dual-crossing-copy">
+                        ultrapassa
+                      </text>
+
+                      <line
+                        class="dual-end-leader"
+                        x1="615"
+                        y1="89"
+                        x2="635"
+                        y2="89"
+                        stroke="#c51414"
+                        stroke-width="3"
+                      />
+                      <text x="642" y="54" class="dual-end-name">Estadual</text>
+                      <text x="642" y="96" class="dual-end-value">23.294</text>
+                      <text x="642" y="136" class="dual-end-valence" fill="#c51414">↑ amplia</text>
+                      <text x="642" y="176" class="dual-end-change">+121% até 2025</text>
+                      <line
+                        class="dual-end-leader"
+                        x1="615"
+                        y1="233"
+                        x2="635"
+                        y2="233"
+                        stroke="#78716c"
+                        stroke-width="3"
+                      />
+                      <text x="642" y="248" class="dual-end-name">Municipal</text>
+                      <text x="642" y="290" class="dual-end-value">15.948</text>
+                      <text x="642" y="330" class="dual-end-valence" fill="#78716c">↓ recua</text>
+                      <text x="642" y="370" class="dual-end-change">−23% até 2025</text>
+
+                      <g class="dual-axis-label" text-anchor="middle">
+                        <text x="52" y="604">2017</text>
+                        <text x="174" y="604">2019</text>
+                        <text x="296" y="604">2021</text>
+                        <text x="417" y="604">2023</text>
+                        <text x="600" y="604">2026</text>
+                      </g>
+                    </svg>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> Ministério da Saúde — SIH/SUS (AIH aprovadas por
+                      ano)<br />
+                      Nota: 2026 é projeção pela média de janeiro a junho × 2.
+                    </p>
+                    <div class="brand-lockup" aria-label="Marca provisória do mandato">
+                      <span class="brand-signal"></span>
+                      <div>
+                        <div class="brand-name">JORGE SOLLA</div>
+                        <div class="brand-office">MANDATO DEPUTADO FEDERAL</div>
+                      </div>
+                    </div>
+                  </footer>
+                </div>
+                <span class="asset-flag">NEEDS ASSET · LOGO OFICIAL</span>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">VALÊNCIA SEM DEPENDER DA COR</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Estadual (bom) usa o vermelho do mandato, círculo e “↑ amplia”. Municipal (ruim)
+                recua em cinza de eixo, quadrado e “↓ recua”: a cor do PT nunca carrega o caminho
+                ruim. Nome, valor, seta, palavra e forma mantêm a leitura redundante.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">PROJEÇÃO VISÍVEL, SEM ALARME</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Só o segmento 2025→2026 é tracejado. Os dois marcadores finais são vazados, a faixa
+                é neutra e “projeção” aparece sobre 2026; o cálculo permanece na nota da fonte.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">O VAZIO VIROU EXPLICAÇÃO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                O plot cresce de 430 para 620 px e ocupa a coluna útil até perto do rodapé. A área
+                abaixo das linhas não é cortada: mantém o zero real e recebe a marcação de 2024,
+                quando o estadual ultrapassa, em vez de permanecer como vazio morto.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">SEM TONS · COMPARAÇÃO NEUTRA</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Quando bom/ruim não vier informado, a série A fica em tinta com círculos e a B em
+                cinza de eixo com quadrados. Os rótulos trazem apenas nome + valor: sem setas, sem
+                “amplia/recua”, variação ou cruzamento valorativo e sem vermelho dentro do plot; o
+                vermelho permanece só na régua e na marca do template.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-7 border-t border-stone-200 pt-6" aria-labelledby="dual-rules-title">
+          <p class="text-xs font-bold text-brand-dark">REGRAS DA LINHA DE 2 SÉRIES</p>
+          <h3 id="dual-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato visual para o porte classe-a-classe
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Entrada e teto</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Exatamente 2 séries e os mesmos rótulos temporais, na mesma ordem. Teto:
+                <strong>12 pontos por série</strong> no feed, quadrado e story (24 marcas no total).
+                Barra/coluna continuam em 7 pontos no feed/quadrado e 5 no story. Contagem ou tempo
+                desalinhado → perguntar; nunca interpolar, completar, repetir nem remover ponto. O
+                domínio y é compartilhado e parte do zero real.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Bom × ruim · tons presentes</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Tons entram sempre em par. Bom =
+                <span class="rule-code">#c51414 + círculo + ↑ “amplia”</span>. Ruim =
+                <span class="rule-code">#78716c + quadrado + ↓ “recua”</span>. No caso: Estadual é
+                bom; Municipal é ruim. Vermelho é marca do mandato/PT e aponta o caminho desejável;
+                nunca significa perda. O ruim permanece neutro. Palavra, seta, forma e cor tornam a
+                leitura redundante, não decorativa.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Sem tons · comparação neutra</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Se nenhum tom vier informado, não inferir juízo: série A =
+                <span class="rule-code">#1c1917 + círculo</span>; série B =
+                <span class="rule-code">#78716c + quadrado</span>. Rótulos finais têm nome + valor e
+                podem trazer a variação observada com sinal matemático, sem palavra valorativa. Sem
+                setas ou “amplia/recua”; nenhum vermelho no plot — ele fica apenas na régua superior
+                e na marca do template.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Kicker, rótulos e colisão</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Kicker fixo: <strong>“Comparação no tempo”</strong>; não há legenda separada. Cada
+                linha termina em bloco nome + valor + glifo/palavra + variação observada, tudo ≥30
+                px. O gutter começa 42 px após o ponto e tem 238 px. Cada bloco usa 4 linhas: nome,
+                valor, valência e “±N% até AAAA” em uma linha. Leading interno ≥38 px; entre blocos,
+                ≥40 px livres. Leaders de 3 px voltam ao ponto. Nunca esconder série. Nome quebra em
+                até 2 linhas; se não couber, pedir forma curta, nunca abreviar sozinho.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Projeção</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Só quando o último período for projetado: faixa neutra
+                <span class="rule-code">#a8a29e a 16%</span> do meio do penúltimo→último passo até
+                33 px depois do ponto final; apenas esse segmento usa tracejado (feed/story
+                <span class="rule-code">18 12</span>; quadrado
+                <span class="rule-code">15 11</span>). Os dois marcadores finais preservam a forma e
+                ficam vazados, com stroke 5 px. O rótulo projetado tem de ser o último ponto das
+                duas séries. “projeção” fica no topo direito da faixa, não junto ao eixo nem
+                misturada aos rótulos finais; a nota traz o método. Sem projeção: remover faixa,
+                tracejado, palavra e ressalva automática.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Eixo X · 10 pontos anuais</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Fonte 30 px, centralizada. Para 9–12 pontos, mostrar rótulos alternados, sempre o
+                primeiro e o último; omitir o penúltimo se colidir com o último. Neste caso, exibir
+                2017, 2019, 2021, 2023 e 2026 — o rótulo final substitui 2025. A palavra “projeção”
+                fica acima do período, nunca espremida no eixo.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Variação e cruzamento</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Se o último ponto é projeção, a variação compara o primeiro valor ao último
+                <em>observado</em>, nunca à projeção: aqui, <strong>+121% até 2025</strong> no
+                estadual e <strong>−23% até 2025</strong> no municipal. O cruzamento confirmado
+                recebe <span class="rule-code">dual-crossing-*</span>: anel no ponto estadual de
+                2024, guia tracejada até uma caixa de 3 linhas: “2024” / “Estadual” / “ultrapassa”.
+                A copy permanece em 28 px; nunca comprimir em uma linha nem deixá-la tocar a borda.
+                Sem confirmação textual do cruzamento, não gerar a anotação automaticamente.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Feed · 1080×1350</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Canvas padding 76/84/58 px; headline 60 px; plot
+                <span class="rule-code">880×620</span>, margin-top 28. Plot L52, R280, T56, B76;
+                dados x=52…600; baseline y=544; grid em y=56/300/544. Os 10 pontos ficam em
+                x=52/113/174/235/296/356/417/478/539/600; a largura útil cai de 598 para 548 px, com
+                passo anual de ~61 px, e o eixo alternado usa 52/174/296/417/600 (≥121 px entre
+                rótulos). Linhas 8 px; círculos r=8; quadrados 16×16; finais r=11 / 20×20; dash 18
+                12. Gutter x=642…880; nomes/valência/variação 30 px, valores 36 px. Baselines
+                finais: Estadual 54/96/136/176; Municipal 248/290/330/370. Cruzamento: guia x=478,
+                y=160…398; caixa x=351, y=398, 254×118, rx=8; textos em y=431/465/497.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Quadrado · 1080×1080</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Canvas padding 56/84/48 px; headline 54 px; encurtar subtítulo antes de reduzir
+                texto. Plot <span class="rule-code">880×440</span>, margin-top 20, L52, R280, T40,
+                B70; dados x=52…600; baseline y=370; grid em y=40/205/370. Linhas 7 px; círculos
+                r=7; quadrados 14×14; finais r=10 / 18×18; dash 15 11. Gutter x=642…880; textos 30
+                px, valores 32 px. Baselines finais: Estadual 32/70/108/146; Municipal
+                186/224/262/300. Cruzamento: guia x=478, y=115…252; caixa x=351, y=252, 254×108,
+                rx=8; textos em y=282/311/340.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Story · 1080×1920</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Faixas seguras de 250 px no topo e na base; conteúdo padding 306/84/310 px; headline
+                64 px. Plot <span class="rule-code">880×700</span>, margin-top 28, L52, R280, T64,
+                B78; dados x=52…600; baseline y=622; grid em y=64/343/622. Linhas 8 px; círculos
+                r=8; quadrados 16×16; finais r=11 / 20×20; dash 18 12. Gutter x=642…880; nomes,
+                valência e variação 32 px, valores 36 px. Baselines finais: Estadual 68/112/154/196;
+                Municipal 280/324/366/408. Plot, caixa, rótulos e “projeção” ficam integralmente
+                entre y=250 e y=1670 do canvas. Cruzamento: guia x=478, y=181…478; caixa x=351,
+                y=478, 254×118, rx=8; textos em y=511/545/577.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-stone-200 bg-white p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Mapa de classes do SVG</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Chassi: <span class="rule-code">dual-line-plot</span>,
+                <span class="rule-code">dual-axis-label</span>,
+                <span class="rule-code">dual-projection-band</span> e
+                <span class="rule-code">dual-projection-label</span>. Com tons:
+                <span class="rule-code">dual-series-good / dual-markers-good</span> e
+                <span class="rule-code">dual-series-bad / dual-markers-bad</span>. Sem tons, trocar
+                apenas os modificadores por
+                <span class="rule-code">dual-series-a / dual-markers-a</span> e
+                <span class="rule-code">dual-series-b / dual-markers-b</span>. Projeção acrescenta
+                <span class="rule-code">dual-series-projection</span> e
+                <span class="rule-code">dual-marker-projected-*</span>. Saída direta:
+                <span class="rule-code">dual-end-leader</span>,
+                <span class="rule-code">dual-end-name</span>,
+                <span class="rule-code">dual-end-value</span> e, só com tons,
+                <span class="rule-code">dual-end-valence</span>; variação observada em
+                <span class="rule-code">dual-end-change</span>. Cruzamento, quando confirmado:
+                <span class="rule-code">dual-crossing-guide</span>,
+                <span class="rule-code">dual-crossing-ring</span>,
+                <span class="rule-code">dual-crossing-box</span>,
+                <span class="rule-code">dual-crossing-year</span> e
+                <span class="rule-code">dual-crossing-copy</span>.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -1143,7 +1795,8 @@
             <div class="rounded-xl border border-stone-200 bg-white p-4">
               <p class="text-sm font-bold">Densidade</p>
               <p class="mt-1 text-sm leading-5 text-stone-600">
-                Até 7 pontos por gráfico. Acima disso: resumir com orientação explícita.
+                Barra, coluna e linha simples: até 7 pontos. Exceção aprovada: linha de 2 séries,
+                até 12 pontos alinhados por série; story mantém 5 apenas para barra/coluna.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
@@ -1159,8 +1812,10 @@
       <footer
         class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-stone-300 py-5 text-xs text-stone-600"
       >
-        <span>Design hi-fi · graficos-dados-instagram · dados e fontes fictícios</span>
-        <span>Paleta Solla · Inter · sem gradiente, 3D ou chrome de dashboard</span>
+        <span
+          >Design hi-fi certificado · graficos-dados-instagram · cinco variações integradas</span
+        >
+        <span>Paleta Solla · valência redundante · sem gradiente, 3D ou chrome de dashboard</span>
       </footer>
     </main>
   </body>

@@ -106,3 +106,87 @@ describe('SOLLA_PALETTE — the verbatim brand colors', () => {
     })
   })
 })
+
+// C191 approved variant: the two-series time line carries valence by word +
+// arrow + marker shape + color, on a shared zero-based scale.
+const annual = (values: number[]) =>
+  values.map((value, index) => ({ label: `${2017 + index}`, value }))
+const seriesSpec = (overrides = {}) => ({
+  chartType: 'line',
+  size: 'feed',
+  headline: 'Internações crescem no hospital estadual e recuam no municipal',
+  subtitle: 'AIH aprovadas por ano · Vitória da Conquista (BA) · 2017–2026',
+  source: 'Ministério da Saúde — SIH/SUS',
+  note: '2026 é projeção pela média de janeiro a junho × 2.',
+  projectedLabel: '2026',
+  crossingLabel: '2024',
+  series: [
+    {
+      name: 'Estadual',
+      tone: 'good',
+      rows: annual([9807, 10636, 11807, 10929, 13119, 14767, 14501, 20495, 21637, 23294]),
+    },
+    {
+      name: 'Municipal',
+      tone: 'bad',
+      rows: annual([24002, 24438, 22269, 20305, 21562, 20608, 19983, 19726, 18588, 15948]),
+    },
+  ],
+  ...overrides,
+})
+
+describe('renderChartHtml — the two-series time line', () => {
+  it('renders the dual plot with the fixed kicker, changes and valence words', () => {
+    const html = renderChartHtml(seriesSpec())
+    expect(html).toContain('dual-line-plot')
+    expect(html).toContain('Comparação no tempo')
+    expect(html).toContain('↑ amplia')
+    expect(html).toContain('↓ recua')
+    expect(html).toContain('+121%')
+    expect(html).toContain('−23%')
+    expect(html).toContain('23.294')
+  })
+
+  it('annotates the confirmed crossing without inferring it by itself', () => {
+    expect(renderChartHtml(seriesSpec())).toContain('ultrapassa')
+    expect(renderChartHtml(seriesSpec({ crossingLabel: null }))).not.toContain('ultrapassa')
+  })
+
+  it('uses the compact feed rhythm of the variant', () => {
+    const html = renderChartHtml(seriesSpec())
+    expect(html).toContain('font-size: 60px')
+    expect(html).toContain('margin-top: 28px')
+  })
+
+  it('adapts the plot and the rhythm to square and to Stories', () => {
+    const square = renderChartHtml(seriesSpec({ size: 'square' }))
+    expect(square).toContain('viewBox="0 0 880 440"')
+    expect(square).toContain('font-size: 54px')
+    const story = renderChartHtml(seriesSpec({ size: 'story' }))
+    expect(story).toContain('viewBox="0 0 880 700"')
+    expect(story).toContain('font-size: 64px')
+  })
+
+  it('keeps red out of the plot when the comparison is neutral', () => {
+    const { series } = seriesSpec()
+    const html = renderChartHtml(
+      seriesSpec({
+        crossingLabel: null,
+        series: series.map((serie: { name: string; rows: unknown[] }) => ({
+          name: serie.name,
+          rows: serie.rows,
+        })),
+      }),
+    )
+    const svg = html.slice(html.indexOf('<svg'), html.indexOf('</svg>'))
+    expect(svg).not.toContain('#c51414')
+    expect(svg).not.toContain('amplia')
+  })
+
+  it('carries the projection note and the source inside the image', () => {
+    const html = renderChartHtml(seriesSpec())
+    expect(html).toContain('2026 é projeção pela média de janeiro a junho × 2.')
+    expect(html).toContain('Ministério da Saúde — SIH/SUS')
+    expect(html).toContain('JORGE SOLLA')
+  })
+})

@@ -137,6 +137,361 @@ export const stackedColumnChart = ({
 }
 
 /**
+ * Geometry of the approved two-series time line (C191 variant), per export
+ * size. The data box is the same on every canvas; only the vertical rhythm and
+ * the marker sizes change (design: "Feed / Quadrado / Story" rules).
+ */
+const DUAL_GEOMETRY = {
+  feed: {
+    width: 880,
+    height: 620,
+    left: 52,
+    right: 600,
+    top: 56,
+    baseline: 544,
+    stroke: 8,
+    dotRadius: 8,
+    squareSize: 16,
+    projectedDotRadius: 11,
+    projectedSquareSize: 20,
+    dash: '18 12',
+    nameSize: 30,
+    valueSize: 36,
+    valenceSize: 30,
+    changeSize: 30,
+    axisSize: 30,
+    blockOffsets: [-35, 7, 47, 87],
+    blockGap: 72,
+    crossing: {
+      boxWidth: 254,
+      boxHeight: 118,
+      boxY: 398,
+      yearOffset: 33,
+      copyOffset: 67,
+      copyOffset2: 99,
+    },
+  },
+  square: {
+    width: 880,
+    height: 440,
+    left: 52,
+    right: 600,
+    top: 40,
+    baseline: 370,
+    stroke: 7,
+    dotRadius: 7,
+    squareSize: 14,
+    projectedDotRadius: 10,
+    projectedSquareSize: 18,
+    dash: '15 11',
+    nameSize: 30,
+    valueSize: 32,
+    valenceSize: 30,
+    changeSize: 30,
+    axisSize: 30,
+    blockOffsets: [-31, 7, 45, 83],
+    blockGap: 40,
+    crossing: {
+      boxWidth: 254,
+      boxHeight: 108,
+      boxY: 252,
+      yearOffset: 30,
+      copyOffset: 59,
+      copyOffset2: 88,
+    },
+  },
+  story: {
+    width: 880,
+    height: 700,
+    left: 52,
+    right: 600,
+    top: 64,
+    baseline: 622,
+    stroke: 8,
+    dotRadius: 8,
+    squareSize: 16,
+    projectedDotRadius: 11,
+    projectedSquareSize: 20,
+    dash: '18 12',
+    nameSize: 32,
+    valueSize: 36,
+    valenceSize: 32,
+    changeSize: 32,
+    axisSize: 30,
+    blockOffsets: [-34, 10, 52, 94],
+    blockGap: 84,
+    crossing: {
+      boxWidth: 254,
+      boxHeight: 118,
+      boxY: 478,
+      yearOffset: 33,
+      copyOffset: 67,
+      copyOffset2: 99,
+    },
+  },
+}
+
+/** Rounds the shared maximum up to the next legible step (never down). */
+const niceMax = (value) => {
+  if (!(value > 0)) return 1
+  const magnitude = 10 ** Math.floor(Math.log10(value))
+  for (const step of [1, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) {
+    const candidate = step * magnitude
+    if (candidate >= value) return candidate
+  }
+  return 10 * magnitude
+}
+
+/**
+ * 9–12 annual points alternate their axis labels, always keeping the first and
+ * the last; the penultimate is dropped when it would collide with the last
+ * (design: "2017, 2019, 2021, 2023 e 2026").
+ */
+const dualAxisIndices = (count) => {
+  if (count < 9) return [...Array(count).keys()]
+  const shown = new Set()
+  for (let index = 0; index < count; index += 2) shown.add(index)
+  const last = count - 1
+  if (!shown.has(last)) {
+    shown.delete(last - 1)
+    shown.add(last)
+  }
+  return [...shown].sort((a, b) => a - b)
+}
+
+/** Keeps the crossing box inside the data box while staying centered on the point. */
+const crossingCenter = (x, cfg) =>
+  Math.min(Math.max(x, cfg.left + cfg.crossing.boxWidth / 2), cfg.right - cfg.crossing.boxWidth / 2)
+
+/**
+ * Two-series time line (Instagram, C191 approved variant): shared zero-based
+ * scale, direct end labels and valence carried by word + arrow + shape + color.
+ * `series` items are `{ name, tone?: 'good'|'bad', rows: [{ label, value }] }`;
+ * tones come in pairs, or not at all (neutral comparison, no red in the plot).
+ */
+export const dualLineChart = ({
+  series,
+  size = 'feed',
+  projected = false,
+  crossingLabel = /** @type {string | null} */ (null),
+  colors,
+  valence,
+  format,
+}) => {
+  const cfg = DUAL_GEOMETRY[size] ?? DUAL_GEOMETRY.feed
+  const count = series[0].rows.length
+  const max = niceMax(Math.max(...series.flatMap((serie) => serie.rows.map((row) => row.value))))
+  const step = count > 1 ? (cfg.right - cfg.left) / (count - 1) : 0
+  const xAt = (index) => Math.round(cfg.left + index * step)
+  const yAt = (value) => cfg.baseline - Math.round((value / max) * (cfg.baseline - cfg.top))
+  const pointsOf = (serie) => serie.rows.map((row, index) => ({ x: xAt(index), y: yAt(row.value) }))
+  const styles = series.map((serie, index) => {
+    if (serie.tone === 'good') {
+      return { color: colors.good, shape: 'circle', valence: valence.good, tone: 'good' }
+    }
+    if (serie.tone === 'bad') {
+      return { color: colors.bad, shape: 'square', valence: valence.bad, tone: 'bad' }
+    }
+    return index === 0
+      ? { color: colors.neutralA, shape: 'circle', valence: null, tone: 'a' }
+      : { color: colors.neutralB, shape: 'square', valence: null, tone: 'b' }
+  })
+
+  const marker = ({ x, y, shape, size: markerSize, fill, className = '' }) =>
+    shape === 'square'
+      ? `<rect x="${x - markerSize / 2}" y="${y - markerSize / 2}" width="${markerSize}" height="${markerSize}" fill="${fill}"${className ? ` class="${className}"` : ''} />`
+      : `<circle cx="${x}" cy="${y}" r="${markerSize / 2}" fill="${fill}"${className ? ` class="${className}"` : ''} />`
+
+  const band = projected
+    ? (() => {
+        const before = xAt(count - 2)
+        const last = xAt(count - 1)
+        const start = Math.round((before + last) / 2)
+        const end = last + 33
+        return `<rect class="dual-projection-band" x="${start}" y="0" width="${end - start}" height="${cfg.baseline}" fill="${colors.grid}" fill-opacity="0.16" />`
+      })()
+    : ''
+
+  const gridLines = `<line class="dual-grid-line" x1="${cfg.left}" y1="${cfg.top}" x2="${cfg.right}" y2="${cfg.top}" stroke="${colors.grid}" stroke-opacity="0.32" stroke-width="2" />
+      <line class="dual-grid-line" x1="${cfg.left}" y1="${Math.round((cfg.top + cfg.baseline) / 2)}" x2="${cfg.right}" y2="${Math.round((cfg.top + cfg.baseline) / 2)}" stroke="${colors.grid}" stroke-opacity="0.32" stroke-width="2" />
+      <line class="dual-zero-line" x1="${cfg.left}" y1="${cfg.baseline}" x2="${cfg.right}" y2="${cfg.baseline}" stroke="${colors.grid}" stroke-width="2" />
+      <text x="${cfg.left - 10}" y="${cfg.baseline - 5}" text-anchor="end" class="dual-axis-label" font-size="${cfg.axisSize}">0</text>`
+
+  const projectionLabel = projected
+    ? `<text x="${cfg.right + 24}" y="${cfg.top - 11}" text-anchor="end" class="dual-projection-label" font-size="${cfg.axisSize}">projeção</text>`
+    : ''
+
+  const lines = series
+    .map((serie, index) => {
+      const points = pointsOf(serie)
+      const style = styles[index]
+      const solid = projected ? points.slice(0, -1) : points
+      const polyline = `<polyline class="dual-series dual-series-${style.tone}" points="${solid.map((point) => `${point.x},${point.y}`).join(' ')}" fill="none" stroke="${style.color}" stroke-width="${cfg.stroke}" stroke-linecap="round" stroke-linejoin="round" />`
+      const dashed = projected
+        ? `<line class="dual-series-projection dual-series-${style.tone}" x1="${points[count - 2].x}" y1="${points[count - 2].y}" x2="${points[count - 1].x}" y2="${points[count - 1].y}" stroke="${style.color}" stroke-width="${cfg.stroke}" stroke-linecap="round" stroke-dasharray="${cfg.dash}" />`
+        : ''
+      const regular = projected ? points.slice(0, -1) : points
+      const markers = `<g class="dual-markers-${style.tone}" fill="${style.color}">${regular
+        .map((point) =>
+          marker({
+            x: point.x,
+            y: point.y,
+            shape: style.shape,
+            size: style.shape === 'square' ? cfg.squareSize : cfg.dotRadius * 2,
+            fill: style.color,
+          }),
+        )
+        .join('')}</g>`
+      return `${polyline}${dashed}${markers}`
+    })
+    .join('')
+
+  const projectedMarkers = projected
+    ? series
+        .map((serie, index) => {
+          const point = pointsOf(serie)[count - 1]
+          const style = styles[index]
+          return marker({
+            x: point.x,
+            y: point.y,
+            shape: style.shape,
+            size: style.shape === 'square' ? cfg.projectedSquareSize : cfg.projectedDotRadius * 2,
+            fill: colors.paper,
+            className: `dual-marker-projected dual-marker-projected-${style.tone}`,
+          }).replace('/>', ` stroke="${style.color}" stroke-width="5" />`)
+        })
+        .join('')
+    : ''
+
+  const observedIndex = projected ? count - 2 : count - 1
+  const changeOf = (serie) => {
+    const firstValue = serie.rows[0].value
+    const observed = serie.rows[observedIndex]?.value
+    if (!(firstValue > 0) || !Number.isFinite(observed)) return null
+    const percent = Math.round(((observed - firstValue) / firstValue) * 100)
+    const sign = percent > 0 ? '+' : percent < 0 ? '−' : ''
+    const until = `até ${serie.rows[observedIndex].label}`
+    return {
+      percent: `${sign}${Math.abs(percent)}%`,
+      until,
+      label: `${sign}${Math.abs(percent)}% ${until}`,
+    }
+  }
+
+  const blocks = series
+    .map((serie, index) => {
+      const point = pointsOf(serie)[count - 1]
+      const offsets = styles[index].valence ? cfg.blockOffsets : cfg.blockOffsets.slice(0, 3)
+      return {
+        name: serie.name,
+        style: styles[index],
+        point,
+        baselines: offsets.map((offset) => point.y + offset),
+        value: format(serie.rows[count - 1]),
+        change: changeOf(serie),
+      }
+    })
+    .sort((a, b) => a.point.y - b.point.y)
+  let previousBottom = null
+  for (const block of blocks) {
+    if (previousBottom !== null) {
+      const minName = previousBottom + cfg.blockGap
+      const delta = minName - block.baselines[0]
+      if (delta > 0) block.baselines = block.baselines.map((baseline) => baseline + delta)
+    }
+    previousBottom = block.baselines[block.baselines.length - 1]
+  }
+  const clampOverflow = blocks[blocks.length - 1]?.baselines.at(-1) - (cfg.height - 12)
+  const endBlocks = blocks
+    .map((block) => {
+      const baselineOffset = clampOverflow > 0 ? -clampOverflow : 0
+      const text = (className, size, fill, value, index) =>
+        `<text x="${cfg.right + 42}" y="${block.baselines[index] + baselineOffset}" class="${className}" font-size="${size}"${fill ? ` fill="${fill}"` : ''}>${htmlEscape(value)}</text>`
+      const parts = [
+        `<line class="dual-end-leader" x1="${cfg.right + 15}" y1="${block.point.y}" x2="${cfg.right + 29}" y2="${block.point.y}" stroke="${block.style.color}" stroke-width="3" />`,
+        text('dual-end-name', cfg.nameSize, colors.ink, block.name, 0),
+        text('dual-end-value', cfg.valueSize, colors.ink, block.value, 1),
+      ]
+      if (block.style.valence) {
+        parts.push(
+          text('dual-end-valence', cfg.valenceSize, block.style.color, block.style.valence, 2),
+        )
+      }
+      if (block.change) {
+        parts.push(
+          text(
+            'dual-end-change',
+            cfg.changeSize,
+            colors.change,
+            block.change.label,
+            block.style.valence ? 3 : 2,
+          ),
+        )
+      }
+      return parts.join('')
+    })
+    .join('')
+
+  const goodSeries = series.find((serie) => serie.tone === 'good')
+  const crossingIndex = crossingLabel
+    ? series[0].rows.findIndex((row) => row.label === crossingLabel)
+    : -1
+  const showCrossing = Boolean(goodSeries) && crossingIndex >= 1
+  const crossingGuide = showCrossing
+    ? (() => {
+        const point = pointsOf(goodSeries)[crossingIndex]
+        const center = crossingCenter(point.x, cfg)
+        return `<line class="dual-crossing-guide" x1="${center}" y1="${point.y + 16}" x2="${center}" y2="${cfg.crossing.boxY}" stroke="${colors.good}" stroke-width="2" stroke-dasharray="8 8" opacity="0.45" />`
+      })()
+    : ''
+  const crossingAnnotation = showCrossing
+    ? (() => {
+        const point = pointsOf(goodSeries)[crossingIndex]
+        const box = cfg.crossing
+        const center = crossingCenter(point.x, cfg)
+        return `<circle class="dual-crossing-ring" cx="${point.x}" cy="${point.y}" r="14" fill="${colors.paper}" stroke="${colors.good}" stroke-width="4" />
+      <circle cx="${point.x}" cy="${point.y}" r="7" fill="${colors.good}" />
+      <rect class="dual-crossing-box" x="${Math.round(center - box.boxWidth / 2)}" y="${box.boxY}" width="${box.boxWidth}" height="${box.boxHeight}" rx="8" fill="${colors.paper}" stroke="${colors.grid}" stroke-width="2" />
+      <text x="${center}" y="${box.boxY + box.yearOffset}" text-anchor="middle" class="dual-crossing-year" font-size="30" font-weight="850" fill="${colors.good}">${htmlEscape(crossingLabel)}</text>
+      <text x="${center}" y="${box.boxY + box.copyOffset}" text-anchor="middle" class="dual-crossing-copy" font-size="28" font-weight="750" fill="${colors.ink}">${htmlEscape(goodSeries.name)}</text>
+      <text x="${center}" y="${box.boxY + box.copyOffset2}" text-anchor="middle" class="dual-crossing-copy" font-size="28" font-weight="750" fill="${colors.ink}">ultrapassa</text>`
+      })()
+    : ''
+
+  const axis = dualAxisIndices(count)
+    .map(
+      (index) =>
+        `<text x="${xAt(index)}" y="${cfg.height - 14}" text-anchor="middle" class="dual-axis-label" font-size="${cfg.axisSize}">${htmlEscape(series[0].rows[index].label)}</text>`,
+    )
+    .join('')
+
+  const ariaLabel = `${series
+    .map((serie) => {
+      const change = changeOf(serie)
+      const destination = projected
+        ? ` para projeção de ${format(serie.rows[count - 1])} em ${serie.rows[count - 1].label}`
+        : ` para ${format(serie.rows[count - 1])} em ${serie.rows[count - 1].label}`
+      const trend = change
+        ? `, variação observada de ${change.percent} até ${serie.rows[observedIndex].label}`
+        : ''
+      return `${serie.name}: de ${format(serie.rows[0])} em ${serie.rows[0].label}${destination}${trend}`
+    })
+    .join('. ')}${showCrossing ? `. ${goodSeries.name} ultrapassa em ${crossingLabel}` : ''}`
+
+  return `<svg class="chart dual-chart" viewBox="0 0 ${cfg.width} ${cfg.height}" role="img" aria-label="${htmlEscape(ariaLabel)}" preserveAspectRatio="xMidYMid meet">
+      ${band}
+      ${gridLines}
+      ${projectionLabel}
+      ${crossingGuide}
+      ${lines}
+      ${projectedMarkers}
+      ${crossingAnnotation}
+      ${endBlocks}
+      ${axis}
+    </svg>`
+}
+
+/**
  * Time-series line (Instagram): every point a hollow marker, the last one the
  * single red highlight with its value. Honest scale — the baseline is zero.
  */
