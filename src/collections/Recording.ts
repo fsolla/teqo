@@ -1,13 +1,19 @@
-import type { CollectionBeforeDeleteHook, CollectionConfig } from 'payload'
+import type {
+  CollectionBeforeDeleteHook,
+  CollectionBeforeValidateHook,
+  CollectionConfig,
+} from 'payload'
 
 import {
   RECORDING_MEDIA_SLUG,
+  RECORDING_SPEAKER_LABEL_MAX_LENGTH,
   RECORDING_STATUSES,
   RECORDING_STEPS,
   RECORDING_TITLE_MAX_LENGTH,
   recordingStatusLabels,
   recordingStepLabels,
 } from '@/lib/recording'
+import { speakerNamesFromLabels } from '@/lib/recordingDiarization'
 import {
   canDeleteRecording,
   canReadRecording,
@@ -46,6 +52,21 @@ const deleteRecordingSegments: CollectionBeforeDeleteHook = async ({ id, req }) 
   })
 }
 
+/**
+ * C200 — `speakerNames` is derived from the human labels so the "Pessoa" facet
+ * filters one denormalized array instead of joining segments. Mirrors
+ * `RecordingSegment.deriveSearchText`: `originalDoc` covers every update that
+ * does not touch the labels (status, searchText, step).
+ */
+const deriveSpeakerNames: CollectionBeforeValidateHook = ({ data, originalDoc }) => {
+  if (!data) return data
+  // An explicit array (even empty) is the new truth; only an untouched field
+  // falls back to the stored document.
+  const labels = data.speakerLabels === undefined ? originalDoc?.speakerLabels : data.speakerLabels
+  data.speakerNames = speakerNamesFromLabels(labels)
+  return data
+}
+
 export const Recording: CollectionConfig = {
   slug: 'recording',
   labels: {
@@ -66,6 +87,7 @@ export const Recording: CollectionConfig = {
     delete: canDeleteRecording,
   },
   hooks: {
+    beforeValidate: [deriveSpeakerNames],
     beforeChange: [stampCampaignCreatedBy],
     beforeDelete: [deleteRecordingSegments],
   },
@@ -131,6 +153,52 @@ export const Recording: CollectionConfig = {
       admin: {
         readOnly: true,
         description: 'Concatenação normalizada dos segmentos (sem acentos, minúsculas).',
+      },
+    },
+    {
+      name: 'speakerLabels',
+      type: 'array',
+      label: 'Falantes identificados',
+      admin: {
+        readOnly: true,
+        description:
+          'Rótulos humanos por agrupamento acústico (chave → nome). Identificação sempre humana; o acervo nunca sugere ou infere pessoas.',
+      },
+      fields: [
+        {
+          name: 'speakerKey',
+          type: 'text',
+          label: 'Agrupamento',
+          required: true,
+        },
+        {
+          name: 'label',
+          type: 'text',
+          label: 'Nome do falante',
+          required: true,
+          maxLength: RECORDING_SPEAKER_LABEL_MAX_LENGTH,
+        },
+      ],
+    },
+    {
+      name: 'speakerNames',
+      type: 'text',
+      label: 'Pessoas (busca)',
+      hasMany: true,
+      admin: {
+        readOnly: true,
+        description:
+          'Derivado dos rótulos (sem duplicatas, sem diferenciar maiúsculas) para a faceta "Pessoa".',
+      },
+    },
+    {
+      name: 'speakerLabelsDropped',
+      type: 'checkbox',
+      label: 'Identificações perdidas no reprocessamento',
+      admin: {
+        readOnly: true,
+        description:
+          'Ligado quando um reprocessamento reordenou os agrupamentos e algum rótulo não pôde ser re-vinculado.',
       },
     },
     {

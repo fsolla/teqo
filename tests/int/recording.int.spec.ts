@@ -29,9 +29,14 @@ import { GET } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/gravacoe
 import {
   deleteRecordingForActor,
   getRecordingStatusesForActor,
+  labelRecordingSpeakerForActor,
   retryRecordingForActor,
 } from '@/app/(campaign)/campanha/actions/recording'
 import { RECORDING_MAX_BYTES } from '@/lib/recording'
+import {
+  RECORDING_FORBIDDEN_MESSAGE,
+  RECORDING_SPEAKER_UNKNOWN_MESSAGE,
+} from '@/lib/schemas/recording'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import type { CampaignUser, RecordingMedia } from '@/payload-types'
 import config from '@/payload.config'
@@ -41,7 +46,10 @@ import {
   RECORDING_STALE_MS,
   runRecordingJob,
 } from '@/utilities/recordings/recordingJob'
-import { loadRecordingsPageData } from '@/utilities/recordings/recordingPageData'
+import {
+  loadRecordingFilterOptions,
+  loadRecordingsPageData,
+} from '@/utilities/recordings/recordingPageData'
 import { receiveRecordingUpload } from '@/utilities/recordings/recordingUpload'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -90,11 +98,18 @@ const createRecording = async ({
   status = 'ready',
   title = 'Plenária da Comissão',
   segments = [],
+  speakerLabels,
   withMedia = true,
 }: {
   status?: 'uploading' | 'processing' | 'ready' | 'failed'
   title?: string
-  segments?: { startSeconds: number; endSeconds: number; text: string }[]
+  segments?: {
+    startSeconds: number
+    endSeconds: number
+    text: string
+    speakerKey?: string | null
+  }[]
+  speakerLabels?: { speakerKey: string; label: string }[]
   withMedia?: boolean
 } = {}) => {
   const media = withMedia ? await createMedia(`${title}.mp4`) : null
@@ -104,6 +119,7 @@ const createRecording = async ({
       title,
       status,
       ...(media ? { media: media.id } : {}),
+      ...(speakerLabels ? { speakerLabels } : {}),
     },
     overrideAccess: true,
   })
@@ -118,6 +134,7 @@ const createRecording = async ({
         startSeconds: segment.startSeconds,
         endSeconds: segment.endSeconds,
         text: segment.text,
+        speakerKey: segment.speakerKey ?? null,
       }),
       overrideAccess: true,
     })
@@ -554,5 +571,198 @@ describe('uploaded recordings (C199)', () => {
     })
     expect(unfiltered.rows.length).toBeGreaterThanOrEqual(2)
     expect(unfiltered.rows.every((row) => row.excerpt === null)).toBe(true)
+  })
+
+  it('filters recordings by a human label and lists the facet options', async () => {
+    const marker = `solla${Date.now().toString(36)}`
+    const { recording } = await createRecording({
+      title: `Plenária com vozes ${marker}`,
+      segments: [
+        { startSeconds: 0, endSeconds: 5, text: 'Primeira fala.', speakerKey: 'speaker-1' },
+        { startSeconds: 5, endSeconds: 10, text: 'Segunda fala.', speakerKey: 'speaker-2' },
+      ],
+      speakerLabels: [{ speakerKey: 'speaker-1', label: `Dep. ${marker}` }],
+    })
+    const { recording: other } = await createRecording({
+      title: `Sem falantes ${marker}`,
+      segments: [],
+    })
+
+    // The facet matches the same way the dialog chip does: case-insensitive
+    // containment over the derived names, against the real join table.
+    const filtered = await loadRecordingsPageData(payload, communicator, {
+      source: 'enviadas',
+      person: [`dep. ${marker}`],
+    })
+    expect(filtered.rows.map((row) => row.id)).toContain(recording.id)
+    expect(filtered.rows.map((row) => row.id)).not.toContain(other.id)
+    expect(filtered.rows.find((row) => row.id === recording.id)?.matchedPersons).toEqual([
+      `dep. ${marker}`,
+    ])
+
+    const options = await loadRecordingFilterOptions(payload, communicator)
+    expect(options.people).toContain(`Dep. ${marker}`)
+  })
+
+  it('labels one cluster through the action and rebuilds the facet names', async () => {
+    const marker = `falante${Date.now().toString(36)}`
+    const { recording } = await createRecording({
+      title: `Debate ${marker}`,
+      segments: [{ startSeconds: 0, endSeconds: 5, text: 'Fala única.', speakerKey: 'speaker-1' }],
+    })
+
+    getCampaignUserMock.mockResolvedValue(communicator)
+    await labelRecordingSpeakerForActor({
+      recordingId: recording.id,
+      speakerKey: 'speaker-1',
+      label: `Dep. ${marker}`,
+    })
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(updated.speakerLabels).toEqual([
+      expect.objectContaining({ speakerKey: 'speaker-1', label: `Dep. ${marker}` }),
+    ])
+    expect(updated.speakerNames).toEqual([`Dep. ${marker}`])
+
+    for (const denied of [advisor, leader]) {
+      getCampaignUserMock.mockResolvedValue(denied)
+      await expect(
+        labelRecordingSpeakerForActor({
+          recordingId: recording.id,
+          speakerKey: 'speaker-1',
+          label: 'Quem quer que seja',
+        }),
+      ).rejects.toThrow(RECORDING_FORBIDDEN_MESSAGE)
+    }
+
+    getCampaignUserMock.mockResolvedValue(communicator)
+    await expect(
+      labelRecordingSpeakerForActor({
+        recordingId: recording.id,
+        speakerKey: 'speaker-9',
+        label: 'Agrupamento fantasma',
+      }),
+    ).rejects.toThrow(RECORDING_SPEAKER_UNKNOWN_MESSAGE)
+  })
+
+  it('groups the transcript with the injected diarizer and keeps a reconcilable label', async () => {
+    const { recording } = await createRecording({
+      status: 'processing',
+      title: 'Plenária com falantes',
+      segments: [
+        { startSeconds: 1, endSeconds: 4, text: 'Fala anterior A', speakerKey: 'speaker-1' },
+        { startSeconds: 5, endSeconds: 9, text: 'Fala anterior B', speakerKey: 'speaker-2' },
+      ],
+      speakerLabels: [{ speakerKey: 'speaker-1', label: 'Dep. Jorge Solla' }],
+    })
+
+    const restore = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+    try {
+      await runRecordingJob(
+        payload,
+        recording.id,
+        async () => ({
+          ok: true,
+          segments: [
+            { start: 1, end: 4, text: 'Bom dia a todas' },
+            { start: 5, end: 9, text: 'e a todos' },
+          ],
+          durationSeconds: 1_200,
+        }),
+        async (file, options) => {
+          expect(file).toBeInstanceOf(Blob)
+          await options?.onProgress?.()
+          return {
+            ok: true,
+            turns: [
+              { speaker: 'A', startSeconds: 0, endSeconds: 4.5 },
+              { speaker: 'B', startSeconds: 4.5, endSeconds: 10 },
+            ],
+          }
+        },
+      )
+    } finally {
+      restore()
+    }
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(updated.status).toBe('ready')
+    expect(updated.speakerLabels).toEqual([
+      expect.objectContaining({ speakerKey: 'speaker-1', label: 'Dep. Jorge Solla' }),
+    ])
+    expect(updated.speakerLabelsDropped).toBe(false)
+
+    const segments = await payload.find({
+      collection: 'recordingSegment',
+      where: { recording: { equals: recording.id } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      sort: 'order',
+      overrideAccess: true,
+    })
+    expect(segments.docs).toHaveLength(4)
+    expect(segments.docs.map((segment) => segment.speakerKey)).toEqual([
+      'speaker-1',
+      'speaker-2',
+      'speaker-2',
+      'speaker-2',
+    ])
+  })
+
+  it('keeps the plain transcript and warns when the diarizer fails with labels present', async () => {
+    const { recording } = await createRecording({
+      status: 'processing',
+      title: 'Debate sem provedor',
+      segments: [{ startSeconds: 1, endSeconds: 4, text: 'Fala', speakerKey: 'speaker-1' }],
+      speakerLabels: [{ speakerKey: 'speaker-1', label: 'Dep. Jorge Solla' }],
+    })
+
+    const restore = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+    try {
+      await runRecordingJob(
+        payload,
+        recording.id,
+        async () => ({
+          ok: true,
+          segments: [{ start: 1, end: 4, text: 'Fala' }],
+          durationSeconds: 600,
+        }),
+        async () => ({ ok: false, error: 'provider down', status: 502 }),
+      )
+    } finally {
+      restore()
+    }
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(updated.status).toBe('ready')
+    expect(updated.speakerLabels ?? []).toEqual([])
+    expect(updated.speakerLabelsDropped).toBe(true)
+
+    const segments = await payload.find({
+      collection: 'recordingSegment',
+      where: { recording: { equals: recording.id } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      sort: 'order',
+      overrideAccess: true,
+    })
+    expect(segments.docs.every((segment) => !segment.speakerKey)).toBe(true)
   })
 })

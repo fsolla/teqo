@@ -7,7 +7,9 @@ import { canReadRecording, payloadAdminOnly } from '@/utilities/campaignAccess'
  * C199 — searchable ASR segment of an uploaded recording: one timestamped block
  * of the transcript with the trigram-search index (`recording_segment_search_text_trgm_idx`,
  * hand-written migration). Admin-hidden: the product surface is the recording
- * detail with its clickable transcript.
+ * detail with its clickable transcript. C200 adds `speakerKey`: the anonymous
+ * acoustic cluster ("Falante N") the segment was assigned to; null when the
+ * recording has no diarization (the detail renders the plain transcript then).
  */
 
 const deriveSearchText: CollectionBeforeValidateHook = ({ data, originalDoc }) => {
@@ -51,6 +53,15 @@ export const RecordingSegment: CollectionConfig = {
       type: 'number',
       label: 'Ordem',
       required: true,
+    },
+    {
+      name: 'speakerKey',
+      type: 'text',
+      label: 'Agrupamento de falante',
+      admin: {
+        readOnly: true,
+        description: 'Chave do agrupamento acústico ("Falante N") do trecho; vazio sem diarização.',
+      },
     },
     {
       name: 'startSeconds',

@@ -1,4 +1,4 @@
-import { ChevronRightIcon, VideoIcon } from 'lucide-react'
+import { ChevronRightIcon, UserIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { RecordingStatusBadge } from '@/components/campaign/recording/RecordingStatusBadge'
@@ -65,6 +65,21 @@ export const RecordingResultCard = ({ recording }: { recording: RecordingListIte
             {STATE_COPY[recording.status]}
           </p>
         )}
+
+        {recording.matchedPersons.length > 0 ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            {recording.matchedPersons.map((person) => (
+              <span
+                key={person}
+                className="inline-flex min-h-7 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-xs font-semibold"
+              >
+                <UserIcon className="size-3.5 shrink-0" aria-hidden="true" />
+                {person}
+              </span>
+            ))}
+            <span className="text-muted-foreground">aparece nesta gravação</span>
+          </div>
+        ) : null}
       </div>
 
       <Button

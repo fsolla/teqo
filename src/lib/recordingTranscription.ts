@@ -34,17 +34,11 @@ export type RecordingTranscriptSegment = {
 }
 
 /**
- * Extracts a mono 16 kHz MP3 and splits it into fixed chunks in one ffmpeg
- * pass. Args are returned as an array — never a shell string; `outputPattern`
- * carries the `%03d` sequence ffmpeg replaces per chunk.
+ * The shared extraction prefix of both ffmpeg passes: mono 16 kHz MP3, at the
+ * bitrate the ASR provider and the diarization provider both accept. Args are
+ * returned as an array — never a shell string.
  */
-export const buildRecordingAudioFfmpegArgs = ({
-  inputPath,
-  outputPattern,
-}: {
-  inputPath: string
-  outputPattern: string
-}): string[] => [
+const recordingAudioArgs = (inputPath: string): string[] => [
   '-nostdin',
   '-hide_banner',
   '-y',
@@ -59,6 +53,20 @@ export const buildRecordingAudioFfmpegArgs = ({
   'libmp3lame',
   '-b:a',
   RECORDING_AUDIO_BITRATE,
+]
+
+/**
+ * Extracts a mono 16 kHz MP3 and splits it into fixed chunks in one ffmpeg
+ * pass. `outputPattern` carries the `%03d` sequence ffmpeg replaces per chunk.
+ */
+export const buildRecordingAudioFfmpegArgs = ({
+  inputPath,
+  outputPattern,
+}: {
+  inputPath: string
+  outputPattern: string
+}): string[] => [
+  ...recordingAudioArgs(inputPath),
   '-f',
   'segment',
   '-segment_time',
@@ -67,6 +75,20 @@ export const buildRecordingAudioFfmpegArgs = ({
   '1',
   outputPattern,
 ]
+
+/**
+ * Extracts the whole recording as one mono 16 kHz MP3 (C200): the diarization
+ * provider needs the entire audio in a single call so the speaker numbering is
+ * global — a per-chunk run would renumber speakers that never relate across
+ * chunks. Same audio parameters as the chunked pass.
+ */
+export const buildRecordingFullAudioFfmpegArgs = ({
+  inputPath,
+  outputPath,
+}: {
+  inputPath: string
+  outputPath: string
+}): string[] => [...recordingAudioArgs(inputPath), outputPath]
 
 /**
  * Merges every chunk into one ordered transcript: each segment is shifted by

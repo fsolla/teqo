@@ -19,3 +19,8 @@ export type RecordingDeleteResponse =
 export type RecordingRetryResponse =
   | { status: 'success'; recording: RecordingViewModel }
   | { status: 'error'; message: string }
+
+/** Wire contract of `POST .../gravacoes/[id]/falantes` (C200) — label a cluster. */
+export type RecordingSpeakerLabelResponse =
+  | { status: 'success'; labeled: true }
+  | { status: 'error'; message: string }

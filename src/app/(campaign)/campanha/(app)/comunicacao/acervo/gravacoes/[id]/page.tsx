@@ -116,6 +116,8 @@ export default async function RecordingDetailPage({
           downloadHref={recording.downloadHref}
           failureMessage={recording.failureMessage}
           segments={recording.segments}
+          speakerGroups={recording.speakerGroups}
+          speakerLabelsDropped={recording.speakerLabelsDropped}
           initialSeconds={initialSeconds}
         />
 

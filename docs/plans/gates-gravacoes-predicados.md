@@ -18,6 +18,7 @@ Expor no dono (`utilities/access/recordings.ts`) um predicado de papel compartil
 
 - `POST .../gravacoes/enviar` (`route.ts` — gate cru de sessão e origem).
 - `retryRecordingForActor`, `deleteRecordingForActor` (`actions/recording.ts`).
+- `labelRecordingSpeakerForActor` (`actions/recording.ts`; absorvido do C200 #1167 — a action gateia no action-level com `canReadCommunicationCatalog` enquanto a collection usa `canUploadRecording`).
 - `getRecordingStatusesForActor` é leitura: mantém `canReadCommunicationCatalog`.
 
 Rejeitadas: duplicar o corpo dos predicados nas rotas (gêmeo); criar um quarto predicado (o dono já tem os três).

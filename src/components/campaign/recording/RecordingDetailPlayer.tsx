@@ -1,14 +1,23 @@
 'use client'
 
-import { CircleAlertIcon, DownloadIcon, PlayIcon, UploadIcon } from 'lucide-react'
+import { CircleAlertIcon, DownloadIcon, InfoIcon, PlayIcon, UploadIcon } from 'lucide-react'
 import { useRef, useState } from 'react'
 
 import { RecordingRetryButton } from '@/components/campaign/recording/RecordingRetryButton'
-import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { RecordingSpeakerTranscript } from '@/components/campaign/recording/RecordingSpeakerTranscript'
+import { RecordingTranscriptSegmentButton } from '@/components/campaign/recording/RecordingTranscriptSegmentButton'
 import { Button } from '@/components/ui/button'
-import { canRetryRecording, type RecordingStatus } from '@/lib/recording'
+import {
+  canRetryRecording,
+  RECORDING_SPEAKER_INFO_BANNER,
+  RECORDING_SPEAKER_INFO_BANNER_MOBILE,
+  type RecordingStatus,
+} from '@/lib/recording'
 import { cn } from '@/lib/utils'
-import type { RecordingDetailSegmentViewModel } from '@/utilities/recordings/recordingViewModels'
+import type {
+  RecordingDetailSegmentViewModel,
+  RecordingSpeakerGroupViewModel,
+} from '@/utilities/recordings/recordingViewModels'
 
 type RecordingDetailPlayerProps = {
   recordingId: number
@@ -17,6 +26,10 @@ type RecordingDetailPlayerProps = {
   downloadHref: string
   failureMessage: string | null
   segments: readonly RecordingDetailSegmentViewModel[]
+  /** C200 — groups when the whole transcript is keyed; empty otherwise. */
+  speakerGroups: readonly RecordingSpeakerGroupViewModel[]
+  /** C200 — true when a reprocessing dropped some identification. */
+  speakerLabelsDropped: boolean
   /** `?t=` of the search hit; null when the detail was opened without a term. */
   initialSeconds: number | null
 }
@@ -35,6 +48,8 @@ export const RecordingDetailPlayer = ({
   downloadHref,
   failureMessage,
   segments,
+  speakerGroups,
+  speakerLabelsDropped,
   initialSeconds,
 }: RecordingDetailPlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -48,6 +63,7 @@ export const RecordingDetailPlayer = ({
   const [retrying, setRetrying] = useState(false)
   const hasFile = status !== 'uploading'
   const showTranscript = status === 'ready' && segments.length > 0
+  const grouped = speakerGroups.length > 0
 
   const seekTo = (seconds: number) => {
     const video = videoRef.current
@@ -157,6 +173,16 @@ export const RecordingDetailPlayer = ({
         </p>
       ) : null}
 
+      {grouped ? (
+        <div className="mt-4 flex gap-2 rounded-lg border border-border bg-muted/50 p-3">
+          <InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <p className="text-xs leading-5 text-muted-foreground">
+            <span className="md:hidden">{RECORDING_SPEAKER_INFO_BANNER_MOBILE}</span>
+            <span className="max-md:hidden">{RECORDING_SPEAKER_INFO_BANNER}</span>
+          </p>
+        </div>
+      ) : null}
+
       {status === 'ready' && segments.length === 0 ? (
         <p className="mt-4 text-xs text-muted-foreground">
           A transcrição desta gravação está vazia — o arquivo continua disponível para download.
@@ -178,48 +204,44 @@ export const RecordingDetailPlayer = ({
   return (
     <div
       data-slot="recording-player"
-      className="grid gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,.65fr)]"
+      className={cn(
+        'grid gap-6',
+        grouped
+          ? 'lg:grid-cols-[minmax(0,1.05fr)_minmax(430px,.95fr)]'
+          : 'lg:grid-cols-[minmax(0,1.35fr)_minmax(340px,.65fr)]',
+      )}
     >
       {mediaColumn}
 
-      <section aria-label="Transcrição" className="min-w-0">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-            Transcrição
-          </p>
-          <span className="text-[11px] text-muted-foreground">Clique para posicionar</span>
-        </div>
-        <ol className="mt-2 max-h-[28rem] space-y-0.5 overflow-y-auto">
-          {segments.map((segment) => {
-            const active = activeStart === segment.startSeconds
-            return (
+      {grouped ? (
+        <RecordingSpeakerTranscript
+          recordingId={recordingId}
+          groups={speakerGroups}
+          labelsDropped={speakerLabelsDropped}
+          activeStart={activeStart}
+          onSeek={seekTo}
+        />
+      ) : (
+        <section aria-label="Transcrição" className="min-w-0">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+              Transcrição
+            </p>
+            <span className="text-[11px] text-muted-foreground">Clique para posicionar</span>
+          </div>
+          <ol className="mt-2 max-h-[28rem] space-y-0.5 overflow-y-auto">
+            {segments.map((segment) => (
               <li key={`${segment.startSeconds}-${segment.startLabel}`}>
-                <button
-                  type="button"
-                  data-start-seconds={segment.startSeconds}
-                  onClick={() => seekTo(segment.startSeconds)}
-                  className={cn(
-                    'grid w-full grid-cols-[3.25rem_1fr] gap-3 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    active && 'bg-muted',
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'pt-0.5 text-xs tabular-nums',
-                      active ? 'text-primary' : 'text-muted-foreground',
-                    )}
-                  >
-                    {segment.startLabel}
-                  </span>
-                  <span className="text-sm leading-relaxed text-foreground/90">
-                    <SpeechHighlightParts parts={segment.parts} />
-                  </span>
-                </button>
+                <RecordingTranscriptSegmentButton
+                  segment={segment}
+                  active={activeStart === segment.startSeconds}
+                  onSeek={seekTo}
+                />
               </li>
-            )
-          })}
-        </ol>
-      </section>
+            ))}
+          </ol>
+        </section>
+      )}
     </div>
   )
 }

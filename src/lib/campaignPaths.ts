@@ -73,4 +73,8 @@ export const campaignRecordingRetryHref = (id: number): string =>
 export const campaignRecordingDeleteHref = (id: number): string =>
   `${campaignRecordingDetailHref(id)}/apagar`
 
+/** C200 — human identification of one speaker cluster of a recording. */
+export const campaignRecordingSpeakersHref = (id: number): string =>
+  `${campaignRecordingDetailHref(id)}/falantes`
+
 export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const

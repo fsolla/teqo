@@ -7,7 +7,10 @@ import {
   buildRecordingListHref,
   parseAcervoSource,
   parseRecordingListParams,
+  parseRecordingPeople,
+  removeRecordingPerson,
   resolveRecordingListUrl,
+  toggleRecordingPerson,
 } from '@/utilities/recordings/recordingListUrl'
 
 describe('recording list URL (C199)', () => {
@@ -67,5 +70,64 @@ describe('recording list URL (C199)', () => {
   it('builds the switcher hrefs (the Câmara side is the bare acervo)', () => {
     expect(buildAcervoSourceHref('enviadas')).toBe('/campanha/comunicacao/acervo?source=enviadas')
     expect(buildAcervoSourceHref('camara')).toBe('/campanha/comunicacao/acervo')
+  })
+
+  it('parses repeated `person` values: trim, oversized drop, case-insensitive dedupe', () => {
+    expect(parseRecordingPeople([' Solla ', 'solla', 'Presidente'])).toEqual([
+      'Solla',
+      'Presidente',
+    ])
+    expect(parseRecordingPeople(undefined)).toEqual([])
+    expect(parseRecordingPeople('')).toEqual([])
+    expect(parseRecordingPeople('x'.repeat(121))).toEqual([])
+  })
+
+  it('canonicalizes and serializes the `person` facet with the query', () => {
+    const parsed = parseRecordingListParams({
+      source: 'enviadas',
+      q: 'merenda',
+      person: ['Solla', 'Presidente'],
+    })
+    expect(parsed.people).toEqual(['Solla', 'Presidente'])
+
+    const canonical = resolveRecordingListUrl({
+      source: 'enviadas',
+      q: 'merenda',
+      person: ['Solla', 'Presidente'],
+    })
+    expect(canonical.href).toBe(
+      '/campanha/comunicacao/acervo?source=enviadas&q=merenda&person=Solla&person=Presidente',
+    )
+    expect(canonical.redirectHref).toBeUndefined()
+  })
+
+  it('drops a duplicated facet value on canonicalization', () => {
+    const canonical = resolveRecordingListUrl({
+      source: 'enviadas',
+      person: ['Solla', 'solla', 'x'.repeat(200)],
+    })
+    expect(canonical.href).toBe('/campanha/comunicacao/acervo?source=enviadas&person=Solla')
+    expect(canonical.redirectHref).toBe('/campanha/comunicacao/acervo?source=enviadas&person=Solla')
+  })
+
+  it('toggles and removes one person, resetting to the first page', () => {
+    const base = { source: 'enviadas' as const, page: 3, q: 'merenda' }
+
+    const added = toggleRecordingPerson(base, 'Solla')
+    expect(added).toEqual({ ...base, page: 1, people: ['Solla'] })
+
+    const removed = toggleRecordingPerson({ ...base, people: ['Solla'] }, 'solla')
+    expect(removed).toEqual({ ...base, page: 1, people: undefined })
+
+    expect(removeRecordingPerson({ ...base, people: ['Solla', 'Presidente'] }, 'Solla')).toEqual({
+      ...base,
+      page: 1,
+      people: ['Presidente'],
+    })
+    expect(removeRecordingPerson({ ...base, people: ['Solla'] }, 'Solla')).toEqual({
+      ...base,
+      page: 1,
+      people: undefined,
+    })
   })
 })
