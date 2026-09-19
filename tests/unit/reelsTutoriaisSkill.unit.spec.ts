@@ -13,27 +13,70 @@ const repoRoot = process.cwd()
 const read = (path: string): string => readFileSync(resolve(repoRoot, path), 'utf8')
 
 describe('reel package metadata', () => {
-  it('carries the identity the library ingests', () => {
+  const shotList = {
+    slug: 'cards',
+    title: 'Crie seu card de apoio',
+    feature: 'cards',
+    coverAlt: 'Capa do tutorial dos cards',
+  }
+
+  it('carries the identity the library ingests, with the always-on transcription', () => {
     const metadata = buildReelMetadata({
-      shotList: { slug: 'cards', title: 'Crie seu card de apoio', feature: 'cards' },
+      shotList,
       hash: 'a'.repeat(64),
       durationMs: 18_418.6,
       ffmpeg: 'ffmpeg version test',
       generatedAt: new Date('2026-09-18T12:00:00.000Z'),
+      artifacts: ['reel.mp4', 'capa.png', 'narracao.srt', 'roteiro.md'],
     })
     expect(metadata).toEqual({
       slug: 'cards',
       title: 'Crie seu card de apoio',
       feature: 'cards',
       shotListHash: 'a'.repeat(64),
+      coverAlt: 'Capa do tutorial dos cards',
       durationMs: 18_419,
+      durationSeconds: 18.419,
       width: 1_080,
       height: 1_920,
       fps: 30,
       codec: 'h264',
       audio: false,
+      artifacts: ['reel.mp4', 'capa.png', 'narracao.srt', 'roteiro.md'],
       generatedAt: '2026-09-18T12:00:00.000Z',
       ffmpeg: 'ffmpeg version test',
+    })
+  })
+
+  it('declares the TTS voice and the audio artifacts when the gate asked for audio', () => {
+    const metadata = buildReelMetadata({
+      shotList,
+      hash: 'b'.repeat(64),
+      durationMs: 10_000,
+      ffmpeg: 'ffmpeg version test',
+      audio: true,
+      voice: 'pt-BR-AntonioNeural',
+      artifacts: [
+        'reel.mp4',
+        'capa.png',
+        'narracao.srt',
+        'roteiro.md',
+        'narracao.mp3',
+        'reel-audio.mp4',
+      ],
+    })
+    expect(metadata).toMatchObject({
+      audio: true,
+      voice: 'pt-BR-AntonioNeural',
+      durationSeconds: 10,
+      artifacts: [
+        'reel.mp4',
+        'capa.png',
+        'narracao.srt',
+        'roteiro.md',
+        'narracao.mp3',
+        'reel-audio.mp4',
+      ],
     })
   })
 })
@@ -73,5 +116,18 @@ describe('skill /reels-tutoriais contract', () => {
     expect(skill).toContain('capa.png')
     expect(skill).toContain('metadata.json')
     expect(skill).toContain('Nada é publicado')
+  })
+
+  it('keeps the C197 narration contract: transcription always, audio opt-in', () => {
+    const skill = read('.agents/skills/reels-tutoriais/SKILL.md')
+    expect(skill).toContain('com ou sem áudio')
+    expect(skill).toContain('narracao.srt')
+    expect(skill).toContain('roteiro.md')
+    expect(skill).toContain('--audio')
+    expect(skill).toContain('narracao.mp3')
+    expect(skill).toContain('reel-audio.mp4')
+    expect(skill).toContain('pnpm reels:tts:setup')
+    expect(skill).toContain('edge-tts')
+    expect(skill).not.toContain('Áudio, narração e trilha (C197)')
   })
 })

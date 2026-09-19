@@ -3,6 +3,7 @@
   "title": "Crie seu card de apoio",
   "feature": "cards",
   "route": "/",
+  "coverAlt": "Capa do tutorial com o título “Crie seu card de apoio” sobre o fundo vermelho da campanha",
   "fixture": {
     "cardName": "Joana"
   },
@@ -11,7 +12,8 @@
       "id": "hook",
       "kind": "graphic",
       "template": "hook",
-      "durationMs": 2400
+      "durationMs": 2400,
+      "narration": "Seu apoio vira card em segundos."
     },
     {
       "id": "step-1",
@@ -80,7 +82,8 @@
       "id": "cta",
       "kind": "graphic",
       "template": "cta",
-      "durationMs": 3200
+      "durationMs": 3200,
+      "narration": "Acesse o site pelo link na bio e crie o seu."
     }
   ]
 }
