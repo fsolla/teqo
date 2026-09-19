@@ -200,6 +200,19 @@ export const TEAM_CARD_NAME_SLOT = {
   maxLines: 1,
 } as const satisfies CardNameBannerSlot
 
+/**
+ * S18 — the candidates' face box measured once over the master art
+ * (`public/cards/team-card-base.png`, 1080×1440) with the same detector the
+ * composer runs on the visitor's cutout: MediaPipe `FaceDetector` +
+ * `blaze_face_full_range.tflite` (float16/1, SHA-256
+ * 3698b18f063835bc609069ef052228fbe86d9c9a6dc8dcb7c7c2d69aed2b181b) at
+ * `minDetectionConfidence: 0.5`. Detected boxes (x,y,w,h): (45,609,108,108),
+ * (202,580,103,103), (336,540,149,149), (762,583,103,103), (926,608,99,99).
+ * The median (103) is the reference so the visitor's head lands on the team's
+ * typical scale instead of the central candidate's larger box (149).
+ */
+export const TEAM_CARD_FACE_REFERENCE_SIZE = 103
+
 export const BRAND_FALLBACK_FONT = 'sans-serif'
 
 export const isCardModelId = (value: unknown): value is CardModelId =>

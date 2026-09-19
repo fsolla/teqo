@@ -4,8 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { removeCardPhotoBackground } from '@/components/cards/cardCutout'
 import { harmonizeCardCutout } from '@/components/cards/cardPhotoHarmonyCanvas'
-import type { CardRect } from '@/lib/cardModels'
-import { frameCardPhotoOnBbox, type CardPhotoTransform } from '@/lib/cardPhotoTransform'
+import { TEAM_CARD_FACE_REFERENCE_SIZE, type CardRect } from '@/lib/cardModels'
+import { frameCardPhotoOnFace, type CardPhotoTransform } from '@/lib/cardPhotoTransform'
 
 export type CardCutoutState =
   | { status: 'idle' }
@@ -21,7 +21,7 @@ export type CardCutoutState =
       harmonized: HTMLCanvasElement | null
       width: number
       height: number
-      /** Initial framing: cutout top on the slot top, centered, covering it. */
+      /** Initial framing: cutout top on the slot top, face centered (S18). */
       transform: CardPhotoTransform
     }
   | { status: 'error'; reason: 'engine' | 'empty' }
@@ -67,10 +67,12 @@ export const useCardCutout = (photoWindow: CardRect | undefined, harmonyReferenc
       }
 
       const transform = photoWindow
-        ? frameCardPhotoOnBbox(
+        ? frameCardPhotoOnFace(
             { width: result.width, height: result.height },
             photoWindow,
             result.bbox,
+            result.face,
+            TEAM_CARD_FACE_REFERENCE_SIZE,
           )
         : null
       if (!transform) {

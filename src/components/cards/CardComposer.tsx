@@ -34,6 +34,7 @@ import { fitCardName, type CardNameFit } from '@/lib/cardNameFit'
 import {
   CARD_PHOTO_MAX_ZOOM,
   CARD_PHOTO_MIN_ZOOM,
+  CARD_TEAM_PHOTO_MIN_ZOOM,
   cardPhotoTransformsEqual,
   centerCardPhotoTransform,
   panCardPhotoTransform,
@@ -177,6 +178,8 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const photoWindow = model.photoWindow
   const isNameModel = model.kind === 'name'
   const isTeamModel = model.kind === 'team'
+  /** S18 — the team framing may sit below the S13 cover floor. */
+  const photoMinZoom = isTeamModel ? CARD_TEAM_PHOTO_MIN_ZOOM : CARD_PHOTO_MIN_ZOOM
   const cutout = useCardCutout(photoWindow, isTeamModel ? model.assetSrc : undefined)
   const cutoutState = cutout.state
 
@@ -382,7 +385,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     const dy = (event.clientY - drag.y) * scale
     dragRef.current = { ...drag, x: event.clientX, y: event.clientY }
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy),
+      panCardPhotoTransform(transform, size, window, dx, dy, photoMinZoom),
     )
   }
 
@@ -392,13 +395,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
 
   const panBy = (dx: number, dy: number) => {
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy),
+      panCardPhotoTransform(transform, size, window, dx, dy, photoMinZoom),
     )
   }
 
   const zoomTo = (zoom: number) => {
     withTransform((transform, size, window) =>
-      zoomCardPhotoTransform(transform, size, window, zoom),
+      zoomCardPhotoTransform(transform, size, window, zoom, { minZoom: photoMinZoom }),
     )
   }
 
@@ -510,7 +513,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         <input
           id={zoomInputId}
           type="range"
-          min={CARD_PHOTO_MIN_ZOOM}
+          min={photoMinZoom}
           max={CARD_PHOTO_MAX_ZOOM}
           step={0.05}
           value={effectiveTransform.zoom}

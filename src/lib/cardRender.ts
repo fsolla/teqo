@@ -26,6 +26,7 @@ import {
   type CardTextMetrics,
 } from './cardNameFit'
 import {
+  CARD_TEAM_PHOTO_MIN_ZOOM,
   cardPhotoDrawRect,
   clampCardPhotoTransform,
   type CardPhotoSize,
@@ -236,7 +237,12 @@ export const renderTeamCard = (
 ): TeamCardRenderResult => {
   ctx.drawImage(args.base, 0, 0, model.width, model.height)
 
-  const rect = cardPhotoDrawRect(args.transform, args.photoSize, args.window)
+  const rect = cardPhotoDrawRect(
+    args.transform,
+    args.photoSize,
+    args.window,
+    CARD_TEAM_PHOTO_MIN_ZOOM,
+  )
   ctx.drawImage(args.photo, rect.x, rect.y, rect.width, rect.height)
 
   ctx.drawImage(args.overlay, 0, 0, model.width, model.height)
@@ -257,6 +263,11 @@ export const renderTeamCard = (
 
   return {
     fit,
-    transform: clampCardPhotoTransform(args.transform, args.photoSize, args.window),
+    transform: clampCardPhotoTransform(
+      args.transform,
+      args.photoSize,
+      args.window,
+      CARD_TEAM_PHOTO_MIN_ZOOM,
+    ),
   }
 }
