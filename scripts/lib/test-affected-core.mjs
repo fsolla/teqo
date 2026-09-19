@@ -83,6 +83,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/playwright-e2e-args.mjs',
   'scripts/lib/portalTransparenciaEmendas.mjs',
   'scripts/lib/readOnlyExtract.mjs',
+  'scripts/lib/reel-ingest.mjs',
   'scripts/lib/reelFfmpeg.mjs',
   'scripts/lib/reelPackage.mjs',
   'scripts/lib/reelShotList.mjs',
