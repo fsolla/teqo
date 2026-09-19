@@ -24,3 +24,4 @@ Banco de conhecimento para escrever qualquer peça de comunicação do mandato. 
    - [ ] Sem desinformação, sem ofensa pessoal, sem linguagem de ódio?
    - [ ] Chama à ação quando fizer sentido (compartilhar, assinar, link na bio)?
    - [ ] Português correto, frases curtas, sem jargão desnecessário?
+4. **Identidade visual oficial é o kit 1313**: ativos e regras de uso em `public/campaign-kit/README.md` (+ manual em `docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`). Não invente identidade nem copie a paleta; se a peça pedir visual, o caminho é o kit.
