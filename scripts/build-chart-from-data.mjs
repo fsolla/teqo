@@ -195,7 +195,7 @@ export const main = async ({
 
   let brandLogo = ''
   try {
-    const assets = await readKitAssets()
+    const assets = await readKitAssets({ keys: ['namePositive'] })
     brandLogo = assets.namePositive
   } catch (error) {
     die(

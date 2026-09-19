@@ -25,9 +25,8 @@ const spec = (overrides = {}) => ({
 })
 
 // C203: the official kit mark travels as a data URI injected by the entry.
-const brandLogo = 'data:image/png;base64,c203-stub'
-const render = (chartSpec: Parameters<typeof renderChartHtml>[0]) =>
-  renderChartHtml(chartSpec, { brandLogo })
+const brandLogo = 'data:image/png;base64,QzIwMw=='
+const render = (chartSpec: Record<string, unknown>) => renderChartHtml(chartSpec, { brandLogo })
 
 describe('renderChartHtml — canvas and template', () => {
   it('authors the feed canvas at exactly 1080×1350', () => {

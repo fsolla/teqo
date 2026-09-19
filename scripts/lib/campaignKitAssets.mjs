@@ -19,10 +19,21 @@ const KIT_ASSETS = {
 
 const defaultRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..')
 
-/** Official campaign kit marks as data URIs (committed under `public/campaign-kit`). */
-export const readKitAssets = async ({ root = defaultRoot } = {}) => {
+/**
+ * Official campaign kit marks as data URIs (committed under `public/campaign-kit`).
+ *
+ * @param {{ root?: string, keys?: string[] }} [options] repo root (defaults to
+ *   this module's repo) and the asset keys to read (defaults to all).
+ * @returns {Promise<Record<string, string>>} data URI per requested key.
+ */
+export const readKitAssets = async ({
+  root = defaultRoot,
+  keys = Object.keys(KIT_ASSETS),
+} = {}) => {
   const entries = await Promise.all(
-    Object.entries(KIT_ASSETS).map(async ([key, file]) => {
+    keys.map(async (key) => {
+      const file = KIT_ASSETS[key]
+      if (!file) throw new Error(`ativo do kit desconhecido: ${key}`)
       const bytes = await readFile(resolve(root, 'public/campaign-kit', file))
       return [key, `data:image/png;base64,${bytes.toString('base64')}`]
     }),
