@@ -91,6 +91,28 @@ describe('github-api (issue tracker layer)', () => {
     expect(JSON.parse(calls[1].init?.body ?? '{}')).toEqual({ labels: ['done'] })
   })
 
+  it('removeLabels tolerates 404 on an already-absent label (idempotent flip re-run)', async () => {
+    const calls: FetchCall[] = []
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async (url, init) => {
+        calls.push({ url: String(url), init })
+        return ok({ message: 'Label does not exist' }, 404)
+      },
+    })
+    await expect(api.removeLabels(11, ['in-progress'])).resolves.toBeUndefined()
+    expect(calls[0].init?.method).toBe('DELETE')
+    expect(calls[0].url).toContain('/issues/11/labels/in-progress')
+  })
+
+  it('removeLabels still throws on non-404 failures (does not swallow real errors)', async () => {
+    const api = createApi({
+      token: 'tok',
+      fetchImpl: async () => ok({ message: 'boom' }, 500),
+    })
+    await expect(api.removeLabels(11, ['in-progress'])).rejects.toThrow(/→ 500/)
+  })
+
   it('closeIssue PATCHes state=closed', async () => {
     const calls: FetchCall[] = []
     const api = createApi({
