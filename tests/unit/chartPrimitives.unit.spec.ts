@@ -4,6 +4,7 @@ import {
   CHART_COLORS,
   barChart,
   columnChart,
+  dualLineChart,
   lineChart,
   proportionalPercent,
   stackedColumnChart,
@@ -138,5 +139,158 @@ describe('lineChart — series with one highlighted end', () => {
 
   it('marks the last point with the Solla red', () => {
     expect(svg).toContain('fill="#c51414"')
+  })
+})
+
+describe('dualLineChart — the approved two-series time line', () => {
+  const annual = (values: number[]) =>
+    values.map((value, index) => ({ label: `${2017 + index}`, value }))
+  const series = [
+    {
+      name: 'Estadual',
+      tone: 'good',
+      rows: annual([9807, 10636, 11807, 10929, 13119, 14767, 14501, 20495, 21637, 23294]),
+    },
+    {
+      name: 'Municipal',
+      tone: 'bad',
+      rows: annual([24002, 24438, 22269, 20305, 21562, 20608, 19983, 19726, 18588, 15948]),
+    },
+  ]
+  const colors = {
+    good: '#c51414',
+    bad: '#78716c',
+    neutralA: '#1c1917',
+    neutralB: '#78716c',
+    grid: '#a8a29e',
+    paper: '#faf9f7',
+    ink: '#1c1917',
+    change: '#57534e',
+  }
+  const valence = { good: '↑ amplia', bad: '↓ recua' }
+  const format = (row: { value: number }) =>
+    new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(row.value)
+  const svg = dualLineChart({
+    series,
+    size: 'feed',
+    projected: true,
+    crossingLabel: '2024',
+    colors,
+    valence,
+    format,
+  })
+
+  it('draws the good path in the mandate red and the bad one neutral', () => {
+    expect(svg).toContain('class="dual-series dual-series-good"')
+    expect(svg).toContain('stroke="#c51414"')
+    expect(svg).toContain('class="dual-series dual-series-bad"')
+    expect(svg).toContain('stroke="#78716c"')
+    expect(svg).toContain('<g class="dual-markers-good" fill="#c51414"><circle')
+    expect(svg).toContain('<g class="dual-markers-bad" fill="#78716c"><rect')
+  })
+
+  it('labels each line with name, value, valence word and observed change', () => {
+    expect(svg).toContain('>Estadual<')
+    expect(svg).toContain('>23.294<')
+    expect(svg).toContain('>↑ amplia<')
+    expect(svg).toContain('>+121% até 2025<')
+    expect(svg).toContain('>Municipal<')
+    expect(svg).toContain('>15.948<')
+    expect(svg).toContain('>↓ recua<')
+    expect(svg).toContain('>−23% até 2025<')
+  })
+
+  it('marks only the last segment as a projection', () => {
+    expect(svg.match(/stroke-dasharray="18 12"/g)).toHaveLength(2)
+    expect(svg).toContain('class="dual-projection-band"')
+    expect(svg).toContain('>projeção<')
+    expect(svg).toContain('class="dual-marker-projected dual-marker-projected-good"')
+    expect(svg).toContain('class="dual-marker-projected dual-marker-projected-bad"')
+  })
+
+  it('annotates the confirmed crossing with ring, guide and box', () => {
+    expect(svg).toContain('class="dual-crossing-guide"')
+    expect(svg).toContain('class="dual-crossing-ring"')
+    expect(svg).toContain('class="dual-crossing-box"')
+    expect(svg).toContain('class="dual-crossing-year"')
+    expect(svg).toContain('>2024<')
+    expect(svg).toContain('class="dual-crossing-copy"')
+    expect(svg).toContain('>ultrapassa<')
+  })
+
+  it('keeps the crossing out when it was not confirmed', () => {
+    const withoutCrossing = dualLineChart({
+      series,
+      size: 'feed',
+      projected: true,
+      colors,
+      valence,
+      format,
+    })
+    expect(withoutCrossing).not.toContain('dual-crossing')
+    expect(withoutCrossing).not.toContain('ultrapassa')
+  })
+
+  it('keeps the honest zero base and the shared legible ceiling', () => {
+    expect(svg).toContain('viewBox="0 0 880 620"')
+    expect(svg).toContain('y1="544"')
+    expect(svg).toContain('>0<')
+    expect(svg.match(/class="dual-grid-line"/g)).toHaveLength(2)
+  })
+
+  it('alternates the ten annual axis labels, always keeping first and last', () => {
+    for (const label of ['2017', '2019', '2021', '2023', '2026']) {
+      expect(svg).toContain(`>${label}<`)
+    }
+    for (const label of ['2018', '2020', '2022', '2025']) {
+      expect(svg).not.toContain(`>${label}<`)
+    }
+  })
+
+  it('adapts the geometry to square and to Stories', () => {
+    const square = dualLineChart({
+      series,
+      size: 'square',
+      projected: true,
+      colors,
+      valence,
+      format,
+    })
+    expect(square).toContain('viewBox="0 0 880 440"')
+    expect(square).toContain('stroke-dasharray="15 11"')
+    expect(square).toContain('font-size="32"')
+    const story = dualLineChart({ series, size: 'story', projected: true, colors, valence, format })
+    expect(story).toContain('viewBox="0 0 880 700"')
+    expect(story).toContain('stroke-dasharray="18 12"')
+    expect(story).toContain('font-size="36"')
+  })
+
+  it('compares neutrally without valence or red when no tone is informed', () => {
+    const neutral = dualLineChart({
+      series: series.map(({ name, rows }) => ({ name, rows })),
+      size: 'feed',
+      projected: false,
+      colors,
+      valence,
+      format,
+    })
+    expect(neutral).toContain('class="dual-series dual-series-a"')
+    expect(neutral).toContain('class="dual-series dual-series-b"')
+    expect(neutral).not.toContain('#c51414')
+    expect(neutral).not.toContain('amplia')
+    expect(neutral).not.toContain('recua')
+    expect(neutral).not.toContain('dual-projection-band')
+  })
+
+  it('escapes untrusted series names', () => {
+    const evil = dualLineChart({
+      series: [{ ...series[0], name: '<b>x</b>' }, series[1]],
+      size: 'feed',
+      projected: false,
+      colors,
+      valence,
+      format,
+    })
+    expect(evil).toContain('&lt;b&gt;x&lt;/b&gt;')
   })
 })

@@ -9,8 +9,8 @@
  * only sets the viewport and clips the canvas.
  */
 
-import { RELATION_LABEL, SIZES } from './chartData.mjs'
-import { lineChart, proportionalPercent } from './chartPrimitives.mjs'
+import { RELATION_LABEL, SERIES_RELATION_LABEL, SIZES } from './chartData.mjs'
+import { dualLineChart, lineChart, proportionalPercent } from './chartPrimitives.mjs'
 import { htmlEscape } from './reportText.mjs'
 
 /** Solla palette (verbatim from the intention). */
@@ -85,7 +85,39 @@ const anchorBody = (spec) => {
   </div>`
 }
 
+/**
+ * Two-series time line (approved C191 variant): the valence travels by word +
+ * arrow + marker shape + color, never by color alone. Red belongs to the
+ * mandate (the good path); the falling series stays neutral.
+ */
+const DUAL_COLORS = {
+  good: SOLLA_PALETTE.highlight,
+  bad: SOLLA_PALETTE.axis,
+  neutralA: SOLLA_PALETTE.ink,
+  neutralB: SOLLA_PALETTE.axis,
+  grid: SOLLA_PALETTE.barStrong,
+  paper: SOLLA_PALETTE.paper,
+  ink: SOLLA_PALETTE.ink,
+  change: SOLLA_PALETTE.label,
+}
+
+const DUAL_VALENCE = { good: '↑ amplia', bad: '↓ recua' }
+
+const dualBody = (spec) => {
+  const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
+  return `<div class="dual-line-plot">${dualLineChart({
+    series: spec.series,
+    size: sizeKey,
+    projected: Boolean(spec.projectedLabel),
+    crossingLabel: spec.crossingLabel ?? null,
+    colors: DUAL_COLORS,
+    valence: DUAL_VALENCE,
+    format: (row) => formatValue(row.value),
+  })}</div>`
+}
+
 const plotBody = (spec) => {
+  if (Array.isArray(spec.series) && spec.series.length > 0) return dualBody(spec)
   if (spec.chartType === 'anchor') return anchorBody(spec)
   if (spec.chartType === 'column') return columnBody(spec)
   if (spec.chartType === 'line') {
@@ -152,6 +184,22 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
 .column-label { position: absolute; bottom: -40px; left: 0; width: 100%; text-align: center; color: ${SOLLA_PALETTE.label}; font-size: 30px; font-weight: 650; }
 .line-plot { height: 100%; display: flex; align-items: center; }
 .line-plot svg { width: 100%; height: auto; }
+.dual-line-plot { flex: none; }
+.dual-line-plot svg { display: block; width: 880px; height: auto; }
+.dual-projection-band { fill: ${SOLLA_PALETTE.barStrong}; fill-opacity: 0.16; }
+.dual-grid-line { stroke: ${SOLLA_PALETTE.barStrong}; stroke-opacity: 0.32; stroke-width: 2; }
+.dual-zero-line { stroke: ${SOLLA_PALETTE.barStrong}; stroke-width: 2; }
+.dual-axis-label { fill: ${SOLLA_PALETTE.axis}; font-weight: 650; }
+.dual-projection-label { fill: ${SOLLA_PALETTE.axis}; font-weight: 700; }
+.dual-end-name { fill: ${SOLLA_PALETTE.ink}; font-weight: 700; }
+.dual-end-value { fill: ${SOLLA_PALETTE.ink}; font-weight: 850; font-variant-numeric: tabular-nums; }
+.dual-end-valence { font-weight: 850; }
+.dual-end-change { fill: ${SOLLA_PALETTE.label}; font-weight: 700; }
+.dual-crossing-guide { stroke: ${SOLLA_PALETTE.highlight}; stroke-width: 2; stroke-dasharray: 8 8; opacity: 0.45; }
+.dual-crossing-ring { fill: ${SOLLA_PALETTE.paper}; stroke: ${SOLLA_PALETTE.highlight}; stroke-width: 4; }
+.dual-crossing-box { fill: ${SOLLA_PALETTE.paper}; stroke: ${SOLLA_PALETTE.barStrong}; stroke-width: 2; }
+.dual-crossing-year { fill: ${SOLLA_PALETTE.highlight}; font-weight: 850; }
+.dual-crossing-copy { fill: ${SOLLA_PALETTE.ink}; font-weight: 750; }
 .anchor { padding-top: 20px; }
 .anchor-number { color: ${SOLLA_PALETTE.highlight}; font-size: 300px; line-height: 0.86; letter-spacing: -0.065em; font-weight: 900; font-variant-numeric: tabular-nums; }
 .anchor-copy { max-width: 760px; margin: 40px 0 0; font-size: 52px; line-height: 1.12; font-weight: 750; }
@@ -208,7 +256,15 @@ export const renderChartHtml = (spec) => {
   const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
   const canvas = SIZES[sizeKey]
   const layout = layoutFor(sizeKey)
-  const kicker = RELATION_LABEL[spec.chartType] ?? 'Gráfico'
+  const dual = Array.isArray(spec.series) && spec.series.length > 0
+  const dualStyles = !dual
+    ? ''
+    : sizeKey === 'feed'
+      ? '.headline { font-size: 60px; max-width: 900px; } .subtitle { font-size: 28px; } .source { font-size: 25px; } .plot { margin-top: 28px; }'
+      : sizeKey === 'square'
+        ? '.inner { padding: 56px 84px 48px; } .headline { font-size: 54px; } .plot { margin-top: 20px; }'
+        : '.headline { font-size: 64px; } .plot { margin-top: 28px; }'
+  const kicker = dual ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico')
   const anchorUsesSubtitle = spec.chartType === 'anchor' && !spec.rows[0]?.label
   const showSubtitle = Boolean(spec.subtitle) && !anchorUsesSubtitle
   return `<!doctype html>
@@ -224,10 +280,11 @@ export const renderChartHtml = (spec) => {
       .headline { font-size: ${layout.headline}px; max-width: ${canvas.width - 200}px; }
       .subtitle { margin-top: ${Math.round(layout.gapAfterContext * 1.28)}px; font-size: ${layout.subtitle}px; max-width: ${canvas.width - 260}px; }
       .plot { margin-top: ${layout.plotGap}px; }
+      ${dualStyles}
     </style>
   </head>
   <body>
-    <article class="canvas" role="img" aria-label="${htmlEscape(spec.headline)}">
+    <article class="canvas${dual ? ' dual-series' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
       <div class="inner">
         <div class="top-rule"></div>
         <p class="context">${htmlEscape(kicker)}</p>

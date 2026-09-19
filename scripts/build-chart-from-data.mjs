@@ -22,6 +22,7 @@ import { fileURLToPath } from 'node:url'
 import { launchPdfBrowser, screenshotHtmlPng } from './lib/buildPdf.mjs'
 import {
   MAX_POINTS,
+  MAX_POINTS_LINE,
   MAX_POINTS_STORY,
   SIZES,
   classifyRelation,
@@ -53,6 +54,29 @@ const slugify = (value) =>
     .slice(0, 48)
 
 const today = () => new Date().toISOString().slice(0, 10)
+
+/**
+ * `--good`/`--bad` name the series that carry each tone of the approved
+ * two-series variant; the pair itself is validated by `validateSpec`.
+ */
+const applyTones = (series, flags, die) => {
+  const good = flags.good ? String(flags.good) : null
+  const bad = flags.bad ? String(flags.bad) : null
+  if (good && bad && good === bad) {
+    die(`--good e --bad apontam para a mesma série: ${JSON.stringify(good)}.`)
+  }
+  const known = series.map((serie) => serie.name)
+  for (const name of [good, bad].filter(Boolean)) {
+    if (!known.includes(name)) {
+      die(`série ${JSON.stringify(name)} não existe nos dados (nomes: ${known.join(', ')}).`)
+    }
+  }
+  return series.map((serie) => {
+    if (good && serie.name === good) return { ...serie, tone: 'good' }
+    if (bad && serie.name === bad) return { ...serie, tone: 'bad' }
+    return serie
+  })
+}
 
 const readInput = async (flags) => {
   const path = flags.in === '-' || flags.in === true ? null : String(flags.in ?? '')
@@ -111,14 +135,27 @@ export const main = async ({
       return
     }
 
-    if (dataset.rows.length === 0 || dataset.issues.length > 0) {
+    const hasSeries = Array.isArray(dataset.series) && dataset.series.length > 0
+    if ((!hasSeries && dataset.rows.length === 0) || dataset.issues.length > 0) {
       process.stdout.write(
-        `${JSON.stringify({ needsQuestion: true, issues: dataset.issues, rows: dataset.rows }, null, 2)}\n`,
+        `${JSON.stringify(
+          {
+            needsQuestion: true,
+            issues: dataset.issues,
+            rows: dataset.rows,
+            series: dataset.series ?? [],
+          },
+          null,
+          2,
+        )}\n`,
       )
       die('dado ambíguo ou faltando — pergunte à pessoa antes de gerar (nada é completado).')
     }
 
-    const chartType = classifyRelation(dataset.rows, flags.type ? String(flags.type) : null)
+    const forcedType = flags.type ? String(flags.type) : null
+    const chartType = hasSeries
+      ? (forcedType ?? 'line')
+      : classifyRelation(dataset.rows, forcedType)
     spec = {
       chartType,
       size: flags.size ? String(flags.size) : 'feed',
@@ -126,8 +163,13 @@ export const main = async ({
       subtitle: flags.subtitle ? String(flags.subtitle) : '',
       source: flags.source ? String(flags.source) : '',
       note: flags.note ? String(flags.note) : '',
-      highlight: flags.highlight ? String(flags.highlight) : null,
-      rows: dataset.rows,
+      ...(hasSeries
+        ? {
+            ...(flags.projected ? { projectedLabel: String(flags.projected) } : {}),
+            ...(flags.crossing ? { crossingLabel: String(flags.crossing) } : {}),
+            series: applyTones(dataset.series, flags, die),
+          }
+        : { highlight: flags.highlight ? String(flags.highlight) : null, rows: dataset.rows }),
     }
   }
 
@@ -147,10 +189,14 @@ export const main = async ({
   const html = renderChartHtml(spec)
   const sizeKey = SIZES[spec.size] ? spec.size : 'feed'
   const canvas = SIZES[sizeKey]
-  const pointCap =
-    sizeKey === 'story' && (spec.chartType === 'bar' || spec.chartType === 'column')
+  const pointCap = spec.series?.length
+    ? MAX_POINTS_LINE
+    : sizeKey === 'story' && (spec.chartType === 'bar' || spec.chartType === 'column')
       ? MAX_POINTS_STORY
       : MAX_POINTS
+  const pointCount = spec.series?.length
+    ? `${spec.series.length} séries × ${spec.series[0].rows.length}`
+    : `${spec.rows.length} ponto(s)`
   const browser = await launchBrowser()
   try {
     await mkdir(dirname(outPath), { recursive: true })
@@ -163,7 +209,7 @@ export const main = async ({
       outPath,
     })
     console.log(
-      `[${LABEL}] PNG ${outPath} (${canvas.width}×${canvas.height}, ${Math.round(size / 1024)} KB) · tipo=${spec.chartType} · ${spec.rows.length} ponto(s) ≤ ${pointCap}`,
+      `[${LABEL}] PNG ${outPath} (${canvas.width}×${canvas.height}, ${Math.round(size / 1024)} KB) · tipo=${spec.chartType} · ${pointCount} ≤ ${pointCap}`,
     )
   } finally {
     await browser.close()

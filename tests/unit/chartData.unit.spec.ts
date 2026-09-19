@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest'
 import {
   CHART_TYPES,
   MAX_POINTS,
+  MAX_POINTS_LINE,
   MAX_POINTS_STORY,
+  MAX_SERIES,
   RELATION_LABEL,
   SIZES,
   classifyRelation,
@@ -215,6 +217,174 @@ describe('validateSpec — fail-closed guardrails', () => {
 
   it('refuses an unlabeled bar row', () => {
     expect(() => validateSpec({ ...base, rows: [{ label: '', value: 1 }] })).toThrow(/rótulo/)
+  })
+})
+
+describe('parseInput — two aligned measures become series, not a ranking', () => {
+  it('reads a time table with two measures as two series', () => {
+    const dataset = parseInput({
+      text: 'Ano,Estadual,Municipal\n2017,9807,24002\n2018,10636,24438\n',
+      format: 'csv',
+    })
+    expect(dataset.rows).toEqual([])
+    expect(dataset.series).toEqual([
+      {
+        name: 'Estadual',
+        rows: [
+          { label: '2017', value: 9807 },
+          { label: '2018', value: 10636 },
+        ],
+      },
+      {
+        name: 'Municipal',
+        rows: [
+          { label: '2017', value: 24002 },
+          { label: '2018', value: 24438 },
+        ],
+      },
+    ])
+    expect(dataset.issues).toEqual([])
+  })
+
+  it('keeps a two-column table on the single-series path', () => {
+    const dataset = parseInput({ text: 'cidade,votos\nIlhéus,84\nItabuna,68\n', format: 'csv' })
+    expect(dataset.series).toBeUndefined()
+    expect(dataset.rows).toHaveLength(2)
+  })
+
+  it('flags a non-numeric cell of a series table instead of dropping the column', () => {
+    const dataset = parseInput({
+      text: 'Ano,Estadual,Municipal\n2017,9807,???\n2018,10636,24438\n',
+      format: 'csv',
+    })
+    expect(dataset.issues.join(' ')).toContain('Municipal · 2017')
+  })
+})
+
+describe('validateSpec — the two-series time line', () => {
+  const seriesSpec = (overrides = {}) => ({
+    chartType: 'line',
+    headline: 'Internações crescem no hospital estadual e recuam no municipal',
+    series: [
+      {
+        name: 'Estadual',
+        tone: 'good',
+        rows: [
+          { label: '2017', value: 9807 },
+          { label: '2026', value: 23294 },
+        ],
+      },
+      {
+        name: 'Municipal',
+        tone: 'bad',
+        rows: [
+          { label: '2017', value: 24002 },
+          { label: '2026', value: 15948 },
+        ],
+      },
+    ],
+    ...overrides,
+  })
+
+  it('accepts aligned temporal series with paired tones', () => {
+    expect(validateSpec(seriesSpec())).toBeTruthy()
+  })
+
+  it('refuses a multi-series spec that is not a line', () => {
+    expect(() => validateSpec(seriesSpec({ chartType: 'bar' }))).toThrow(/linha/)
+  })
+
+  it(`refuses more than ${MAX_SERIES} series`, () => {
+    const [first, second] = seriesSpec().series
+    expect(() =>
+      validateSpec(seriesSpec({ series: [first, second, { ...first, name: 'Total' }] })),
+    ).toThrow(/séries/)
+  })
+
+  it('refuses misaligned periods between the series', () => {
+    const [first, second] = seriesSpec().series
+    const drifted = {
+      ...second,
+      rows: [
+        { label: '2018', value: 1 },
+        { label: '2026', value: 2 },
+      ],
+    }
+    expect(() => validateSpec(seriesSpec({ series: [first, drifted] }))).toThrow(/mesmos períodos/)
+  })
+
+  it('refuses categorical labels on the time axis', () => {
+    const categorical = (name: string, tone: string) => ({
+      name,
+      tone,
+      rows: [
+        { label: 'Ilhéus', value: 1 },
+        { label: 'Itabuna', value: 2 },
+      ],
+    })
+    expect(() =>
+      validateSpec(
+        seriesSpec({ series: [categorical('Estadual', 'good'), categorical('Municipal', 'bad')] }),
+      ),
+    ).toThrow(/períodos/)
+  })
+
+  it('refuses a one-sided, repeated or unknown tone', () => {
+    const [first, second] = seriesSpec().series
+    expect(() =>
+      validateSpec(seriesSpec({ series: [{ ...first, tone: undefined }, second] })),
+    ).toThrow(/tom/)
+    expect(() => validateSpec(seriesSpec({ series: [{ ...first, tone: 'bad' }, second] }))).toThrow(
+      /mesmo tom/,
+    )
+    expect(() =>
+      validateSpec(seriesSpec({ series: [{ ...first, tone: 'ótimo' }, second] })),
+    ).toThrow(/tom inválido/)
+  })
+
+  it(`caps each series at ${MAX_POINTS_LINE} points`, () => {
+    const [first, second] = seriesSpec().series
+    const rows = Array.from({ length: MAX_POINTS_LINE + 1 }, (_v, index) => ({
+      label: `${2000 + index}`,
+      value: index + 1,
+    }))
+    expect(() => validateSpec(seriesSpec({ series: [{ ...first, rows }, second] }))).toThrow(
+      /resuma/,
+    )
+    expect(MAX_POINTS_LINE).toBeGreaterThan(MAX_POINTS)
+  })
+
+  it('marks the projection only on the last period', () => {
+    expect(validateSpec(seriesSpec({ projectedLabel: '2026' }))).toBeTruthy()
+    expect(() => validateSpec(seriesSpec({ projectedLabel: '2017' }))).toThrow(/último período/)
+  })
+
+  it('refuses --highlight on a two-series line (the tones carry the meaning)', () => {
+    expect(() => validateSpec(seriesSpec({ highlight: 'Estadual' }))).toThrow(/highlight/)
+  })
+
+  it('accepts a confirmed crossing and refuses an unconfirmed one', () => {
+    expect(validateSpec(seriesSpec({ crossingLabel: '2026' }))).toBeTruthy()
+    expect(() => validateSpec(seriesSpec({ crossingLabel: '2017' }))).toThrow(/primeiro/)
+    const [first, second] = seriesSpec().series
+    const alreadyAhead = {
+      ...second,
+      rows: [
+        { label: '2017', value: 1 },
+        { label: '2026', value: 2 },
+      ],
+    }
+    expect(() =>
+      validateSpec(seriesSpec({ crossingLabel: '2026', series: [first, alreadyAhead] })),
+    ).toThrow(/ultrapassagem/)
+  })
+
+  it('refuses a crossing annotation without the tone pair', () => {
+    const { series } = seriesSpec()
+    const neutral = series.map(({ name, rows }) => ({ name, rows }))
+    expect(() => validateSpec(seriesSpec({ crossingLabel: '2026', series: neutral }))).toThrow(
+      /tons/,
+    )
   })
 })
 
