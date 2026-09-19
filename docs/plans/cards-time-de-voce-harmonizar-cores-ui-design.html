@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>DEGRADED — Design S17 · Card Time de você: harmonizar cores</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --team-red: #e50e2f;
+        --team-yellow: #ffec01;
+        --team-blue: #0061a5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      a:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+      .range-track {
+        appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--pt-red) 0 46%, #d6d3d1 46% 100%);
+      }
+      .range-track::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        border-radius: 999px;
+        background: var(--pt-red);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+      }
+
+      /* card composto pelo pipeline real: base -> foto -> front -> banners */
+      .tcard {
+        position: relative;
+        aspect-ratio: 1080 / 1440;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #cfe7f7;
+        container-type: inline-size;
+      }
+      .tcard-base,
+      .tcard-front {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+      }
+      .tcard-window {
+        position: absolute;
+        left: 26.481%;
+        top: 30.486%;
+        width: 54.815%;
+        height: 40.069%;
+        overflow: hidden;
+      }
+      .tcard-bust {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        height: auto;
+        transform: translateX(-50%);
+        color: #7f8a97;
+      }
+      .tcard-cast {
+        position: absolute;
+        inset: 0;
+        mix-blend-mode: color;
+        pointer-events: none;
+      }
+      .cast-original {
+        background: #5f7896;
+        opacity: 0.42;
+      }
+      .cast-harmonized {
+        background: #e0964a;
+        opacity: 0.3;
+      }
+      .photo-original {
+        filter: saturate(0.8) brightness(0.92) contrast(0.97);
+      }
+      .photo-harmonized {
+        filter: saturate(1.12) brightness(1.06) contrast(1.06);
+      }
+      .tcard-banner {
+        position: absolute;
+        left: 50.463%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%) rotate(var(--rot, -4.1deg));
+        overflow: hidden;
+      }
+      .tcard-banner-red {
+        top: 11.25%;
+        height: 8.194%;
+        width: 64.167%;
+        background: var(--team-red);
+        color: var(--team-yellow);
+        --rot: -3.5deg;
+      }
+      .tcard-banner-blue {
+        top: 21.736%;
+        height: 12.222%;
+        width: 47.13%;
+        background: var(--team-blue);
+        color: #ffffff;
+        --rot: -4.1deg;
+      }
+      .tcard-face {
+        font-family: Brexter, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        letter-spacing: -0.005em;
+        font-size: calc(var(--fs, 9) * 1cqw);
+      }
+
+      /* controles do compositor (estado pronto) */
+      .ctrl-btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        border: 1px solid var(--campaign-line);
+        background: #fff;
+        color: var(--campaign-ink);
+        font-size: 18px;
+        line-height: 1;
+      }
+      .switch-track {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 26px;
+        flex: none;
+        border-radius: 999px;
+        transition: background-color 0.15s ease;
+      }
+      .switch-thumb {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+        transition: left 0.15s ease;
+      }
+      .switch-on {
+        background: var(--pt-red);
+      }
+      .switch-on .switch-thumb {
+        left: 21px;
+      }
+      .switch-off {
+        background: #cfcac7;
+      }
+      .switch-off .switch-thumb {
+        left: 3px;
+      }
+      .switch-sm {
+        width: 34px;
+        height: 20px;
+      }
+      .switch-sm .switch-thumb {
+        top: 2px;
+        left: 2px;
+        width: 16px;
+        height: 16px;
+      }
+      .switch-sm.switch-on .switch-thumb {
+        left: 16px;
+      }
+      .switch-sm.switch-off .switch-thumb {
+        left: 2px;
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div
+      class="border-b border-amber-500/60 bg-amber-500/10 px-4 py-2 text-center text-[11px] font-black tracking-[0.14em] text-amber-300 uppercase"
+    >
+      DEGRADED — não certificado; exige sign-off humano · tier opencode-go/deepseek-v4.1-flash
+    </div>
+
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="m-0 text-xs font-black tracking-[0.12em] text-red-400 uppercase">
+          Gate visual · S17 · DEGRADED
+        </p>
+        <h1 class="mt-2 text-2xl font-black tracking-[-0.02em] sm:text-3xl">
+          Card “Time de você”: harmonizar as cores da foto
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          No estado em que a foto já está pronta, um único controle binário ajusta brilho, contraste e
+          saturação da selfie para o tom das fotos oficiais dos candidatos. Padrão LIGADO; desligar
+          devolve a original na hora; vale para a prévia e para o PNG; nada persiste e não há editor.
+        </p>
+        <p class="mt-3 max-w-3xl text-xs leading-5 text-amber-300/90">
+          <strong>DEGRADED:</strong> este design não está certificado. É insumo para decisão humana no
+          gate/PR — o tier degradado nunca aprova.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · desktop</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · mobile</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >alvo ≥ 44px</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >padrão LIGADO</span
+          >
+        </div>
+      </header>
+
+      <!-- Cena 1: estado pronto desktop, controle LIGADO -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 1 · Estado pronto · dialog desktop 1280 — “Harmonizar cores” LIGADO (padrão)
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          O controle entra depois do ajuste fino e antes de “Trocar foto”, com ajuda curta em pt-BR e
+          alvo ≥ 44px. No estado ligado, a prévia já abre harmonizada.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[920px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-band)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="s17-on-title"
+            class="relative z-10 flex max-h-[94dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="s17-on-title" class="mt-1 text-xl font-black">Confira seu card</h3>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+                </p>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                role="group"
+                aria-label="Ajuste da foto"
+                tabindex="0"
+                class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+              >
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust photo-harmonized"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <div class="tcard-cast cast-harmonized"></div>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+                <span
+                  class="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 text-[10px] font-bold text-white"
+                  >Arraste para ajustar</span
+                >
+              </div>
+              <p class="mt-2 text-center text-[11px] font-bold text-[var(--campaign-muted)]">
+                Prévia real · foto harmonizada (placeholder cinza)
+              </p>
+
+              <div class="mt-5 flex items-center gap-3">
+                <label for="s17-zoom" class="text-sm font-bold">Zoom</label>
+                <button
+                  aria-label="Diminuir zoom"
+                  class="ctrl-btn size-11 shrink-0"
+                >
+                  −
+                </button>
+                <input
+                  id="s17-zoom"
+                  aria-label="Nível de zoom"
+                  type="range"
+                  value="46"
+                  class="range-track h-11 min-w-0 flex-1"
+                />
+                <button
+                  aria-label="Aumentar zoom"
+                  class="ctrl-btn size-11 shrink-0"
+                >
+                  +
+                </button>
+              </div>
+              <div class="mt-4">
+                <p class="text-sm font-bold">Ajuste fino</p>
+                <div class="mt-2 grid grid-cols-4 gap-2">
+                  <button aria-label="Mover foto para a esquerda" class="ctrl-btn min-h-11">
+                    ←
+                  </button>
+                  <button aria-label="Mover foto para cima" class="ctrl-btn min-h-11">↑</button>
+                  <button aria-label="Mover foto para baixo" class="ctrl-btn min-h-11">↓</button>
+                  <button aria-label="Mover foto para a direita" class="ctrl-btn min-h-11">→</button>
+                </div>
+              </div>
+
+              <!-- controle Harmonizar cores · LIGADO -->
+              <div class="relative mt-4">
+                <div
+                  class="flex items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3"
+                >
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked="true"
+                    id="s17-harm"
+                    class="flex min-h-11 w-full items-start gap-3 text-left"
+                  >
+                    <span aria-hidden="true" class="switch-track switch-on mt-1.5">
+                      <span class="switch-thumb"></span>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block text-sm font-bold text-[var(--campaign-ink)]"
+                        >Harmonizar cores</span
+                      >
+                      <span class="mt-0.5 block text-xs leading-5 text-[var(--campaign-muted)]"
+                        >Ajusta o brilho e as cores da sua foto para combinar com as fotos do
+                        card.</span
+                      >
+                    </span>
+                  </button>
+                </div>
+                <span
+                  class="absolute -top-2 -right-2 rounded-full bg-[var(--team-blue)] px-2 py-0.5 text-[9px] font-black text-white shadow"
+                  >LIGADO · alvo ≥ 44px</span
+                >
+              </div>
+
+              <button
+                class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Trocar foto
+              </button>
+              <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                Sua foto fica neste aparelho e não é enviada para nós.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white shadow-sm"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 2: mesmo estado pronto, controle DESLIGADO -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 2 · Estado pronto · dialog desktop 1280 — “Harmonizar cores” DESLIGADO
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Desligar devolve a foto original na hora; tudo o mais (recorte, enquadramento, controles,
+          CTA) permanece idêntico. Religar reaplica.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[920px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-band)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="s17-off-title"
+            class="relative z-10 flex max-h-[94dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="s17-off-title" class="mt-1 text-xl font-black">Confira seu card</h3>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+                </p>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                role="group"
+                aria-label="Ajuste da foto"
+                tabindex="0"
+                class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+              >
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust photo-original"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <div class="tcard-cast cast-original"></div>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+                <span
+                  class="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 text-[10px] font-bold text-white"
+                  >Arraste para ajustar</span
+                >
+              </div>
+              <p class="mt-2 text-center text-[11px] font-bold text-[var(--campaign-muted)]">
+                Prévia real · foto original (placeholder cinza)
+              </p>
+
+              <div class="mt-5 flex items-center gap-3">
+                <label for="s17-zoom-off" class="text-sm font-bold">Zoom</label>
+                <button aria-label="Diminuir zoom" class="ctrl-btn size-11 shrink-0">−</button>
+                <input
+                  id="s17-zoom-off"
+                  aria-label="Nível de zoom"
+                  type="range"
+                  value="46"
+                  class="range-track h-11 min-w-0 flex-1"
+                />
+                <button aria-label="Aumentar zoom" class="ctrl-btn size-11 shrink-0">+</button>
+              </div>
+              <div class="mt-4">
+                <p class="text-sm font-bold">Ajuste fino</p>
+                <div class="mt-2 grid grid-cols-4 gap-2">
+                  <button aria-label="Mover foto para a esquerda" class="ctrl-btn min-h-11">
+                    ←
+                  </button>
+                  <button aria-label="Mover foto para cima" class="ctrl-btn min-h-11">↑</button>
+                  <button aria-label="Mover foto para baixo" class="ctrl-btn min-h-11">↓</button>
+                  <button aria-label="Mover foto para a direita" class="ctrl-btn min-h-11">→</button>
+                </div>
+              </div>
+
+              <!-- controle Harmonizar cores · DESLIGADO -->
+              <div class="relative mt-4">
+                <div
+                  class="flex items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3"
+                >
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked="false"
+                    class="flex min-h-11 w-full items-start gap-3 text-left"
+                  >
+                    <span aria-hidden="true" class="switch-track switch-off mt-1.5">
+                      <span class="switch-thumb"></span>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block text-sm font-bold text-[var(--campaign-ink)]"
+                        >Harmonizar cores</span
+                      >
+                      <span class="mt-0.5 block text-xs leading-5 text-[var(--campaign-muted)]"
+                        >Ajusta o brilho e as cores da sua foto para combinar com as fotos do
+                        card.</span
+                      >
+                    </span>
+                  </button>
+                </div>
+                <span
+                  class="absolute -top-2 -right-2 rounded-full bg-stone-600 px-2 py-0.5 text-[9px] font-black text-white shadow"
+                  >DESLIGADO</span
+                >
+              </div>
+
+              <button
+                class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Trocar foto
+              </button>
+              <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                Sua foto fica neste aparelho e não é enviada para nós.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white shadow-sm"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 3: mobile drawer -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 3 · Estado pronto · drawer mobile 390 — controle LIGADO
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          No mobile o controle fica na mesma ordem do desktop e o alvo de toque cobre a linha inteira
+          (≥ 44px), sem depender de mirar no trilho.
+        </p>
+        <div class="mt-4 grid gap-6 lg:grid-cols-2">
+          <div
+            class="relative h-[860px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+          >
+            <div class="absolute inset-0 bg-black/50"></div>
+            <article
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="s17-m-title"
+              class="absolute inset-x-0 bottom-0 max-h-[97%] overflow-hidden rounded-t-2xl bg-white"
+            >
+              <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+              <header class="flex items-start gap-3 px-5 pt-4">
+                <div>
+                  <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                    Time de você
+                  </p>
+                  <h3 id="s17-m-title" class="mt-1 text-lg leading-6 font-black">Confira seu card</h3>
+                  <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                    Arraste a foto ou use os controles.
+                  </p>
+                </div>
+                <button
+                  aria-label="Fechar"
+                  class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+                >
+                  ×
+                </button>
+              </header>
+              <div class="px-5 pt-3 pb-5">
+                <div
+                  class="relative mx-auto w-[180px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+                >
+                  <div class="tcard">
+                    <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                    <div class="tcard-window">
+                      <svg
+                        class="tcard-bust photo-harmonized"
+                        style="width: 38%"
+                        viewBox="0 0 100 130"
+                        aria-hidden="true"
+                      >
+                        <circle cx="50" cy="30" r="26" fill="currentColor" />
+                        <path
+                          d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <div class="tcard-cast cast-harmonized"></div>
+                    </div>
+                    <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                    <div class="tcard-banner tcard-banner-red">
+                      <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                    </div>
+                    <div class="tcard-banner tcard-banner-blue">
+                      <span class="tcard-face" style="--fs: 13">MARIA</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-3 flex items-center gap-2">
+                  <label for="s17-m-zoom" class="text-sm font-bold">Zoom</label>
+                  <button aria-label="Diminuir zoom" class="ctrl-btn size-11 shrink-0">−</button>
+                  <input
+                    id="s17-m-zoom"
+                    aria-label="Nível de zoom"
+                    type="range"
+                    value="46"
+                    class="range-track h-11 min-w-0 flex-1"
+                  />
+                  <button aria-label="Aumentar zoom" class="ctrl-btn size-11 shrink-0">+</button>
+                </div>
+                <div class="mt-3 grid grid-cols-4 gap-2">
+                  <button aria-label="Mover foto para a esquerda" class="ctrl-btn min-h-11">
+                    ←
+                  </button>
+                  <button aria-label="Mover foto para cima" class="ctrl-btn min-h-11">↑</button>
+                  <button aria-label="Mover foto para baixo" class="ctrl-btn min-h-11">↓</button>
+                  <button aria-label="Mover foto para a direita" class="ctrl-btn min-h-11">→</button>
+                </div>
+
+                <div
+                  class="mt-3 flex items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3"
+                >
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked="true"
+                    class="flex min-h-11 w-full items-start gap-3 text-left"
+                  >
+                    <span aria-hidden="true" class="switch-track switch-on mt-1.5">
+                      <span class="switch-thumb"></span>
+                    </span>
+                    <span class="min-w-0">
+                      <span class="block text-sm font-bold text-[var(--campaign-ink)]"
+                        >Harmonizar cores</span
+                      >
+                      <span class="mt-0.5 block text-xs leading-5 text-[var(--campaign-muted)]"
+                        >Ajusta o brilho e as cores da sua foto para combinar com as fotos do
+                        card.</span
+                      >
+                    </span>
+                  </button>
+                </div>
+
+                <button
+                  class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Trocar foto
+                </button>
+                <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                  Sua foto fica neste aparelho e não é enviada para nós.
+                </p>
+              </div>
+              <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white"
+                >
+                  Criar meu card
+                </button>
+              </footer>
+            </article>
+          </div>
+
+          <!-- anatomia do controle -->
+          <div class="max-w-[560px]">
+            <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+              <h3 class="text-sm font-black tracking-wide text-zinc-200 uppercase">
+                Anatomia do controle
+              </h3>
+              <ul class="mt-3 space-y-3 text-xs leading-5 text-zinc-400">
+                <li>
+                  <strong class="text-zinc-200">Rótulo:</strong> “Harmonizar cores”, sempre visível
+                  (nunca só o trilho).
+                </li>
+                <li>
+                  <strong class="text-zinc-200">Ajuda:</strong> “Ajusta o brilho e as cores da sua foto
+                  para combinar com as fotos do card.”
+                </li>
+                <li>
+                  <strong class="text-zinc-200">Alvo:</strong> a linha inteira é o botão, com altura
+                  mínima de 44px; funciona por toque e teclado, com foco visível.
+                </li>
+                <li>
+                  <strong class="text-zinc-200">Semântica:</strong> binário ligado/desligado
+                  (<code>role="switch"</code> + <code>aria-checked</code>); no port, usa o vocabulário
+                  de toggle já existente no app (sem shadcn Switch).
+                </li>
+                <li>
+                  <strong class="text-zinc-200">Estados:</strong> LIGADO (trilho
+                  <code>--pt-red</code>, thumb à direita) e DESLIGADO (trilho cinza, thumb à
+                  esquerda).
+                </li>
+                <li>
+                  <strong class="text-zinc-200">Posição:</strong> depois de “Ajuste fino” e antes de
+                  “Trocar foto”; só no estado pronto.
+                </li>
+              </ul>
+            </div>
+            <div
+              class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 text-xs leading-5 text-zinc-400"
+            >
+              <strong class="text-zinc-300">Tokens reais:</strong> trilho ligado
+              <code>--pt-red #A21C1C</code>; texto <code>--campaign-ink #000</code>; ajuda
+              <code>--campaign-muted #6C615E</code>; borda <code>--campaign-line</code>; superfície
+              <code>--campaign-surface</code>. Nada de cor nova.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 4: antes/depois -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 4 · Antes / depois da prévia — a escolha refletida
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Mesmo recorte, mesmo enquadramento, mesma prévia: só o ajuste de brilho/contraste/saturação
+          muda. A foto do visitante é um placeholder cinza (NEEDS ASSET) — nenhuma foto real de
+          terceiro é simulada.
+        </p>
+        <div
+          class="mt-4 overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="grid gap-8 sm:grid-cols-2">
+            <figure class="m-0">
+              <div class="mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust photo-original"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <div class="tcard-cast cast-original"></div>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption class="mt-3 text-center">
+                <span
+                  class="inline-flex items-center gap-2 rounded-full border border-[var(--campaign-line)] bg-white px-3 py-2 text-xs font-black"
+                >
+                  <span aria-hidden="true" class="switch-track switch-off switch-sm">
+                    <span class="switch-thumb"></span>
+                  </span>
+                  Desligado · foto original
+                </span>
+                <p class="mt-2 text-[11px] leading-4 text-[var(--campaign-muted)]">
+                  Tom mais frio/des saturado em relação ao card.
+                </p>
+              </figcaption>
+            </figure>
+
+            <figure class="m-0">
+              <div class="mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md">
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust photo-harmonized"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                    <div class="tcard-cast cast-harmonized"></div>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue">
+                    <span class="tcard-face" style="--fs: 13">MARIA</span>
+                  </div>
+                </div>
+              </div>
+              <figcaption class="mt-3 text-center">
+                <span
+                  class="inline-flex items-center gap-2 rounded-full border border-[var(--campaign-line)] bg-white px-3 py-2 text-xs font-black"
+                >
+                  <span aria-hidden="true" class="switch-track switch-on switch-sm">
+                    <span class="switch-thumb"></span>
+                  </span>
+                  Ligado · harmonizada (padrão)
+                </span>
+                <p class="mt-2 text-[11px] leading-4 text-[var(--campaign-muted)]">
+                  Brilho, contraste e saturação aproximados do tom dos candidatos.
+                </p>
+              </figcaption>
+            </figure>
+          </div>
+
+          <p class="mt-6 text-center text-xs leading-5 text-[var(--campaign-muted)]">
+            <strong>NEEDS ASSET:</strong> foto real do visitante para validar o ajuste no lugar do
+            placeholder cinza. A referência de tom é a arte oficial
+            <code>team-card-base.png</code>.
+          </p>
+        </div>
+      </section>
+
+      <!-- Cena 5: o que é / o que não é -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 5 · O que o controle faz — e o que fica fora
+        </h2>
+        <div class="mt-4 grid gap-4 lg:grid-cols-2">
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+            <h3 class="text-sm font-black tracking-wide text-emerald-300 uppercase">Faz</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+              <li>Padrão LIGADO: a prévia abre harmonizada, sem exigir decisão.</li>
+              <li>Desligar devolve a foto original instantaneamente; religar reaplica.</li>
+              <li>A escolha vale para a prévia e para o PNG baixado.</li>
+              <li>100% no aparelho: sem upload, sem rede, sem analytics de PII.</li>
+              <li>Ajuste suave e limitado ao tom das fotos oficiais (brilho, contraste, saturação).</li>
+              <li>Fica só no modelo <code>time-de-voce</code>.</li>
+              <li>A nota de privacidade existente continua visível e verdadeira.</li>
+            </ul>
+          </div>
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5">
+            <h3 class="text-sm font-black tracking-wide text-red-300 uppercase">Não faz</h3>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+              <li>Não é editor: sem sliders, curvas, presets ou ajuste manual.</li>
+              <li>Não é retoque de beleza: sem pele, forma ou imperfeições.</li>
+              <li>Não altera o recorte nem o enquadramento.</li>
+              <li>Não persiste: sair e voltar retorna ao padrão LIGADO.</li>
+              <li>Não toca os 3 modelos existentes nem as artes-mestre.</li>
+              <li>Não promete “parecer profissional”.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p
+          class="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 font-bold text-amber-300"
+        >
+          DEGRADED — não certificado; exige sign-off humano. Tier: opencode-go/deepseek-v4.1-flash.
+        </p>
+        <p>
+          <strong class="text-zinc-300">Copys literais do plano:</strong> rótulo “Harmonizar cores”;
+          ajuda “Ajusta o brilho e as cores da sua foto para combinar com as fotos do card.”; nota de
+          privacidade inalterada (<code>CARD_PHOTO_PRIVACY_NOTE</code>).
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Em aberto (validar com produto):</strong> referência de tom
+          medida na arte-mestre vs perfil fixo; controle só no estado pronto vs também antes da foto.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Nota de justiça visual:</strong> os tons antes/depois aqui são
+          uma ilustração sobre placeholder cinza; o ajuste real é automático e calibrado contra a
+          arte-mestre, sem preview de número.
+        </p>
+      </aside>
+    </main>
+  </body>
+</html>

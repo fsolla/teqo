@@ -1,0 +1,1189 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>DEGRADED — Design S16 · Card Time de você: nomes longos</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --team-red: #e50e2f;
+        --team-yellow: #ffec01;
+        --team-blue: #0061a5;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      a:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+      .checker {
+        background-color: #f4f1ed;
+        background-image:
+          linear-gradient(45deg, #e6e1dc 25%, transparent 25%),
+          linear-gradient(-45deg, #e6e1dc 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e6e1dc 75%),
+          linear-gradient(-45deg, transparent 75%, #e6e1dc 75%);
+        background-position:
+          0 0,
+          0 8px,
+          8px -8px,
+          -8px 0;
+        background-size: 16px 16px;
+      }
+      .range-track {
+        appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--pt-red) 0 46%, #d6d3d1 46% 100%);
+      }
+      .range-track::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        border-radius: 999px;
+        background: var(--pt-red);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+      }
+
+      /* card composto pelo pipeline real: base -> foto -> front -> banners */
+      .tcard {
+        position: relative;
+        aspect-ratio: 1080 / 1440;
+        overflow: hidden;
+        border-radius: 12px;
+        background: #cfe7f7;
+        container-type: inline-size;
+      }
+      .tcard-base,
+      .tcard-front {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+      }
+      /* janela da foto S15: x=286 y=439 w=592 h=577 (card 1080x1440) */
+      .tcard-window {
+        position: absolute;
+        left: 26.481%;
+        top: 30.486%;
+        width: 54.815%;
+        height: 40.069%;
+        overflow: hidden;
+      }
+      .tcard-bust {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        height: auto;
+        transform: translateX(-50%);
+        color: #8b98a6;
+      }
+      .tcard-banner {
+        position: absolute;
+        left: 50.463%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%) rotate(var(--rot, -4.1deg));
+        overflow: hidden;
+      }
+      .tcard-banner-red {
+        top: 11.25%;
+        height: 8.194%;
+        width: 64.167%;
+        background: var(--team-red);
+        color: var(--team-yellow);
+        --rot: -3.5deg;
+      }
+      .tcard-banner-blue {
+        top: 21.736%;
+        height: 12.222%;
+        background: var(--team-blue);
+        color: #ffffff;
+        --rot: -4.1deg;
+      }
+      .tcard-face {
+        font-family: Brexter, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-weight: 700;
+        line-height: 1;
+        white-space: nowrap;
+        letter-spacing: -0.005em;
+        font-size: calc(var(--fs, 9) * 1cqw);
+      }
+      .banner-outline {
+        position: absolute;
+        left: 50.463%;
+        top: 21.736%;
+        height: 12.222%;
+        transform: translate(-50%, -50%) rotate(-4.1deg);
+        border-radius: 2px;
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div
+      class="border-b border-amber-500/60 bg-amber-500/10 px-4 py-2 text-center text-[11px] font-black tracking-[0.14em] text-amber-300 uppercase"
+    >
+      DEGRADED — não certificado; exige sign-off humano · tier opencode-go/deepseek-v4.1-flash
+    </div>
+
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="m-0 text-xs font-black tracking-[0.12em] text-red-400 uppercase">
+          Gate visual · S16 · DEGRADED
+        </p>
+        <h1 class="mt-2 text-2xl font-black tracking-[-0.02em] sm:text-3xl">
+          Card “Time de você”: nomes longos cabendo no banner
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+           Militante no celular com nome composto digita o nome inteiro e o banner azul se alarga
+           apenas o necessário a partir da referência 509, agora até o teto de 1000 (antes 660; ≈40 px
+           de margem em cada lado do card), sem nunca cruzar o topo da janela da foto. Acima do teto, a
+           pessoa recebe a mesma mensagem de nome curto de hoje e o CTA segue desabilitado. Nenhum passo
+           novo, nenhuma decisão nova.
+        </p>
+        <p class="mt-3 max-w-3xl text-xs leading-5 text-amber-300/90">
+          <strong>DEGRADED:</strong> este design não está certificado. É insumo para decisão humana no
+          gate/PR — o tier degradado nunca aprova.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · desktop</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · mobile</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >alvos ≥ 44px</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >banner 509 → 1000</span
+          >
+        </div>
+      </header>
+
+      <!-- Cena 1: spec de geometria -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 1 · Spec de geometria — banner dinâmico 509 → 1000
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Centro, y, altura e rotação do banner azul permanecem os do S15; só a largura entra. No teto
+          (largura 1000) o canto mais baixo fica em ≈436, ~3 px acima do topo da janela da foto
+          (y=439) — encosta sem cruzar.
+        </p>
+
+        <div class="mt-4 grid gap-8 lg:grid-cols-[360px_1fr]">
+          <div class="mx-auto w-[360px] max-w-full">
+            <div class="tcard shadow-2xl ring-1 ring-zinc-700">
+              <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+              <div
+                class="tcard-window"
+                style="
+                  background: rgb(255 236 1 / 8%);
+                  outline: 2px dashed rgb(255 236 1 / 75%);
+                  outline-offset: -1px;
+                "
+              ></div>
+              <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+              <div class="tcard-banner tcard-banner-red">
+                <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+              </div>
+              <div
+                class="banner-outline"
+                style="width: 47.13%; border: 2px solid rgb(255 255 255 / 85%)"
+              ></div>
+              <div
+                class="banner-outline"
+                style="width: 78.33%; border: 2px dashed rgb(255 255 255 / 45%)"
+              ></div>
+              <div
+                class="banner-outline"
+                style="width: 92.59%; border: 2px dashed rgb(255 236 1 / 90%)"
+              ></div>
+              <div
+                class="pointer-events-none absolute inset-x-0"
+                style="top: 30.486%; border-top: 2px solid #ff5a5a"
+              ></div>
+              <span
+                class="absolute right-1 rounded bg-[#ff5a5a] px-1.5 py-0.5 text-[9px] font-black text-black"
+                style="top: calc(30.486% - 8px)"
+                >y=439</span
+              >
+            </div>
+            <p class="mt-2 text-center text-[11px] text-zinc-500">
+              Diagrama fora de escala de fonte, mas com larguras reais sobre a arte oficial.
+            </p>
+          </div>
+
+          <div class="min-w-0">
+            <dl class="grid gap-3 text-xs sm:grid-cols-2">
+              <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3">
+                <dt class="font-black tracking-wide text-zinc-300 uppercase">Banner azul</dt>
+                <dd class="mt-1 text-zinc-400">
+                  centro <strong class="text-zinc-200">(545, 313)</strong> · altura
+                  <strong class="text-zinc-200">176</strong> · rotação
+                  <strong class="text-zinc-200">−4,1°</strong> · fill
+                  <strong class="text-zinc-200">#0061A5</strong> · texto
+                  <strong class="text-zinc-200">#FFFFFF</strong> · 1 linha, sem quebra.
+                </dd>
+              </div>
+              <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3">
+                <dt class="font-black tracking-wide text-zinc-300 uppercase">Largura dinâmica</dt>
+                <dd class="mt-1 text-zinc-400">
+                  referência <strong class="text-zinc-200">509</strong> quando o nome cabe nela (tinta
+                  ≤ <strong class="text-zinc-200">470</strong>); alarga só o necessário até o teto
+                  <strong class="text-zinc-200">1000</strong> (≈40 px de margem de cada lado); centro
+                  mantido em 545.
+                </dd>
+              </div>
+              <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3">
+                <dt class="font-black tracking-wide text-zinc-300 uppercase">Tinta e cap</dt>
+                <dd class="mt-1 text-zinc-400">
+                  tinta máxima sobe de <strong class="text-zinc-200">470</strong> para
+                  <strong class="text-zinc-200">961</strong>; cap mínimo legível desce de
+                  <strong class="text-zinc-200">56</strong> para
+                  <strong class="text-zinc-200">40</strong> (mínimo legível).
+                </dd>
+              </div>
+              <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3">
+                <dt class="font-black tracking-wide text-zinc-300 uppercase">Limite intocável</dt>
+                <dd class="mt-1 text-zinc-400">
+                  topo da janela da foto em <strong class="text-zinc-200">y=439</strong>; canto mais
+                  baixo do banner no teto (largura 1000) ≈
+                  <strong class="text-zinc-200">436</strong>. Margens ≈40 px preservadas (x ≈
+                  45…1045 de 1080).
+                </dd>
+              </div>
+            </dl>
+            <div
+              class="mt-3 rounded-lg border border-zinc-800 bg-zinc-900/60 p-3 text-xs leading-5 text-zinc-400"
+            >
+              <strong class="text-zinc-300">Banner vermelho intocado:</strong> 693×118, centro
+              (545, 162), −3,5°, fill #E50E2F, texto #FFEC01 — as cores do S15 seguem literais. O azul
+              agora <strong class="text-zinc-300">pode ultrapassar</strong> o vermelho (teto 1000 >
+              693). Teto 1000 e cap mínimo 40: <em>decisão do humano no gate (2026-09-19)</em>.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 2: alargamento do banner (referência 509 → teto 1000) -->
+      <section id="cena-2" class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 2 · Alargamento do banner — referência 509 → teto 1000 · desktop 1280
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          ANA encosta na referência e pede só 566; MARIA, FULANO, MARIA CLARA, MARIA EDUARDA e MARIA DA
+          CONCEIÇÃO alargam conforme o nome, encostando no teto 1000. O cap desce até o mínimo legível
+          40; abaixo disso o banner não é desenhado e a mensagem pede um nome mais curto. Nunca há corte
+          silencioso.
+        </p>
+
+        <div
+          class="mt-4 overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <ul class="grid list-none gap-5 p-0 sm:grid-cols-2 lg:grid-cols-3">
+            <li>
+              <div class="tcard shadow-md ring-1 ring-black/10">
+                <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                <div class="tcard-window">
+                  <svg
+                    class="tcard-bust"
+                    style="width: 38%"
+                    viewBox="0 0 100 130"
+                    aria-hidden="true"
+                  >
+                    <circle cx="50" cy="30" r="26" fill="currentColor" />
+                    <path
+                      d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                <div class="tcard-banner tcard-banner-red">
+                  <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                </div>
+                <div class="tcard-banner tcard-banner-blue" style="width: 52.41%">
+                  <span class="tcard-face" style="--fs: 16.72">ANA</span>
+                </div>
+              </div>
+              <p class="mt-3 text-center text-sm font-black">ANA</p>
+              <p class="text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                banner 509 → 566 · cap 130 (referência)
+              </p>
+            </li>
+            <li>
+              <div class="tcard shadow-md ring-1 ring-black/10">
+                <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                <div class="tcard-window">
+                  <svg
+                    class="tcard-bust"
+                    style="width: 38%"
+                    viewBox="0 0 100 130"
+                    aria-hidden="true"
+                  >
+                    <circle cx="50" cy="30" r="26" fill="currentColor" />
+                    <path
+                      d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                <div class="tcard-banner tcard-banner-red">
+                  <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                </div>
+                <div class="tcard-banner tcard-banner-blue" style="width: 78.33%">
+                  <span class="tcard-face" style="--fs: 16.72">MARIA</span>
+                </div>
+              </div>
+              <p class="mt-3 text-center text-sm font-black">MARIA</p>
+              <p class="text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                banner 846 · cap 130
+              </p>
+            </li>
+            <li>
+              <div class="tcard shadow-md ring-1 ring-black/10">
+                <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                <div class="tcard-window">
+                  <svg
+                    class="tcard-bust"
+                    style="width: 38%"
+                    viewBox="0 0 100 130"
+                    aria-hidden="true"
+                  >
+                    <circle cx="50" cy="30" r="26" fill="currentColor" />
+                    <path
+                      d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                <div class="tcard-banner tcard-banner-red">
+                  <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                </div>
+                <div class="tcard-banner tcard-banner-blue" style="width: 89.26%">
+                  <span class="tcard-face" style="--fs: 16.72">FULANO</span>
+                </div>
+              </div>
+              <p class="mt-3 text-center text-sm font-black">FULANO</p>
+              <p class="text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                banner 964 · cap 130 · já passa o vermelho (693)
+              </p>
+            </li>
+            <li>
+              <div class="tcard shadow-md ring-1 ring-black/10">
+                <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                <div class="tcard-window">
+                  <svg
+                    class="tcard-bust"
+                    style="width: 38%"
+                    viewBox="0 0 100 130"
+                    aria-hidden="true"
+                  >
+                    <circle cx="50" cy="30" r="26" fill="currentColor" />
+                    <path
+                      d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                <div class="tcard-banner tcard-banner-red">
+                  <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                </div>
+                <div class="tcard-banner tcard-banner-blue" style="width: 91.67%">
+                  <span class="tcard-face" style="--fs: 9.39">MARIA CLARA</span>
+                </div>
+              </div>
+              <p class="mt-3 text-center text-sm font-black">MARIA CLARA</p>
+              <p class="text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                banner 990 · cap 73 · quase no teto
+              </p>
+            </li>
+            <li>
+              <div class="tcard shadow-md ring-1 ring-black/10">
+                <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                <div class="tcard-window">
+                  <svg
+                    class="tcard-bust"
+                    style="width: 38%"
+                    viewBox="0 0 100 130"
+                    aria-hidden="true"
+                  >
+                    <circle cx="50" cy="30" r="26" fill="currentColor" />
+                    <path
+                      d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                <div class="tcard-banner tcard-banner-red">
+                  <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                </div>
+                <div class="tcard-banner tcard-banner-blue" style="width: 91.94%">
+                  <span class="tcard-face" style="--fs: 7.97">MARIA EDUARDA</span>
+                </div>
+              </div>
+              <p class="mt-3 text-center text-sm font-black">MARIA EDUARDA</p>
+              <p class="text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                banner 993 · cap 62 · quase no teto
+              </p>
+            </li>
+            <li>
+              <div class="tcard shadow-md ring-1 ring-black/10">
+                <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                <div class="tcard-window">
+                  <svg
+                    class="tcard-bust"
+                    style="width: 38%"
+                    viewBox="0 0 100 130"
+                    aria-hidden="true"
+                  >
+                    <circle cx="50" cy="30" r="26" fill="currentColor" />
+                    <path
+                      d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                </div>
+                <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                <div class="tcard-banner tcard-banner-red">
+                  <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                </div>
+                <div class="tcard-banner tcard-banner-blue" style="width: 91.76%">
+                  <span class="tcard-face" style="--fs: 6.04">MARIA DA CONCEIÇÃO</span>
+                </div>
+              </div>
+              <p class="mt-3 text-center text-sm font-black">MARIA DA CONCEIÇÃO</p>
+              <p class="text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                banner 991 · cap 47 · <strong>passa a caber</strong> (era too-long)
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Cena 3: compositor desktop — campo + previa -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 3 · Compositor · dialog desktop 1280 — campo “Seu nome” com nome composto
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Estado inicial: a pessoa digita MARIA CLARA; a prévia ainda é o exemplo congelado. Nenhuma
+          decisão nova e um único CTA primário (desabilitado até ter foto).
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[780px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-[linear-gradient(135deg,#fff8f2,#ebe9e9)] opacity-80"></div>
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="s16-idle-title"
+            class="relative z-10 flex max-h-[92dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div class="min-w-0">
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="s16-idle-title" class="mt-1 text-xl font-black tracking-[-0.01em]">
+                  Entre para o time
+                </h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)] hover:bg-[var(--campaign-band)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-[172px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <img
+                  src="../../public/cards/team-card-example.jpg"
+                  alt="Exemplo do card Time de você"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <div class="mt-5">
+                <label for="s16-name" class="block text-sm font-bold text-[var(--campaign-ink)]"
+                  >Seu nome</label
+                >
+                <input
+                  id="s16-name"
+                  value="MARIA CLARA"
+                  placeholder="Como você é chamado"
+                  class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] bg-white px-3 text-base"
+                />
+                <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                  Vai aparecer em caixa alta depois de “TIME DE”. Use um nome curto e conhecido.
+                </p>
+                <p
+                  class="mt-3 rounded-md border border-dashed border-amber-500 bg-amber-50 px-3 py-2 text-[11px] leading-5 font-bold text-amber-800"
+                >
+                  Anotação do gate (não é copy de produto): o banner azul se alarga para caber o nome
+                  composto em uma linha.
+                </p>
+              </div>
+              <div
+                class="mt-5 rounded-lg border border-[var(--campaign-line)] bg-[var(--campaign-surface)] p-4"
+              >
+                <p class="text-sm font-bold">Sua foto de busto</p>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  Para um recorte melhor, escolha uma foto nítida, de frente e com fundo simples.
+                </p>
+                <button
+                  class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)] hover:bg-[var(--campaign-band)]"
+                >
+                  Escolher foto
+                </button>
+              </div>
+              <p class="mt-4 text-xs leading-5 text-[var(--campaign-muted)]">
+                Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para nós.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="inline-flex min-h-11 flex-1 cursor-not-allowed items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 4: compositor desktop pronto -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 4 · Compositor pronto · dialog desktop 1280 — prévia com o banner alargado
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          A prévia real confirma “TIME DE MARIA CLARA” em uma linha; Zoom, ajuste fino e “Trocar foto”
+          seguem como escape.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[880px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-band)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="s16-ready-title"
+            class="relative z-10 flex max-h-[92dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Time de você
+                </p>
+                <h3 id="s16-ready-title" class="mt-1 text-xl font-black">Confira seu card</h3>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+                </p>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                role="group"
+                aria-label="Ajuste da foto"
+                tabindex="0"
+                class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+              >
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                  <div class="tcard-banner tcard-banner-blue" style="width: 91.67%">
+                    <span class="tcard-face" style="--fs: 9.39">MARIA CLARA</span>
+                  </div>
+                </div>
+                <span
+                  class="absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 text-[10px] font-bold text-white"
+                  >Arraste para ajustar</span
+                >
+              </div>
+              <p class="mt-2 text-center text-[11px] font-bold text-[var(--campaign-muted)]">
+                Prévia real · banner alargado para o nome composto
+              </p>
+
+              <div class="mt-5 flex items-center gap-3">
+                <label for="s16-zoom" class="text-sm font-bold">Zoom</label>
+                <button
+                  aria-label="Diminuir zoom"
+                  class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-xl font-bold"
+                >
+                  −
+                </button>
+                <input
+                  id="s16-zoom"
+                  aria-label="Nível de zoom"
+                  type="range"
+                  value="46"
+                  class="range-track h-11 min-w-0 flex-1"
+                />
+                <button
+                  aria-label="Aumentar zoom"
+                  class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-xl font-bold"
+                >
+                  +
+                </button>
+              </div>
+              <div class="mt-4">
+                <p class="text-sm font-bold">Ajuste fino</p>
+                <div class="mt-2 grid grid-cols-4 gap-2">
+                  <button
+                    aria-label="Mover foto para a esquerda"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ←
+                  </button>
+                  <button
+                    aria-label="Mover foto para cima"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    aria-label="Mover foto para baixo"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    aria-label="Mover foto para a direita"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+              <button
+                class="mt-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Trocar foto
+              </button>
+              <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                Sua foto fica neste aparelho e não é enviada para nós.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white shadow-sm"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 5: compositor mobile -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 5 · Compositor · drawer mobile 390 — campo + prévia
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          No mobile o mesmo diálogo vira drawer; o campo “Seu nome” e a prévia com o banner alargado
+          convivem no mesmo fluxo, sem passo novo.
+        </p>
+
+        <div class="mt-4 grid gap-6 lg:grid-cols-2">
+          <!-- idle mobile -->
+          <div
+            class="relative h-[820px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+          >
+            <div class="px-5 py-10 opacity-50">
+              <p class="text-xs font-black text-[var(--pt-red)] uppercase">Faça parte</p>
+              <h3 class="mt-1 text-2xl font-black">Mostre que você está com Solla</h3>
+              <div class="mt-5 h-72 rounded-xl bg-stone-200"></div>
+            </div>
+            <div class="absolute inset-0 bg-black/50"></div>
+            <article
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="s16-m-idle"
+              class="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-2xl border-t border-black/10 bg-white"
+            >
+              <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+              <header class="flex items-start gap-3 px-5 pt-4">
+                <div>
+                  <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                    Time de você
+                  </p>
+                  <h3 id="s16-m-idle" class="mt-1 text-lg font-black tracking-[-0.01em]">
+                    Entre para o time
+                  </h3>
+                </div>
+                <button
+                  aria-label="Fechar"
+                  class="ml-auto inline-flex size-11 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+                >
+                  ×
+                </button>
+              </header>
+              <div class="px-5 pt-4 pb-5">
+                <div
+                  class="mx-auto w-[144px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+                >
+                  <img
+                    src="../../public/cards/team-card-example.jpg"
+                    alt="Exemplo do card Time de você"
+                    class="block aspect-[3/4] w-full object-cover"
+                  />
+                </div>
+                <div class="mt-4">
+                  <label for="s16-m-name" class="block text-sm font-bold">Seu nome</label>
+                  <input
+                    id="s16-m-name"
+                    value="MARIA CLARA"
+                    class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] bg-white px-3 text-base"
+                  />
+                  <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                    Use seu primeiro nome ou o nome pelo qual as pessoas conhecem você.
+                  </p>
+                </div>
+                <div
+                  class="mt-4 rounded-lg border border-[var(--campaign-line)] bg-[var(--campaign-surface)] p-4"
+                >
+                  <p class="text-sm font-bold">Sua foto de busto</p>
+                  <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                    Foto nítida, de frente e com fundo simples.
+                  </p>
+                  <button
+                    class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+                  >
+                    Escolher foto
+                  </button>
+                </div>
+                <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                  Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para
+                  nós.
+                </p>
+              </div>
+              <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  disabled
+                  class="inline-flex min-h-11 flex-1 cursor-not-allowed items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+                >
+                  Criar meu card
+                </button>
+              </footer>
+            </article>
+          </div>
+
+          <!-- ready mobile -->
+          <div
+            class="relative h-[820px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+          >
+            <div class="absolute inset-0 bg-black/50"></div>
+            <article
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="s16-m-ready"
+              class="absolute inset-x-0 bottom-0 max-h-[96%] overflow-hidden rounded-t-2xl bg-white"
+            >
+              <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+              <header class="flex items-start gap-3 px-5 pt-4">
+                <div>
+                  <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                    Time de você
+                  </p>
+                  <h3 id="s16-m-ready" class="mt-1 text-lg leading-6 font-black">Confira seu card</h3>
+                  <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                    Arraste a foto ou use os controles.
+                  </p>
+                </div>
+                <button
+                  aria-label="Fechar"
+                  class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+                >
+                  ×
+                </button>
+              </header>
+              <div class="px-5 pt-3 pb-5">
+                <div
+                  class="relative mx-auto w-[190px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+                >
+                  <div class="tcard">
+                    <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                    <div class="tcard-window">
+                      <svg
+                        class="tcard-bust"
+                        style="width: 38%"
+                        viewBox="0 0 100 130"
+                        aria-hidden="true"
+                      >
+                        <circle cx="50" cy="30" r="26" fill="currentColor" />
+                        <path
+                          d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
+                    <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                    <div class="tcard-banner tcard-banner-red">
+                      <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                    </div>
+                    <div class="tcard-banner tcard-banner-blue" style="width: 91.67%">
+                      <span class="tcard-face" style="--fs: 9.39">MARIA CLARA</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-4 flex items-center gap-2">
+                  <label for="s16-m-zoom" class="text-sm font-bold">Zoom</label>
+                  <button
+                    aria-label="Diminuir zoom"
+                    class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-xl font-bold"
+                  >
+                    −
+                  </button>
+                  <input
+                    id="s16-m-zoom"
+                    aria-label="Nível de zoom"
+                    type="range"
+                    value="46"
+                    class="range-track h-11 min-w-0 flex-1"
+                  />
+                  <button
+                    aria-label="Aumentar zoom"
+                    class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-xl font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+                <div class="mt-3 grid grid-cols-4 gap-2">
+                  <button
+                    aria-label="Mover foto para a esquerda"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ←
+                  </button>
+                  <button
+                    aria-label="Mover foto para cima"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    aria-label="Mover foto para baixo"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    aria-label="Mover foto para a direita"
+                    class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--campaign-line)] bg-white text-lg"
+                  >
+                    →
+                  </button>
+                </div>
+                <button
+                  class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Trocar foto
+                </button>
+                <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">
+                  Sua foto fica neste aparelho e não é enviada para nós.
+                </p>
+              </div>
+              <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Cancelar
+                </button>
+                <button
+                  class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white"
+                >
+                  Criar meu card
+                </button>
+              </footer>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cena 6: fora do teto -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 6 · Fora do teto · dialog desktop — mensagem existente + CTA desabilitado
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          BARTOLOMEUCOSTAJUNIOR (cap 39) e ANTICONSTITUCIONALISSIMAMENTE (cap 30) seguem como
+          <code>too-long</code>: ficam abaixo do cap mínimo 40, o banner não é desenhado, a mensagem é
+          a mesma de hoje e o CTA fica desabilitado. Nada de corte silencioso.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[820px] w-full max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-band)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="s16-error-title"
+            class="relative z-10 flex max-h-[92dvh] w-[512px] max-w-full flex-col overflow-hidden rounded-xl border border-black/10 bg-white shadow-2xl"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">
+                  Nome muito longo
+                </p>
+                <h3 id="s16-error-title" class="mt-1 text-xl font-black">Encurte o nome</h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="ml-auto inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-md"
+              >
+                <div class="tcard">
+                  <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                  <div class="tcard-window">
+                    <svg
+                      class="tcard-bust"
+                      style="width: 38%"
+                      viewBox="0 0 100 130"
+                      aria-hidden="true"
+                    >
+                      <circle cx="50" cy="30" r="26" fill="currentColor" />
+                      <path
+                        d="M38 50h24v20c18 6 30 24 30 60H8c0-36 12-54 30-60z"
+                        fill="currentColor"
+                      />
+                    </svg>
+                  </div>
+                  <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                  <div class="tcard-banner tcard-banner-red">
+                    <span class="tcard-face" style="--fs: 11.96">TIME DE</span>
+                  </div>
+                </div>
+              </div>
+              <label for="s16-error-name" class="mt-5 block text-sm font-bold">Seu nome</label>
+              <input
+                id="s16-error-name"
+                aria-invalid="true"
+                value="BARTOLOMEUCOSTAJUNIOR"
+                class="mt-2 h-11 w-full rounded-lg border-2 border-[var(--pt-red)] bg-white px-3 text-base"
+              />
+              <p role="alert" class="mt-2 text-sm leading-5 font-semibold text-[var(--pt-red)]">
+                Não foi possível encaixar esse nome no card. Use um nome mais curto, como você é
+                chamado.
+              </p>
+              <p class="mt-4 text-xs leading-5 text-[var(--campaign-muted)]">
+                A foto escolhida e o recorte permanecem salvos neste aparelho enquanto você corrige o
+                nome.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- Cena 7: nomes de aceite -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 7 · Nomes que devem caber (aceite, medidos com a fonte real)
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Com o teto 1000 (tinta máxima 961) e o cap mínimo 40, os nomes longos cabem em uma linha, sem
+          corte. MARIA DA CONCEIÇÃO passou a caber; só os absurdos abaixo do cap mínimo seguem
+          <code>too-long</code>.
+        </p>
+        <div class="mt-4 overflow-hidden rounded-xl border border-zinc-700">
+          <table class="w-full border-collapse text-left text-xs">
+            <thead class="bg-zinc-900 text-zinc-400">
+              <tr>
+                <th class="px-4 py-3 font-black tracking-wide uppercase">Nome</th>
+                <th class="px-4 py-3 font-black tracking-wide uppercase">Cap</th>
+                <th class="px-4 py-3 font-black tracking-wide uppercase">Banner</th>
+                <th class="px-4 py-3 font-black tracking-wide uppercase">Resultado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-zinc-800 bg-zinc-950 text-zinc-300">
+              <tr>
+                <td class="px-4 py-3 font-bold">ANA (referência)</td>
+                <td class="px-4 py-3">130</td>
+                <td class="px-4 py-3">566 (referência 509)</td>
+                <td class="px-4 py-3">cabe · alarga só 57</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">MARIA</td>
+                <td class="px-4 py-3">130</td>
+                <td class="px-4 py-3">846</td>
+                <td class="px-4 py-3">cabe</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">FULANO</td>
+                <td class="px-4 py-3">130</td>
+                <td class="px-4 py-3">964</td>
+                <td class="px-4 py-3">cabe · já passa o vermelho (693)</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">MARIA CLARA</td>
+                <td class="px-4 py-3">73</td>
+                <td class="px-4 py-3">990</td>
+                <td class="px-4 py-3">cabe · quase no teto</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">MARIA EDUARDA</td>
+                <td class="px-4 py-3">62</td>
+                <td class="px-4 py-3">993</td>
+                <td class="px-4 py-3">cabe · quase no teto</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">MARIA DA CONCEIÇÃO</td>
+                <td class="px-4 py-3">47</td>
+                <td class="px-4 py-3">991</td>
+                <td class="px-4 py-3">cabe · <strong>antes too-long</strong></td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">BARTOLOMEUCOSTAJUNIOR</td>
+                <td class="px-4 py-3">39</td>
+                <td class="px-4 py-3">—</td>
+                <td class="px-4 py-3">too-long (cap &lt; 40)</td>
+              </tr>
+              <tr>
+                <td class="px-4 py-3 font-bold">ANTICONSTITUCIONALISSIMAMENTE</td>
+                <td class="px-4 py-3">30</td>
+                <td class="px-4 py-3">—</td>
+                <td class="px-4 py-3">too-long (cap &lt; 40)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="mt-2 text-[11px] leading-4 text-zinc-500">
+          Caps e larguras medidos com Brexter 700 (cap ratio 0,72) sobre a arte oficial do S15. Outros
+          nomes do aceite no plano: ANA BEATRIZ 78, JOSÉ CARLOS 78, PEDRO HENRIQUE 62, JOÃO VITOR 89,
+          GUILHERME 94, FERNANDA 98. A medição fina é do plano/implementação — este artefato mostra a
+          intenção visual.
+        </p>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p
+          class="mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 font-bold text-amber-300"
+        >
+          DEGRADED — não certificado; exige sign-off humano. Tier: opencode-go/deepseek-v4.1-flash.
+        </p>
+        <p>
+          <strong class="text-zinc-300">Decisões portadas do S15:</strong> banner vermelho intocado
+          (693×118, centro 545/162, −3,5°, #E50E2F, texto #FFEC01); banner azul com centro 545, y 313,
+          altura 176, rotação −4,1°, fill #0061A5, texto #FFFFFF, uma linha, sem quebra; largura
+          dinâmica referência 509 → teto 1000 (tinta máxima 961); janela da foto x=286 y=439 w=592
+          h=577.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Decisão do humano no gate (2026-09-19):</strong> o banner azul
+          pode ultrapassar o vermelho e ir até quase a largura toda do card → teto 1000; cap mínimo
+          legível 40. A confirmar na implementação: margem real (≈45 px) vs ≈40 px informado; largura
+          dinâmica vs fixa; texto da mensagem inalterado.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">NEEDS ASSET:</strong> foto real do visitante para substituir a
+          silhueta SVG placeholder usada nas prévias; a arte oficial
+          (<code>team-card-base.png</code>, <code>team-card-front.png</code>) já existe e é usada
+          direto.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Fora de escopo deste design:</strong> duas linhas no banner,
+          encolher a fonte abaixo de 40, cortar/elidir o nome, proibir o banner azul de ultrapassar o
+          vermelho (agora é permitido), regenerar <code>team-card-example.jpg</code>, mexer no modelo de
+          nome (S13) e nos outros 3 modelos.
+        </p>
+      </aside>
+    </main>
+  </body>
+</html>
