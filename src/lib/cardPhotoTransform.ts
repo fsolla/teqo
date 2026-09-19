@@ -8,6 +8,12 @@
  * (`CARD_TEAM_PHOTO_MIN_ZOOM`), so its clamp keeps the drawn photo *inside* the
  * window when it is smaller than it instead of pinning it to the edge.
  *
+ * S20 — the team fine-tuning may also anchor on the measured box (the face,
+ * else the silhouette): the horizontal range becomes the union of the S13/S18
+ * rule with the range that lets the anchor box touch both window edges, so the
+ * visitor is never limited by the transparent canvas around the person. The
+ * vertical axis keeps the S13/S18 rule.
+ *
  * `centerCardPhotoTransform` is the initial framing (cover on the window, not
  * on the whole card) so the face lands on the visible area of the frame.
  */
@@ -66,11 +72,39 @@ export type CardFaceBox = {
   height: number
 }
 
+/**
+ * S20 — fine-tuning context of the clamp: `minZoom` widens the zoom floor
+ * (S18) and `anchorBox` allows the pan/zoom to keep the measured box (face,
+ * else silhouette) reaching the window edges. Omitted = the S13/S18 rule.
+ */
+export type CardPhotoClamp = {
+  minZoom?: number
+  anchorBox?: CardAlphaBbox | null
+}
+
 export const cardPhotoTransformsEqual = (a: CardPhotoTransform, b: CardPhotoTransform): boolean =>
   a.zoom === b.zoom && a.offsetX === b.offsetX && a.offsetY === b.offsetY
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max)
+
+const isUsableCardFace = (face: CardFaceBox | null): face is CardFaceBox =>
+  face !== null &&
+  Number.isFinite(face.x) &&
+  Number.isFinite(face.y) &&
+  Number.isFinite(face.width) &&
+  face.width > 0 &&
+  Number.isFinite(face.height) &&
+  face.height > 0
+
+/**
+ * S20 — the box the fine-tuning anchors on: the detected face when it is
+ * usable, else the visible silhouette (alpha bbox). Source-pixel coords.
+ */
+export const resolveCardPhotoAnchor = (
+  bbox: CardAlphaBbox,
+  face: CardFaceBox | null,
+): CardAlphaBbox => (isUsableCardFace(face) ? face : bbox)
 
 export const coverScale = (source: CardPhotoSize, window: CardRect): number => {
   if (source.width <= 0 || source.height <= 0 || window.width <= 0 || window.height <= 0) return 1
@@ -82,9 +116,9 @@ export const cardPhotoDrawRect = (
   transform: CardPhotoTransform,
   source: CardPhotoSize,
   window: CardRect,
-  minZoom: number = CARD_PHOTO_MIN_ZOOM,
+  clampOptions?: CardPhotoClamp,
 ): CardRect => {
-  const clamped = clampCardPhotoTransform(transform, source, window, minZoom)
+  const clamped = clampCardPhotoTransform(transform, source, window, clampOptions)
   const scale = coverScale(source, window) * clamped.zoom
 
   return {
@@ -100,25 +134,62 @@ export const cardPhotoDrawRect = (
  * (the S13 rule) and fully inside it when it is smaller (the S18 team framing,
  * where the visitor no longer fills the slot).
  */
-const clampPhotoOffset = (value: number, start: number, size: number, drawn: number): number =>
-  drawn >= size
-    ? clamp(value, start + size - drawn, start)
-    : clamp(value, start, start + size - drawn)
+const photoOffsetRange = (start: number, size: number, drawn: number): [number, number] =>
+  drawn >= size ? [start + size - drawn, start] : [start, start + size - drawn]
+
+/**
+ * S20 — the horizontal offset range that lets the drawn anchor box touch both
+ * window edges; `null` when the drawn box is wider than the window (no
+ * placement).
+ */
+const anchorXOffsetRange = (
+  box: CardAlphaBbox,
+  scale: number,
+  start: number,
+  size: number,
+): [number, number] | null =>
+  box.width * scale > size
+    ? null
+    : [start - box.x * scale, start + size - (box.x + box.width) * scale]
+
+/**
+ * S20 — the S13/S18 range, widened by the anchor range when one exists. For a
+ * box inside the source the two always intersect, so the union is a single
+ * interval; a detected face may sit at the image edge, so a disjoint anchor
+ * (outside the photo) falls back to the S13/S18 range instead of hulling a gap.
+ */
+const clampPhotoOffset = (
+  value: number,
+  start: number,
+  size: number,
+  drawn: number,
+  anchorRange?: [number, number] | null,
+): number => {
+  const [min, max] = photoOffsetRange(start, size, drawn)
+  if (!anchorRange || anchorRange[1] < min || anchorRange[0] > max) {
+    return clamp(value, min, max)
+  }
+
+  return clamp(value, Math.min(min, anchorRange[0]), Math.max(max, anchorRange[1]))
+}
 
 export const clampCardPhotoTransform = (
   transform: CardPhotoTransform,
   source: CardPhotoSize,
   window: CardRect,
-  minZoom: number = CARD_PHOTO_MIN_ZOOM,
+  { minZoom = CARD_PHOTO_MIN_ZOOM, anchorBox }: CardPhotoClamp = {},
 ): CardPhotoTransform => {
   const zoom = clamp(transform.zoom, minZoom, CARD_PHOTO_MAX_ZOOM)
   const scale = coverScale(source, window) * zoom
   const width = source.width * scale
   const height = source.height * scale
+  const anchorRange = anchorBox
+    ? anchorXOffsetRange(anchorBox, scale, window.x, window.width)
+    : null
 
   return {
     zoom,
-    offsetX: clampPhotoOffset(transform.offsetX, window.x, window.width, width),
+    offsetX: clampPhotoOffset(transform.offsetX, window.x, window.width, width, anchorRange),
     offsetY: clampPhotoOffset(transform.offsetY, window.y, window.height, height),
   }
 }
@@ -204,7 +275,7 @@ export const frameCardPhotoOnFace = (
 ): CardPhotoTransform | null => {
   const baseFraming = frameCardPhotoOnBbox(source, window, bbox)
   if (!baseFraming) return null
-  if (!face || !(face.width > 0) || !(face.height > 0) || !(referenceSize > 0)) return baseFraming
+  if (!isUsableCardFace(face) || !(referenceSize > 0)) return baseFraming
 
   const scale = coverScale(source, window)
   const faceSize = Math.max(face.width, face.height)
@@ -223,7 +294,7 @@ export const frameCardPhotoOnFace = (
     },
     source,
     window,
-    CARD_TEAM_PHOTO_MIN_ZOOM,
+    { minZoom: CARD_TEAM_PHOTO_MIN_ZOOM },
   )
 }
 
@@ -234,19 +305,20 @@ export const panCardPhotoTransform = (
   window: CardRect,
   dx: number,
   dy: number,
-  minZoom: number = CARD_PHOTO_MIN_ZOOM,
+  clampOptions?: CardPhotoClamp,
 ): CardPhotoTransform =>
   clampCardPhotoTransform(
     { ...transform, offsetX: transform.offsetX + dx, offsetY: transform.offsetY + dy },
     source,
     window,
-    minZoom,
+    clampOptions,
   )
 
 /**
  * Rescales around a window anchor (used by the zoom control): keeps the point
  * under `anchor` stable from old to new zoom, then clamps. The team model
- * passes its own `minZoom` so the visitor can fine-tune below the cover floor.
+ * passes its own `minZoom` (and, on S20, the `anchorBox`) so the visitor can
+ * fine-tune below the cover floor.
  */
 export const zoomCardPhotoTransform = (
   transform: CardPhotoTransform,
@@ -256,14 +328,17 @@ export const zoomCardPhotoTransform = (
   {
     anchor,
     minZoom = CARD_PHOTO_MIN_ZOOM,
-  }: { anchor?: { x: number; y: number }; minZoom?: number } = {},
+    anchorBox,
+  }: { anchor?: { x: number; y: number } } & CardPhotoClamp = {},
 ): CardPhotoTransform => {
   const resolvedAnchor = anchor ?? {
     x: window.x + window.width / 2,
     y: window.y + window.height / 2,
   }
   const zoom = clamp(nextZoom, minZoom, CARD_PHOTO_MAX_ZOOM)
-  if (zoom === transform.zoom) return clampCardPhotoTransform(transform, source, window, minZoom)
+  if (zoom === transform.zoom) {
+    return clampCardPhotoTransform(transform, source, window, { minZoom, anchorBox })
+  }
 
   const ratio = zoom / transform.zoom
 
@@ -275,6 +350,6 @@ export const zoomCardPhotoTransform = (
     },
     source,
     window,
-    minZoom,
+    { minZoom, anchorBox },
   )
 }

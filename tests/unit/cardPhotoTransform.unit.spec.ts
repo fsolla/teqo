@@ -12,9 +12,11 @@ import {
   frameCardPhotoOnBbox,
   frameCardPhotoOnFace,
   panCardPhotoTransform,
+  resolveCardPhotoAnchor,
   zoomCardPhotoTransform,
   type CardAlphaBbox,
   type CardFaceBox,
+  type CardPhotoClamp,
   type CardPhotoSize,
 } from '@/lib/cardPhotoTransform'
 
@@ -166,7 +168,9 @@ describe('frameCardPhotoOnFace', () => {
     expect(transform.zoom).toBeLessThan(CARD_PHOTO_MIN_ZOOM)
     expect(transform.zoom).toBeGreaterThanOrEqual(CARD_TEAM_PHOTO_MIN_ZOOM)
 
-    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW, CARD_TEAM_PHOTO_MIN_ZOOM)
+    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW, {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+    })
     const scale = rect.width / SOURCE.width
     // ...and still lands the face exactly on the reference size
     expect(face.width * scale).toBeCloseTo(REFERENCE, 5)
@@ -190,7 +194,9 @@ describe('frameCardPhotoOnFace', () => {
 
     expect(transform.zoom).toBe(CARD_TEAM_PHOTO_MIN_ZOOM)
 
-    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW, CARD_TEAM_PHOTO_MIN_ZOOM)
+    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW, {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+    })
     const scale = rect.width / SOURCE.width
     const achieved = face.width * scale
 
@@ -274,11 +280,13 @@ describe('clampCardPhotoTransform', () => {
       { zoom: 0.1, offsetX: 9999, offsetY: -9999 },
       LANDSCAPE,
       WINDOW,
-      CARD_TEAM_PHOTO_MIN_ZOOM,
+      { minZoom: CARD_TEAM_PHOTO_MIN_ZOOM },
     )
 
     expect(shrunk.zoom).toBe(CARD_TEAM_PHOTO_MIN_ZOOM)
-    const rect = cardPhotoDrawRect(shrunk, LANDSCAPE, WINDOW, CARD_TEAM_PHOTO_MIN_ZOOM)
+    const rect = cardPhotoDrawRect(shrunk, LANDSCAPE, WINDOW, {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+    })
     expect(rect.x).toBeGreaterThanOrEqual(WINDOW.x)
     expect(rect.y).toBeGreaterThanOrEqual(WINDOW.y)
     expect(rect.x + rect.width).toBeLessThanOrEqual(WINDOW.x + WINDOW.width)
@@ -305,10 +313,185 @@ describe('panCardPhotoTransform', () => {
       WINDOW,
       40,
       30,
-      CARD_TEAM_PHOTO_MIN_ZOOM,
+      { minZoom: CARD_TEAM_PHOTO_MIN_ZOOM },
     )
 
     expect(panned).toEqual({ zoom: 0.3, offsetX: 40, offsetY: 30 })
+  })
+})
+
+describe('resolveCardPhotoAnchor', () => {
+  const BBOX: CardAlphaBbox = { x: 10, y: 20, width: 300, height: 400 }
+
+  it('prefers a usable face over the silhouette', () => {
+    const face: CardFaceBox = { x: 40, y: 50, width: 60, height: 60 }
+
+    expect(resolveCardPhotoAnchor(BBOX, face)).toEqual(face)
+    expect(resolveCardPhotoAnchor(BBOX, { ...face, width: Number.NaN })).toEqual(BBOX)
+    expect(resolveCardPhotoAnchor(BBOX, { ...face, width: 0 })).toEqual(BBOX)
+    expect(resolveCardPhotoAnchor(BBOX, { ...face, height: -1 })).toEqual(BBOX)
+    expect(resolveCardPhotoAnchor(BBOX, null)).toEqual(BBOX)
+  })
+})
+
+describe('S20 anchor clamp', () => {
+  const TEAM_WINDOW: CardRect = { x: 286, y: 439, width: 592, height: 577 }
+  const SOURCE: CardPhotoSize = { width: 1000, height: 1250 }
+  const BBOX: CardAlphaBbox = { x: 200, y: 100, width: 600, height: 900 }
+  const REFERENCE = 103
+  // Big enough that the face lands on the reference below the cover floor:
+  // the drawn photo is smaller than the window horizontally (contain regime).
+  const FACE: CardFaceBox = { x: 400, y: 200, width: 200, height: 200 }
+  const anchor = resolveCardPhotoAnchor(BBOX, FACE)
+
+  it('lets the anchor box reach both window edges from the initial framing', () => {
+    const initial = frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, FACE, REFERENCE)
+    expect(initial).not.toBeNull()
+    if (!initial) return
+
+    const clampOptions: CardPhotoClamp = {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+      anchorBox: anchor,
+    }
+    const scale = coverScale(SOURCE, TEAM_WINDOW) * initial.zoom
+    const toTheLeft = panCardPhotoTransform(initial, SOURCE, TEAM_WINDOW, -9999, 0, clampOptions)
+    const toTheRight = panCardPhotoTransform(initial, SOURCE, TEAM_WINDOW, 9999, 0, clampOptions)
+    // course = window − face drawn on the reference size, split evenly around
+    // the initial framing: the design's ≈±244px per side
+    const halfCourse = (TEAM_WINDOW.width - REFERENCE) / 2
+
+    expect(initial.offsetX - toTheLeft.offsetX).toBeCloseTo(halfCourse, 5)
+    expect(toTheRight.offsetX - initial.offsetX).toBeCloseTo(halfCourse, 5)
+    // the anchor box touches each edge and never leaves the window
+    expect(toTheLeft.offsetX + anchor.x * scale).toBeCloseTo(TEAM_WINDOW.x, 5)
+    expect(toTheRight.offsetX + (anchor.x + anchor.width) * scale).toBeCloseTo(
+      TEAM_WINDOW.x + TEAM_WINDOW.width,
+      5,
+    )
+  })
+
+  it('accepts on the anchor side what the S18 clamp rejects, without touching Y', () => {
+    const zoom = REFERENCE / (FACE.width * coverScale(SOURCE, TEAM_WINDOW))
+    const scale = coverScale(SOURCE, TEAM_WINDOW) * zoom
+    const clampOptions: CardPhotoClamp = {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+      anchorBox: anchor,
+    }
+
+    const todayRight = panCardPhotoTransform(
+      { zoom, offsetX: 0, offsetY: 0 },
+      SOURCE,
+      TEAM_WINDOW,
+      9999,
+      9999,
+      { minZoom: CARD_TEAM_PHOTO_MIN_ZOOM },
+    )
+    const anchoredRight = panCardPhotoTransform(
+      { zoom, offsetX: 0, offsetY: 0 },
+      SOURCE,
+      TEAM_WINDOW,
+      9999,
+      9999,
+      clampOptions,
+    )
+
+    expect(anchoredRight.offsetX).toBeGreaterThan(todayRight.offsetX)
+    expect(anchoredRight.offsetY).toBe(todayRight.offsetY)
+    expect(anchoredRight.offsetX + (anchor.x + anchor.width) * scale).toBeCloseTo(
+      TEAM_WINDOW.x + TEAM_WINDOW.width,
+      5,
+    )
+  })
+
+  it('never rejects a transform that the S18 clamp accepts (grid of zooms and anchors)', () => {
+    const anchors: CardAlphaBbox[] = [
+      anchor,
+      { x: 40, y: 60, width: 300, height: 300 },
+      { x: 0, y: 0, width: 900, height: 900 },
+      { x: -400, y: 0, width: 500, height: 500 },
+    ]
+
+    for (const zoom of [0.3, 0.87, 1, 1.6, 2.5]) {
+      for (const anchorBox of anchors) {
+        for (const offset of [-2000, -500, 0, 300, 900, 2000]) {
+          const today = clampCardPhotoTransform(
+            { zoom, offsetX: offset, offsetY: offset },
+            SOURCE,
+            TEAM_WINDOW,
+            { minZoom: CARD_TEAM_PHOTO_MIN_ZOOM },
+          )
+          const anchored = clampCardPhotoTransform(today, SOURCE, TEAM_WINDOW, {
+            minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+            anchorBox,
+          })
+
+          expect(anchored).toEqual(today)
+        }
+      }
+    }
+  })
+
+  it('falls back to the S18 range when the anchor lies outside the photo', () => {
+    // zoom 1 draws the source exactly on the window width: today's X is pinned,
+    // while a face box at x = -100 would anchor entirely to its right
+    const clampOptions: CardPhotoClamp = {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+      anchorBox: { x: -100, y: 0, width: 100, height: 100 },
+    }
+    const today = clampCardPhotoTransform(
+      { zoom: 1, offsetX: 9999, offsetY: 9999 },
+      SOURCE,
+      TEAM_WINDOW,
+      {
+        minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+      },
+    )
+
+    expect(
+      clampCardPhotoTransform(
+        { zoom: 1, offsetX: 9999, offsetY: 9999 },
+        SOURCE,
+        TEAM_WINDOW,
+        clampOptions,
+      ),
+    ).toEqual(today)
+  })
+
+  it('falls back to the S18 rule when the drawn anchor is wider than the window', () => {
+    const wideAnchor: CardAlphaBbox = { x: 0, y: 0, width: 600, height: 600 }
+    // zoom 2: the 600px anchor draws 710px wide, wider than the 592px window
+    const transform = { zoom: 2, offsetX: 9999, offsetY: 9999 }
+    const clampOptions: CardPhotoClamp = {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+      anchorBox: wideAnchor,
+    }
+
+    expect(clampCardPhotoTransform(transform, SOURCE, TEAM_WINDOW, clampOptions)).toEqual(
+      clampCardPhotoTransform(transform, SOURCE, TEAM_WINDOW, {
+        minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+      }),
+    )
+  })
+
+  it('is idempotent with an anchor in both regimes', () => {
+    const transforms = [
+      { zoom: 0.5, offsetX: -9999, offsetY: -9999 },
+      { zoom: 0.87, offsetX: 9999, offsetY: 9999 },
+      { zoom: 2.5, offsetX: -400, offsetY: 120 },
+    ]
+
+    for (const transform of transforms) {
+      const once = clampCardPhotoTransform(transform, SOURCE, TEAM_WINDOW, {
+        minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+        anchorBox: anchor,
+      })
+      const twice = clampCardPhotoTransform(once, SOURCE, TEAM_WINDOW, {
+        minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+        anchorBox: anchor,
+      })
+
+      expect(twice).toEqual(once)
+    }
   })
 })
 
