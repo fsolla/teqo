@@ -19,7 +19,12 @@ import {
   loadCardImage,
   loadCardPhoto,
 } from '@/components/cards/cardCanvas'
-import { CARD_PHOTO_PRIVACY_NOTE, CARD_PRIVACY_NOTE } from '@/components/cards/cardCopy'
+import {
+  CARD_HARMONY_HELP,
+  CARD_HARMONY_LABEL,
+  CARD_PHOTO_PRIVACY_NOTE,
+  CARD_PRIVACY_NOTE,
+} from '@/components/cards/cardCopy'
 import { CardPreviewCanvas } from '@/components/cards/CardPreviewCanvas'
 import { useCardCutout } from '@/components/cards/useCardCutout'
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -53,12 +58,12 @@ const controlButtonClassName =
 const NAME_TOO_LONG_MESSAGE =
   'Não foi possível encaixar esse nome no card. Use um nome mais curto, como você é chamado.'
 
-/** S15 design gate: the team preview width per state. */
+/** S15 design gate: the team preview width per state (S17 ready: 180px mobile / 240px desktop). */
 type TeamPreviewStage = 'idle' | 'processing' | 'ready' | 'result'
 const TEAM_PREVIEW_WIDTH: Record<TeamPreviewStage, string> = {
   idle: 'max-w-[10.75rem]',
   processing: 'max-w-[9rem]',
-  ready: 'max-w-[15rem]',
+  ready: 'max-w-[11.25rem] sm:max-w-[15rem]',
   result: 'max-w-[11.875rem]',
 }
 
@@ -101,6 +106,45 @@ const TeamNameField = ({
   </div>
 )
 
+/**
+ * S17 — the tone-harmony switch of the ready state. Native `role="switch"` (the
+ * design gate's semantics; the studio has no shadcn Switch) with the whole row
+ * as the target and the label/help always visible.
+ */
+const TeamHarmonySwitch = ({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) => {
+  const helpId = useId()
+
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      aria-describedby={helpId}
+      onClick={onToggle}
+      className="mt-4 flex min-h-11 w-full items-start gap-3 rounded-lg border border-(--campaign-line) bg-white p-3 text-left focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:ring-offset-2 focus-visible:outline-none"
+    >
+      <span
+        aria-hidden="true"
+        className={`relative mt-1.5 inline-block h-[26px] w-11 flex-none rounded-full transition-colors ${
+          enabled ? 'bg-(--pt-red)' : 'bg-[#cfcac7]'
+        }`}
+      >
+        <span
+          className={`absolute top-[3px] size-5 rounded-full bg-white shadow-[0_1px_2px_rgb(0_0_0/25%)] transition-[left] ${
+            enabled ? 'left-[21px]' : 'left-[3px]'
+          }`}
+        />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-bold text-(--campaign-ink)">{CARD_HARMONY_LABEL}</span>
+        <span id={helpId} className="mt-0.5 block text-xs leading-5 text-(--campaign-muted)">
+          {CARD_HARMONY_HELP}
+        </span>
+      </span>
+    </button>
+  )
+}
+
 type CardComposerProps = {
   model: CardModel
   shell: 'dialog' | 'drawer'
@@ -121,6 +165,8 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const [previewImage, setPreviewImage] = useState<HTMLImageElement | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
+  /** S17 — LIGADO by default; resets only when the composer unmounts (no persistence). */
+  const [harmonyEnabled, setHarmonyEnabled] = useState(true)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -131,7 +177,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const photoWindow = model.photoWindow
   const isNameModel = model.kind === 'name'
   const isTeamModel = model.kind === 'team'
-  const cutout = useCardCutout(photoWindow)
+  const cutout = useCardCutout(photoWindow, isTeamModel ? model.assetSrc : undefined)
   const cutoutState = cutout.state
 
   const teamProcessing = cutoutState.status === 'processing' ? cutoutState : null
@@ -215,7 +261,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         const result = renderTeamCard(ctx, model, {
           base: baseImage,
           overlay: overlayImage,
-          photo: teamReady.canvas,
+          photo: harmonyEnabled && teamReady.harmonized ? teamReady.harmonized : teamReady.canvas,
           photoSize: { width: teamReady.width, height: teamReady.height },
           transform: effectiveTransform,
           window: photoWindow,
@@ -264,6 +310,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     isNameModel,
     isTeamModel,
     teamReady,
+    harmonyEnabled,
     cutoutState.status,
     model,
     name,
@@ -733,10 +780,16 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
             ) : (
               <>
                 {zoomAndPanControls}
+                {teamReady.harmonized ? (
+                  <TeamHarmonySwitch
+                    enabled={harmonyEnabled}
+                    onToggle={() => setHarmonyEnabled((enabled) => !enabled)}
+                  />
+                ) : null}
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className={`${secondaryButtonClassName} mt-4 w-full`}
+                  className={`${secondaryButtonClassName} mt-3 w-full`}
                 >
                   Trocar foto
                 </button>

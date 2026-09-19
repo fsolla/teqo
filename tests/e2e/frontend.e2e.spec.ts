@@ -1787,6 +1787,8 @@ test.describe('Cards personalizados (S14)', () => {
     const canvas = dialog.locator('canvas')
     await expect(canvas).toHaveAttribute('width', '1000')
     await expect(canvas).toHaveAttribute('height', '1000')
+    // S17 — the harmony control is exclusive of the team model.
+    await expect(dialog.getByRole('switch')).toHaveCount(0)
 
     await dialog.locator('input[type="file"]').setInputFiles({
       name: 'foto-e2e.png',
@@ -1915,6 +1917,53 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
     await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
   })
 
+  test('harmonizes the cutout by default and toggles back to the original photo', async ({
+    page,
+  }) => {
+    await setCutoutStub(page, 'ok')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+
+    const toggle = dialog.getByRole('switch', { name: 'Harmonizar cores' })
+    await expect(toggle).toBeVisible()
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await expect(
+      dialog.getByText(
+        'Ajusta o brilho e as cores da sua foto para combinar com as fotos do card.',
+      ),
+    ).toBeVisible()
+    const box = await toggle.boundingBox()
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
+
+    const canvas = dialog.locator('canvas')
+    const readSample = () =>
+      canvas.evaluate((element) => {
+        const node = element as HTMLCanvasElement
+        return [...node.getContext('2d')!.getImageData(582, 727, 1, 1).data]
+      })
+
+    // Default ON: the preview pixel is the harmonized variant, not the raw photo.
+    await expect.poll(readSample).not.toEqual([30, 120, 200, 255])
+    const harmonized = await readSample()
+
+    await toggle.click()
+    await expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await expect.poll(readSample).toEqual([30, 120, 200, 255])
+
+    // Re-enabling with the keyboard proves the native switch semantics.
+    await toggle.focus()
+    await page.keyboard.press('Space')
+    await expect(toggle).toHaveAttribute('aria-checked', 'true')
+    await expect.poll(readSample).toEqual(harmonized)
+    await expect(
+      dialog.getByText('Sua foto fica neste aparelho e não é enviada para nós.'),
+    ).toBeVisible()
+  })
+
   test('a name that cannot fit fails closed and keeps the cutout', async ({ page }) => {
     await setCutoutStub(page, 'ok')
     await page.goto('/cards?model=time-de-voce')
@@ -1925,6 +1974,8 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
 
     await expect(dialog.getByRole('heading', { name: 'Encurte o nome' })).toBeVisible()
     await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
+    // S17 — the harmony control lives in the regular ready state only.
+    await expect(dialog.getByRole('switch')).toHaveCount(0)
     const primary = dialog.getByRole('button', { name: 'Criar meu card' })
     await expect(primary).toBeDisabled()
     await expect(dialog.getByText('permanecem salvos neste aparelho')).toBeVisible()

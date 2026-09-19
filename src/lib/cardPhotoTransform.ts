@@ -20,6 +20,12 @@ export const CARD_PHOTO_MAX_ZOOM = 4
  */
 const CARD_CUTOUT_MIN_BBOX = 24
 
+/**
+ * Alpha noise floor of a cutout (matches the mask's soft edge): the bbox read
+ * ignores it and the S17 tone sample ignores it too, so both see the same photo.
+ */
+export const CARD_CUTOUT_ALPHA_THRESHOLD = 32
+
 export type CardPhotoSize = {
   width: number
   height: number
