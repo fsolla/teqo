@@ -255,7 +255,7 @@ describe('shareLink', () => {
     expect(revalidateTagMock).toHaveBeenCalledWith('shareLinks')
   })
 
-  it('resolves the configured image and falls back to the site default', async () => {
+  it('absolutizes the image against the deployment origin and falls back to the site default', async () => {
     const media = await payload.create({
       collection: 'media',
       data: { alt: 'Imagem do link' },
@@ -282,7 +282,10 @@ describe('shareLink', () => {
       id: withImage.id,
       depth: 1,
     })
-    getCachedGlobalMock.mockReturnValue(async () => ({}))
+    // The global carries the canonical domain (served elsewhere, e.g. the legacy
+    // WordPress): the media proxy only exists on the deployment origin, so the
+    // image URL must come from `NEXT_PUBLIC_SITE_URL`, never from `URL`.
+    getCachedGlobalMock.mockReturnValue(async () => ({ URL: 'https://canonical.example' }))
     expect(await resolveShareLinkOgImageUrl(populated)).toBe(expectedUrl)
 
     const withoutImage = await createShareLink({
@@ -295,6 +298,7 @@ describe('shareLink', () => {
     expect(await resolveShareLinkOgImageUrl(withoutImage)).toBeNull()
 
     getCachedGlobalMock.mockReturnValue(async () => ({
+      URL: 'https://canonical.example',
       image: { url: '/api/media/file/site-default.png' },
     }))
     expect(await resolveShareLinkOgImageUrl(withoutImage)).toBe(

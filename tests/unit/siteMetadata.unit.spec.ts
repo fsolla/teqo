@@ -2,7 +2,12 @@
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { SITE_METADATA_DEFAULTS, absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
+import {
+  SITE_METADATA_DEFAULTS,
+  absoluteSitePath,
+  resolveDeploymentOrigin,
+  resolveSiteMetadata,
+} from '@/utilities/seo'
 
 const originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL
 
@@ -99,5 +104,27 @@ describe('absoluteSitePath', () => {
   it('joins origin and path without doubling slashes', () => {
     expect(absoluteSitePath('https://example.com', '/noticia')).toBe('https://example.com/noticia')
     expect(absoluteSitePath('https://example.com', 'noticia')).toBe('https://example.com/noticia')
+  })
+})
+
+describe('resolveDeploymentOrigin', () => {
+  it('prefers NEXT_PUBLIC_SITE_URL over the global fallback and strips trailing slashes', () => {
+    process.env.NEXT_PUBLIC_SITE_URL = 'https://deploy.example///'
+
+    expect(resolveDeploymentOrigin('https://global.example')).toBe('https://deploy.example')
+  })
+
+  it('falls back to the global site URL when env is missing or blank', () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL
+    expect(resolveDeploymentOrigin('https://global.example')).toBe('https://global.example')
+
+    process.env.NEXT_PUBLIC_SITE_URL = '   '
+    expect(resolveDeploymentOrigin('https://global.example')).toBe('https://global.example')
+  })
+
+  it('returns null when neither source has a usable URL', () => {
+    delete process.env.NEXT_PUBLIC_SITE_URL
+
+    expect(resolveDeploymentOrigin(null)).toBeNull()
   })
 })

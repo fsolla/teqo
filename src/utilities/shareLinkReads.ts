@@ -3,7 +3,7 @@ import 'server-only'
 import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCollectionListingTag } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globalReads'
-import { resolveSiteMetadata, toAbsoluteUrl } from '@/utilities/seo'
+import { resolveDeploymentOrigin, resolveSiteMetadata, toAbsoluteUrl } from '@/utilities/seo'
 import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
@@ -50,22 +50,28 @@ const mediaOf = (value: Media | number | null | undefined): Media | null =>
 /**
  * The card image: the link's own upload first; without it the site default
  * image of the `metadata` global — never a relative URL the WhatsApp crawler
- * cannot resolve. Same fallback contract as `/corte/[id]` and the root layout;
- * `siteUrl` comes from `resolveSiteMetadata` (empty global never crashes).
+ * cannot resolve. Media lives behind this app's `/api/media/file/…` proxy, so
+ * the absolute URL is built on the deployment origin (`NEXT_PUBLIC_SITE_URL`),
+ * not on the `metadata` global `URL`: the global can be a canonical domain
+ * served by another platform (today the legacy WordPress), which 404s the
+ * proxy path and makes WhatsApp drop the thumbnail. The global `siteUrl` is
+ * the fallback when the env is missing.
  */
 export const resolveShareLinkOgImageUrl = async (link: ShareLink): Promise<string | null> => {
   const globalMetadata = await getCachedGlobal('metadata')()
   const { siteUrl } = resolveSiteMetadata(globalMetadata)
+  const origin = resolveDeploymentOrigin(siteUrl)
+  if (!origin) return null
 
   const configured = mediaOf(link.image)?.url
-  if (configured && siteUrl) return toAbsoluteUrl(configured, siteUrl)
+  if (configured) return toAbsoluteUrl(configured, origin)
 
   const fallback =
     typeof globalMetadata.image === 'number'
       ? await getCachedDocumentById('media', String(globalMetadata.image))()
       : globalMetadata.image
   const fallbackUrl = mediaOf(fallback)?.url
-  if (!fallbackUrl || !siteUrl) return null
+  if (!fallbackUrl) return null
 
-  return toAbsoluteUrl(fallbackUrl, siteUrl)
+  return toAbsoluteUrl(fallbackUrl, origin)
 }
