@@ -776,6 +776,56 @@ read-only é aplicada antes do Payload subir (qualquer write estoura no servidor
 explícita, nunca zero). Nunca aponte o extrator para o banco local esperando
 dados de produção — o caminho é o proxy do homeserver.
 
+## C195 — ingestão do pacote do reel na biblioteca privada
+
+O comando `pnpm reels:ingest <diretório>` publica um pacote de reel produzido
+fora do site (`metadata.json` + `reel.mp4` + `capa.png` + `narracao.srt` e
+opcionais `reel-audio.mp4`/`narracao.mp3`/`roteiro.md`) na biblioteca privada do
+`/campanha` pela Local API. Roda **na imagem de manutenção do ambiente** (o
+pacote chega por rsync; nenhuma credencial de campanha vai para a workstation) e
+é **idempotente pelo hash do shot list**: re-ingerir o mesmo pacote atualiza a
+mesma entrada e preserva o status (nunca ressuscita um reel despublicado).
+
+O caminho é **staging primeiro**, sempre. O dry-run é o padrão e não escreve:
+
+```bash
+# da workstation — copia o pacote para o homeserver:
+rsync -av /caminho/do/pacote/ homeserver:/srv/reels/<slug>/
+
+# no homeserver:
+ssh homeserver
+cd ~/stack
+# 1) conferência (dry-run; mostra alvo, operação, artefatos e falha se o pacote estiver incompleto):
+docker compose --profile maintenance run --rm \
+  -v /srv/reels/<slug>:/pkg:ro \
+  teqo-staging-migrate pnpm reels:ingest /pkg
+# 2) escrita no staging (exige TEQO_ENV + confirmação; o par é fail-closed):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=staging -e REELS_INGEST_CONFIRM=1 \
+  -v /srv/reels/<slug>:/pkg:ro \
+  teqo-staging-migrate pnpm reels:ingest /pkg --apply
+# 3) validação no staging (biblioteca/painel) e só então produção, com TEQO_ENV=production
+#    e o serviço teqo-1313-migrate.
+```
+
+Guardas: fora de teste o `TEQO_ENV=staging|production` é obrigatório e o
+**nome exato** do banco é o discriminador (`teqo_staging`/`teqo_1313` — o host do
+socat é `127.0.0.1` nos dois, então host não distingue); `ALLOW_REMOTE_DB` é
+recusado; sem as 4 `S3_*` o comando recusa (o container gravaria em disco
+efêmero); `--apply` sem `REELS_INGEST_CONFIRM=1` recusa. Falha no meio não deixa
+entrada parcial: os documentos vão numa transação e a publicação é a última
+escrita (objeto órfão no bucket é o único resíduo; o nome determinístico faz o
+re-run sobrescrevê-lo). O plano de implementação completo vive em
+`docs/plans/reels-ingestao-impl.md`; a migration `add_reel_source_hash` é
+aditiva e aplicada pelo deploy.
+
+### Rollback
+
+Sem migração para desfazer. O rollback funcional é o kill switch: despublicar o
+reel no admin tira da biblioteca e para de servir os arquivos. Para remover de
+vez, apagar o `reel` (e as `reelMedia` órfãs) no admin; re-ingerir recria a
+entrada (as mesmas chaves de objeto são sobrescritas).
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)

@@ -99,6 +99,21 @@ export const Reel: CollectionConfig = {
       },
     },
     {
+      // C195 identity: re-ingesting the same package (same shot list hash)
+      // updates this reel instead of creating a duplicate. Nullable so reels
+      // registered by hand in the admin have no hash; unique so the database
+      // itself refuses two reels with the same package.
+      name: 'sourceHash',
+      type: 'text',
+      label: 'Hash do shot list',
+      unique: true,
+      index: true,
+      admin: {
+        readOnly: true,
+        description: 'Hash do shot list do pacote; identifica o reel na ingestão (C195).',
+      },
+    },
+    {
       name: 'status',
       type: 'select',
       label: 'Estado',

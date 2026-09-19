@@ -1079,6 +1079,10 @@ export interface Reel {
    */
   feature: 'cards';
   /**
+   * Hash do shot list do pacote; identifica o reel na ingestão (C195).
+   */
+  sourceHash?: string | null;
+  /**
    * Despublicar tira o reel da biblioteca e para de servir os arquivos (kill switch).
    */
   status: 'draft' | 'published' | 'unpublished';
@@ -2280,6 +2284,7 @@ export interface SpeechCutSelect<T extends boolean = true> {
 export interface ReelSelect<T extends boolean = true> {
   title?: T;
   feature?: T;
+  sourceHash?: T;
   status?: T;
   video?: T;
   videoWithAudio?: T;

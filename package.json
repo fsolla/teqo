@@ -32,6 +32,7 @@
     "db:seed:consent": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-consent.mjs",
     "db:seed:projecao": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/import-projecao.mjs",
     "media:recover": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/recover-media.mjs",
+    "reels:ingest": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/reels-ingest.mjs",
     "db:seed:minimal": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-minimal.mjs",
     "campaign:staging:test-account": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/bootstrap-staging-test-account.mjs",
     "db:check:push-chain": "node scripts/check-push-chain.mjs",
