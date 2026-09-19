@@ -9,28 +9,42 @@
  * `selfie_segmenter.tflite` (float16, 256×256) — no COOP/COEP, single-threaded
  * wasm, lazily imported only when the visitor picks the team model. The
  * `@imgly` packages stay out of the bundle (AGPL + ~40 MB on mobile).
+ *
+ * S18 — the same runtime also runs the Apache-2.0 `blaze_face_full_range.tflite`
+ * FaceDetector (see `blaze_face_full_range.LICENSE.txt`) on the cutout canvas:
+ * the largest face feeds the proportional framing. The detector is a second
+ * lazy singleton and every detection failure is swallowed into `face: null` so
+ * the card never fails or surfaces an error because of it.
  */
 
-import type { ImageSegmenter, MPMask } from '@mediapipe/tasks-vision'
+import type { Detection, FaceDetector, ImageSegmenter, MPMask } from '@mediapipe/tasks-vision'
 
-import type { CardAlphaBbox } from '@/lib/cardPhotoTransform'
-import { CARD_CUTOUT_ALPHA_THRESHOLD } from '@/lib/cardPhotoTransform'
+import {
+  CARD_CUTOUT_ALPHA_THRESHOLD,
+  type CardAlphaBbox,
+  type CardFaceBox,
+} from '@/lib/cardPhotoTransform'
 
 declare global {
   interface Window {
     /** Test seam: the e2e build stubs the engine through this flag. */
-    __cardsCutoutStub?: 'ok' | 'slow' | 'error'
+    __cardsCutoutStub?: 'ok' | 'slow' | 'error' | 'noface'
   }
 }
 
 const WASM_DIR = '/cards/mediapipe/wasm'
 const MODEL_URL = '/cards/selfie_segmenter.tflite'
+const FACE_MODEL_URL = '/cards/blaze_face_full_range.tflite'
+const FACE_MIN_CONFIDENCE = 0.5
 const CUTOUT_MAX_EDGE = 1600
 const STUB_ENABLED = process.env.NEXT_PUBLIC_CARDS_CUTOUT_STUB === '1'
 const STUB_DELAY_MS = 1500
 const STUB_PROGRESS = 0.36
 /** Upscale target so the synthetic bbox passes the real cutout checks. */
 const STUB_MIN_EDGE = 400
+/** Synthetic head box of the stub ellipse, as a fraction of its canvas (S18). */
+const STUB_FACE_WIDTH_RATIO = 0.3
+const STUB_FACE_TOP_RATIO = 0.18
 
 export type CardCutoutProgress = {
   phase: 'download' | 'process'
@@ -47,13 +61,17 @@ export type CardCutoutResult =
       width: number
       height: number
       bbox: CardAlphaBbox
+      /** S18 — largest detected face in canvas pixels; null falls back to S15. */
+      face: CardFaceBox | null
     }
   | { ok: false; reason: CardCutoutFailureReason }
 
 /**
  * Removes the background of `file` on this device. Resolves with the cutout
- * canvas + its alpha bbox, or fails with `engine` (decode/inference/asset
- * failure) or `empty` (blank segmentation) — both recoverable in the composer.
+ * canvas + its alpha bbox + the largest detected face (`face: null` when the
+ * detector is unavailable or finds none — the composer falls back to the S15
+ * framing in silence), or fails with `engine` (decode/inference/asset failure)
+ * or `empty` (blank segmentation) — both recoverable in the composer.
  */
 export const removeCardPhotoBackground = async (
   file: File,
@@ -113,9 +131,7 @@ const createSegmenter = async (onProgress: (progress: CardCutoutProgress) => voi
 
   const vision = await import('@mediapipe/tasks-vision')
   const fileset = await vision.FilesetResolver.forVisionTasks(WASM_DIR)
-  const modelResponse = await fetch(MODEL_URL)
-  if (!modelResponse.ok) throw new Error(`card-cutout-model:${modelResponse.status}`)
-  const modelAssetBuffer = new Uint8Array(await modelResponse.arrayBuffer())
+  const modelAssetBuffer = await fetchModelBuffer(MODEL_URL, 'card-cutout-model')
 
   return vision.ImageSegmenter.createFromOptions(fileset, {
     baseOptions: { modelAssetBuffer },
@@ -123,6 +139,72 @@ const createSegmenter = async (onProgress: (progress: CardCutoutProgress) => voi
     outputConfidenceMasks: true,
     outputCategoryMask: false,
   })
+}
+
+const fetchModelBuffer = async (url: string, errorPrefix: string) => {
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`${errorPrefix}:${response.status}`)
+
+  return new Uint8Array(await response.arrayBuffer())
+}
+
+let faceDetectorPromise: Promise<FaceDetector> | null = null
+
+const loadFaceDetector = () => {
+  if (!faceDetectorPromise) {
+    faceDetectorPromise = createFaceDetector().catch((error: unknown) => {
+      faceDetectorPromise = null
+      throw error
+    })
+  }
+
+  return faceDetectorPromise
+}
+
+const createFaceDetector = async () => {
+  const vision = await import('@mediapipe/tasks-vision')
+  const fileset = await vision.FilesetResolver.forVisionTasks(WASM_DIR)
+  const modelAssetBuffer = await fetchModelBuffer(FACE_MODEL_URL, 'card-face-model')
+
+  return vision.FaceDetector.createFromOptions(fileset, {
+    baseOptions: { modelAssetBuffer },
+    runningMode: 'IMAGE',
+    minDetectionConfidence: FACE_MIN_CONFIDENCE,
+  })
+}
+
+/**
+ * S18 — largest face of the cutout canvas, or `null`. Every failure (model
+ * fetch, detector creation, inference) is swallowed here on purpose: the
+ * proportional framing is an enhancement, so the card must never fail nor show
+ * an error because of it — the composer falls back to the S15 framing.
+ */
+const detectCardFace = async (canvas: HTMLCanvasElement): Promise<CardFaceBox | null> => {
+  try {
+    const detector = await loadFaceDetector()
+    return readLargestFaceBox(detector.detect(canvas).detections)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * S18 — the visitor's face: the largest detected box, or `null`. Exported for
+ * unit tests (the adapter itself is DOM-bound); MediaPipe may omit the box of a
+ * degenerate detection, so those are dropped.
+ */
+export const readLargestFaceBox = (detections: Detection[]): CardFaceBox | null => {
+  let largest: CardFaceBox | null = null
+
+  for (const detection of detections) {
+    const box = detection.boundingBox
+    if (!box || !(box.width > 0) || !(box.height > 0)) continue
+    if (!largest || box.width * box.height > largest.width * largest.height) {
+      largest = { x: box.originX, y: box.originY, width: box.width, height: box.height }
+    }
+  }
+
+  return largest
 }
 
 /**
@@ -184,8 +266,9 @@ const engineCutout = async (
     const bbox = readAlphaBbox(canvas)
     if (!bbox) return { ok: false, reason: 'empty' }
 
+    const face = await detectCardFace(canvas)
     onProgress({ phase: 'process', ratio: 1 })
-    return { ok: true, canvas, width, height, bbox }
+    return { ok: true, canvas, width, height, bbox, face }
   } finally {
     mask?.close()
     result.close()
@@ -280,16 +363,17 @@ const supportsWasmSimd = (): boolean => {
   }
 }
 
-const readStubMode = (): 'ok' | 'slow' | 'error' => {
+const readStubMode = (): 'ok' | 'slow' | 'error' | 'noface' => {
   if (typeof window === 'undefined') return 'ok'
   const mode = window.__cardsCutoutStub
-  return mode === 'slow' || mode === 'error' ? mode : 'ok'
+  return mode === 'slow' || mode === 'error' || mode === 'noface' ? mode : 'ok'
 }
 
 /**
  * Test seam (`NEXT_PUBLIC_CARDS_CUTOUT_STUB=1`, e2e builds only): a
  * deterministic cutout with the same shape as the engine result. `slow` keeps
- * the processing state visible; `error` exercises the retry path.
+ * the processing state visible; `error` exercises the retry path; `noface`
+ * returns no detected face so the S15 fallback framing runs.
  */
 const stubCutout = async (
   file: File,
@@ -320,5 +404,22 @@ const stubCutout = async (
   ctx.globalCompositeOperation = 'source-over'
   bitmap.close()
 
-  return { ok: true, canvas, width, height, bbox: { x: 0, y: 0, width, height } }
+  const stubFaceSize = Math.round(width * STUB_FACE_WIDTH_RATIO)
+
+  return {
+    ok: true,
+    canvas,
+    width,
+    height,
+    bbox: { x: 0, y: 0, width, height },
+    face:
+      mode === 'noface'
+        ? null
+        : {
+            x: Math.round((width - stubFaceSize) / 2),
+            y: Math.round(height * STUB_FACE_TOP_RATIO),
+            width: stubFaceSize,
+            height: stubFaceSize,
+          },
+  }
 }

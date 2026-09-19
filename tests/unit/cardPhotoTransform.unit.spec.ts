@@ -4,14 +4,17 @@ import type { CardRect } from '@/lib/cardModels'
 import {
   CARD_PHOTO_MAX_ZOOM,
   CARD_PHOTO_MIN_ZOOM,
+  CARD_TEAM_PHOTO_MIN_ZOOM,
   cardPhotoDrawRect,
   centerCardPhotoTransform,
   clampCardPhotoTransform,
   coverScale,
   frameCardPhotoOnBbox,
+  frameCardPhotoOnFace,
   panCardPhotoTransform,
   zoomCardPhotoTransform,
   type CardAlphaBbox,
+  type CardFaceBox,
   type CardPhotoSize,
 } from '@/lib/cardPhotoTransform'
 
@@ -113,6 +116,132 @@ describe('frameCardPhotoOnBbox', () => {
   })
 })
 
+describe('frameCardPhotoOnFace', () => {
+  const TEAM_WINDOW: CardRect = { x: 286, y: 439, width: 592, height: 577 }
+  const SOURCE: CardPhotoSize = { width: 1000, height: 1250 }
+  const BBOX: CardAlphaBbox = { x: 200, y: 100, width: 600, height: 900 }
+  const REFERENCE = 103
+
+  it('scales the detected face to the reference, centered and on the window top', () => {
+    const face: CardFaceBox = { x: 400, y: 200, width: 60, height: 60 }
+
+    const transform = frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, face, REFERENCE)
+    expect(transform).not.toBeNull()
+    if (!transform) return
+
+    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW)
+    const scale = rect.width / SOURCE.width
+
+    expect(transform.zoom).toBeCloseTo(
+      REFERENCE / (face.width * coverScale(SOURCE, TEAM_WINDOW)),
+      5,
+    )
+    // the face lands exactly on the candidates' reference size
+    expect(face.width * scale).toBeCloseTo(REFERENCE, 5)
+    // face center on the window center, bbox top on the window top
+    expect(rect.x + (face.x + face.width / 2) * scale).toBeCloseTo(
+      TEAM_WINDOW.x + TEAM_WINDOW.width / 2,
+      5,
+    )
+    expect(rect.y + BBOX.y * scale).toBeCloseTo(TEAM_WINDOW.y, 5)
+    // the face itself stays inside the window
+    expect(rect.x + face.x * scale).toBeGreaterThanOrEqual(TEAM_WINDOW.x - 1e-6)
+    expect(rect.x + (face.x + face.width) * scale).toBeLessThanOrEqual(
+      TEAM_WINDOW.x + TEAM_WINDOW.width + 1e-6,
+    )
+    expect(rect.y + face.y * scale).toBeGreaterThanOrEqual(TEAM_WINDOW.y - 1e-6)
+    expect(rect.y + (face.y + face.height) * scale).toBeLessThanOrEqual(
+      TEAM_WINDOW.y + TEAM_WINDOW.height + 1e-6,
+    )
+  })
+
+  it('scales a large face down below the S13 cover floor onto the reference size', () => {
+    const face: CardFaceBox = { x: 380, y: 180, width: 220, height: 220 }
+
+    const transform = frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, face, REFERENCE)
+    expect(transform).not.toBeNull()
+    if (!transform) return
+
+    // the proportional framing wins over the S13 cover floor...
+    expect(transform.zoom).toBeLessThan(CARD_PHOTO_MIN_ZOOM)
+    expect(transform.zoom).toBeGreaterThanOrEqual(CARD_TEAM_PHOTO_MIN_ZOOM)
+
+    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW, CARD_TEAM_PHOTO_MIN_ZOOM)
+    const scale = rect.width / SOURCE.width
+    // ...and still lands the face exactly on the reference size
+    expect(face.width * scale).toBeCloseTo(REFERENCE, 5)
+    // per axis: contained where the photo is smaller, covering where it is bigger
+    expect(rect.x).toBeGreaterThanOrEqual(TEAM_WINDOW.x - 1e-6)
+    expect(rect.x + rect.width).toBeLessThanOrEqual(TEAM_WINDOW.x + TEAM_WINDOW.width + 1e-6)
+    expect(rect.y).toBeLessThanOrEqual(TEAM_WINDOW.y + 1e-6)
+    expect(rect.y + rect.height).toBeGreaterThanOrEqual(TEAM_WINDOW.y + TEAM_WINDOW.height - 1e-6)
+    // the face itself stays inside the window
+    expect(rect.y + (face.y + face.height) * scale).toBeLessThanOrEqual(
+      TEAM_WINDOW.y + TEAM_WINDOW.height + 1e-6,
+    )
+  })
+
+  it('clamps an extreme face at the team floor and keeps it within +15%', () => {
+    const face: CardFaceBox = { x: 40, y: 100, width: 900, height: 900 }
+
+    const transform = frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, face, REFERENCE)
+    expect(transform).not.toBeNull()
+    if (!transform) return
+
+    expect(transform.zoom).toBe(CARD_TEAM_PHOTO_MIN_ZOOM)
+
+    const rect = cardPhotoDrawRect(transform, SOURCE, TEAM_WINDOW, CARD_TEAM_PHOTO_MIN_ZOOM)
+    const scale = rect.width / SOURCE.width
+    const achieved = face.width * scale
+
+    expect(achieved).toBeCloseTo(face.width * coverScale(SOURCE, TEAM_WINDOW) * 0.2, 5)
+    expect(achieved).toBeLessThanOrEqual(REFERENCE * 1.15)
+  })
+
+  it('delegates to the S15 framing on non-finite face or reference values', () => {
+    const expected = frameCardPhotoOnBbox(SOURCE, TEAM_WINDOW, BBOX)
+
+    expect(
+      frameCardPhotoOnFace(
+        SOURCE,
+        TEAM_WINDOW,
+        BBOX,
+        { x: 0, y: 0, width: Number.NaN, height: 40 },
+        REFERENCE,
+      ),
+    ).toEqual(expected)
+    expect(frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, null, Number.POSITIVE_INFINITY)).toEqual(
+      expected,
+    )
+  })
+
+  it('delegates to the S15 framing when there is no usable face', () => {
+    const expected = frameCardPhotoOnBbox(SOURCE, TEAM_WINDOW, BBOX)
+
+    expect(frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, null, REFERENCE)).toEqual(expected)
+    expect(
+      frameCardPhotoOnFace(
+        SOURCE,
+        TEAM_WINDOW,
+        BBOX,
+        { x: 0, y: 0, width: 0, height: 0 },
+        REFERENCE,
+      ),
+    ).toEqual(expected)
+    expect(
+      frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, BBOX, { x: 400, y: 200, width: 60, height: 60 }, 0),
+    ).toEqual(expected)
+  })
+
+  it('fails closed on a degenerate bbox, with or without a face', () => {
+    const emptyBbox: CardAlphaBbox = { x: 0, y: 0, width: 0, height: 0 }
+    const face: CardFaceBox = { x: 10, y: 10, width: 50, height: 50 }
+
+    expect(frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, emptyBbox, face, REFERENCE)).toBeNull()
+    expect(frameCardPhotoOnFace(SOURCE, TEAM_WINDOW, emptyBbox, null, REFERENCE)).toBeNull()
+  })
+})
+
 describe('clampCardPhotoTransform', () => {
   it('clamps the zoom to [1, 4]', () => {
     expect(
@@ -139,6 +268,22 @@ describe('clampCardPhotoTransform', () => {
     expect(tooFarLeft).toEqual({ zoom: 1, offsetX: -480, offsetY: 0 })
     expect(coversWindow(cardPhotoDrawRect(tooFarLeft, LANDSCAPE, WINDOW), WINDOW)).toBe(true)
   })
+
+  it('accepts the team floor and keeps a smaller photo contained by the window', () => {
+    const shrunk = clampCardPhotoTransform(
+      { zoom: 0.1, offsetX: 9999, offsetY: -9999 },
+      LANDSCAPE,
+      WINDOW,
+      CARD_TEAM_PHOTO_MIN_ZOOM,
+    )
+
+    expect(shrunk.zoom).toBe(CARD_TEAM_PHOTO_MIN_ZOOM)
+    const rect = cardPhotoDrawRect(shrunk, LANDSCAPE, WINDOW, CARD_TEAM_PHOTO_MIN_ZOOM)
+    expect(rect.x).toBeGreaterThanOrEqual(WINDOW.x)
+    expect(rect.y).toBeGreaterThanOrEqual(WINDOW.y)
+    expect(rect.x + rect.width).toBeLessThanOrEqual(WINDOW.x + WINDOW.width)
+    expect(rect.y + rect.height).toBeLessThanOrEqual(WINDOW.y + WINDOW.height)
+  })
 })
 
 describe('panCardPhotoTransform', () => {
@@ -152,12 +297,27 @@ describe('panCardPhotoTransform', () => {
     const overPanned = panCardPhotoTransform(panned, LANDSCAPE, WINDOW, 9999, 9999)
     expect(overPanned).toEqual({ zoom: 1, offsetX: 0, offsetY: 0 })
   })
+
+  it('keeps a sub-1 team zoom while panning the contained photo', () => {
+    const panned = panCardPhotoTransform(
+      { zoom: 0.3, offsetX: 0, offsetY: 0 },
+      LANDSCAPE,
+      WINDOW,
+      40,
+      30,
+      CARD_TEAM_PHOTO_MIN_ZOOM,
+    )
+
+    expect(panned).toEqual({ zoom: 0.3, offsetX: 40, offsetY: 30 })
+  })
 })
 
 describe('zoomCardPhotoTransform', () => {
   it('keeps the anchor point stable while zooming', () => {
     const start = centerCardPhotoTransform(LANDSCAPE, WINDOW)
-    const zoomed = zoomCardPhotoTransform(start, LANDSCAPE, WINDOW, 2, { x: 500, y: 370 })
+    const zoomed = zoomCardPhotoTransform(start, LANDSCAPE, WINDOW, 2, {
+      anchor: { x: 500, y: 370 },
+    })
     const scale = coverScale(LANDSCAPE, WINDOW) * 2
 
     expect((500 - zoomed.offsetX) / scale).toBeCloseTo((500 - start.offsetX) / (scale / 2), 5)
@@ -181,5 +341,18 @@ describe('zoomCardPhotoTransform', () => {
     const same = zoomCardPhotoTransform(start, LANDSCAPE, WINDOW, start.zoom)
 
     expect(same).toEqual(start)
+  })
+
+  it('honors the team floor and preserves a sub-1 escape zoom', () => {
+    const start = { zoom: 0.3, offsetX: 0, offsetY: 0 }
+    const floored = zoomCardPhotoTransform(start, LANDSCAPE, WINDOW, 0.05, {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+    })
+    const adjusted = zoomCardPhotoTransform(start, LANDSCAPE, WINDOW, 0.5, {
+      minZoom: CARD_TEAM_PHOTO_MIN_ZOOM,
+    })
+
+    expect(floored.zoom).toBe(CARD_TEAM_PHOTO_MIN_ZOOM)
+    expect(adjusted.zoom).toBe(0.5)
   })
 })

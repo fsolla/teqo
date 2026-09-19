@@ -1837,7 +1837,7 @@ test.describe('Cards personalizados (S14)', () => {
 /** Mirrors the stub's deterministic `slow` download progress (cardCutout.ts). */
 const STUB_CUTOUT_PERCENT = 36
 
-const setCutoutStub = (page: Page, mode: 'ok' | 'slow' | 'error') =>
+const setCutoutStub = (page: Page, mode: 'ok' | 'slow' | 'error' | 'noface') =>
   page.addInitScript((value: string) => {
     ;(window as unknown as { __cardsCutoutStub?: string }).__cardsCutoutStub = value
   }, mode)
@@ -1995,7 +1995,10 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
     const readSample = () =>
       canvas.evaluate((element) => {
         const node = element as HTMLCanvasElement
-        return [...node.getContext('2d')!.getImageData(582, 727, 1, 1).data]
+        // S18 — the proportional framing draws the stub photo smaller than the
+        // slot, so the sample sits inside the drawn ellipse (window center)
+        // instead of the S15 cover point (582, 727).
+        return [...node.getContext('2d')!.getImageData(582, 550, 1, 1).data]
       })
 
     // Default ON: the preview pixel is the harmonized variant, not the raw photo.
@@ -2048,5 +2051,59 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
     await expect(drawer.getByRole('heading', { name: 'Entre para o time' })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(drawer).toHaveCount(0)
+  })
+})
+
+/**
+ * S18 — the proportional face framing. The stub carries a synthetic face box
+ * (`ok`/`slow`) or none (`noface`), so both branches run through the composer
+ * without touching the real detector; the unit specs pin the framing math.
+ */
+test.describe('Cards personalizados (S18 — cabeça proporcional)', () => {
+  test('a cutout without a detected face falls back to the S15 framing in silence', async ({
+    page,
+  }) => {
+    await setCutoutStub(page, 'noface')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+
+    // The fallback is invisible: no detection alert, no error state, S15 zoom.
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(dialog.getByRole('alert')).toHaveCount(0)
+    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBe(1)
+    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
+    await expect(primary).toBeEnabled()
+
+    await primary.click()
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
+    ])
+    expect(
+      readFileSync((await download.path())!)
+        .subarray(0, 8)
+        .equals(PNG_SIGNATURE),
+    ).toBe(true)
+  })
+
+  test('a detected face reaches the proportional framing without surfacing errors', async ({
+    page,
+  }) => {
+    await setCutoutStub(page, 'ok')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(dialog.getByRole('alert')).toHaveCount(0)
+    // The proportional framing sits well below the S13 cover floor (team min).
+    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBeLessThan(0.5)
+    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
+    await expect(dialog.getByText('Arraste para ajustar')).toBeVisible()
   })
 })

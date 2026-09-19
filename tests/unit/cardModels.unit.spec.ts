@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   CARD_MODELS,
   NAME_CARD_SLOT,
+  TEAM_CARD_FACE_REFERENCE_SIZE,
   TEAM_CARD_LABEL,
   TEAM_CARD_NAME_BANNER,
   TEAM_CARD_NAME_SLOT,
@@ -10,7 +11,7 @@ import {
   isCardModelId,
 } from '@/lib/cardModels'
 
-describe('card model catalog (S13/S15)', () => {
+describe('card model catalog (S13/S15/S18)', () => {
   it('exposes the four shipped models with unique ids', () => {
     expect(CARD_MODELS.map((model) => model.id)).toEqual([
       'eu-sou-solla',
@@ -130,6 +131,10 @@ describe('card model catalog (S13/S15)', () => {
     expect(TEAM_CARD_NAME_BANNER.centerX - halfSpanX).toBeGreaterThanOrEqual(0)
     expect(TEAM_CARD_NAME_BANNER.centerX + halfSpanX).toBeLessThanOrEqual(model.width)
     expect(lowestCorner).toBeLessThan(model.photoWindow!.y)
+  })
+
+  it('pins the measured candidates face reference (S18)', () => {
+    expect(TEAM_CARD_FACE_REFERENCE_SIZE).toBe(103)
   })
 
   it('sanitizes query-param values through isCardModelId', () => {
