@@ -91,6 +91,9 @@ export interface Config {
     speechCut: SpeechCut;
     reel: Reel;
     reelMedia: ReelMedia;
+    recording: Recording;
+    recordingMedia: RecordingMedia;
+    recordingSegment: RecordingSegment;
     calendarFeed: CalendarFeed;
     googleCalendarSync: GoogleCalendarSync;
     electionTally: ElectionTally;
@@ -137,6 +140,9 @@ export interface Config {
     speechCut: SpeechCutSelect<false> | SpeechCutSelect<true>;
     reel: ReelSelect<false> | ReelSelect<true>;
     reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
+    recording: RecordingSelect<false> | RecordingSelect<true>;
+    recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
+    recordingSegment: RecordingSegmentSelect<false> | RecordingSegmentSelect<true>;
     calendarFeed: CalendarFeedSelect<false> | CalendarFeedSelect<true>;
     googleCalendarSync: GoogleCalendarSyncSelect<false> | GoogleCalendarSyncSelect<true>;
     electionTally: ElectionTallySelect<false> | ElectionTallySelect<true>;
@@ -1140,6 +1146,86 @@ export interface ReelMedia {
   focalY?: number | null;
 }
 /**
+ * Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recording".
+ */
+export interface Recording {
+  id: number;
+  title: string;
+  /**
+   * Data em que a gravação foi feita (opcional).
+   */
+  recordedAt?: string | null;
+  status: 'uploading' | 'processing' | 'ready' | 'failed';
+  /**
+   * Progresso honesto da transcrição em andamento.
+   */
+  step?: ('extracting' | 'transcribing' | 'saving') | null;
+  /**
+   * O arquivo privado que o player toca e o download entrega.
+   */
+  media?: (number | null) | RecordingMedia;
+  /**
+   * Derivada do áudio transcrito.
+   */
+  durationSeconds?: number | null;
+  /**
+   * Concatenação normalizada dos segmentos (sem acentos, minúsculas).
+   */
+  searchText?: string | null;
+  /**
+   * Motivo interno da falha; nunca vai à pessoa com o detalhe cru.
+   */
+  error?: string | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Arquivos privados das gravações enviadas ao acervo. Só abrem com login da campanha.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordingMedia".
+ */
+export interface RecordingMedia {
+  id: number;
+  /**
+   * Descrição do arquivo para acessibilidade.
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordingSegment".
+ */
+export interface RecordingSegment {
+  id: number;
+  recording: number | Recording;
+  order: number;
+  startSeconds: number;
+  endSeconds: number;
+  text: string;
+  /**
+   * Derivado do texto (sem acentos, minúsculas) para a busca por palavra.
+   */
+  searchText: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "calendarFeed".
  */
@@ -1695,6 +1781,18 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'reelMedia';
         value: number | ReelMedia;
+      } | null)
+    | ({
+        relationTo: 'recording';
+        value: number | Recording;
+      } | null)
+    | ({
+        relationTo: 'recordingMedia';
+        value: number | RecordingMedia;
+      } | null)
+    | ({
+        relationTo: 'recordingSegment';
+        value: number | RecordingSegment;
       } | null)
     | ({
         relationTo: 'calendarFeed';
@@ -2314,6 +2412,55 @@ export interface ReelMediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recording_select".
+ */
+export interface RecordingSelect<T extends boolean = true> {
+  title?: T;
+  recordedAt?: T;
+  status?: T;
+  step?: T;
+  media?: T;
+  durationSeconds?: T;
+  searchText?: T;
+  error?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordingMedia_select".
+ */
+export interface RecordingMediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "recordingSegment_select".
+ */
+export interface RecordingSegmentSelect<T extends boolean = true> {
+  recording?: T;
+  order?: T;
+  startSeconds?: T;
+  endSeconds?: T;
+  text?: T;
+  searchText?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3050,6 +3197,9 @@ export interface TaskCreateCollectionExport {
       | 'speechCut'
       | 'reel'
       | 'reelMedia'
+      | 'recording'
+      | 'recordingMedia'
+      | 'recordingSegment'
       | 'calendarFeed'
       | 'googleCalendarSync'
       | 'electionTally'

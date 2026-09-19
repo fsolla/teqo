@@ -50,4 +50,27 @@ export const campaignSpeechCutDeleteHref = (id: number): string =>
 export const campaignSpeechCutRetryHref = (id: number): string =>
   `${campaignSpeechCutDetailHref(id)}/retry`
 
+/** C199 — "Gravações enviadas" source inside the acervo (list + `/<id>` detail). */
+export const CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES =
+  `${CAMPAIGN_COMMUNICATION_ACERVO}/gravacoes` as const
+
+const campaignRecordingDetailHref = (id: number): string =>
+  `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/${id}`
+
+/** C199 — JSON endpoints of the recording detail (send/status/retry/delete). */
+export const CAMPAIGN_RECORDING_UPLOAD_HREF =
+  `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/enviar` as const
+
+export const CAMPAIGN_RECORDING_STATUS_HREF =
+  `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/status` as const
+
+export const campaignRecordingFileHref = (id: number, download = false): string =>
+  `${campaignRecordingDetailHref(id)}/arquivo${download ? '?download=1' : ''}`
+
+export const campaignRecordingRetryHref = (id: number): string =>
+  `${campaignRecordingDetailHref(id)}/retry`
+
+export const campaignRecordingDeleteHref = (id: number): string =>
+  `${campaignRecordingDetailHref(id)}/apagar`
+
 export const CAMPAIGN_UPDATES_HREF = '/campanha/atualizacoes' as const

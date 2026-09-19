@@ -36,3 +36,13 @@ export const formatSpeechDate = (speechAt: string): string => {
   const [, year, month, day] = match
   return `${day}/${month}/${year}`
 }
+
+/**
+ * C199 — seek offset from a detail URL (`?t=`), non-negative seconds or null.
+ * Shared by the speech and recording details (the query contract is the same).
+ */
+export const parseSeekSeconds = (raw: string | undefined): number | null => {
+  if (raw === undefined) return null
+  const seconds = Number(raw)
+  return Number.isFinite(seconds) && seconds >= 0 ? seconds : null
+}

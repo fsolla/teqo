@@ -19,11 +19,12 @@ import {
 } from '@/lib/speechCut'
 import { speechVodCoordinates } from '@/lib/speechVod'
 import type { SpeechCut } from '@/payload-types'
+import { messageOf, runFfmpeg } from '@/utilities/media/ffmpeg'
 import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
-import { downloadSource, messageOf, runFfmpeg } from '@/utilities/speech/speechMediaPipeline'
+import { downloadSource } from '@/utilities/speech/speechMediaPipeline'
 import { resolveSpeechVod, SPEECH_VOD_CUT_POLICY } from '@/utilities/speech/speechVodResolver'
 
 /**

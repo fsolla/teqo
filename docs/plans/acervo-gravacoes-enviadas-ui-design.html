@@ -29,8 +29,13 @@
         font-family: Inter, ui-sans-serif, system-ui, sans-serif;
       }
       button,
-      input {
+      input,
+      a {
         font: inherit;
+      }
+      a {
+        color: inherit;
+        text-decoration: none;
       }
       .icon {
         width: 1rem;
@@ -69,6 +74,16 @@
         background: transparent;
         color: #292524;
         border: 1px solid transparent;
+      }
+      .btn-destructive {
+        background: #b42318;
+        color: white;
+        border: 1px solid #b42318;
+      }
+      .btn:disabled,
+      .btn[aria-disabled='true'] {
+        cursor: not-allowed;
+        opacity: 0.55;
       }
       .field {
         min-height: 2.75rem;
@@ -157,6 +172,11 @@
       .seg-active {
         background: #f4f4f5;
       }
+      .alert-error {
+        border: 1px solid rgb(180 35 24 / 28%);
+        background: #fff7f6;
+        color: #8f1d14;
+      }
       @media (prefers-reduced-motion: reduce) {
         *,
         *::before,
@@ -212,6 +232,20 @@
         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
         <circle cx="9" cy="7" r="4" />
         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+      </symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M3 6h18M8 6V4h8v2M19 6l-1 15H6L5 6" />
+        <path d="M10 11v5M14 11v5" />
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4M12 16h.01" />
+      </symbol>
+      <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m15 18-6-6 6-6" />
+      </symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m9 18 6-6-6-6" />
       </symbol>
     </svg>
 
@@ -280,18 +314,18 @@
               </div>
               <div
                 class="mt-5 inline-flex rounded-lg bg-secondary p-1 text-sm"
-                role="tablist"
                 aria-label="Fonte do acervo"
               >
-                <button class="rounded-md px-3 py-2 text-muted-foreground" data-source-tab="camara">
+                <a class="rounded-md px-3 py-2 text-muted-foreground" href="#scene-1">
                   Falas da Câmara
-                </button>
-                <button
+                </a>
+                <a
                   class="rounded-md bg-white px-3 py-2 font-medium text-foreground shadow-sm ring-1 ring-border"
-                  data-source-tab="enviadas"
+                  href="#scene-1"
+                  aria-current="page"
                 >
                   Gravações enviadas
-                </button>
+                </a>
               </div>
               <label class="mt-5 block text-sm font-medium" for="search-1"
                 >Buscar nas gravações enviadas</label
@@ -600,7 +634,7 @@
                   <svg class="h-6 w-6 text-muted-foreground"><use href="#i-upload" /></svg
                   ><span class="mt-2 text-sm font-medium">Selecionar arquivo local</span
                   ><span class="mt-1 text-xs text-muted-foreground"
-                    >O limite será informado antes do envio.</span
+                    >Vídeos até 4 GB · MP4, MOV, MKV e formatos compatíveis</span
                   >
                 </button>
               </div>
@@ -617,8 +651,8 @@
                 <label class="text-sm font-medium" for="date-upload">Data da gravação</label
                 ><input
                   id="date-upload"
+                  type="date"
                   class="field mt-1.5 text-sm text-muted-foreground"
-                  placeholder="dd/mm/aaaa"
                 />
               </div>
             </div>
@@ -638,9 +672,13 @@
         <div class="desktop-frame p-8">
           <div class="mx-auto max-w-5xl">
             <div class="inline-flex rounded-lg bg-secondary p-1 text-sm">
-              <span class="rounded-md px-3 py-2 text-muted-foreground">Falas da Câmara</span
-              ><span class="rounded-md bg-white px-3 py-2 font-medium shadow-sm ring-1 ring-border"
-                >Gravações enviadas</span
+              <a class="rounded-md px-3 py-2 text-muted-foreground" href="#scene-5"
+                >Falas da Câmara</a
+              ><a
+                class="rounded-md bg-white px-3 py-2 font-medium shadow-sm ring-1 ring-border"
+                href="#scene-5"
+                aria-current="page"
+                >Gravações enviadas</a
               >
             </div>
             <div
@@ -664,7 +702,7 @@
       </section>
 
       <!-- CENA 6 -->
-      <section aria-labelledby="scene-6">
+      <section class="mb-12" aria-labelledby="scene-6">
         <h2 id="scene-6" class="scene-label">
           Cena 6 · Mobile (390 px) — lista e detalhe com transcrição
         </h2>
@@ -680,12 +718,15 @@
               </header>
               <div class="border-b border-border bg-white px-4 pt-3 pb-2">
                 <div class="grid grid-cols-2 rounded-lg bg-secondary p-1 text-xs">
-                  <button class="rounded-md px-2 py-2 text-muted-foreground">Falas da Câmara</button
-                  ><button
+                  <a class="rounded-md px-2 py-2 text-center text-muted-foreground" href="#scene-6"
+                    >Falas da Câmara</a
+                  ><a
                     class="rounded-md bg-white px-2 py-2 font-medium shadow-sm ring-1 ring-border"
+                    href="#scene-6"
+                    aria-current="page"
                   >
                     Gravações enviadas
-                  </button>
+                  </a>
                 </div>
                 <div class="mt-2 flex min-h-10 items-center gap-2 rounded-lg px-2">
                   <svg class="icon text-muted-foreground"><use href="#i-search" /></svg
@@ -803,18 +844,614 @@
           </div>
         </div>
       </section>
-    </main>
 
-    <script>
-      document.querySelectorAll('[data-source-tab]').forEach((tab) => {
-        tab.addEventListener('click', () => {
-          document
-            .querySelectorAll('[data-source-tab]')
-            .forEach((item) => (item.className = 'rounded-md px-3 py-2 text-muted-foreground'))
-          tab.className =
-            'rounded-md bg-white px-3 py-2 font-medium text-foreground shadow-sm ring-1 ring-border'
-        })
-      })
-    </script>
+      <!-- CENA 7 -->
+      <section class="mb-12" aria-labelledby="scene-7">
+        <h2 id="scene-7" class="scene-label">
+          Cena 7 · Desktop — confirmação destrutiva ao apagar
+        </h2>
+        <div class="desktop-frame relative overflow-hidden bg-stone-50">
+          <div class="border-b border-border bg-white px-6 py-5">
+            <button class="btn btn-ghost -ml-2">
+              <svg class="icon"><use href="#i-back" /></svg>Voltar ao acervo
+            </button>
+            <div class="mt-3 flex items-center justify-between gap-4">
+              <div>
+                <h3 class="text-lg font-semibold">Título da gravação</h3>
+                <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+              </div>
+              <button class="btn btn-ghost text-destructive">
+                <svg class="icon"><use href="#i-trash" /></svg>Apagar
+              </button>
+            </div>
+          </div>
+          <div class="absolute inset-0 bg-stone-950/35"></div>
+          <section
+            class="absolute top-1/2 left-1/2 w-[min(31rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-white p-6 shadow-2xl"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+            aria-describedby="delete-description"
+          >
+            <div class="flex items-start gap-3">
+              <span
+                class="grid size-9 shrink-0 place-items-center rounded-full bg-red-50 text-destructive"
+              >
+                <svg class="h-5 w-5"><use href="#i-alert" /></svg>
+              </span>
+              <div class="min-w-0">
+                <h3 id="delete-title" class="text-base font-semibold">Apagar esta gravação?</h3>
+                <p id="delete-description" class="mt-2 text-sm leading-5 text-muted-foreground">
+                  O arquivo e toda a transcrição serão removidos. Esta ação não pode ser desfeita.
+                </p>
+              </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2 max-sm:flex-col-reverse">
+              <button class="btn btn-outline max-sm:w-full">Cancelar</button>
+              <button class="btn btn-destructive max-sm:w-full">
+                <svg class="icon"><use href="#i-trash" /></svg>Apagar gravação
+              </button>
+            </div>
+          </section>
+        </div>
+        <div class="mt-3 rounded-lg border border-border bg-white p-4 text-sm leading-6">
+          <strong>Decisão visual:</strong> o gatilho “Apagar” vive somente no detalhe, no bloco de
+          ações do cabeçalho. Os cards da lista preservam uma única ação, “Abrir”, evitando uma ação
+          irreversível no contexto de varredura.
+        </div>
+      </section>
+
+      <!-- CENA 8 -->
+      <section class="mb-12" aria-labelledby="scene-8">
+        <h2 id="scene-8" class="scene-label">
+          Cena 8 · Desktop — detalhe em Enviando, Processando e Falhou
+        </h2>
+        <div class="desktop-frame p-7">
+          <div class="grid grid-cols-3 gap-5">
+            <article class="min-w-0 rounded-xl border border-border bg-white p-5">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span class="status status-upload">Enviando</span>
+                  <h3 class="mt-3 text-sm font-semibold">Título da gravação</h3>
+                  <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa</p>
+                </div>
+                <button class="btn btn-ghost min-h-9 px-2 text-destructive">Apagar</button>
+              </div>
+              <div
+                class="mt-5 flex aspect-video flex-col items-center justify-center rounded-lg border border-dashed border-input bg-stone-50 px-5 text-center"
+              >
+                <svg class="h-7 w-7 text-muted-foreground"><use href="#i-upload" /></svg>
+                <p class="mt-3 text-sm font-medium">O arquivo ainda está sendo enviado</p>
+                <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                  Player e download aparecem quando o envio terminar.
+                </p>
+              </div>
+              <div class="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                <div class="h-full w-[58%] rounded-full bg-primary"></div>
+              </div>
+              <div class="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>Enviando arquivo…</span><span>58%</span>
+              </div>
+            </article>
+
+            <article class="min-w-0 rounded-xl border border-border bg-white p-5">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span class="status status-work">Processando</span>
+                  <h3 class="mt-3 text-sm font-semibold">Título da gravação</h3>
+                  <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                </div>
+                <button class="btn btn-ghost min-h-9 px-2 text-destructive">Apagar</button>
+              </div>
+              <div
+                class="relative mt-5 grid aspect-video place-items-center rounded-lg bg-stone-900"
+              >
+                <button
+                  class="grid size-12 place-items-center rounded-full bg-white text-stone-950"
+                >
+                  <svg class="h-5 w-5 translate-x-0.5"><use href="#i-play" /></svg>
+                </button>
+              </div>
+              <button class="btn btn-outline mt-3 w-full">
+                <svg class="icon"><use href="#i-download" /></svg>Baixar arquivo
+              </button>
+              <div class="mt-4 rounded-lg bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                <div class="flex items-center gap-2 font-semibold">
+                  <span
+                    class="size-4 animate-spin rounded-full border-2 border-amber-300 border-t-amber-800 motion-reduce:animate-none"
+                  ></span>
+                  Transcrição em processamento
+                </div>
+                <p class="mt-1">
+                  O vídeo já pode ser assistido. A transcrição ainda não está disponível.
+                </p>
+              </div>
+            </article>
+
+            <article class="min-w-0 rounded-xl border border-destructive/30 bg-white p-5">
+              <div class="flex items-start justify-between gap-3">
+                <div>
+                  <span class="status status-failed">Falhou</span>
+                  <h3 class="mt-3 text-sm font-semibold">Título da gravação</h3>
+                  <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                </div>
+                <button class="btn btn-ghost min-h-9 px-2 text-destructive">Apagar</button>
+              </div>
+              <div
+                class="relative mt-5 grid aspect-video place-items-center rounded-lg bg-stone-900"
+              >
+                <button
+                  class="grid size-12 place-items-center rounded-full bg-white text-stone-950"
+                >
+                  <svg class="h-5 w-5 translate-x-0.5"><use href="#i-play" /></svg>
+                </button>
+              </div>
+              <div class="alert-error mt-4 rounded-lg p-3 text-xs leading-5">
+                <p class="font-semibold">A transcrição não foi concluída</p>
+                <p class="mt-1">Não foi possível processar o áudio. O arquivo foi preservado.</p>
+              </div>
+              <div class="mt-3 grid gap-2">
+                <button class="btn btn-primary w-full">
+                  <svg class="icon"><use href="#i-refresh" /></svg>Reprocessar transcrição
+                </button>
+                <button class="btn btn-outline w-full">
+                  <svg class="icon"><use href="#i-download" /></svg>Baixar arquivo
+                </button>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p class="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+          Em “Enviando”, não há arquivo utilizável. Em “Processando” e “Falhou”, o envio já
+          terminou: player e download ficam disponíveis; somente a transcrição é substituída pelo
+          aviso de estado.
+        </p>
+      </section>
+
+      <!-- CENA 9 -->
+      <section class="mb-12" aria-labelledby="scene-9">
+        <h2 id="scene-9" class="scene-label">
+          Cena 9 · Desktop — reprocessamento em andamento e falha ao iniciar
+        </h2>
+        <div class="desktop-frame p-8">
+          <div class="mx-auto grid max-w-4xl grid-cols-2 gap-6">
+            <article class="rounded-xl border border-border p-5">
+              <span class="status status-work">Processando</span>
+              <h3 class="mt-3 text-base font-semibold">Reprocessando a transcrição</h3>
+              <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                O arquivo foi preservado. Você pode assistir enquanto a nova transcrição é
+                preparada.
+              </p>
+              <button class="btn btn-outline mt-5 w-full" disabled>
+                <span
+                  class="size-4 animate-spin rounded-full border-2 border-stone-300 border-t-stone-700 motion-reduce:animate-none"
+                ></span>
+                Reprocessando…
+              </button>
+              <p class="mt-3 text-center text-xs text-muted-foreground">
+                Ao aceitar o pedido, a tela troca de “Falhou” para “Processando”.
+              </p>
+            </article>
+            <article class="rounded-xl border border-destructive/30 p-5">
+              <span class="status status-failed">Falhou</span>
+              <h3 class="mt-3 text-base font-semibold">A transcrição continua pendente</h3>
+              <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                O erro original continua visível até uma nova tentativa ser iniciada.
+              </p>
+              <button class="btn btn-primary mt-5 w-full">
+                <svg class="icon"><use href="#i-refresh" /></svg>Reprocessar transcrição
+              </button>
+              <div
+                class="alert-error mt-3 flex gap-2 rounded-lg p-3 text-xs leading-5"
+                role="alert"
+              >
+                <svg class="mt-0.5 h-4 w-4 shrink-0"><use href="#i-alert" /></svg>
+                <span>Não foi possível iniciar o reprocessamento. Tente novamente.</span>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p class="mt-3 text-sm leading-6 text-muted-foreground">
+          O erro do clique aparece imediatamente abaixo da ação, sem apagar a mensagem da falha de
+          transcrição. Não usar toast como único feedback.
+        </p>
+      </section>
+
+      <!-- CENA 10 -->
+      <section class="mb-12" aria-labelledby="scene-10">
+        <h2 id="scene-10" class="scene-label">
+          Cena 10 · Desktop — arquivo acima do limite no diálogo
+        </h2>
+        <div class="desktop-frame relative grid place-items-center bg-stone-200/70 p-8">
+          <div class="absolute inset-0 bg-stone-950/25"></div>
+          <section
+            class="relative w-full max-w-lg rounded-xl border border-border bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-error-title"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 id="upload-error-title" class="text-base font-semibold">Enviar gravação</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Adicione um arquivo local ao acervo.
+                </p>
+              </div>
+              <button
+                class="grid size-8 place-items-center rounded-md hover:bg-muted"
+                aria-label="Fechar"
+              >
+                <svg class="icon"><use href="#i-x" /></svg>
+              </button>
+            </div>
+            <div class="mt-5">
+              <label class="text-sm font-medium">Arquivo de vídeo</label>
+              <button
+                class="mt-1.5 flex min-h-28 w-full flex-col items-center justify-center rounded-lg border border-destructive bg-red-50/40 px-4 text-center"
+              >
+                <svg class="h-6 w-6 text-destructive"><use href="#i-file" /></svg>
+                <span class="mt-2 text-sm font-medium">gravacao-plenaria.mkv</span>
+                <span class="mt-1 text-xs text-muted-foreground">4,6 GB</span>
+              </button>
+              <div
+                class="alert-error mt-2 flex gap-2 rounded-lg p-3 text-xs leading-5"
+                role="alert"
+              >
+                <svg class="mt-0.5 h-4 w-4 shrink-0"><use href="#i-alert" /></svg>
+                <span>Este arquivo tem 4,6 GB. Escolha um vídeo de até 4 GB.</span>
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground">
+                Vídeos até 4 GB · MP4, MOV, MKV e formatos compatíveis
+              </p>
+            </div>
+            <div class="mt-5 space-y-3 opacity-60" aria-hidden="true">
+              <div>
+                <span class="text-sm font-medium">Título</span>
+                <div class="mt-1.5 h-11 rounded-lg border border-input bg-white"></div>
+              </div>
+              <div>
+                <span class="text-sm font-medium">Data da gravação</span>
+                <div class="mt-1.5 h-11 rounded-lg border border-input bg-white"></div>
+              </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Cancelar</button>
+              <button class="btn btn-primary" disabled>Enviar</button>
+            </div>
+          </section>
+        </div>
+        <p class="mt-3 text-sm leading-6 text-muted-foreground">
+          O limite aparece antes da seleção, dentro da área do arquivo. Quando excedido, o erro fica
+          logo abaixo do seletor, associa-se ao campo e bloqueia “Enviar”.
+        </p>
+      </section>
+
+      <!-- CENA 11 -->
+      <section class="mb-12" aria-labelledby="scene-11">
+        <h2 id="scene-11" class="scene-label">Cena 11 · Desktop — diálogo durante o envio</h2>
+        <div class="desktop-frame relative grid place-items-center bg-stone-200/70 p-8">
+          <div class="absolute inset-0 bg-stone-950/25"></div>
+          <section
+            class="relative w-full max-w-lg rounded-xl border border-border bg-white p-6 shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-progress-title"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 id="upload-progress-title" class="text-base font-semibold">
+                  Enviando gravação
+                </h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Mantenha esta janela aberta até concluir.
+                </p>
+              </div>
+              <button
+                class="grid size-8 cursor-not-allowed place-items-center rounded-md opacity-40"
+                aria-label="Fechar indisponível durante o envio"
+                disabled
+              >
+                <svg class="icon"><use href="#i-x" /></svg>
+              </button>
+            </div>
+            <div class="mt-5 rounded-lg border border-border bg-stone-50 p-4">
+              <div class="flex items-center gap-3">
+                <span
+                  class="grid size-10 shrink-0 place-items-center rounded-lg bg-white text-muted-foreground ring-1 ring-border"
+                >
+                  <svg class="h-5 w-5"><use href="#i-video" /></svg>
+                </span>
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium">gravacao-plenaria.mkv</p>
+                  <p class="mt-0.5 text-xs text-muted-foreground">
+                    Título da gravação · dd/mm/aaaa
+                  </p>
+                </div>
+                <span class="ml-auto text-sm font-semibold tabular-nums">58%</span>
+              </div>
+              <div class="mt-4 h-2 overflow-hidden rounded-full bg-muted" aria-label="58% enviado">
+                <div class="h-full w-[58%] rounded-full bg-primary"></div>
+              </div>
+              <div class="mt-2 flex justify-between text-xs text-muted-foreground">
+                <span>Enviando arquivo…</span><span>58%</span>
+              </div>
+            </div>
+            <div class="mt-4 rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground">
+              Quando o envio terminar, a gravação aparecerá na lista como “Processando”.
+            </div>
+            <div class="mt-6 flex justify-end">
+              <button class="btn btn-primary min-w-36" disabled>
+                <span
+                  class="size-4 animate-spin rounded-full border-2 border-white/45 border-t-white motion-reduce:animate-none"
+                ></span>
+                Enviando…
+              </button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- CENA 12 -->
+      <section class="mb-12" aria-labelledby="scene-12">
+        <h2 id="scene-12" class="scene-label">Cena 12 · Desktop — paginação e vazio da busca</h2>
+        <div class="desktop-frame p-8">
+          <div class="mx-auto grid max-w-5xl grid-cols-2 gap-8">
+            <article>
+              <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Rodapé com resultados
+              </p>
+              <div class="mt-4 space-y-3">
+                <div class="h-20 rounded-xl border border-border bg-white"></div>
+                <div class="h-20 rounded-xl border border-border bg-white"></div>
+                <div class="h-20 rounded-xl border border-border bg-white"></div>
+              </div>
+              <div class="mt-5 flex flex-col items-center gap-2">
+                <p class="text-sm text-muted-foreground">— gravações encontradas</p>
+                <nav class="flex items-center gap-1" aria-label="Paginação das gravações">
+                  <a class="btn btn-ghost min-h-11 min-w-11 px-2" href="#scene-12">
+                    <svg class="icon"><use href="#i-chevron-left" /></svg><span>Anterior</span>
+                  </a>
+                  <a class="btn btn-ghost min-h-11 min-w-11" href="#scene-12">1</a>
+                  <a class="btn btn-outline min-h-11 min-w-11" href="#scene-12" aria-current="page"
+                    >2</a
+                  >
+                  <a class="btn btn-ghost min-h-11 min-w-11" href="#scene-12">3</a>
+                  <span class="grid min-h-11 min-w-11 place-items-center text-muted-foreground"
+                    >…</span
+                  >
+                  <a class="btn btn-ghost min-h-11 min-w-11 px-2" href="#scene-12">
+                    <span>Próxima</span><svg class="icon"><use href="#i-chevron-right" /></svg>
+                  </a>
+                </nav>
+              </div>
+            </article>
+            <article>
+              <p class="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                Busca sem resultado
+              </p>
+              <div
+                class="mt-4 flex min-h-[21rem] flex-col items-center justify-center rounded-xl border border-border px-6 text-center"
+              >
+                <span
+                  class="grid size-12 place-items-center rounded-lg bg-muted text-muted-foreground"
+                >
+                  <svg class="h-6 w-6"><use href="#i-search" /></svg>
+                </span>
+                <h3 class="mt-4 text-base font-semibold">
+                  Nenhuma gravação encontrada para “termo buscado”
+                </h3>
+                <p class="mt-1 max-w-sm text-sm leading-5 text-muted-foreground">
+                  Tente outro termo ou limpe a busca para ver todas as gravações enviadas.
+                </p>
+                <button class="btn btn-outline mt-5">Limpar busca</button>
+              </div>
+            </article>
+          </div>
+        </div>
+        <p class="mt-3 text-sm leading-6 text-muted-foreground">
+          Este vazio substitui somente os resultados filtrados e não oferece novo envio. O vazio sem
+          gravações continua sendo a Cena 5, com a ação “Enviar gravação”.
+        </p>
+      </section>
+
+      <!-- CENA 13 -->
+      <section class="mb-12" aria-labelledby="scene-13">
+        <h2 id="scene-13" class="scene-label">
+          Cena 13 · Mobile (390 px) — extensão dos estados críticos
+        </h2>
+        <div class="flex items-start gap-8">
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">Detalhe com falha</p>
+            <div class="mobile-frame relative pb-20">
+              <header class="flex min-h-14 items-center gap-3 bg-primary px-4 text-white">
+                <svg class="icon"><use href="#i-back" /></svg>
+                <div>
+                  <h3 class="text-sm font-semibold">Gravação enviada</h3>
+                  <p class="text-xs text-white/75">Acervo</p>
+                </div>
+              </header>
+              <div class="p-4">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h4 class="text-base font-semibold">Título da gravação</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">dd/mm/aaaa · —:—:—</p>
+                  </div>
+                  <span class="status status-failed">Falhou</span>
+                </div>
+                <div
+                  class="relative mt-4 grid aspect-video place-items-center rounded-lg bg-stone-900"
+                >
+                  <button
+                    class="grid size-12 place-items-center rounded-full bg-white text-stone-950"
+                  >
+                    <svg class="h-5 w-5 translate-x-0.5"><use href="#i-play" /></svg>
+                  </button>
+                </div>
+                <div class="alert-error mt-4 rounded-lg p-3 text-xs leading-5">
+                  <p class="font-semibold">A transcrição não foi concluída</p>
+                  <p class="mt-1">Não foi possível processar o áudio. O arquivo foi preservado.</p>
+                </div>
+                <button class="btn btn-primary mt-3 w-full">
+                  <svg class="icon"><use href="#i-refresh" /></svg>Reprocessar transcrição
+                </button>
+                <button class="btn btn-outline mt-2 w-full">
+                  <svg class="icon"><use href="#i-download" /></svg>Baixar arquivo
+                </button>
+                <button class="btn btn-ghost mt-2 w-full text-destructive">
+                  <svg class="icon"><use href="#i-trash" /></svg>Apagar
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">Confirmação de apagar</p>
+            <div class="mobile-frame relative grid place-items-center bg-stone-200 p-4">
+              <div class="absolute inset-0 bg-stone-950/35"></div>
+              <section
+                class="relative w-full rounded-xl border border-border bg-white p-5 shadow-2xl"
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="mobile-delete-title"
+              >
+                <span
+                  class="grid size-9 place-items-center rounded-full bg-red-50 text-destructive"
+                >
+                  <svg class="h-5 w-5"><use href="#i-alert" /></svg>
+                </span>
+                <h3 id="mobile-delete-title" class="mt-4 text-base font-semibold">
+                  Apagar esta gravação?
+                </h3>
+                <p class="mt-2 text-sm leading-5 text-muted-foreground">
+                  O arquivo e toda a transcrição serão removidos. Esta ação não pode ser desfeita.
+                </p>
+                <div class="mt-6 flex flex-col-reverse gap-2">
+                  <button class="btn btn-outline w-full">Cancelar</button>
+                  <button class="btn btn-destructive w-full">
+                    <svg class="icon"><use href="#i-trash" /></svg>Apagar gravação
+                  </button>
+                </div>
+              </section>
+            </div>
+          </div>
+
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">Envio em andamento</p>
+            <div class="mobile-frame relative grid place-items-center bg-stone-200 p-4">
+              <div class="absolute inset-0 bg-stone-950/25"></div>
+              <section
+                class="relative w-full rounded-xl border border-border bg-white p-5 shadow-2xl"
+              >
+                <h3 class="text-base font-semibold">Enviando gravação</h3>
+                <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                  Mantenha esta janela aberta até concluir.
+                </p>
+                <div class="mt-5 rounded-lg border border-border bg-stone-50 p-4">
+                  <div class="flex items-center gap-3">
+                    <svg class="h-5 w-5 shrink-0 text-muted-foreground">
+                      <use href="#i-video" />
+                    </svg>
+                    <p class="min-w-0 flex-1 truncate text-sm font-medium">gravacao-plenaria.mkv</p>
+                    <span class="text-sm font-semibold">58%</span>
+                  </div>
+                  <div class="mt-4 h-2 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full w-[58%] rounded-full bg-primary"></div>
+                  </div>
+                  <p class="mt-2 text-xs text-muted-foreground">Enviando arquivo…</p>
+                </div>
+                <div
+                  class="mt-4 rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground"
+                >
+                  Depois do envio, a gravação aparecerá como “Processando”.
+                </div>
+                <button class="btn btn-primary mt-5 w-full" disabled>
+                  <span
+                    class="size-4 animate-spin rounded-full border-2 border-white/45 border-t-white motion-reduce:animate-none"
+                  ></span>
+                  Enviando…
+                </button>
+              </section>
+            </div>
+          </div>
+
+          <div>
+            <p class="mb-2 text-xs font-medium text-muted-foreground">Busca sem resultado</p>
+            <div class="mobile-frame relative pb-20">
+              <header class="flex min-h-14 items-center bg-primary px-4 text-white">
+                <h3 class="text-sm font-semibold">Acervo</h3>
+              </header>
+              <div class="p-4">
+                <div class="grid grid-cols-2 rounded-lg bg-secondary p-1 text-xs">
+                  <a
+                    class="rounded-md px-2 py-2 text-center text-muted-foreground"
+                    href="#scene-13"
+                  >
+                    Falas da Câmara
+                  </a>
+                  <a
+                    class="rounded-md bg-white px-2 py-2 text-center font-medium shadow-sm ring-1 ring-border"
+                    href="#scene-13"
+                    aria-current="page"
+                  >
+                    Gravações enviadas
+                  </a>
+                </div>
+                <div
+                  class="mt-4 flex min-h-80 flex-col items-center justify-center rounded-xl border border-border px-5 text-center"
+                >
+                  <span
+                    class="grid size-12 place-items-center rounded-lg bg-muted text-muted-foreground"
+                  >
+                    <svg class="h-6 w-6"><use href="#i-search" /></svg>
+                  </span>
+                  <h4 class="mt-4 text-base font-semibold">
+                    Nenhuma gravação encontrada para “termo buscado”
+                  </h4>
+                  <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                    Tente outro termo ou limpe a busca.
+                  </p>
+                  <button class="btn btn-outline mt-5 w-full">Limpar busca</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ANOTAÇÕES -->
+      <section class="mb-4" aria-labelledby="design-notes">
+        <h2 id="design-notes" class="scene-label">Anotações semânticas obrigatórias para o port</h2>
+        <div
+          class="grid grid-cols-2 gap-4 rounded-xl border border-border bg-white p-5 text-sm leading-6"
+        >
+          <ul class="list-disc space-y-2 pl-5">
+            <li>
+              O alternador de fonte é <strong>navegação</strong>: dois links com
+              <code class="rounded bg-muted px-1 py-0.5 text-xs">aria-current="page"</code> no
+              ativo, mantendo a aparência de pill. Não é widget de abas.
+            </li>
+            <li>
+              “Data da gravação” usa o controle nativo
+              <code class="rounded bg-muted px-1 py-0.5 text-xs">type="date"</code>.
+            </li>
+            <li>Todo texto visível, rótulo, feedback e mensagem de erro permanece em pt-BR.</li>
+          </ul>
+          <ul class="list-disc space-y-2 pl-5">
+            <li>
+              Toda ação destrutiva exige confirmação. “Apagar” aparece somente no detalhe e abre a
+              Cena 7; nunca apaga diretamente no card.
+            </li>
+            <li>
+              Um CTA domina por estado: “Baixar” em Pronto; “Reprocessar transcrição” em Falhou;
+              “Enviar” no formulário válido; “Apagar gravação” apenas dentro da confirmação.
+            </li>
+            <li>
+              Erros de campo ficam junto ao campo; erro de retry fica sob a ação; falha de
+              transcrição ocupa o painel do estado. Toast nunca é a única evidência.
+            </li>
+          </ul>
+        </div>
+      </section>
+    </main>
   </body>
 </html>

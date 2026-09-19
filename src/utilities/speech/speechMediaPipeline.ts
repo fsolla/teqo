@@ -1,6 +1,5 @@
 import 'server-only'
 
-import { execFile } from 'node:child_process'
 import { createWriteStream } from 'node:fs'
 import { Readable, Transform } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
@@ -9,25 +8,15 @@ import { CAMARA_USER_AGENT } from '@/lib/speechVod'
 
 /**
  * C182 — the Câmara media pipeline shared by the cut job (C167) and the acervo
- * frame job (C182): download one resolved VOD to a temp file and run ffmpeg on
- * it. Extracted from `speechCutJob` so both jobs own a single implementation;
- * the temp dir lifecycle and the failure copy stay with each job.
+ * frame job (C182): download one resolved VOD to a temp file. ffmpeg execution
+ * is owned by `utilities/media/ffmpeg` (C199 extracted it for the recording
+ * job); the temp dir lifecycle and the failure copy stay with each job.
  */
-
-/** `FFMPEG_PATH` lets a test/runtime point at a fake binary; the image ships `ffmpeg`. */
-const ffmpegBinary = (): string => process.env.FFMPEG_PATH?.trim() || 'ffmpeg'
 
 /** Defensive ceiling for the source download (the VOD of a speech is minutes long). */
 const MAX_SOURCE_BYTES = 2 * 1024 * 1024 * 1024
 
 const SOURCE_DOWNLOAD_TIMEOUT_MS = 180_000
-const FFMPEG_MIN_TIMEOUT_MS = 30_000
-const FFMPEG_MAX_TIMEOUT_MS = 300_000
-const FFMPEG_MAX_BUFFER_BYTES = 8 * 1024 * 1024
-
-/** Last-resort copy when an error carries no message; each job names its own. */
-export const messageOf = (error: unknown, fallback: string): string =>
-  error instanceof Error && error.message !== '' ? error.message : fallback
 
 /**
  * Streams the resolved VOD to a temp file. A `text/html` body is the CDN's
@@ -68,31 +57,3 @@ export const downloadSource = async (url: string, destination: string): Promise<
     createWriteStream(destination),
   )
 }
-
-/** Runs ffmpeg with a timeout scaled by the source duration (clamped to a floor/ceiling). */
-export const runFfmpeg = (
-  args: string[],
-  durationSeconds: number,
-  fallbackMessage = 'Falha ao processar o vídeo.',
-): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const timeout = Math.min(
-      FFMPEG_MAX_TIMEOUT_MS,
-      Math.max(FFMPEG_MIN_TIMEOUT_MS, durationSeconds * 8_000),
-    )
-    execFile(
-      ffmpegBinary(),
-      args,
-      { timeout, maxBuffer: FFMPEG_MAX_BUFFER_BYTES },
-      (error, _stdout, stderr) => {
-        if (!error) {
-          resolve()
-          return
-        }
-        const detail = String(stderr ?? '')
-          .trim()
-          .slice(-400)
-        reject(new Error(`${messageOf(error, fallbackMessage)}${detail ? ` — ${detail}` : ''}`))
-      },
-    )
-  })

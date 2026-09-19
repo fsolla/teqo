@@ -32,6 +32,9 @@ import { Organization } from './collections/Organization'
 import { Petition } from './collections/Petition'
 import { Post } from './collections/Post'
 import { PushSubscription } from './collections/PushSubscription'
+import { Recording } from './collections/Recording'
+import { RecordingMedia } from './collections/RecordingMedia'
+import { RecordingSegment } from './collections/RecordingSegment'
 import { Reel } from './collections/Reel'
 import { ReelMedia } from './collections/ReelMedia'
 import { Signature } from './collections/Signature'
@@ -121,6 +124,9 @@ export default buildConfig({
     SpeechCut,
     Reel,
     ReelMedia,
+    Recording,
+    RecordingMedia,
+    RecordingSegment,
     CalendarFeed,
     GoogleCalendarSync,
     ElectionTally,
@@ -169,6 +175,8 @@ export default buildConfig({
               // C193 — private reel artifacts; without this entry they would
               // fall back to the container's ephemeral disk in production.
               reelMedia: true,
+              // C199 — private recording files; same failure mode if omitted.
+              recordingMedia: true,
             },
             bucket: mediaStorage.bucket,
             config: {

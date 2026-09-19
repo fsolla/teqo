@@ -12,12 +12,12 @@ import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import { parseSeekSeconds } from '@/lib/speechClock'
 import { isExcerptSelectionAvailable } from '@/lib/speechExcerptSelection'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import { loadSpeechCutsForSpeech } from '@/utilities/speech/speechCutPageData'
 import { loadSpeechDetailPageData, SpeechNotFoundError } from '@/utilities/speech/speechPageData'
-import { parseSpeechSeekSeconds } from '@/utilities/speech/speechViewModels'
 
 type SpeechDetailPageProps = {
   params: Promise<{ id: string }>
@@ -56,7 +56,7 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
   if (!speechId) notFound()
 
   const q = firstValue(query.q)
-  const initialSeconds = parseSpeechSeekSeconds(firstValue(query.t))
+  const initialSeconds = parseSeekSeconds(firstValue(query.t))
 
   const [view, cuts] = await Promise.all([
     loadSpeechDetailPageData(payload, user, speechId, q).catch((error) => {

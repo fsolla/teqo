@@ -3,15 +3,15 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
 import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
+import { PRIVATE_MEDIA_CACHE_CONTROL } from '@/lib/privateMedia'
 import {
   canServeReelMedia,
   isReelMediaKind,
   REEL_MEDIA_SLUG,
   reelMediaFieldByKind,
 } from '@/lib/reel'
-import { REEL_MEDIA_CACHE_CONTROL } from '@/lib/reelMedia'
 import { getCampaignUser } from '@/utilities/campaignAuth'
-import { buildReelMediaResponse } from '@/utilities/reels/reelMediaResponse'
+import { buildPrivateMediaResponse } from '@/utilities/privateMedia/privateMediaResponse'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +25,10 @@ export const dynamic = 'force-dynamic'
  */
 
 const notFound = (): NextResponse =>
-  new NextResponse(null, { status: 404, headers: { 'Cache-Control': REEL_MEDIA_CACHE_CONTROL } })
+  new NextResponse(null, {
+    status: 404,
+    headers: { 'Cache-Control': PRIVATE_MEDIA_CACHE_CONTROL },
+  })
 
 export const GET = async (
   request: Request,
@@ -57,7 +60,7 @@ export const GET = async (
   const staticDir =
     upload && typeof upload === 'object' && upload.staticDir ? upload.staticDir : REEL_MEDIA_SLUG
 
-  return buildReelMediaResponse({
+  return buildPrivateMediaResponse({
     media,
     staticDir,
     rangeHeader: request.headers.get('range'),

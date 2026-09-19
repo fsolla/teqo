@@ -18,9 +18,9 @@ vi.mock('next/cache', () => ({
 
 import { buildSpeechPosterFfmpegArgs, speechPosterFilename } from '@/lib/speechPoster'
 import config from '@/payload.config'
+import { runFfmpeg } from '@/utilities/media/ffmpeg'
 import type { SpeechImportBundle } from '@/utilities/speech/speechImport'
 import { upsertSpeechBundle } from '@/utilities/speech/speechImport'
-import { runFfmpeg } from '@/utilities/speech/speechMediaPipeline'
 import { ensureSpeechPoster, findSpeechPosterMedia } from '@/utilities/speech/speechPosterJob'
 
 import { camaraVodStub, PLAYBACK_URL } from '../helpers/camaraVodStub'
