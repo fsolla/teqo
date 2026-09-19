@@ -9,6 +9,11 @@
  * (paced clicks/typing that the viewer sees), plus the burned caption and the
  * step badge of the design artifact.
  *
+ * C197 adds the spoken script: an optional `narration` per scene (capture
+ * scenes fall back to the burned caption, graphic scenes are silent without
+ * one) and the top-level `coverAlt` of the cover. Both enter the normalized
+ * object, so the shot list hash identifies them too.
+ *
  * Pure module: no browser, no ffmpeg, no I/O beyond reading the JSON file.
  */
 
@@ -18,16 +23,19 @@ import { resolve } from 'node:path'
 import { sha256Hex } from './cli.mjs'
 
 const SHOT_LIST_DIR = 'scripts/reels/shot-lists'
+const NARRATION_MAX_LENGTH = 600
 
 /**
  * @typedef {{
  *   slug: string, title: string, feature: string, route: string,
+ *   coverAlt: string,
  *   fixture: Record<string, unknown>,
  *   scenes: Array<{
  *     id: string, kind: string,
  *     template?: string, durationMs?: number,
  *     badge?: { number: number, total: number, label: string },
  *     caption?: { parts: Array<{ text: string, accent?: boolean }> } | null,
+ *     narration?: string | null,
  *     setup: Array<{ action: string, selector: string }>,
  *     steps: Array<{ action: string, selector: string, value?: string, pauseMs?: number, zoom?: boolean }>,
  *     leadInMs: number, trailOutMs: number, captionDelayMs: number, captionDurationMs: number | null,
@@ -50,9 +58,9 @@ const assertObject = (value, label) => {
   }
 }
 
-const assertString = (value, label) => {
+const assertString = (value, label, { trim = true } = {}) => {
   if (typeof value !== 'string' || value.trim() === '') fail(`${label} deve ser string não vazia.`)
-  return value.trim()
+  return trim ? value.trim() : value
 }
 
 const assertPositiveInt = (value, label, { max = 120000 } = {}) => {
@@ -74,10 +82,21 @@ const normalizeCaption = (raw, label) => {
   if (!Array.isArray(raw.parts) || raw.parts.length === 0) fail(`${label}.parts deve ter itens.`)
   const parts = raw.parts.map((part, index) => {
     assertObject(part, `${label}.parts[${index}]`)
-    const text = assertString(part.text, `${label}.parts[${index}].text`)
+    // The authored spacing between parts is part of the caption AND of the
+    // narration fallback — validated, never trimmed away.
+    const text = assertString(part.text, `${label}.parts[${index}].text`, { trim: false })
     return part.accent === true ? { text, accent: true } : { text }
   })
   return { parts }
+}
+
+const normalizeNarration = (raw, label) => {
+  if (raw === undefined || raw === null) return null
+  const text = assertString(raw, label)
+  if (text.length > NARRATION_MAX_LENGTH) {
+    fail(`${label} excede ${NARRATION_MAX_LENGTH} caracteres.`)
+  }
+  return text
 }
 
 const normalizeBadge = (raw, label) => {
@@ -142,6 +161,7 @@ const normalizeCaptureScene = (scene, index) => {
     kind: 'capture',
     badge: normalizeBadge(scene.badge, `${label}.badge`),
     caption: normalizeCaption(scene.caption, `${label}.caption`),
+    narration: normalizeNarration(scene.narration, `${label}.narration`),
     setup: normalizeSetup(scene.setup, `${label}.setup`),
     steps: normalizeSteps(scene.steps, `${label}.steps`),
     leadInMs:
@@ -176,6 +196,7 @@ const normalizeGraphicScene = (scene, index) => {
     kind: 'graphic',
     template,
     durationMs: assertPositiveInt(scene.durationMs, `${label}.durationMs`, { max: 15000 }),
+    narration: normalizeNarration(scene.narration, `${label}.narration`),
   }
 }
 
@@ -217,11 +238,16 @@ export const normalizeShotList = (raw) => {
     fail('a primeira cena deve ser o hook.')
   const last = scenes[scenes.length - 1]
   if (last.kind !== 'graphic' || last.template !== 'cta') fail('a última cena deve ser o CTA.')
+  const title = assertString(raw.title ?? slug, 'title')
   return {
     slug,
-    title: assertString(raw.title ?? slug, 'title'),
+    title,
     feature: assertString(raw.feature ?? slug, 'feature'),
     route,
+    coverAlt:
+      raw.coverAlt === undefined || raw.coverAlt === null
+        ? title
+        : assertString(raw.coverAlt, 'coverAlt'),
     fixture,
     scenes,
   }

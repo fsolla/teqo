@@ -16,12 +16,15 @@ import { execFile } from 'node:child_process'
 import { writeFile } from 'node:fs/promises'
 import { promisify } from 'node:util'
 
+import { NARRATION_PCM } from './reelScript.mjs'
 import { seconds } from './reelTimeline.mjs'
 
 const execFileAsync = promisify(execFile)
 const MAX_BUFFER_BYTES = 16 * 1024 * 1024
 
 const REQUIRED_FILTERS = ['fade', 'overlay', 'scale', 'zoompan']
+const AUDIO_REQUIRED_ENCODER = 'libmp3lame'
+const AUDIO_REQUIRED_FILTERS = ['atempo']
 export const REEL_PRESET = 'medium'
 export const REEL_CRF = 18
 export const PREVIEW_PRESET = 'ultrafast'
@@ -35,7 +38,13 @@ export const PREVIEW_CRF = 14
  * @typedef {(bin: string, args: string[]) => Promise<{ ok: boolean, stdout: string, stderr: string, error?: { code?: string } }>} RunFn
  */
 
-const defaultRun = async (bin, args) => {
+/**
+ * Generic process runner shared by the reel tools (ffmpeg and edge-tts): never
+ * throws, returns the exit outcome.
+ *
+ * @type {RunFn}
+ */
+export const runProcess = async (bin, args) => {
   try {
     const { stdout, stderr } = await execFileAsync(bin, args, { maxBuffer: MAX_BUFFER_BYTES })
     return { ok: true, stdout, stderr }
@@ -43,6 +52,8 @@ const defaultRun = async (bin, args) => {
     return { ok: false, stdout: error.stdout ?? '', stderr: error.stderr ?? '', error }
   }
 }
+
+const defaultRun = runProcess
 
 const versionLine = (stdout) =>
   stdout.split('\n').find((line) => line.startsWith('ffmpeg version')) ?? ''
@@ -52,10 +63,10 @@ const versionLine = (stdout) =>
  * filters the composer uses. Missing capabilities are reported, never assumed.
  *
  * @param {string} bin
- * @param {{ run?: RunFn }} [options]
+ * @param {{ run?: RunFn, audio?: boolean }} [options]
  * @returns {Promise<{ ok: true, bin: string, version: string } | { ok: false, bin: string, reason: string }>}
  */
-export const probeFfmpeg = async (bin, { run = defaultRun } = {}) => {
+export const probeFfmpeg = async (bin, { run = defaultRun, audio = false } = {}) => {
   const version = await run(bin, ['-hide_banner', '-version'])
   if (!version.ok)
     return { ok: false, bin, reason: `não executou (${version.error?.code ?? 'erro'})` }
@@ -63,9 +74,15 @@ export const probeFfmpeg = async (bin, { run = defaultRun } = {}) => {
   if (!encoders.ok || !/\blibx264\b/.test(encoders.stdout)) {
     return { ok: false, bin, reason: 'sem encoder libx264' }
   }
+  if (audio && !new RegExp(`\\b${AUDIO_REQUIRED_ENCODER}\\b`).test(encoders.stdout)) {
+    return { ok: false, bin, reason: `sem encoder ${AUDIO_REQUIRED_ENCODER}` }
+  }
   const filters = await run(bin, ['-hide_banner', '-filters'])
   if (!filters.ok) return { ok: false, bin, reason: 'não listou filtros' }
-  const missing = REQUIRED_FILTERS.filter(
+  const requiredFilters = audio
+    ? [...REQUIRED_FILTERS, ...AUDIO_REQUIRED_FILTERS]
+    : REQUIRED_FILTERS
+  const missing = requiredFilters.filter(
     (filter) => !new RegExp(`\\b${filter}\\b`).test(filters.stdout),
   )
   if (missing.length > 0) return { ok: false, bin, reason: `sem filtro(s): ${missing.join(', ')}` }
@@ -78,10 +95,15 @@ const installHint =
 /**
  * Resolves the first candidate that passes the probe. Explicit `FFMPEG_PATH` is strict.
  *
- * @param {{ env?: Record<string, string | undefined>, run?: RunFn, installer?: { path?: string } | null }} [options]
+ * @param {{ env?: Record<string, string | undefined>, run?: RunFn, installer?: { path?: string } | null, audio?: boolean }} [options]
  * @returns {Promise<{ ok: true, bin: string, version: string, source: string }>}
  */
-export const resolveFfmpeg = async ({ env = process.env, run = defaultRun, installer } = {}) => {
+export const resolveFfmpeg = async ({
+  env = process.env,
+  run = defaultRun,
+  installer,
+  audio = false,
+} = {}) => {
   let packaged = installer
   if (packaged === undefined) {
     try {
@@ -99,7 +121,7 @@ export const resolveFfmpeg = async ({ env = process.env, run = defaultRun, insta
   if (packaged?.path) candidates.push({ bin: packaged.path, source: 'empacotado', strict: false })
   const failures = []
   for (const candidate of candidates) {
-    const probe = await probeFfmpeg(candidate.bin, { run })
+    const probe = await probeFfmpeg(candidate.bin, { run, audio })
     if (probe.ok) {
       return { ok: true, bin: probe.bin, version: probe.version, source: candidate.source }
     }
@@ -107,18 +129,20 @@ export const resolveFfmpeg = async ({ env = process.env, run = defaultRun, insta
     if (candidate.strict) break
   }
   throw new Error(
-    `Nenhum ffmpeg utilizável (libx264 + filtros do reel). ${failures.join('; ')}. ${installHint}`,
+    `Nenhum ffmpeg utilizável (libx264 + filtros do reel${audio ? ' + áudio' : ''}). ${failures.join('; ')}. ${installHint}`,
   )
 }
 
 /**
- * Runs ffmpeg and fails with the stderr tail — never swallows the exit code.
+ * Runs a process and fails with the stderr tail — never swallows the exit
+ * code. Shared by the reel tools (ffmpeg and edge-tts); `runFfmpeg` is the
+ * ffmpeg-labelled alias kept for the historical call sites.
  *
  * @param {string} bin
  * @param {string[]} args
  * @param {{ run?: RunFn, label?: string }} [options]
  */
-export const runFfmpeg = async (bin, args, { run = defaultRun, label = 'ffmpeg' } = {}) => {
+export const runTool = async (bin, args, { run = defaultRun, label = 'processo' } = {}) => {
   const result = await run(bin, args)
   if (!result.ok) {
     const tail = (result.stderr || result.error?.message || '').trim().slice(-400)
@@ -126,6 +150,10 @@ export const runFfmpeg = async (bin, args, { run = defaultRun, label = 'ffmpeg' 
   }
   return result
 }
+
+/** @type {typeof runTool} */
+export const runFfmpeg = (bin, args, options = {}) =>
+  runTool(bin, args, { label: 'ffmpeg', ...options })
 
 /**
  * One scene clip: seek the source, apply the zoom camera (when the scene has
@@ -303,6 +331,85 @@ export const buildConcatArgs = ({ listPath, output }) => [
   listPath,
   '-c',
   'copy',
+  '-movflags',
+  '+faststart',
+  '-y',
+  output,
+]
+
+/**
+ * C197 — decode one TTS beat (mp3) to the raw narration PCM, optionally
+ * applying the `atempo` fit in the same pass.
+ *
+ * @param {{ input: string, output: string, tempo?: number | null }} options
+ * @returns {string[]}
+ */
+export const buildAudioDecodeArgs = ({ input, output, tempo = null }) => [
+  '-hide_banner',
+  '-loglevel',
+  'error',
+  '-i',
+  input,
+  ...(tempo && tempo !== 1 ? ['-filter:a', `atempo=${tempo}`] : []),
+  '-ac',
+  String(NARRATION_PCM.channels),
+  '-ar',
+  String(NARRATION_PCM.sampleRate),
+  '-c:a',
+  'pcm_s16le',
+  '-f',
+  's16le',
+  '-y',
+  output,
+]
+
+/** Encode the padded narration PCM track into `narracao.mp3` (mono 128 kbps). */
+export const buildNarrationEncodeArgs = ({ input, output }) => [
+  '-hide_banner',
+  '-loglevel',
+  'error',
+  '-f',
+  's16le',
+  '-ar',
+  String(NARRATION_PCM.sampleRate),
+  '-ac',
+  String(NARRATION_PCM.channels),
+  '-i',
+  input,
+  '-c:a',
+  'libmp3lame',
+  '-b:a',
+  '128k',
+  '-y',
+  output,
+]
+
+/**
+ * Mux `narracao.mp3` into a copy of `reel.mp4` — the video stream is copied
+ * bit-for-bit (both variants share the same track) and the audio becomes AAC.
+ *
+ * @param {{ video: string, audio: string, output: string }} options
+ * @returns {string[]}
+ */
+export const buildMuxAudioVideoArgs = ({ video, audio, output }) => [
+  '-hide_banner',
+  '-loglevel',
+  'error',
+  '-i',
+  video,
+  '-i',
+  audio,
+  '-map',
+  '0:v:0',
+  '-map',
+  '1:a:0',
+  '-c:v',
+  'copy',
+  '-c:a',
+  'aac',
+  '-b:a',
+  '128k',
+  '-shortest',
   '-movflags',
   '+faststart',
   '-y',

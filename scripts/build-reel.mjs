@@ -1,17 +1,19 @@
 /**
- * C196 — reel builder: one shot list in, one publishable package out
- * (`reel.mp4` + `capa.png` + `metadata.json`).
+ * C196/C197 — reel builder: one shot list in, one publishable package out
+ * (`reel.mp4` + `capa.png` + `narracao.srt` + `roteiro.md` + `metadata.json`,
+ * plus `narracao.mp3` + `reel-audio.mp4` with `--audio`).
  *
  * Pipeline: capture (real site, mobile viewport, timestamped screencast) →
  * overlays/cover/graphic scenes (Playwright + the site's own fonts) → one
- * H.264 clip per scene (zoompan + burned captions) → concat → package.
+ * H.264 clip per scene (zoompan + burned captions) → concat → transcription
+ * (always) → optional TTS draft → package.
  *
  * Runs on the workstation: the database is never touched and the site is
  * visited as an anonymous reader (the card download is client-side).
  *
  * Usage:
  *   node scripts/build-reel.mjs cards [--base-url=…] [--out-dir=…] [--work-dir=…]
- *     [--dry-run] [--capture-only]
+ *     [--dry-run] [--capture-only] [--audio] [--voice=pt-BR-AntonioNeural]
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'
@@ -30,6 +32,7 @@ import {
 } from './lib/reelCapture.mjs'
 import {
   buildConcatArgs,
+  buildMuxAudioVideoArgs,
   buildSceneClipArgs,
   concatListContent,
   encodeFrames,
@@ -50,6 +53,12 @@ import {
   renderCover,
   renderOverlay,
 } from './lib/reelRender.mjs'
+import {
+  buildReelRoteiro,
+  buildReelSrt,
+  buildScriptBeats,
+  resolveSceneNarration,
+} from './lib/reelScript.mjs'
 import { captureScenes, graphicScenes, loadShotList } from './lib/reelShotList.mjs'
 import {
   captionOverlayHtml,
@@ -59,6 +68,7 @@ import {
   hookHtml,
 } from './lib/reelTemplates.mjs'
 import { captureScenePlan, graphicScenePlan, REEL, totalDurationMs } from './lib/reelTimeline.mjs'
+import { buildNarrationTrack, DEFAULT_TTS_VOICE, resolveEdgeTts } from './lib/reelTts.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const LABEL = 'build-reel'
@@ -75,7 +85,7 @@ const main = async () => {
   const slug = positional[0]
   if (!slug) {
     die(
-      'Uso: node scripts/build-reel.mjs <slug> [--base-url=…] [--out-dir=…] [--work-dir=…] [--dry-run] [--capture-only]',
+      'Uso: node scripts/build-reel.mjs <slug> [--base-url=…] [--out-dir=…] [--work-dir=…] [--dry-run] [--capture-only] [--audio] [--voice=pt-BR-AntonioNeural]',
     )
   }
   const outRoot = resolve(
@@ -92,6 +102,22 @@ const main = async () => {
       : process.env.REELS_BASE_URL?.trim()) || DEFAULT_BASE_URL
   const dryRun = flags['dry-run'] === true
   const captureOnly = flags['capture-only'] === true
+  if (flags.audio !== undefined && flags.audio !== true) {
+    die('--audio não aceita valor (use --audio puro).')
+  }
+  const audio = flags.audio === true
+  if (audio && captureOnly) die('--audio não combina com --capture-only.')
+  const voiceFlag = flags.voice
+  if (voiceFlag !== undefined && typeof voiceFlag !== 'string') {
+    die('--voice exige um valor: --voice=pt-BR-AntonioNeural.')
+  }
+  if (typeof voiceFlag === 'string' && voiceFlag.trim() === '') {
+    die('--voice exige um valor: --voice=pt-BR-AntonioNeural.')
+  }
+  if (voiceFlag !== undefined && !audio) die('--voice exige --audio.')
+  const voice =
+    (typeof voiceFlag === 'string' ? voiceFlag.trim() : process.env.REELS_TTS_VOICE?.trim()) ||
+    DEFAULT_TTS_VOICE
 
   const { shotList, hash } = await loadShotList({ slug, root: ROOT })
   const outDir = join(outRoot, slug)
@@ -104,12 +130,15 @@ const main = async () => {
         scene.kind === 'capture'
           ? `captura · ${scene.steps.length} passo(s)`
           : `gráfica · ${scene.template}`
-      console.log(`  - ${scene.id}: ${detail}`)
+      const speech = resolveSceneNarration(scene)
+      console.log(`  - ${scene.id}: ${detail} · ${speech ? `fala: ${speech}` : 'sem fala'}`)
     }
     return
   }
-  const ffmpeg = await resolveFfmpeg()
+  const ffmpeg = await resolveFfmpeg({ audio })
   console.log(`[${LABEL}] ffmpeg: ${ffmpeg.source} (${ffmpeg.version || ffmpeg.bin})`)
+  const tts = audio ? await resolveEdgeTts({ root: ROOT }) : null
+  if (tts) console.log(`[${LABEL}] TTS: ${tts.source} (${tts.bin}) — voz ${voice}`)
 
   await mkdir(workDir, { recursive: true })
   await mkdir(outDir, { recursive: true })
@@ -276,15 +305,53 @@ const main = async () => {
   await runFfmpeg(ffmpeg.bin, buildConcatArgs({ listPath, output: reelPath }), { label: 'concat' })
 
   const durationMs = totalDurationMs([...plans.values()])
+  const beats = buildScriptBeats({ shotList, plans })
+  await writeFile(join(outDir, 'narracao.srt'), buildReelSrt(beats))
+  await writeFile(
+    join(outDir, 'roteiro.md'),
+    buildReelRoteiro({ shotList, hash, beats, durationMs }),
+  )
+  console.log(`[${LABEL}] transcrição: narracao.srt · roteiro.md`)
+
+  const artifacts = ['reel.mp4', 'capa.png', 'narracao.srt', 'roteiro.md']
+  if (audio) {
+    const mp3Path = join(outDir, 'narracao.mp3')
+    await buildNarrationTrack({
+      ffmpegBin: ffmpeg.bin,
+      edgeTtsBin: tts.bin,
+      voice,
+      beats,
+      workDir,
+      mp3Path,
+    })
+    await runFfmpeg(
+      ffmpeg.bin,
+      buildMuxAudioVideoArgs({
+        video: reelPath,
+        audio: mp3Path,
+        output: join(outDir, 'reel-audio.mp4'),
+      }),
+      { label: 'mux do áudio' },
+    )
+    artifacts.push('narracao.mp3', 'reel-audio.mp4')
+    console.log(`[${LABEL}] áudio: narracao.mp3 + reel-audio.mp4 (voz ${voice})`)
+  }
+
   const metadata = buildReelMetadata({
     shotList,
     hash,
     durationMs,
     ffmpeg: ffmpeg.version || ffmpeg.bin,
+    audio,
+    voice: audio ? voice : null,
+    artifacts,
   })
   await writeFile(join(outDir, 'metadata.json'), `${JSON.stringify(metadata, null, 2)}\n`)
+  const audioFiles = audio ? ' · narracao.mp3 · reel-audio.mp4' : ''
   console.log(`[${LABEL}] pacote: ${outDir}`)
-  console.log(`  reel.mp4 (${(durationMs / 1000).toFixed(1)}s) · capa.png · metadata.json`)
+  console.log(
+    `  reel.mp4 (${(durationMs / 1000).toFixed(1)}s) · capa.png · narracao.srt · roteiro.md${audioFiles} · metadata.json`,
+  )
 }
 
 await main().catch((error) => {

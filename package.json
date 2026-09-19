@@ -53,6 +53,7 @@
     "build:municipality-zone-geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-municipality-zone-geometries.mjs",
     "build:tse-city-codes": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-tse-city-codes.mjs",
     "reels:build": "node scripts/build-reel.mjs",
+    "reels:tts:setup": "node scripts/reels-tts-setup.mjs",
     "dev": "node scripts/dev.mjs",
     "devsafe": "rm -rf .next && node scripts/dev.mjs",
     "predev": "node scripts/predev-importmap.mjs",

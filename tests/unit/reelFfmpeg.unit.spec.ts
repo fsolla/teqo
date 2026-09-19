@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildAudioDecodeArgs,
   buildConcatArgs,
   buildFrameListContent,
+  buildMuxAudioVideoArgs,
+  buildNarrationEncodeArgs,
   buildSceneClipArgs,
   concatListContent,
   encodeFrames,
@@ -71,6 +74,39 @@ describe('reelFfmpeg', () => {
     await expect(probeFfmpeg('/ffmpeg', { run: noZoompan })).resolves.toMatchObject({
       ok: false,
       reason: 'sem filtro(s): zoompan',
+    })
+  })
+
+  it('requires libmp3lame and atempo only when probing for audio', async () => {
+    await expect(probeFfmpeg('/ffmpeg', { run: okRun, audio: true })).resolves.toMatchObject({
+      ok: false,
+      reason: 'sem encoder libmp3lame',
+    })
+
+    const audioRun = async (_bin: string, args: string[]): Promise<RunResult> => {
+      if (args.includes('-version'))
+        return { ok: true, stdout: 'ffmpeg version 7.0.2-test\n', stderr: '' }
+      if (args.includes('-encoders'))
+        return { ok: true, stdout: ' V....D libx264 H.264\n A....D libmp3lame MP3\n', stderr: '' }
+      return {
+        ok: true,
+        stdout: 'overlay\nfade\nscale\nzoompan\natempo A->A\n',
+        stderr: '',
+      }
+    }
+    await expect(probeFfmpeg('/ffmpeg', { run: audioRun, audio: true })).resolves.toMatchObject({
+      ok: true,
+    })
+
+    const noAtempo = async (_bin: string, args: string[]): Promise<RunResult> => {
+      if (args.includes('-version')) return { ok: true, stdout: 'ffmpeg version x\n', stderr: '' }
+      if (args.includes('-encoders'))
+        return { ok: true, stdout: 'libx264\nlibmp3lame\n', stderr: '' }
+      return { ok: true, stdout: 'overlay\nfade\nscale\nzoompan\n', stderr: '' }
+    }
+    await expect(probeFfmpeg('/ffmpeg', { run: noAtempo, audio: true })).resolves.toMatchObject({
+      ok: false,
+      reason: 'sem filtro(s): atempo',
     })
   })
 
@@ -177,6 +213,80 @@ describe('reelFfmpeg', () => {
       '+faststart',
       '-y',
       'reel.mp4',
+    ])
+  })
+
+  it('builds the decode, encode and mux commands of the narration track', () => {
+    expect(buildAudioDecodeArgs({ input: 'in.mp3', output: 'out.pcm' })).toEqual([
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      'in.mp3',
+      '-ac',
+      '1',
+      '-ar',
+      '24000',
+      '-c:a',
+      'pcm_s16le',
+      '-f',
+      's16le',
+      '-y',
+      'out.pcm',
+    ])
+    const fitted = buildAudioDecodeArgs({ input: 'in.mp3', output: 'fit.pcm', tempo: 1.5 })
+    expect(fitted).toContain('atempo=1.5')
+    expect(fitted[fitted.indexOf('-filter:a') - 1]).toBe('in.mp3')
+
+    expect(buildNarrationEncodeArgs({ input: 'narracao.pcm', output: 'narracao.mp3' })).toEqual([
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-f',
+      's16le',
+      '-ar',
+      '24000',
+      '-ac',
+      '1',
+      '-i',
+      'narracao.pcm',
+      '-c:a',
+      'libmp3lame',
+      '-b:a',
+      '128k',
+      '-y',
+      'narracao.mp3',
+    ])
+
+    expect(
+      buildMuxAudioVideoArgs({
+        video: 'reel.mp4',
+        audio: 'narracao.mp3',
+        output: 'reel-audio.mp4',
+      }),
+    ).toEqual([
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      'reel.mp4',
+      '-i',
+      'narracao.mp3',
+      '-map',
+      '0:v:0',
+      '-map',
+      '1:a:0',
+      '-c:v',
+      'copy',
+      '-c:a',
+      'aac',
+      '-b:a',
+      '128k',
+      '-shortest',
+      '-movflags',
+      '+faststart',
+      '-y',
+      'reel-audio.mp4',
     ])
   })
 

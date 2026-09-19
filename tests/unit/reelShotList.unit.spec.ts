@@ -118,4 +118,60 @@ describe('reelShotList', () => {
     }
     expect(() => normalizeShotList({ ...withoutFixture, scenes })).toThrow(/fixture.cardName/)
   })
+
+  it('normalizes the narration and preserves the authored caption spacing', () => {
+    const shotList = normalizeShotList(
+      rawShotList({
+        coverAlt: 'Alt próprio da capa',
+        scenes: [
+          { id: 'hook', kind: 'graphic', template: 'hook', durationMs: 1000, narration: ' Olá.' },
+          {
+            id: 'step-1',
+            kind: 'capture',
+            badge: { number: 1, total: 3, label: 'Escolha' },
+            caption: { parts: [{ text: 'Toque em ' }, { text: '“Card”', accent: true }] },
+            narration: 'Fale por cima.',
+            steps: [{ action: 'click', selector: '#a' }],
+          },
+          { id: 'cta', kind: 'graphic', template: 'cta', durationMs: 1000 },
+        ],
+      }),
+    )
+    expect(shotList.coverAlt).toBe('Alt próprio da capa')
+    expect(shotList.scenes[0]).toMatchObject({ narration: 'Olá.' })
+    expect(captureScenes(shotList)[0]).toMatchObject({ narration: 'Fale por cima.' })
+    expect(shotList.scenes[2]).toMatchObject({ narration: null })
+    expect(captureScenes(shotList)[0].caption?.parts[0].text).toBe('Toque em ')
+  })
+
+  it('falls back coverAlt to the title and hashes the narration', () => {
+    const shotList = normalizeShotList(rawShotList())
+    expect(shotList.coverAlt).toBe(shotList.title)
+
+    const scenes = (rawShotList().scenes as Array<Record<string, unknown>>).map((scene, index) =>
+      index === 0 ? { ...scene, narration: 'Nova fala.' } : scene,
+    )
+    const withSpeech = normalizeShotList(rawShotList({ coverAlt: 'x', scenes }))
+    expect(shotListHash(withSpeech)).not.toBe(shotListHash(shotList))
+  })
+
+  it('rejects an over-long narration', () => {
+    expect(() =>
+      normalizeShotList(
+        rawShotList({
+          scenes: [
+            {
+              id: 'hook',
+              kind: 'graphic',
+              template: 'hook',
+              durationMs: 1000,
+              narration: 'a'.repeat(601),
+            },
+            rawShotList().scenes[1],
+            rawShotList().scenes[2],
+          ],
+        }),
+      ),
+    ).toThrow(/narration excede 600 caracteres/)
+  })
 })

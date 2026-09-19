@@ -103,8 +103,13 @@ next-env.d.ts
 /docs/research/graficos-instagram/
 
 # C196 — reels tutoriais: o shot list é versionado (scripts/reels/shot-lists);
-# o pacote (reel.mp4/capa.png/metadata.json) e os intermediários são regeneráveis.
+# o pacote (reel.mp4/capa.png/narracao.srt/roteiro.md/metadata.json) e os
+# intermediários são regeneráveis.
 /data/reels/
+
+# C197 — venv do provider TTS (edge-tts) do rascunho de narração: local da
+# workstation, nunca versionado (o deploy npm não o toca).
+/scripts/reels/.venv/
 
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
