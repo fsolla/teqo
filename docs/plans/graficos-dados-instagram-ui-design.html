@@ -462,7 +462,7 @@
 
       /* ------------------------------------------------------------------ */
       /* CENA 02A · comparação vertical de 2 categorias, ambas positivas.   */
-      /* Os tons distinguem as categorias; não codificam vencedor/perdedor. */
+      /* A posição e os rótulos distinguem as categorias; a cor codifica a valência boa comum. */
       /* ------------------------------------------------------------------ */
       .feed-canvas.dual-positive .chart-headline {
         max-width: 900px;
@@ -507,10 +507,10 @@
         min-height: 6px;
       }
       .feed-canvas.dual-positive .column.positive-a {
-        background: #c51414;
+        background: #e4102f;
       }
       .feed-canvas.dual-positive .column.positive-b {
-        background: #a21c1c;
+        background: #e4102f;
       }
       .feed-canvas.dual-positive .column-label {
         position: absolute;
@@ -1014,8 +1014,9 @@
             <p class="mt-2 text-sm leading-6 text-stone-700">
               Variante <strong>certificada pelo designer de referência</strong> em 2026-09-19 e
               pronta para avaliação na tela renderizada. Ela não altera as cenas já aprovadas: só
-              acrescenta a comparação vertical em dois tons de vermelho, sem semântica de vencedor e
-              perdedor. O dono do produto aprovou a peça final renderizada em 2026-09-19.
+              acrescenta a comparação vertical positiva, sem semântica de vencedor e perdedor. Sob a
+              revisão C203, a paleta foi re-decidida: as duas colunas usam o vermelho oficial
+              #e4102f. O dono do produto aprovou a peça final renderizada em 2026-09-19.
             </p>
           </div>
           <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
@@ -1523,6 +1524,7 @@
           <div class="flex flex-wrap gap-2">
             <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
             <span class="measure-tag">2 colunas · teto 280 px</span>
+            <span class="measure-tag">PALETA RE-DECIDIDA · C203</span>
             <span class="signoff-approved-badge">APROVADA · 2026-09-19</span>
           </div>
         </div>
@@ -1582,19 +1584,19 @@
 
           <aside class="grid gap-4">
             <div class="rounded-xl border border-red-200 bg-red-50/70 p-4">
-              <p class="text-xs font-extrabold text-[#a21c1c]">MESMA VALÊNCIA, SEM PÓDIO</p>
+              <p class="text-xs font-extrabold text-[#e4102f]">MESMA VALÊNCIA, SEM PÓDIO</p>
               <p class="mt-2 text-sm leading-6 text-stone-700">
-                As duas colunas são boas notícias. O par vermelho só separa categorias; tom mais
-                claro ou mais escuro <strong>não significa</strong> melhor, pior, ganho, perda,
-                prioridade ou vencedor. A altura comunica exclusivamente o valor observado.
+                Quando duas categorias forem igualmente positivas e sem hierarquia, ambas usam
+                <strong>#e4102f</strong>: o vermelho codifica a valência boa compartilhada, não um
+                vencedor; posição e rótulos diretos distinguem as categorias, sem criar um segundo
+                vermelho. A altura comunica exclusivamente o valor observado.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
               <p class="text-xs font-bold text-brand-dark">COR NÃO É A ÚNICA PISTA</p>
               <p class="mt-2 text-sm leading-6 text-stone-700">
                 Cada coluna mantém valor próprio acima do topo e rótulo curto próprio abaixo da
-                base. A ordem recebida é preservada; nunca reordenar pelo valor nem atribuir o tom
-                mais vivo ao maior número.
+                base. A posição preserva a ordem de entrada; nunca reordenar pelo maior valor.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
@@ -1636,12 +1638,14 @@
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
-              <p class="text-sm font-bold">Par de vermelhos · fixo</p>
+              <p class="text-sm font-bold">Vermelho compartilhado · C203</p>
               <p class="mt-2 text-sm leading-5 text-stone-600">
-                Categoria A = <span class="rule-code">#c51414</span>; categoria B =
-                <span class="rule-code">#a21c1c</span>. Atribuir por ordem de entrada, nunca pelo
-                maior valor. Sem classe <span class="rule-code">highlight</span>, sem cinza no plot
-                e sem opacidade. Ambos contrastam com o papel acima de 3:1 (5,73:1 e 7,34:1).
+                Quando duas categorias forem igualmente positivas e sem hierarquia, ambas usam
+                <span class="rule-code">#e4102f</span>: o vermelho codifica a valência boa
+                compartilhada, não um vencedor; posição e rótulos diretos distinguem as categorias,
+                sem criar um segundo vermelho. A posição preserva a ordem de entrada, nunca o maior
+                valor. Sem classe <span class="rule-code">highlight</span>, sem cinza no plot e sem
+                opacidade. O vermelho oficial contrasta com o papel acima de 3:1 (≈4,8:1).
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
@@ -1653,7 +1657,7 @@
                 <span class="rule-code">column-label</span> usa
                 <span class="rule-code">#57534e</span> sobre papel (7,25:1). Se algum formato futuro
                 puser texto sobre as colunas, usar branco <span class="rule-code">#fff</span>:
-                6,03:1 sobre A e 7,73:1 sobre B.
+                ≈4,8:1 sobre ambas.
               </p>
             </div>
             <div class="rounded-xl border border-stone-200 bg-white p-4">
