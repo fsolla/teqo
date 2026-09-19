@@ -20,6 +20,7 @@ const commands = [
   'dossie-solla-instituicao',
   'dossie-solla-tema',
   'graficos-dados',
+  'reels-tutoriais',
 ] as const
 
 describe('opencode commands couple to their skill by exact name', () => {

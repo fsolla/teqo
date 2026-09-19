@@ -52,6 +52,7 @@
     "build:geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-geometries.mjs",
     "build:municipality-zone-geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-municipality-zone-geometries.mjs",
     "build:tse-city-codes": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-tse-city-codes.mjs",
+    "reels:build": "node scripts/build-reel.mjs",
     "dev": "node scripts/dev.mjs",
     "devsafe": "rm -rf .next && node scripts/dev.mjs",
     "predev": "node scripts/predev-importmap.mjs",
@@ -152,6 +153,7 @@
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1112.0",
     "@eslint/eslintrc": "^3.3.6",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@playwright/test": "1.58.2",
     "@smithy/node-http-handler": "^4.11.2",
     "@tailwindcss/postcss": "^4.1.18",

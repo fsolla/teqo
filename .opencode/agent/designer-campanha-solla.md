@@ -22,6 +22,7 @@ Você é o diretor de design e conversão do site de campanha do Deputado Federa
 3. Atividade parlamentar: `https://www.camara.leg.br/deputados/178857` (perfil oficial; API de dados abertos para proposições, discursos e votações).
 4. Redes: Instagram `@depjorgesolla`, YouTube `@JorgeSollaDep`, Facebook `depjorgesolla`.
 5. **Regra de ouro do mandato: "sem fonte, não publica".** Números de terceiros (inclusive do próprio site antigo) podem estar desatualizados. Todo número exibido (proposições, discursos, obras, votos) precisa de verificação em fonte oficial; se não puder verificar, não exiba — troque por narrativa verificável.
+6. **Kit de marca oficial** (`public/campaign-kit/` + manual em `docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`): paleta `#e4102f`/`#184e92`/`#ffeb00`/`#009647`; marcas positiva (fundo claro) e negativa (fundo vermelho/escuro), número e estrela; slogan "Mais Saúde, Mais Futuro" vive dentro das marcas completas. Não recriar lockups quando o ativo oficial existe; a estrela é usada a 100% sobre disco branco.
 
 ## O candidato em uma página (resumo para decisões de design)
 

@@ -10,7 +10,7 @@
         --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
         --color-background: var(--background);
         --color-foreground: var(--foreground);
-        --color-primary: var(--pt-red);
+        --color-primary: var(--kit-red);
         --color-primary-foreground: #ffffff;
         --color-muted: #ebe9e9;
         --color-muted-foreground: var(--campaign-muted);
@@ -19,9 +19,16 @@
       [data-theme='campaign-site'] {
         --background: #fff8f2;
         --foreground: #000000;
-        --pt-red: #a21c1c;
-        --pt-red-dark: #47130e;
-        --pt-yellow: #ffe607;
+        --kit-red: #e4102f;
+        --kit-blue: #184e92;
+        --kit-yellow: #ffeb00;
+        --kit-green: #009647;
+        --kit-orange: #f89c0e;
+        --site-red: #a21c1c;
+        --site-yellow: #ffe607;
+        --pt-red: var(--kit-red);
+        --pt-red-dark: #184e92;
+        --pt-yellow: var(--kit-yellow);
         --campaign-cream: #fff8f2;
         --campaign-muted: #6c615e;
         --campaign-surface: #f9faff;
@@ -35,9 +42,9 @@
         font-family: Inter, ui-sans-serif, system-ui, sans-serif;
       }
       .brexter {
-        /* Brexter is the approved face; Impact is the standalone gate fallback. */
+        /* Brexter Bold 700 is the approved face; Impact is only the standalone fallback. */
         font-family: Brexter, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-        font-weight: 900;
+        font-weight: 700;
       }
       .artifact-grid {
         background-color: #ebe9e9;
@@ -68,9 +75,10 @@
       .crop-line {
         border-color: rgb(255 255 255 / 78%);
       }
-      .logo-lockup {
-        letter-spacing: -0.055em;
-        transform: skew(-4deg);
+      .kit-asset {
+        display: block;
+        height: auto;
+        object-fit: contain;
       }
       .cursor {
         filter: drop-shadow(0 2px 2px rgb(0 0 0 / 35%));
@@ -97,7 +105,8 @@
         <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
           Um sistema de frames para ensinar o site com ritmo, contraste e marca — sem competir com a
           gravação. O vermelho enquadra a história; amarelo aponta a ação; Brexter carrega o
-          impacto.
+          impacto. O kit oficial 2026 assina as cenas gráficas; a captura conserva a aparência real
+          do site.
         </p>
         <div class="mt-5 flex flex-wrap gap-2 text-xs">
           <a
@@ -106,19 +115,24 @@
             >01–03 · Sequência</a
           >
           <a
+            href="#kit"
+            class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
+            >04 · Kit oficial</a
+          >
+          <a
             href="#safe-zone"
             class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
-            >04 · Safe zone</a
+            >05 · Safe zone</a
           >
           <a
             href="#capa"
             class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
-            >05 · Capa e recortes</a
+            >06 · Capa e recortes</a
           >
           <a
             href="#spec"
             class="rounded-full border border-black/10 bg-white px-3 py-1.5 font-medium"
-            >06 · Sistema</a
+            >07 · Sistema</a
           >
         </div>
       </header>
@@ -150,11 +164,13 @@
               class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-(--pt-red)"
             >
               <div
-                class="absolute inset-0 bg-[radial-gradient(circle_at_85%_18%,rgb(255_230_7/28%),transparent_22%),linear-gradient(160deg,#a21c1c_0%,#8f1717_55%,#47130e_100%)]"
+                class="absolute inset-0 bg-[linear-gradient(160deg,#e4102f_0%,#e4102f_62%,#184e92_145%)]"
               ></div>
-              <div
-                class="absolute -right-[12%] top-[15%] size-[52%] rotate-12 rounded-[30%] border-[14px] border-(--pt-yellow)/90"
-              ></div>
+              <img
+                src="../../public/campaign-kit/estrela.png"
+                alt=""
+                class="kit-asset absolute left-[250px] top-[54px] size-[88px] rounded-full bg-white"
+              />
               <div class="absolute left-[6%] right-[6%] top-[14%]">
                 <div
                   class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[1.7%] text-[3.5cqw] font-black text-black"
@@ -162,29 +178,44 @@
                   FAÇA PARTE
                 </div>
                 <h3
-                  class="brexter mt-[8%] max-w-[88%] text-[12cqw] leading-[0.88] uppercase tracking-[-0.045em] text-white"
+                  class="brexter mt-[8%] max-w-full text-[9.5cqw] leading-[0.9] uppercase tracking-[-0.05em] text-white"
                 >
-                  Seu apoio<br />vira card<br /><span class="text-(--pt-yellow)">em segundos.</span>
+                  <span class="block whitespace-nowrap">Seu apoio</span>
+                  <span class="block whitespace-nowrap">vira card</span>
+                  <span class="block whitespace-nowrap text-(--pt-yellow)">em segundos.</span>
                 </h3>
               </div>
-              <div class="absolute inset-x-[6%] bottom-[15%] flex items-end justify-between gap-3">
-                <p class="max-w-[58%] text-[3.8cqw] font-semibold leading-[1.2] text-white">
+              <div class="absolute left-[22px] top-[356px] w-[170px]">
+                <p class="text-[3.8cqw] font-semibold leading-[1.2] text-white">
                   Veja como criar o seu pelo celular.
                 </p>
-                <div class="text-right">
-                  <p class="logo-lockup brexter text-[8cqw] leading-none text-white">SOLLA</p>
-                  <p class="text-[2.6cqw] font-bold text-(--pt-yellow)">13 13</p>
-                </div>
               </div>
+              <img
+                src="../../public/campaign-kit/marca-negativa-completa.png"
+                alt="Jorge Solla 1313 · Mais Saúde, Mais Futuro"
+                class="kit-asset absolute left-[206px] top-[322px] w-[132px]"
+              />
               <span
                 class="absolute bottom-[5%] left-[6%] rounded bg-black/45 px-2 py-1 text-[2.5cqw] text-white"
-                >NEEDS ASSET · logo oficial</span
+                >KIT OFICIAL · marca negativa completa</span
               >
             </div>
             <p class="mx-auto mt-3 max-w-[360px] text-xs leading-5 text-muted-foreground">
-              <strong class="text-foreground">Movimento:</strong> título entra em dois beats; aro
-              amarelo expande 96% → 100%. Sem zoom de site ainda.
+              <strong class="text-foreground">Movimento:</strong> título entra em dois beats; a
+              estrela oficial deriva 8px para dentro com fade, sem pulsar. Sem zoom de site ainda.
             </p>
+            <div
+              class="mx-auto mt-3 max-w-[360px] rounded-xl border border-(--pt-red)/25 bg-(--campaign-cream) p-3 text-xs leading-5"
+            >
+              <p class="font-bold text-(--pt-red)">CALIBRAÇÃO · BREXTER BOLD OFICIAL @ 360PX</p>
+              <p class="mt-1 text-muted-foreground">
+                Título: <strong class="text-foreground">34,2px (9,5cqw)</strong> · entrelinha
+                <strong class="text-foreground">30,78px (0,9)</strong> · tracking
+                <strong class="text-foreground">−1,71px (−0,05em)</strong> · largura máxima
+                <strong class="text-foreground">316,8px (100% do bloco entre insets de 6%)</strong>.
+                As três linhas são explícitas e não quebram internamente.
+              </p>
+            </div>
           </article>
 
           <!-- PASSO -->
@@ -203,7 +234,7 @@
               class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-black"
             >
               <div class="site-placeholder absolute inset-0">
-                <div class="absolute inset-x-0 top-0 h-[7%] bg-(--pt-red)">
+                <div class="absolute inset-x-0 top-0 h-[7%] bg-(--site-red)">
                   <div
                     class="absolute left-[6%] top-1/2 h-[18%] w-[28%] -translate-y-1/2 rounded-full bg-white/75"
                   ></div>
@@ -212,7 +243,7 @@
                   ></div>
                 </div>
                 <div class="absolute inset-x-[6%] top-[11%] text-center">
-                  <p class="text-[2.4cqw] font-black tracking-[0.1em] text-(--pt-red) uppercase">
+                  <p class="text-[2.4cqw] font-black tracking-[0.1em] text-(--site-red) uppercase">
                     Faça parte
                   </p>
                   <h4 class="mt-[1%] text-[5cqw] font-black leading-tight">
@@ -228,7 +259,7 @@
                   <div
                     class="aspect-square flex-1 rounded-[6%] border border-black/10 bg-(--campaign-cream) p-[3%]"
                   >
-                    <div class="h-full rounded-[5%] bg-(--pt-red)"></div>
+                    <div class="h-full rounded-[5%] bg-(--site-red)"></div>
                     <p class="mt-[3%] text-center text-[2.1cqw] font-bold">Card com seu nome</p>
                   </div>
                   <div
@@ -247,7 +278,7 @@
                     Seu nome
                   </div>
                   <div
-                    class="mt-[4%] h-[10cqw] rounded-lg bg-(--pt-red) pt-[3%] text-center text-[3.2cqw] font-bold text-white"
+                    class="mt-[4%] h-[10cqw] rounded-lg bg-(--site-red) pt-[3%] text-center text-[3.2cqw] font-bold text-white"
                   >
                     Criar meu card
                   </div>
@@ -264,7 +295,7 @@
               </div>
               <!-- zoom target -->
               <div
-                class="absolute left-[5%] top-[27%] aspect-square w-[47%] rounded-[7%] border-[3px] border-(--pt-yellow) shadow-[0_0_0_5px_rgb(255_230_7/18%)]"
+                class="absolute left-[87px] top-[196px] h-[246px] w-[186px] rounded-[16px] border-[3px] border-(--kit-yellow) shadow-[0_0_0_5px_rgb(255_235_0/20%)]"
               ></div>
               <svg
                 class="cursor absolute left-[40%] top-[49%] w-[8%] text-white"
@@ -282,21 +313,26 @@
                   Toque em <span class="text-(--pt-yellow)">“Card com seu nome”</span>.
                 </p>
               </div>
-              <div class="absolute bottom-[13%] right-[6%] text-right">
-                <p class="logo-lockup brexter text-[6cqw] leading-none text-white drop-shadow">
-                  SOLLA
-                </p>
-                <p class="text-[2.1cqw] font-black text-(--pt-yellow)">13 13</p>
+              <div
+                class="absolute left-[214px] top-[22px] grid h-[68px] w-[124px] place-items-center rounded-[8px] bg-white/92 p-[6px] shadow-sm"
+              >
+                <img
+                  src="../../public/campaign-kit/jorge-solla-positivo.png"
+                  alt="Jorge Solla · Deputado Federal"
+                  class="kit-asset h-[56px] w-[112px]"
+                />
               </div>
               <span
                 class="absolute bottom-[5%] left-[6%] rounded bg-black/55 px-2 py-1 text-[2.5cqw] text-white"
-                >NEEDS ASSET · captura real + logo</span
+                >CAPTURA REAL · chrome com marca positiva</span
               >
             </div>
             <p class="mx-auto mt-3 max-w-[360px] text-xs leading-5 text-muted-foreground">
               <strong class="text-foreground">Câmera:</strong> zoom suave até 118% no tile; cursor
-              chega 180ms antes do clique; halo amarelo pulsa uma vez. A legenda fica a ~1160px no
-              arquivo final.
+              chega 180ms antes do clique; halo acompanha o tile real em
+              <strong class="text-foreground">x87 · y196 · 186 × 246px @360</strong> e pulsa uma
+              vez. Após o clique, some em até 300ms e não permanece sobre o drawer aberto. A legenda
+              fica a ~1160px no arquivo final.
             </p>
           </article>
 
@@ -312,18 +348,22 @@
               >
             </div>
             <div
-              class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-(--campaign-cream)"
+              class="frame frame-shadow mx-auto w-full max-w-[360px] rounded-[22px] border border-black/15 bg-white"
             >
               <div class="absolute inset-x-0 top-0 h-[47%] bg-(--pt-red)">
-                <div
-                  class="absolute -left-[10%] top-[22%] size-[55%] -rotate-12 rounded-[32%] border-[14px] border-(--pt-yellow)/90"
-                ></div>
+                <img
+                  src="../../public/campaign-kit/estrela.png"
+                  alt=""
+                  class="kit-asset absolute left-[20px] top-[48px] size-[72px] rounded-full bg-white"
+                />
               </div>
               <div class="absolute inset-x-[7%] top-[14%] text-center text-white">
                 <p class="text-[3cqw] font-black tracking-[0.12em] uppercase text-(--pt-yellow)">
                   Seu card, sua voz
                 </p>
-                <h3 class="brexter mt-[4%] text-[12cqw] leading-[0.9] uppercase">
+                <h3
+                  class="brexter mx-auto mt-[4%] max-w-full text-[11.5cqw] leading-[0.9] uppercase"
+                >
                   Agora é<br />com você.
                 </h3>
               </div>
@@ -345,27 +385,26 @@
                   </svg>
                 </div>
                 <p class="mt-[5%] text-[4cqw] font-semibold">Acesse o site pelo</p>
-                <p class="brexter mt-[1%] text-[8cqw] leading-none uppercase text-(--pt-red)">
+                <p class="brexter mt-[1%] text-[8cqw] leading-none uppercase text-(--kit-blue)">
                   link na bio
                 </p>
                 <p class="mt-[4%] text-[3cqw] leading-[1.35] text-(--campaign-muted)">
                   Escolha seu modelo, crie e compartilhe.
                 </p>
               </div>
-              <div class="absolute inset-x-[7%] bottom-[11%] flex items-end justify-between">
-                <p
-                  class="max-w-[52%] text-[2.8cqw] font-semibold leading-[1.3] text-(--pt-red-dark)"
-                >
+              <div class="absolute inset-x-[7%] bottom-[5%] flex items-end justify-between">
+                <p class="max-w-[52%] text-[2.8cqw] font-semibold leading-[1.3] text-(--kit-blue)">
                   jorgesolla1313.com.br
                 </p>
-                <div class="text-right">
-                  <p class="logo-lockup brexter text-[7cqw] leading-none text-(--pt-red)">SOLLA</p>
-                  <p class="text-[2.5cqw] font-black">13 13</p>
-                </div>
+                <img
+                  src="../../public/campaign-kit/marca-positiva-completa.png"
+                  alt="Jorge Solla 1313 · Mais Saúde, Mais Futuro"
+                  class="kit-asset w-[132px]"
+                />
               </div>
               <span
                 class="absolute bottom-[4%] left-[7%] rounded bg-black/75 px-2 py-1 text-[2.5cqw] text-white"
-                >NEEDS ASSET · logo oficial</span
+                >KIT OFICIAL · marca positiva completa</span
               >
             </div>
             <p class="mx-auto mt-3 max-w-[360px] text-xs leading-5 text-muted-foreground">
@@ -376,10 +415,110 @@
         </div>
       </section>
 
+      <!-- KIT OFICIAL -->
+      <section id="kit" class="mt-20" aria-labelledby="kit-title">
+        <div class="mb-5">
+          <p class="text-xs font-semibold text-(--kit-red)">CENA 04 · KIT OFICIAL 2026</p>
+          <h2 id="kit-title" class="mt-1 text-xl font-semibold tracking-tight">
+            Uma assinatura oficial para cada superfície
+          </h2>
+          <p class="mt-1 max-w-3xl text-sm text-muted-foreground">
+            Medidas abaixo são CSS px no compositor 360 × 640; o arquivo final multiplica tudo por
+            3. Não recortar, recolorir, redesenhar ou aplicar sombra aos PNGs do kit.
+          </p>
+        </div>
+        <div class="overflow-hidden rounded-2xl border border-black/10 bg-white">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[900px] border-collapse text-left text-sm">
+              <thead class="bg-(--campaign-band)">
+                <tr>
+                  <th class="px-4 py-3 font-semibold">Superfície</th>
+                  <th class="px-4 py-3 font-semibold">Ativo oficial</th>
+                  <th class="px-4 py-3 font-semibold">Caixa @360</th>
+                  <th class="px-4 py-3 font-semibold">Regra</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-black/10">
+                <tr>
+                  <td class="px-4 py-3 font-semibold">Hook</td>
+                  <td class="px-4 py-3 font-mono text-xs">marca-negativa-completa.png</td>
+                  <td class="px-4 py-3 font-mono text-xs">x206 · y322 · 132×88</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    Sobre vermelho; slogan só no próprio ativo.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold">Captura / chrome</td>
+                  <td class="px-4 py-3 font-mono text-xs">jorge-solla-positivo.png</td>
+                  <td class="px-4 py-3 font-mono text-xs">x220 · y28 · 112×56</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    Plate branco 92% em x214 · y22 · 124×68, no fundo dimmed acima do drawer; nunca
+                    cobrir input, ajuda ou botão. Nunca usar a negativa sobre o sheet branco.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold">CTA</td>
+                  <td class="px-4 py-3 font-mono text-xs">marca-positiva-completa.png</td>
+                  <td class="px-4 py-3 font-mono text-xs">x203 · y520 · 132×88</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    Sobre branco, 6px abaixo do card; URL e “link na bio” em azul oficial.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold">Capa</td>
+                  <td class="px-4 py-3 font-mono text-xs">marca-negativa-completa.png</td>
+                  <td class="px-4 py-3 font-mono text-xs">x205 · y448 · 133×89</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    Inteira dentro do recorte central 4:5.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold">Badges 1 / 2 / 3</td>
+                  <td class="px-4 py-3 font-mono text-xs">nenhum</td>
+                  <td class="px-4 py-3 font-mono text-xs">x22 · y96 · h36</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    Controle funcional amarelo/preto; não miniaturizar marca, número oficial ou
+                    estrela.
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-semibold">Decoração gráfica</td>
+                  <td class="px-4 py-3 font-mono text-xs">estrela.png</td>
+                  <td class="px-4 py-3 font-mono text-xs">hook x250 · y54 · 88²</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    PNG a 100%, sem filtro/recoloração, sobre disco branco do mesmo diâmetro para a
+                    estrela vermelha não sumir no fundo. Capa: x250 · y54 · 88². CTA: x20 · y48 ·
+                    72². Fade + deriva de 8px; sem rotação.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="mt-5 grid gap-5 md:grid-cols-2">
+          <article class="rounded-2xl bg-(--kit-red) p-5 text-white">
+            <p class="text-xs font-bold text-(--kit-yellow)">FUNDO POSITIVO · VERMELHO</p>
+            <img
+              src="../../public/campaign-kit/marca-negativa-completa.png"
+              alt="Jorge Solla 1313 · Mais Saúde, Mais Futuro"
+              class="kit-asset mx-auto mt-5 w-[220px]"
+            />
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-bold text-(--kit-blue)">FUNDO CLARO</p>
+            <img
+              src="../../public/campaign-kit/marca-positiva-completa.png"
+              alt="Jorge Solla 1313 · Mais Saúde, Mais Futuro"
+              class="kit-asset mx-auto mt-5 w-[220px]"
+            />
+          </article>
+        </div>
+      </section>
+
       <!-- SAFE ZONE -->
       <section id="safe-zone" class="mt-20" aria-labelledby="safe-zone-title">
         <div class="mb-5">
-          <p class="text-xs font-semibold text-(--pt-red)">CENA 04 · SAFE ZONE</p>
+          <p class="text-xs font-semibold text-(--pt-red)">CENA 05 · SAFE ZONE</p>
           <h2 id="safe-zone-title" class="mt-1 text-xl font-semibold tracking-tight">
             O Instagram ocupa as bordas; o tutorial ocupa o miolo
           </h2>
@@ -392,7 +531,7 @@
             class="frame frame-shadow mx-auto w-full max-w-[400px] rounded-[22px] border border-black/15 bg-black"
           >
             <div class="site-placeholder absolute inset-0 opacity-85">
-              <div class="absolute inset-x-0 top-0 h-[7%] bg-(--pt-red)"></div>
+              <div class="absolute inset-x-0 top-0 h-[7%] bg-(--site-red)"></div>
               <div class="absolute inset-x-[8%] top-[23%] h-[31%] rounded-[4%] bg-white/70"></div>
             </div>
             <div
@@ -483,10 +622,10 @@
               </li>
             </ol>
             <div class="mt-6 rounded-xl border border-(--pt-red)/25 bg-white p-4">
-              <p class="text-xs font-bold text-(--pt-red)">NEEDS ASSET</p>
+              <p class="text-xs font-bold text-(--pt-red)">ATIVOS RESOLVIDOS</p>
               <p class="mt-1 text-sm leading-6 text-muted-foreground">
-                Captura real do site em viewport mobile, logo oficial transparente e, se aprovada no
-                futuro, foto oficial. Nenhum desses ativos foi inventado neste gate.
+                Captura real do site em viewport mobile + PNGs de `public/campaign-kit/`. Foto
+                oficial continua fora deste template; não é necessária para o reel de cards.
               </p>
             </div>
           </div>
@@ -496,7 +635,7 @@
       <!-- CAPA -->
       <section id="capa" class="mt-20" aria-labelledby="capa-title">
         <div class="mb-5">
-          <p class="text-xs font-semibold text-(--pt-red)">CENA 05 · CAPA</p>
+          <p class="text-xs font-semibold text-(--pt-red)">CENA 06 · CAPA</p>
           <h2 id="capa-title" class="mt-1 text-xl font-semibold tracking-tight">
             Título no núcleo que todos os recortes preservam
           </h2>
@@ -509,11 +648,13 @@
             class="frame frame-shadow mx-auto w-full max-w-[400px] rounded-[22px] border border-black/15 bg-(--pt-red)"
           >
             <div
-              class="absolute inset-0 bg-[radial-gradient(circle_at_80%_25%,rgb(255_230_7/30%),transparent_22%),linear-gradient(160deg,#a21c1c,#47130e)]"
+              class="absolute inset-0 bg-[linear-gradient(160deg,#e4102f_0%,#e4102f_62%,#184e92_145%)]"
             ></div>
-            <div
-              class="absolute -right-[9%] top-[18%] size-[48%] rotate-12 rounded-[30%] border-[14px] border-(--pt-yellow)"
-            ></div>
+            <img
+              src="../../public/campaign-kit/estrela.png"
+              alt=""
+              class="kit-asset absolute left-[250px] top-[54px] size-[88px] rounded-full bg-white"
+            />
             <!-- central 1080x1350 = 70.3125% height, centered -->
             <div
               class="absolute inset-x-0 top-[14.84375%] h-[70.3125%] border-y-2 border-dashed crop-line"
@@ -530,13 +671,16 @@
                 Seu nome ou sua foto, direto pelo celular.
               </p>
             </div>
-            <div class="absolute inset-x-[7%] bottom-[18%] flex items-end justify-between">
-              <p class="rounded bg-black/40 px-[3%] py-[1.5%] text-[2.4cqw] text-white">#cards</p>
-              <div class="text-right">
-                <p class="logo-lockup brexter text-[7cqw] leading-none text-white">SOLLA</p>
-                <p class="text-[2.4cqw] font-black text-(--pt-yellow)">13 13</p>
-              </div>
-            </div>
+            <p
+              class="absolute left-[25px] top-[500px] rounded bg-black/40 px-[11px] py-[5px] text-[8.6px] text-white"
+            >
+              #cards
+            </p>
+            <img
+              src="../../public/campaign-kit/marca-negativa-completa.png"
+              alt="Jorge Solla 1313 · Mais Saúde, Mais Futuro"
+              class="kit-asset absolute left-[205px] top-[448px] w-[133px]"
+            />
             <div
               class="absolute left-[2%] top-[15.5%] rounded bg-white px-2 py-1 text-[2.5cqw] font-bold text-black"
             >
@@ -544,7 +688,7 @@
             </div>
             <span
               class="absolute bottom-[4%] left-[7%] rounded bg-black/55 px-2 py-1 text-[2.5cqw] text-white"
-              >NEEDS ASSET · logo oficial</span
+              >KIT OFICIAL · marca negativa completa</span
             >
           </div>
           <div class="grid content-start gap-5 md:grid-cols-2">
@@ -559,7 +703,7 @@
                 >
               </div>
               <div
-                class="crop-preview relative mx-auto aspect-[4/5] max-w-[270px] overflow-hidden rounded-xl bg-[linear-gradient(155deg,#a21c1c,#47130e)] p-[7%] text-white"
+                class="crop-preview relative mx-auto aspect-[4/5] max-w-[270px] overflow-hidden rounded-xl bg-[linear-gradient(155deg,#e4102f,#184e92)] p-[7%] text-white"
               >
                 <span
                   class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[2%] text-[2.3cqw] font-black text-black"
@@ -568,9 +712,11 @@
                 <p class="brexter mt-[9%] text-[9cqw] leading-[0.88] uppercase">
                   Crie seu<br />card de<br /><span class="text-(--pt-yellow)">apoio.</span>
                 </p>
-                <p class="absolute bottom-[8%] right-[7%] logo-lockup brexter text-[5.5cqw]">
-                  SOLLA
-                </p>
+                <img
+                  src="../../public/campaign-kit/jorge-solla-negativo.png"
+                  alt="Jorge Solla · Deputado Federal"
+                  class="kit-asset absolute bottom-[7%] right-[7%] w-[35%]"
+                />
               </div>
               <p class="mt-3 text-xs leading-5 text-muted-foreground">
                 Eyebrow, título inteiro e marca continuam visíveis. Copy auxiliar pode sair.
@@ -587,7 +733,7 @@
                 >
               </div>
               <div
-                class="crop-preview relative mx-auto aspect-square max-w-[270px] overflow-hidden rounded-xl bg-[linear-gradient(155deg,#a21c1c,#47130e)] p-[7%] text-white"
+                class="crop-preview relative mx-auto aspect-square max-w-[270px] overflow-hidden rounded-xl bg-[linear-gradient(155deg,#e4102f,#184e92)] p-[7%] text-white"
               >
                 <span
                   class="inline-flex rounded-full bg-(--pt-yellow) px-[4%] py-[2%] text-[2.3cqw] font-black text-black"
@@ -596,9 +742,11 @@
                 <p class="brexter mt-[9%] text-[9cqw] leading-[0.88] uppercase">
                   Crie seu<br />card de<br /><span class="text-(--pt-yellow)">apoio.</span>
                 </p>
-                <p class="absolute bottom-[7%] right-[7%] logo-lockup brexter text-[5.5cqw]">
-                  SOLLA
-                </p>
+                <img
+                  src="../../public/campaign-kit/jorge-solla-negativo.png"
+                  alt="Jorge Solla · Deputado Federal"
+                  class="kit-asset absolute bottom-[7%] right-[7%] w-[35%]"
+                />
               </div>
               <p class="mt-3 text-xs leading-5 text-muted-foreground">
                 Título nunca depende do terço inferior. A marca reduz, mas não desaparece.
@@ -617,7 +765,7 @@
       <!-- SISTEMA -->
       <section id="spec" class="mt-20" aria-labelledby="spec-title">
         <div class="mb-5">
-          <p class="text-xs font-semibold text-(--pt-red)">CENA 06 · SISTEMA VISUAL</p>
+          <p class="text-xs font-semibold text-(--pt-red)">CENA 07 · SISTEMA VISUAL</p>
           <h2 id="spec-title" class="mt-1 text-xl font-semibold tracking-tight">
             Receita consistente, não vinheta pesada
           </h2>
@@ -636,24 +784,25 @@
               <div
                 class="aspect-[3/2] rounded-lg bg-(--pt-red) p-2 text-[10px] font-bold text-white"
               >
-                #A21C1C
+                #E4102F
               </div>
               <div class="aspect-[3/2] rounded-lg bg-(--pt-yellow) p-2 text-[10px] font-bold">
-                #FFE607
+                #FFEB00
               </div>
               <div
-                class="aspect-[3/2] rounded-lg bg-(--campaign-cream) p-2 text-[10px] font-bold ring-1 ring-black/10"
+                class="aspect-[3/2] rounded-lg bg-(--kit-blue) p-2 text-[10px] font-bold text-white"
               >
-                CREME
+                #184E92
               </div>
               <div
-                class="aspect-[3/2] rounded-lg bg-(--pt-red-dark) p-2 text-[10px] font-bold text-white"
+                class="aspect-[3/2] rounded-lg bg-(--kit-green) p-2 text-[10px] font-bold text-white"
               >
-                #47130E
+                #009647
               </div>
             </div>
             <p class="mt-4 text-sm leading-6 text-muted-foreground">
-              Amarelo sinaliza ação; nunca vira fundo longo de legenda.
+              Cenas gráficas usam o kit. Capturas não são recoloridas: nelas, o site mantém
+              #A21C1C/#FFE607/creme e só o chrome usa amarelo oficial.
             </p>
           </article>
           <article class="rounded-2xl border border-black/10 bg-white p-5">
@@ -673,7 +822,7 @@
             <p class="text-xs font-bold text-(--pt-red)">GESTO</p>
             <div class="relative mt-4 aspect-[3/2] overflow-hidden rounded-xl bg-stone-300">
               <div
-                class="absolute left-[18%] top-[18%] size-[58%] rounded-xl border-[3px] border-(--pt-yellow) shadow-[0_0_0_6px_rgb(255_230_7/22%)]"
+                class="absolute left-[18%] top-[12%] h-[76%] w-[58%] rounded-xl border-[3px] border-(--pt-yellow) shadow-[0_0_0_6px_rgb(255_235_0/22%)]"
               ></div>
               <svg
                 class="cursor absolute left-[61%] top-[56%] w-[12%] text-white"
@@ -686,27 +835,54 @@
               </svg>
             </div>
             <p class="mt-4 text-sm leading-6 text-muted-foreground">
-              Zoom 108–122%; cursor chega antes; halo pulsa uma vez; easing suave.
+              Zoom 108–122%; cursor chega antes; halo retangular 3:4 acompanha o alvo e pulsa uma
+              vez; easing suave. No frame de Passo 1: x87 · y196 · 186 × 246px @360.
             </p>
           </article>
+        </div>
+        <div
+          class="mt-5 rounded-2xl border border-black/10 bg-(--campaign-cream) p-5 text-sm leading-6"
+        >
+          <p class="text-xs font-bold text-(--pt-red)">FIT CHECK · BREXTER BOLD OFICIAL @ 360PX</p>
+          <p class="mt-2 text-muted-foreground">
+            <strong class="text-foreground">Capa:</strong> mantém 43,2px (12cqw), entrelinha 38,02px
+            (0,88), tracking 0 e largura útil 309,6px. “Crie seu” (255px), “card de” (246px) e
+            “apoio.” (191px) cabem sem ajuste.
+          </p>
+          <p class="mt-1 text-muted-foreground">
+            <strong class="text-foreground">CTA:</strong> título ajustado para 41,4px (11,5cqw),
+            entrelinha 37,26px (0,9), tracking 0 e largura máxima 309,6px; “com você.” passa de
+            306px para 293,25px. “Link na bio” permanece em 28,8px (8cqw), entrelinha 28,8px,
+            tracking 0, dentro dos 259,2px úteis do card.
+          </p>
+          <p class="mt-1 text-muted-foreground">
+            <strong class="text-foreground">Marca e slogan:</strong> hook e capa usam
+            `marca-negativa-completa.png`; CTA usa `marca-positiva-completa.png`; chrome usa
+            `jorge-solla-positivo.png`. “Mais Saúde, Mais Futuro” entra somente dentro dos três
+            ativos completos, com altura visual aproximada de 8px @360 (24px no render), nunca como
+            headline concorrente. Não aplicar recorte, filtro, sombra ou recoloração.
+          </p>
         </div>
       </section>
 
       <footer class="mt-16 border-t border-black/15 pt-6 text-xs leading-5 text-muted-foreground">
         <p>
-          <strong class="text-foreground">NEEDS ASSET:</strong> captura real do fluxo `#cards`, logo
-          oficial transparente e qualquer foto oficial aprovada. A composição usa placeholders
-          explícitos.
+          <strong class="text-foreground">ATIVOS:</strong> o único conteúdo ainda capturado em tempo
+          de geração é o fluxo real `#cards`. Marca, número, slogan e decoração vêm exclusivamente
+          de `public/campaign-kit/`; o SVG branco legado e lockups tipográficos deixam de ser
+          usados.
         </p>
         <p class="mt-1">
           <strong class="text-foreground">Fonte:</strong> o port deve carregar o Brexter Bold
-          oficial. Este HTML autossuficiente usa uma fallback condensada apenas quando Brexter não
-          estiver instalada localmente.
+          oficial em peso 700. As medidas de hook, capa e CTA acima foram recalibradas com essa
+          face; este HTML usa a fallback condensada apenas quando Brexter não estiver instalada
+          localmente.
         </p>
         <p class="mt-1">
-          <strong class="text-foreground">Em aberto no gate:</strong> confirmar composição própria
-          da capa (recomendação B do plano) e aprovar a frase do hook “Seu apoio vira card em
-          segundos”.
+          <strong class="text-foreground">Revalidação no PR:</strong> esta integração do kit é uma
+          mudança material: o gate humano deve confirmar a estrela oficial em vez do aro, as marcas
+          completas com slogan e a paleta #E4102F/#184E92/#FFEB00. A métrica aprovada da Brexter
+          permanece: hook 9,5cqw, capa 12cqw e CTA 11,5cqw.
         </p>
       </footer>
     </main>
