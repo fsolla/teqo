@@ -13,6 +13,13 @@ import type { CardRect } from './cardModels'
 export const CARD_PHOTO_MIN_ZOOM = 1
 export const CARD_PHOTO_MAX_ZOOM = 4
 
+/**
+ * S15 — a cutout smaller than this (in source pixels) is treated as an empty
+ * segmentation: the card would show a speck, so the composer fails closed and
+ * offers a retry instead.
+ */
+const CARD_CUTOUT_MIN_BBOX = 24
+
 export type CardPhotoSize = {
   width: number
   height: number
@@ -23,6 +30,17 @@ export type CardPhotoTransform = {
   offsetX: number
   offsetY: number
 }
+
+/** Alpha bounding box of a cutout photo, in source pixels. */
+export type CardAlphaBbox = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export const cardPhotoTransformsEqual = (a: CardPhotoTransform, b: CardPhotoTransform): boolean =>
+  a.zoom === b.zoom && a.offsetX === b.offsetX && a.offsetY === b.offsetY
 
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max)
@@ -79,6 +97,50 @@ export const centerCardPhotoTransform = (
     offsetX: window.x + (window.width - width) / 2,
     offsetY: window.y + (window.height - height) / 2,
   }
+}
+
+/**
+ * S15 — initial framing for a cutout photo: the alpha bbox is scaled to cover
+ * the window, anchored at the bbox top (head against the top of the slot) and
+ * centered horizontally on it. Returns `null` when the bbox is degenerate
+ * (empty segmentation) or would demand more than the max zoom — the composer
+ * fails closed instead of drawing an invisible or speck-sized photo.
+ */
+export const frameCardPhotoOnBbox = (
+  source: CardPhotoSize,
+  window: CardRect,
+  bbox: CardAlphaBbox,
+): CardPhotoTransform | null => {
+  if (
+    source.width <= 0 ||
+    source.height <= 0 ||
+    window.width <= 0 ||
+    window.height <= 0 ||
+    bbox.width < CARD_CUTOUT_MIN_BBOX ||
+    bbox.height < CARD_CUTOUT_MIN_BBOX
+  ) {
+    return null
+  }
+
+  const scale = coverScale(source, window)
+  const requiredZoom = Math.max(
+    window.width / bbox.width / scale,
+    window.height / bbox.height / scale,
+  )
+  if (!Number.isFinite(requiredZoom) || requiredZoom > CARD_PHOTO_MAX_ZOOM) return null
+
+  const zoom = Math.max(CARD_PHOTO_MIN_ZOOM, requiredZoom)
+  const applied = scale * zoom
+
+  return clampCardPhotoTransform(
+    {
+      zoom,
+      offsetX: window.x + window.width / 2 - (bbox.x + bbox.width / 2) * applied,
+      offsetY: window.y - bbox.y * applied,
+    },
+    source,
+    window,
+  )
 }
 
 /** Nudges the offset by a step in card pixels, clamped to the window. */

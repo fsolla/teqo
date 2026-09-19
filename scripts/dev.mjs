@@ -14,6 +14,7 @@
 import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
 
+import { copyCardVisionAssets } from './copy-card-vision-assets.mjs'
 import './guard-dev-db.mjs'
 import { dieWithLabel, loadCliEnv, nextDevArgs, resolveDevPort } from './lib/cli.mjs'
 
@@ -21,6 +22,14 @@ const require = createRequire(import.meta.url)
 const die = dieWithLabel('dev')
 
 loadCliEnv()
+
+// S15 — the card-cutout wasm runtime is a gitignored artifact: make sure the dev
+// server serves it same-origin before Next boots.
+try {
+  await copyCardVisionAssets(process.cwd())
+} catch (error) {
+  die(error.message)
+}
 
 let port
 try {

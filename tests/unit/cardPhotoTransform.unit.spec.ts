@@ -8,8 +8,10 @@ import {
   centerCardPhotoTransform,
   clampCardPhotoTransform,
   coverScale,
+  frameCardPhotoOnBbox,
   panCardPhotoTransform,
   zoomCardPhotoTransform,
+  type CardAlphaBbox,
   type CardPhotoSize,
 } from '@/lib/cardPhotoTransform'
 
@@ -50,6 +52,64 @@ describe('centerCardPhotoTransform', () => {
     expect(rect.height).toBeGreaterThan(WINDOW.height)
     expect(rect.y).toBeLessThan(0)
     expect(coversWindow(rect, WINDOW)).toBe(true)
+  })
+})
+
+describe('frameCardPhotoOnBbox', () => {
+  const TEAM_WINDOW: CardRect = { x: 286, y: 439, width: 592, height: 577 }
+
+  it('anchors the bbox top on the window top and centers it horizontally', () => {
+    const source: CardPhotoSize = { width: 900, height: 1200 }
+    const bbox: CardAlphaBbox = { x: 260, y: 140, width: 380, height: 520 }
+
+    const transform = frameCardPhotoOnBbox(source, TEAM_WINDOW, bbox)
+    expect(transform).not.toBeNull()
+    if (!transform) return
+
+    const rect = cardPhotoDrawRect(transform, source, TEAM_WINDOW)
+    const scale = rect.width / source.width
+    // bbox top lands exactly on the window top, bbox center on the window center
+    expect(rect.y + bbox.y * scale).toBeCloseTo(TEAM_WINDOW.y, 5)
+    expect(rect.x + (bbox.x + bbox.width / 2) * scale).toBeCloseTo(
+      TEAM_WINDOW.x + TEAM_WINDOW.width / 2,
+      5,
+    )
+    // the cutout itself covers the whole slot
+    expect(bbox.width * scale).toBeGreaterThanOrEqual(TEAM_WINDOW.width - 1e-6)
+    expect(bbox.height * scale).toBeGreaterThanOrEqual(TEAM_WINDOW.height - 1e-6)
+    expect(coversWindow(rect, TEAM_WINDOW)).toBe(true)
+  })
+
+  it('keeps the bottom of a full-height bbox visible when the zoom allows it', () => {
+    const source: CardPhotoSize = { width: 800, height: 1200 }
+    const bbox: CardAlphaBbox = { x: 200, y: 0, width: 400, height: 1000 }
+
+    const transform = frameCardPhotoOnBbox(source, TEAM_WINDOW, bbox)
+    expect(transform).not.toBeNull()
+    if (!transform) return
+
+    const rect = cardPhotoDrawRect(transform, source, TEAM_WINDOW)
+    const scale = rect.width / source.width
+    expect(rect.y + (bbox.y + bbox.height) * scale).toBeGreaterThanOrEqual(
+      TEAM_WINDOW.y + TEAM_WINDOW.height,
+    )
+  })
+
+  it('fails closed on a degenerate bbox (empty segmentation)', () => {
+    const source: CardPhotoSize = { width: 900, height: 1200 }
+    expect(
+      frameCardPhotoOnBbox(source, TEAM_WINDOW, { x: 0, y: 0, width: 0, height: 0 }),
+    ).toBeNull()
+    expect(
+      frameCardPhotoOnBbox(source, TEAM_WINDOW, { x: 10, y: 10, width: 10, height: 30 }),
+    ).toBeNull()
+  })
+
+  it('fails closed when the bbox is so small it would need more than the max zoom', () => {
+    const source: CardPhotoSize = { width: 4000, height: 4000 }
+    const bbox: CardAlphaBbox = { x: 100, y: 100, width: 80, height: 80 }
+
+    expect(frameCardPhotoOnBbox(source, TEAM_WINDOW, bbox)).toBeNull()
   })
 })
 

@@ -43,6 +43,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # the deploy script applies them BEFORE this build (OPS66: static routes read
 # the new schema, so the build must see a migrated DB).
 #
+# S15 — copy the MediaPipe wasm runtime into public/ so the card cutout runs
+# same-origin (the files are gitignored build artifacts, never committed).
+RUN node scripts/copy-card-vision-assets.mjs
+
 # OPS99: Generate importMap with dummy S3_* envs BEFORE next build.
 # This ensures the production image always has the S3ClientUploadHandler entry,
 # eliminating the class of bugs where the admin goes blank (OPS69/OPS72/OPS73).

@@ -253,6 +253,8 @@ const eslintConfig = [
     'coverage/**',
     // Vendored agent material (same carve-out as .prettierignore):
     '.agents/**',
+    // S15 — MediaPipe wasm glue copied from node_modules (generated, gitignored):
+    'public/cards/mediapipe/**',
   ]),
 ]
 

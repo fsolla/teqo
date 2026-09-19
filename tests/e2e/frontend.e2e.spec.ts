@@ -1707,11 +1707,14 @@ test.describe('Cards personalizados (S14)', () => {
     await expect(
       section.getByRole('heading', { name: 'Mostre que você está com Solla' }),
     ).toBeVisible()
-    // S14 — the CTA is gone: the three models are the only trigger.
+    // S14/S15 — the CTA is gone: the four models are the only trigger.
     await expect(section.getByRole('link', { name: 'Criar meu card' })).toHaveCount(0)
-    for (const model of ['eu-sou-solla', 'perfil-quadrado', 'perfil-retangular']) {
+    for (const model of ['eu-sou-solla', 'perfil-quadrado', 'perfil-retangular', 'time-de-voce']) {
       await expect(section.locator(`[data-card-model-tile="${model}"]`).first()).toBeAttached()
     }
+    await expect(section.locator('[data-card-model-tile="time-de-voce"]').first()).toContainText(
+      'NOVO',
+    )
 
     // S14 — the name tile reproduces the real result: `SEU NOME` drawn by the
     // composer pipeline, left-aligned with the `SOU` border (x≈213 at 1080).
@@ -1816,6 +1819,130 @@ test.describe('Cards personalizados (S14)', () => {
     const drawer = page.locator('[data-slot="drawer-popup"]')
     await expect(drawer).toBeVisible()
     await expect(drawer.getByRole('heading', { name: 'Personalize com seu nome' })).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(drawer).toHaveCount(0)
+  })
+})
+
+/**
+ * S15 — the team model runs its engine in an e2e build with the deterministic
+ * stub (`NEXT_PUBLIC_CARDS_CUTOUT_STUB=1`): no wasm download, no inference. The
+ * real engine is exercised manually (craft/UAT); the stub keeps the states
+ * (progress, ready, error/retry) reproducible.
+ */
+/** Mirrors the stub's deterministic `slow` download progress (cardCutout.ts). */
+const STUB_CUTOUT_PERCENT = 36
+
+const setCutoutStub = (page: Page, mode: 'ok' | 'slow' | 'error') =>
+  page.addInitScript((value: string) => {
+    ;(window as unknown as { __cardsCutoutStub?: string }).__cardsCutoutStub = value
+  }, mode)
+
+const uploadBustPhoto = (dialog: Locator) =>
+  dialog.locator('input[type="file"]').setInputFiles({
+    name: 'busto-e2e.png',
+    mimeType: 'image/png',
+    buffer: TEST_PHOTO_PNG,
+  })
+
+test.describe('Cards personalizados (S15 — Time de você)', () => {
+  test('cuts the photo on device, reaches the result and downloads a real PNG', async ({
+    page,
+  }) => {
+    await setCutoutStub(page, 'slow')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('heading', { name: 'Entre para o time' })).toBeVisible()
+
+    const canvas = dialog.locator('canvas')
+    await expect(canvas).toHaveAttribute('width', '1080')
+    await expect(canvas).toHaveAttribute('height', '1440')
+
+    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
+    await expect(primary).toBeDisabled()
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+
+    // Processing is observable (first run: model download + local cutout).
+    await expect(dialog.getByText('Baixando o modelo de recorte…')).toBeVisible()
+    await expect(dialog.getByText(`${STUB_CUTOUT_PERCENT}%`)).toBeVisible()
+    await expect(dialog.getByRole('progressbar')).toHaveAttribute(
+      'aria-valuenow',
+      String(STUB_CUTOUT_PERCENT),
+    )
+
+    // The cutout lands framed: CTA enabled, pan/zoom escape offered.
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(primary).toBeEnabled()
+    await expect(dialog.getByText('Arraste para ajustar')).toBeVisible()
+
+    await primary.click()
+    await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
+    ])
+    expect(download.suggestedFilename()).toBe('card-jorge-solla-time-de-voce.png')
+    const downloadPath = await download.path()
+    expect(downloadPath).toBeTruthy()
+    expect(readFileSync(downloadPath!).subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true)
+  })
+
+  test('a failed cutout is recoverable: retry with the same photo reaches the result', async ({
+    page,
+  }) => {
+    await setCutoutStub(page, 'error')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+
+    await expect(dialog.getByRole('heading', { name: 'Vamos tentar outra vez' })).toBeVisible()
+    await expect(dialog.getByRole('alert')).toContainText(
+      'Não foi possível remover o fundo desta foto.',
+    )
+    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeDisabled()
+
+    // The retry re-runs the SAME file; no re-upload, no lost state.
+    await page.evaluate(() => {
+      ;(window as unknown as { __cardsCutoutStub?: string }).__cardsCutoutStub = 'ok'
+    })
+    await dialog.getByRole('button', { name: 'Tentar de novo' }).click()
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
+  })
+
+  test('a name that cannot fit fails closed and keeps the cutout', async ({ page }) => {
+    await setCutoutStub(page, 'ok')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Anticonstitucionalissimamente')
+    await uploadBustPhoto(dialog)
+
+    await expect(dialog.getByRole('heading', { name: 'Encurte o nome' })).toBeVisible()
+    await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
+    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
+    await expect(primary).toBeDisabled()
+    await expect(dialog.getByText('permanecem salvos neste aparelho')).toBeVisible()
+
+    // The cutout is kept and the name stays editable: fixing it re-enables the card.
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await expect(dialog.getByRole('alert')).toHaveCount(0)
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(primary).toBeEnabled()
+  })
+
+  test('mobile opens the team composer in the bottom drawer', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/cards?model=time-de-voce')
+
+    const drawer = page.locator('[data-slot="drawer-popup"]')
+    await expect(drawer).toBeVisible()
+    await expect(drawer.getByRole('heading', { name: 'Entre para o time' })).toBeVisible()
     await page.keyboard.press('Escape')
     await expect(drawer).toHaveCount(0)
   })
