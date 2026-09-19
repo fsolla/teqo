@@ -67,6 +67,7 @@ Qualquer "não" ⇒ **não despache** o `designer` frontier: segue com o impleme
 
 - **Tokens reais são esperados.** Use as cores, raios, sombras e a tipografia da superfície-alvo; se `data-theme='campaign'` for o alvo, os tokens da campanha valem no artefato (definidos inline via CSS variables/classes, na mesma escala do app).
 - **Brand é permitida e esperada** — gradiente, sombra, motion de apresentação, logo quando aprovado. O teto protege contra virar implementação, não contra ter acabamento.
+- **Marca de campanha tem fonte única: o kit 1313.** Ativos e regras de uso em `public/campaign-kit/README.md` (manual completo em `docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`); não recriar lockup nem inventar paleta — o README do kit é a dona da marca, a doutrina só aponta.
 - **shadcn/lucide primeiro.** Componentes e ícones seguem o vocabulário do app (button, card, dialog, tabs, badge); custom só quando não houver equivalente.
 - **Skeleton completo** abaixo é ponto de partida — o artefato real traz o conteúdo do item.
 
