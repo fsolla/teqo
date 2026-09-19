@@ -521,7 +521,18 @@ test.describe('communication vertical (C154/C162)', () => {
   test.describe('uploaded recordings (C199)', () => {
     const createRecording = async (
       campaign: { fixtures: CampaignE2EOwnership },
-      input: { marker: string; status?: 'processing' | 'ready' | 'failed'; withSegments?: boolean },
+      input: {
+        marker: string
+        status?: 'processing' | 'ready' | 'failed'
+        withSegments?: boolean
+        segments?: {
+          startSeconds: number
+          endSeconds: number
+          text: string
+          speakerKey?: string | null
+        }[]
+        speakerLabels?: { speakerKey: string; label: string }[]
+      },
     ) => {
       const bytes = Buffer.from(`recording-${input.marker}`)
       const media = await campaign.fixtures.payload.create({
@@ -541,11 +552,35 @@ test.describe('communication vertical (C154/C162)', () => {
           status: input.status ?? 'ready',
           recordedAt: '2026-09-01T00:00:00.000Z',
           media: media.id,
+          ...(input.speakerLabels ? { speakerLabels: input.speakerLabels } : {}),
         },
         depth: 0,
       })
 
-      if (input.withSegments ?? true) {
+      if (input.segments) {
+        for (const [index, segment] of input.segments.entries()) {
+          await campaign.fixtures.payload.create({
+            collection: 'recordingSegment',
+            data: hookFilledCreateData<'recordingSegment'>({
+              recording: recording.id,
+              order: index + 1,
+              startSeconds: segment.startSeconds,
+              endSeconds: segment.endSeconds,
+              text: segment.text,
+              speakerKey: segment.speakerKey ?? null,
+            }),
+            depth: 0,
+          })
+        }
+        await campaign.fixtures.payload.update({
+          collection: 'recording',
+          id: recording.id,
+          data: {
+            searchText: normalizeForSearch(input.segments.map((segment) => segment.text).join(' ')),
+          },
+          depth: 0,
+        })
+      } else if (input.withSegments ?? true) {
         await campaign.fixtures.payload.create({
           collection: 'recordingSegment',
           data: hookFilledCreateData<'recordingSegment'>({
@@ -684,6 +719,156 @@ test.describe('communication vertical (C154/C162)', () => {
       const advisorRequest = await campaignRequest(advisor, advisor.password)
       const denied = await advisorRequest.post(uploadUrl)
       expect(denied.status()).toBe(403)
+    })
+
+    test('the grouped detail renders the speaker blocks, the warning and the identify action', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaofalantes')
+      const { recording } = await createRecording(campaign, {
+        marker,
+        segments: [
+          {
+            startSeconds: 12,
+            endSeconds: 20,
+            text: `A plenária discutiu a merenda ${marker}.`,
+            speakerKey: 'speaker-1',
+          },
+          {
+            startSeconds: 21,
+            endSeconds: 30,
+            text: 'O relator respondeu em seguida.',
+            speakerKey: 'speaker-2',
+          },
+        ],
+        speakerLabels: [{ speakerKey: 'speaker-1', label: 'Dep. Jorge Solla' }],
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const response = await request.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}?t=12&q=${marker}`,
+      )
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+
+      expect(html).toContain('Transcrição por falante')
+      expect(html).toContain('Dep. Jorge Solla')
+      expect(html).toContain('Identificação feita pela equipe')
+      expect(html).toContain('Falante 2')
+      expect(html).toContain('Agrupamento sem identificação')
+      expect(html).toContain('Editar identificação')
+      expect(html).toContain('Identificar falante')
+      expect(html).toContain('A separação por falante pode estar imprecisa')
+      expect(html).toContain('data-start-seconds="12"')
+      expect(html).toContain('data-start-seconds="21"')
+      expect(html).toContain('<mark')
+    })
+
+    test('the "Pessoa" facet filters the list and the card shows the chip', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaopessoa')
+      const { recording } = await createRecording(campaign, {
+        marker,
+        segments: [
+          {
+            startSeconds: 12,
+            endSeconds: 20,
+            text: `A plenária discutiu a merenda ${marker}.`,
+            speakerKey: 'speaker-1',
+          },
+        ],
+        speakerLabels: [{ speakerKey: 'speaker-1', label: `Dep. ${marker}` }],
+      })
+      const { recording: other } = await createRecording(campaign, {
+        marker: `${marker}outra`,
+        withSegments: false,
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const response = await request.get(
+        `/campanha/comunicacao/acervo?source=enviadas&person=${encodeURIComponent(`dep. ${marker}`)}`,
+      )
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+
+      expect(html).toContain(`Gravação ${marker}`)
+      expect(html).not.toContain(`Gravação ${marker}outra`)
+      expect(html).toContain('Pessoa:')
+      expect(html).toContain('aparece nesta gravação')
+      expect(html).toContain(`/campanha/comunicacao/acervo/gravacoes/${recording.id}`)
+      expect(html).not.toContain(`/campanha/comunicacao/acervo/gravacoes/${other.id}`)
+    })
+
+    test('labels a cluster through the JSON route and denies the non-acervo roles', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaorotular')
+      const { recording } = await createRecording(campaign, {
+        marker,
+        segments: [
+          {
+            startSeconds: 12,
+            endSeconds: 20,
+            text: 'Fala única do agrupamento.',
+            speakerKey: 'speaker-1',
+          },
+        ],
+      })
+      const endpoint = `/campanha/comunicacao/acervo/gravacoes/${recording.id}/falantes`
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const response = await request.post(endpoint, {
+        data: { recordingId: recording.id, speakerKey: 'speaker-1', label: `Dep. ${marker}` },
+      })
+      expect(response.status()).toBe(200)
+      expect((await response.json()).status).toBe('success')
+
+      const updated = await campaign.fixtures.payload.findByID({
+        collection: 'recording',
+        id: recording.id,
+        depth: 0,
+      })
+      expect(updated.speakerNames).toEqual([`Dep. ${marker}`])
+
+      const unknown = await request.post(endpoint, {
+        data: { recordingId: recording.id, speakerKey: 'speaker-9', label: 'Fantasma' },
+      })
+      expect(unknown.status()).toBe(400)
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      const denied = await advisorRequest.post(endpoint, {
+        data: { recordingId: recording.id, speakerKey: 'speaker-1', label: 'Negado' },
+      })
+      // The JSON mutation wrapper maps a safe domain message to 400 (same
+      // envelope as the other `/campanha/**` mutation routes).
+      expect(denied.status()).toBe(400)
+    })
+
+    test('a recording without diarization keeps the plain transcript', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaoSemFalantes')
+      const { recording } = await createRecording(campaign, { marker })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const response = await request.get(
+        `/campanha/comunicacao/acervo/gravacoes/${recording.id}?t=12&q=${marker}`,
+      )
+      const html = rendered(await response.text())
+
+      expect(html).toContain('data-start-seconds="12"')
+      expect(html).not.toContain('Transcrição por falante')
+      expect(html).not.toContain('A separação por falante pode estar imprecisa')
     })
   })
 })

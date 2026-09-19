@@ -12,14 +12,17 @@ import {
   RECORDING_FORBIDDEN_MESSAGE,
   RECORDING_NOT_FOUND_MESSAGE,
   RECORDING_RETRY_NOT_FAILED_MESSAGE,
+  RECORDING_SPEAKER_UNKNOWN_MESSAGE,
   recordingDeleteRequestSchema,
   recordingRetryRequestSchema,
+  recordingSpeakerLabelRequestSchema,
   recordingStatusRequestSchema,
   type RecordingStatusRequest,
 } from '@/lib/schemas/recording'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { onPayloadTransactionCommit, withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { reapStaleRecording } from '@/utilities/recordings/recordingJob'
 import { startRecordingJobInBackground } from '@/utilities/recordings/recordingScheduler'
 
@@ -39,6 +42,7 @@ const recordingSelect = {
   durationSeconds: true,
   media: true,
   updatedAt: true,
+  speakerLabels: true,
 } as const
 
 const loadRecordingForActor = async (
@@ -136,6 +140,87 @@ export const getRecordingStatusesForActor = async (
     overrideAccess: false,
   })
   return result.docs.map(toRecordingViewModel)
+}
+
+/**
+ * C200 — names one acoustic cluster of a recording. Human curation only: the
+ * key must belong to a segment of this recording (a stale dialog cannot invent
+ * a group), and the label is text on the recording — never a `Contact`. The
+ * write triggers the collection's `deriveSpeakerNames` hook, which is what the
+ * "Pessoa" facet filters on.
+ *
+ * Runs inside a transaction under an advisory lock of the recording and
+ * re-reads the labels after acquiring it: two curators labeling different
+ * clusters at the same time would otherwise each write back a stale array and
+ * silently lose one label. The lock closes that read-modify-write race.
+ */
+export const labelRecordingSpeakerForActor = async (input: {
+  recordingId: number
+  speakerKey: string
+  label: string
+}): Promise<{ labeled: true }> => {
+  const parsed = recordingSpeakerLabelRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(RECORDING_FORBIDDEN_MESSAGE)
+
+  const current = await loadRecordingForActor(payload, actor, parsed.recordingId)
+  if (!current) throw new Error(RECORDING_NOT_FOUND_MESSAGE)
+
+  await withPayloadTransaction(payload, async ({ req }) => {
+    await acquireTextAdvisoryLocks(payload, req, [`recording-speakers:${parsed.recordingId}`])
+
+    const fresh = await payload.find({
+      collection: 'recording',
+      where: { id: { equals: parsed.recordingId } },
+      depth: 0,
+      limit: 1,
+      pagination: false,
+      select: { speakerLabels: true },
+      req,
+      user: actor,
+      overrideAccess: false,
+    })
+    const recording = fresh.docs[0]
+    if (!recording) throw new Error(RECORDING_NOT_FOUND_MESSAGE)
+
+    const segment = await payload.find({
+      collection: 'recordingSegment',
+      where: {
+        and: [
+          { recording: { equals: parsed.recordingId } },
+          { speakerKey: { equals: parsed.speakerKey } },
+        ],
+      },
+      depth: 0,
+      limit: 1,
+      pagination: false,
+      select: { speakerKey: true },
+      req,
+      user: actor,
+      overrideAccess: false,
+    })
+    if (!segment.docs[0]) throw new Error(RECORDING_SPEAKER_UNKNOWN_MESSAGE)
+
+    const labels = [...(recording.speakerLabels ?? [])]
+    const index = labels.findIndex((entry) => entry.speakerKey === parsed.speakerKey)
+    const entry = { speakerKey: parsed.speakerKey, label: parsed.label }
+    if (index >= 0) labels[index] = entry
+    else labels.push(entry)
+
+    await payload.update({
+      collection: 'recording',
+      id: parsed.recordingId,
+      data: { speakerLabels: labels, speakerLabelsDropped: false },
+      depth: 0,
+      select: recordingSelect,
+      req,
+      user: actor,
+      overrideAccess: false,
+    })
+  })
+
+  return { labeled: true }
 }
 
 /**

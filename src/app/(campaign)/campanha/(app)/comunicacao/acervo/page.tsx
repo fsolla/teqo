@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { AcervoSourceToggle } from '@/components/campaign/recording/AcervoSourceToggle'
+import { RecordingPersonFilter } from '@/components/campaign/recording/RecordingPersonFilter'
 import { RecordingResultList } from '@/components/campaign/recording/RecordingResultList'
 import { RecordingStatusRefresher } from '@/components/campaign/recording/RecordingStatusRefresher'
 import { RecordingUploadDialog } from '@/components/campaign/recording/RecordingUploadDialog'
@@ -77,9 +78,19 @@ const AcervoHeader = ({ source }: { source: 'camara' | 'enviadas' }) => (
   </div>
 )
 
-const RecordingsSearchForm = ({ query }: { query?: string }) => (
+const RecordingsSearchForm = ({
+  query,
+  people,
+}: {
+  query?: string
+  people?: readonly string[]
+}) => (
   <form method="get" action={CAMPAIGN_COMMUNICATION_ACERVO} className="flex flex-col gap-1.5">
     <input type="hidden" name="source" value="enviadas" />
+    {/* The "Pessoa" facet survives a new textual search. */}
+    {(people ?? []).map((person) => (
+      <input key={person} type="hidden" name="person" value={person} />
+    ))}
     {/* The shared input owns the accessible label; this is its visible twin. */}
     <p className="text-sm font-medium">Buscar nas gravações enviadas</p>
     <CampaignSearchInput
@@ -101,10 +112,14 @@ const RecordingsSource = ({
   data: Awaited<ReturnType<typeof loadRecordingsPageData>>
 }) => {
   const hasSearch = Boolean(data.state.q)
+  const hasPeople = (data.state.people?.length ?? 0) > 0
+  const hasFilters = hasSearch || hasPeople
 
   return (
     <CampaignListPendingBoundary>
-      <RecordingsSearchForm query={data.state.q} />
+      <RecordingsSearchForm query={data.state.q} people={data.state.people} />
+
+      <RecordingPersonFilter state={data.state} options={data.filterOptions.people} />
 
       <RecordingStatusRefresher
         recordings={data.rows.map((row) => ({ id: row.id, status: row.status }))}
@@ -116,21 +131,27 @@ const RecordingsSource = ({
         ) : (
           <CampaignListEmptyState
             className="border-solid"
-            icon={hasSearch ? SearchIcon : VideoIcon}
+            icon={hasFilters ? SearchIcon : VideoIcon}
             title={
               hasSearch
                 ? `Nenhuma gravação encontrada para "${data.state.q}"`
-                : 'Nenhuma gravação enviada ainda'
+                : hasPeople
+                  ? 'Nenhuma gravação encontrada com esse filtro'
+                  : 'Nenhuma gravação enviada ainda'
             }
             description={
               hasSearch
                 ? 'Tente outro termo ou limpe a busca para ver todas as gravações enviadas.'
-                : 'Envie um arquivo de vídeo para acompanhar a transcrição e pesquisar o conteúdo no acervo.'
+                : hasPeople
+                  ? 'Tente outro termo, remova filtros ou limpe a busca.'
+                  : 'Envie um arquivo de vídeo para acompanhar a transcrição e pesquisar o conteúdo no acervo.'
             }
           >
-            {hasSearch ? (
+            {hasFilters ? (
               <Button asChild variant="outline" className="min-h-11">
-                <Link href={buildAcervoSourceHref('enviadas')}>Limpar busca</Link>
+                <Link href={buildAcervoSourceHref('enviadas')}>
+                  {hasPeople ? 'Limpar filtros' : 'Limpar busca'}
+                </Link>
               </Button>
             ) : (
               <RecordingUploadDialog triggerLabel="Enviar gravação" />

@@ -30,6 +30,11 @@ export const isRecordingStatus = (value: unknown): value is RecordingStatus =>
 /** One owner for the persisted field limits (collection, schema and dialog). */
 export const RECORDING_TITLE_MAX_LENGTH = 200
 
+/** C200 — the human label the team types for one speaker cluster. */
+export const RECORDING_SPEAKER_LABEL_MAX_LENGTH = 120
+export const RECORDING_SPEAKER_LABEL_REQUIRED_MESSAGE = 'Informe o nome do falante.'
+export const RECORDING_SPEAKER_LABEL_LONG_MESSAGE = `O nome do falante deve ter até ${RECORDING_SPEAKER_LABEL_MAX_LENGTH} caracteres.`
+
 /** Upload ceiling: hours of plenary are the real case, 4 GiB is the guard. */
 export const RECORDING_MAX_BYTES = 4 * 1024 * 1024 * 1024
 export const RECORDING_MAX_SIZE_LABEL = '4 GB'
@@ -89,6 +94,31 @@ export const canServeRecordingMedia = (status: RecordingStatus): boolean => stat
 
 /** The retry button only applies to a failed transcription. */
 export const canRetryRecording = (status: RecordingStatus): boolean => status === 'failed'
+
+/** C200 — dialog copy of the human identification step (design scenes 2/5). */
+export const RECORDING_SPEAKER_DIALOG_TITLE = 'Identificar falante'
+export const RECORDING_SPEAKER_DIALOG_INTRO =
+  'Ouça um trecho e informe quem é a pessoa. O acervo não sugere nem identifica pessoas automaticamente.'
+export const RECORDING_SPEAKER_DIALOG_HELP =
+  'O nome será aplicado a todas as falas deste agrupamento nesta gravação.'
+export const RECORDING_SPEAKER_LABEL_FIELD_LABEL = 'Nome do falante'
+export const RECORDING_SPEAKER_LABEL_PLACEHOLDER = 'Digite o nome do falante'
+export const RECORDING_SPEAKER_SAVE_LABEL = 'Salvar identificação'
+
+/** C200 — the transcript banner of the grouped detail (design scenes 1/4/5). */
+export const RECORDING_SPEAKER_INFO_BANNER =
+  'Os falantes são agrupados automaticamente pelo áudio. A identificação de cada pessoa é feita pela equipe.'
+export const RECORDING_SPEAKER_INFO_BANNER_MOBILE =
+  'Agrupamento automático e aproximado. A identificação é feita pela equipe.'
+export const RECORDING_SPEAKER_BANNER_TITLE = 'A separação por falante pode estar imprecisa'
+export const RECORDING_SPEAKER_BANNER_BODY =
+  'O agrupamento é automático e aproximado. Ruído e falas sobrepostas podem colocar trechos no agrupamento errado. A equipe continua responsável por identificar cada falante.'
+export const RECORDING_SPEAKER_BANNER_DROPPED =
+  'Esta gravação foi reprocessada e algumas identificações não puderam ser mantidas. Confira os falantes.'
+export const RECORDING_SPEAKER_GROUP_UNIDENTIFIED = 'Agrupamento sem identificação'
+export const RECORDING_SPEAKER_GROUP_IDENTIFIED = 'Identificação feita pela equipe'
+export const RECORDING_SPEAKER_IDENTIFY_ACTION = 'Identificar falante'
+export const RECORDING_SPEAKER_EDIT_ACTION = 'Editar identificação'
 
 /** Errors of the upload form (client validation). Wire messages live in schemas. */
 export const RECORDING_FILE_REQUIRED_MESSAGE = 'Escolha um arquivo de vídeo para enviar.'

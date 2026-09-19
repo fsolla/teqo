@@ -1176,6 +1176,24 @@ export interface Recording {
    */
   searchText?: string | null;
   /**
+   * Rótulos humanos por agrupamento acústico (chave → nome). Identificação sempre humana; o acervo nunca sugere ou infere pessoas.
+   */
+  speakerLabels?:
+    | {
+        speakerKey: string;
+        label: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Derivado dos rótulos (sem duplicatas, sem diferenciar maiúsculas) para a faceta "Pessoa".
+   */
+  speakerNames?: string[] | null;
+  /**
+   * Ligado quando um reprocessamento reordenou os agrupamentos e algum rótulo não pôde ser re-vinculado.
+   */
+  speakerLabelsDropped?: boolean | null;
+  /**
    * Motivo interno da falha; nunca vai à pessoa com o detalhe cru.
    */
   error?: string | null;
@@ -1215,6 +1233,10 @@ export interface RecordingSegment {
   id: number;
   recording: number | Recording;
   order: number;
+  /**
+   * Chave do agrupamento acústico ("Falante N") do trecho; vazio sem diarização.
+   */
+  speakerKey?: string | null;
   startSeconds: number;
   endSeconds: number;
   text: string;
@@ -2425,6 +2447,15 @@ export interface RecordingSelect<T extends boolean = true> {
   media?: T;
   durationSeconds?: T;
   searchText?: T;
+  speakerLabels?:
+    | T
+    | {
+        speakerKey?: T;
+        label?: T;
+        id?: T;
+      };
+  speakerNames?: T;
+  speakerLabelsDropped?: T;
   error?: T;
   createdBy?: T;
   updatedAt?: T;
@@ -2455,6 +2486,7 @@ export interface RecordingMediaSelect<T extends boolean = true> {
 export interface RecordingSegmentSelect<T extends boolean = true> {
   recording?: T;
   order?: T;
+  speakerKey?: T;
   startSeconds?: T;
   endSeconds?: T;
   text?: T;

@@ -2,6 +2,7 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { foldSpeakerName } from '@/lib/recordingDiarization'
 import { RECORDING_NOT_FOUND_MESSAGE } from '@/lib/schemas/recording'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import type { CampaignUser } from '@/payload-types'
@@ -33,28 +34,75 @@ const recordingListSelect = {
   step: true,
   recordedAt: true,
   durationSeconds: true,
+  speakerNames: true,
 } as const
 
 const recordingDetailSelect = {
   ...recordingListSelect,
   error: true,
+  speakerLabels: true,
+  speakerLabelsDropped: true,
 } as const
 
 const segmentSelect = {
   startSeconds: true,
   endSeconds: true,
   text: true,
+  speakerKey: true,
 } as const
 
 const toSegmentRecord = (segment: {
   startSeconds: number
   endSeconds: number
   text: string
+  speakerKey?: string | null
 }): RecordingSegmentRecord => ({
   startSeconds: segment.startSeconds,
   endSeconds: segment.endSeconds,
   text: segment.text,
+  speakerKey: segment.speakerKey ?? null,
 })
+
+/** C200 — the options the "Pessoa" facet offers. */
+export type RecordingFilterOptions = {
+  people: string[]
+}
+
+/**
+ * C200 — distinct labels across the recordings the actor can read: the facet
+ * only ever lists what is reachable, and the derived `speakerNames` column is
+ * the single source. Small acervo now; if the list grows past a few thousand
+ * rows this becomes a `SELECT DISTINCT` (registered as a revisit trigger in the
+ * impl plan).
+ */
+export const loadRecordingFilterOptions = async (
+  payload: Payload,
+  user: CampaignUser,
+): Promise<RecordingFilterOptions> => {
+  const result = await payload.find({
+    collection: 'recording',
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { speakerNames: true },
+    user,
+    overrideAccess: false,
+  })
+
+  const people: string[] = []
+  const seen = new Set<string>()
+  for (const recording of result.docs) {
+    for (const name of recording.speakerNames ?? []) {
+      const trimmed = name.trim()
+      const folded = foldSpeakerName(trimmed)
+      if (!trimmed || seen.has(folded)) continue
+      seen.add(folded)
+      people.push(trimmed)
+    }
+  }
+
+  return { people: people.sort((left, right) => left.localeCompare(right, 'pt-BR')) }
+}
 
 /**
  * The excerpt segment of each listed recording: ONE matching segment per row
@@ -120,6 +168,7 @@ const loadMatchedSegments = async (
 export type RecordingsPageData = {
   rows: RecordingListItemViewModel[]
   state: RecordingListState
+  filterOptions: RecordingFilterOptions
   redirectHref?: string
   totalDocs: number
   totalPages: number
@@ -134,17 +183,20 @@ export const loadRecordingsPageData = async (
   const canonicalUrl = resolveRecordingListUrl(rawSearchParams)
   const state = canonicalUrl.state
 
-  const result = await payload.find({
-    collection: 'recording',
-    depth: 0,
-    limit: recordingPageSize,
-    page: state.page,
-    sort: '-createdAt',
-    where: buildRecordingListWhere(state),
-    select: recordingListSelect,
-    user,
-    overrideAccess: false,
-  })
+  const [result, filterOptions] = await Promise.all([
+    payload.find({
+      collection: 'recording',
+      depth: 0,
+      limit: recordingPageSize,
+      page: state.page,
+      sort: '-createdAt',
+      where: buildRecordingListWhere(state),
+      select: recordingListSelect,
+      user,
+      overrideAccess: false,
+    }),
+    loadRecordingFilterOptions(payload, user),
+  ])
 
   const resolvedUrl = resolveRecordingListUrl(rawSearchParams, result.totalPages)
   const recordings = result.docs
@@ -163,9 +215,11 @@ export const loadRecordingsPageData = async (
         recording,
         matchedSegments: segmentsByRecording.get(recording.id) ?? [],
         query: state.q,
+        people: state.people,
       }),
     ),
     state: resolvedUrl.state,
+    filterOptions,
     redirectHref: resolvedUrl.redirectHref ?? canonicalUrl.redirectHref,
     totalDocs: result.totalDocs,
     totalPages: result.totalPages,

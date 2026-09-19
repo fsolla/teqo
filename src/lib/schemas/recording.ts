@@ -1,6 +1,12 @@
 import { z } from 'zod'
 
-import { RECORDING_TITLE_MAX_LENGTH, RECORDING_TITLE_REQUIRED_MESSAGE } from '@/lib/recording'
+import {
+  RECORDING_SPEAKER_LABEL_LONG_MESSAGE,
+  RECORDING_SPEAKER_LABEL_MAX_LENGTH,
+  RECORDING_SPEAKER_LABEL_REQUIRED_MESSAGE,
+  RECORDING_TITLE_MAX_LENGTH,
+  RECORDING_TITLE_REQUIRED_MESSAGE,
+} from '@/lib/recording'
 import { trimmedOptionalText } from '@/lib/schemas/primitives'
 
 /** The acervo gate refused the actor — one literal shared with the vertical. */
@@ -47,6 +53,23 @@ export type RecordingUploadMetadata = z.infer<typeof recordingUploadMetadataSche
 /** Retry the transcription of a failed recording. */
 export const recordingRetryRequestSchema = z.object({
   recordingId: z.number().int().positive(),
+})
+
+/** C200 — the team names one acoustic cluster of a recording. */
+export const RECORDING_SPEAKER_UNKNOWN_MESSAGE =
+  'Este agrupamento de falantes não existe mais nesta gravação.'
+
+export const recordingSpeakerLabelRequestSchema = z.object({
+  recordingId: z.number().int().positive(),
+  speakerKey: z
+    .string()
+    .trim()
+    .regex(/^speaker-\d{1,3}$/, RECORDING_SPEAKER_UNKNOWN_MESSAGE),
+  label: z
+    .string()
+    .trim()
+    .min(1, RECORDING_SPEAKER_LABEL_REQUIRED_MESSAGE)
+    .max(RECORDING_SPEAKER_LABEL_MAX_LENGTH, RECORDING_SPEAKER_LABEL_LONG_MESSAGE),
 })
 
 /** Delete one recording (row + segments + private media). */

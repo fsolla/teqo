@@ -11,12 +11,23 @@ import {
   type RecordingStep,
 } from '@/lib/recording'
 import {
+  assignSpeakerKeys,
+  reconcileSpeakerLabels,
+  RECORDING_DIARIZATION_MAX_SECONDS,
+} from '@/lib/recordingDiarization'
+import {
   buildRecordingAudioFfmpegArgs,
+  buildRecordingFullAudioFfmpegArgs,
   mergeChunkTranscriptions,
   RECORDING_AUDIO_CHUNK_SECONDS,
   recordingSearchText,
 } from '@/lib/recordingTranscription'
 import type { Recording } from '@/payload-types'
+import {
+  configuredSpeakerDiarizer,
+  diarizeInputBlob,
+  type SpeakerDiarizer,
+} from '@/utilities/ai/assemblyAiDiarize'
 import {
   deepInfraTranscribeSegments,
   type TranscribeSegmentsResult,
@@ -107,12 +118,16 @@ const chunkFilesIn = async (tempDir: string): Promise<string[]> => {
 /**
  * The whole pipeline of one recording. Never throws: an orphan job (server
  * restart) is covered by the lazy reaper, and any error marks the row `failed`
- * so the retry reuses it.
+ * so the retry reuses it. C200 adds the optional diarization pass: with a
+ * configured provider the whole extracted audio is sent once, the turns are
+ * aligned to the whisper segments and the human labels are reconciled by time
+ * overlap; a provider failure degrades to the single-block transcript.
  */
 export const runRecordingJob = async (
   payload: Payload,
   recordingId: number,
   transcribe: ChunkTranscriber = deepInfraTranscribeSegments,
+  diarize: SpeakerDiarizer | null = configuredSpeakerDiarizer(),
 ): Promise<void> => {
   let tempDir: string | null = null
   let currentStep: RecordingStep = 'extracting'
@@ -155,6 +170,22 @@ export const runRecordingJob = async (
       return
     }
 
+    // C200: the provider accepts up to 10 h per file; a longer recording skips
+    // the step honestly (a rough upper bound is enough to refuse, and the
+    // chunk count overestimates the real duration by at most one chunk).
+    const diarizationEligible =
+      diarize !== null &&
+      chunkFiles.length * RECORDING_AUDIO_CHUNK_SECONDS <= RECORDING_DIARIZATION_MAX_SECONDS
+    const fullAudioPath = join(tempDir, 'full.mp3')
+    if (diarizationEligible) {
+      await runFfmpeg(
+        buildRecordingFullAudioFfmpegArgs({ inputPath, outputPath: fullAudioPath }),
+        RECORDING_AUDIO_CHUNK_SECONDS,
+        NO_AUDIO_MESSAGE,
+        RECORDING_FFMPEG_TIMEOUT_MS,
+      )
+    }
+
     await markStep('transcribing')
     const chunks: {
       offsetSeconds: number
@@ -187,8 +218,63 @@ export const runRecordingJob = async (
       return
     }
 
+    // C200 — optional speaker grouping. The provider seam never fails the
+    // recording: every failure (or a missing key) keeps the plain transcript.
+    let keyedSegments: ((typeof segments)[number] & { speakerKey: string | null })[] = segments.map(
+      (segment) => ({ ...segment, speakerKey: null }),
+    )
+    if (diarizationEligible && diarize) {
+      try {
+        const result = await diarize(await diarizeInputBlob(fullAudioPath), {
+          onProgress: async () => {
+            await updateRecordingSystem(payload, recordingId, { step: 'transcribing' })
+          },
+        })
+        if (result.ok) keyedSegments = assignSpeakerKeys(segments, result.turns)
+      } catch {
+        // Defensive: the provider contract is "never throws"; if it does, the
+        // transcript still gets saved without groups.
+      }
+    }
+
     await markStep('saving')
     await withPayloadTransaction(payload, async ({ req }) => {
+      // Fresh reads inside the transaction: the labels a curator wrote while
+      // the transcription ran must be the ones reconciled, not the snapshot
+      // from the top of the job.
+      const freshRecording = await payload.find({
+        collection: 'recording',
+        where: { id: { equals: recordingId } },
+        depth: 0,
+        limit: 1,
+        pagination: false,
+        select: { speakerLabels: true },
+        req,
+        // Intentional admin bypass: the pipeline owns the row state.
+        overrideAccess: true,
+      })
+      const previous = await payload.find({
+        collection: 'recordingSegment',
+        where: { recording: { equals: recordingId } },
+        depth: 0,
+        limit: 0,
+        pagination: false,
+        sort: 'order',
+        select: { speakerKey: true, startSeconds: true, endSeconds: true },
+        req,
+        // Intentional admin bypass: reconciling the transcript the job owns.
+        overrideAccess: true,
+      })
+      const { labels, dropped } = reconcileSpeakerLabels({
+        previousLabels: freshRecording.docs[0]?.speakerLabels ?? [],
+        previousSegments: previous.docs.map((segment) => ({
+          speakerKey: segment.speakerKey ?? null,
+          startSeconds: segment.startSeconds,
+          endSeconds: segment.endSeconds,
+        })),
+        nextSegments: keyedSegments,
+      })
+
       await payload.delete({
         collection: 'recordingSegment',
         where: { recording: { equals: recordingId } },
@@ -196,7 +282,7 @@ export const runRecordingJob = async (
         // Intentional admin bypass: replacing segments owned by the recording.
         overrideAccess: true,
       })
-      for (const segment of segments) {
+      for (const segment of keyedSegments) {
         await payload.create({
           collection: 'recordingSegment',
           // `searchText` is filled by the collection's own beforeValidate hook.
@@ -206,6 +292,7 @@ export const runRecordingJob = async (
             startSeconds: segment.startSeconds,
             endSeconds: segment.endSeconds,
             text: segment.text,
+            speakerKey: segment.speakerKey,
           }),
           req,
           // Intentional admin bypass: the transcript belongs to the recording row.
@@ -221,6 +308,8 @@ export const runRecordingJob = async (
           error: null,
           durationSeconds: Math.round(durationSeconds),
           searchText: recordingSearchText(segments),
+          speakerLabels: labels,
+          speakerLabelsDropped: dropped,
         },
         req,
       )

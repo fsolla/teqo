@@ -21,6 +21,7 @@ import {
 } from '@/lib/recording'
 import {
   buildRecordingAudioFfmpegArgs,
+  buildRecordingFullAudioFfmpegArgs,
   mergeChunkTranscriptions,
   RECORDING_AUDIO_CHUNK_SECONDS,
   recordingSearchText,
@@ -179,5 +180,18 @@ describe('recording transcription (C199)', () => {
   it('returns nothing for an empty transcription', () => {
     expect(mergeChunkTranscriptions([])).toEqual([])
     expect(recordingSearchText([])).toBe('')
+  })
+
+  it('builds the single-file extraction for diarization (C200)', () => {
+    const args = buildRecordingFullAudioFfmpegArgs({
+      inputPath: '/tmp/in.mkv',
+      outputPath: '/tmp/full.mp3',
+    })
+    expect(args).toContain('-vn')
+    expect(args).toContain('libmp3lame')
+    // One output, no segmentation: speaker numbering needs the whole audio.
+    expect(args).not.toContain('-f')
+    expect(args).not.toContain('-segment_time')
+    expect(args.at(-1)).toBe('/tmp/full.mp3')
   })
 })
