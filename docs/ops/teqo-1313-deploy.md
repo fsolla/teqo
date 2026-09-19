@@ -193,8 +193,9 @@ noindex` no ingress — o noindex versionado (robots.ts + metadata, OPS103)
    Nunca copiar dados de produção (PII/LGPD): o seed mínimo é sintético.
 
 8. **Conta de teste dos agentes (OPS125):** criar/atualizar a conta
-   `coordinator` sintética que a verificação pós-deploy do `work-issue` (OPS121)
-   usa para logar. Com o env de staging exportado e o `DATABASE_URL` reescrito
+   `coordinator` sintética reutilizável para testes manuais em staging (o passo
+   obrigatório de verificação pós-deploy do `work-issue` saiu na OPS128; a infra
+   fica). Com o env de staging exportado e o `DATABASE_URL` reescrito
    para o proxy do build (`127.0.0.1:5434`):
 
    ```bash
@@ -210,9 +211,9 @@ noindex` no ingress — o noindex versionado (robots.ts + metadata, OPS103)
    `TEQO_ENV` ≠ `staging` e host fora do allowlist local falham fechado (o nome
    do banco é o discriminador honesto — o host é reescrito para `127.0.0.1` pelo
    proxy). A credencial (`agente-teste@teqo.invalid` + a senha em
-   `STAGING_TEST_ACCOUNT_PASSWORD`) é fornecida ao agente **no momento do teste
-   de verificação**, pelo humano; nunca entra no PR/Issue nem no env do agente,
-   e o agente nunca recebe `DATABASE_URL` de staging/produção.
+   `STAGING_TEST_ACCOUNT_PASSWORD`) é fornecida pelo humano que opera o
+   homeserver **no momento do teste**; nunca entra no PR/Issue nem no env do
+   agente, e o agente nunca recebe `DATABASE_URL` de staging/produção.
    Nota: o `teqo_staging` deste homeserver é **cópia da produção** (com PII
    real) — a linha "o seed mínimo é sintético" do passo 7 acima está
    desatualizada; a correção dos docs é débito do OPS103, dono do ambiente.

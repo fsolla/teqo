@@ -1,12 +1,14 @@
 /**
  * Staging test account (OPS125) — the ONE source of the synthetic `campaignUser`
- * the `work-issue` post-deploy verification (OPS121) logs in with at
- * `https://staging.jorgesolla1313.com.br`.
+ * used for manual testing at `https://staging.jorgesolla1313.com.br` (the
+ * mandatory `work-issue` post-deploy verification that used it was removed in
+ * OPS128; the infrastructure stays as reusable tooling — runbook §Staging).
  *
- * Why it exists: the verification agent tried the minimal seed credentials,
- * which never exist on staging (the staging DB is a copy of production, not a
- * `db:seed:minimal` target). This module owns the account identity and the
- * fail-closed guard that keeps its creation restricted to staging.
+ * Why it exists: the minimal seed credentials never exist on staging (the
+ * staging DB is a copy of production, not a `db:seed:minimal` target), so
+ * testing there needs a dedicated account. This module owns the account
+ * identity and the fail-closed guard that keeps its creation restricted to
+ * staging.
  *
  * The password is NEVER in code — it comes from `STAGING_TEST_ACCOUNT_PASSWORD`
  * in the homeserver env file (`~/stack/teqo-staging.env`, chmod 600), so the

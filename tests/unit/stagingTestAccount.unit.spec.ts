@@ -23,7 +23,7 @@ const stagingTarget = (overrides = {}) => ({
 })
 
 describe('staging test account identity (OPS125)', () => {
-  it('pins the identity the work-issue verification logs in with', () => {
+  it('pins the staging test account identity used for manual tests', () => {
     expect(STAGING_TEST_ACCOUNT).toEqual({
       name: 'Agente de Teste (staging)',
       email: 'agente-teste@teqo.invalid',
