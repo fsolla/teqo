@@ -29,12 +29,15 @@ export const SOLLA_PALETTE = {
 const FONT_STACK =
   "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif"
 
-const formatValue = (value) =>
-  new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)
+const formatValue = (value, unit = '') =>
+  `${new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(value)}${unit}`
 
 const sortedByValue = (rows) => [...rows].sort((a, b) => b.value - a.value)
 
-const highlightLabel = (spec) => spec.highlight ?? sortedByValue(spec.rows)[0]?.label ?? null
+const highlightLabel = (spec) => {
+  if (spec.noHighlight) return null
+  return spec.highlight ?? sortedByValue(spec.rows)[0]?.label ?? null
+}
 
 const rankingBody = (spec) => {
   const rows = sortedByValue(spec.rows)
@@ -48,7 +51,7 @@ const rankingBody = (spec) => {
         return `<div class="rank-row">
         <span class="rank-label">${htmlEscape(row.label)}</span>
         <div class="bar-track">
-          <div class="bar${isHighlight ? ' highlight' : ''}${percent === 0 ? ' zero' : ''}" style="width:${percent}%">${formatValue(row.value)}</div>
+          <div class="bar${isHighlight ? ' highlight' : ''}${percent === 0 ? ' zero' : ''}" style="width:${percent}%">${formatValue(row.value, spec.unit)}</div>
         </div>
       </div>`
       })
@@ -60,13 +63,19 @@ const columnBody = (spec) => {
   const rows = spec.rows
   const max = Math.max(...rows.map((row) => row.value))
   const winner = highlightLabel(spec)
-  return `<div class="columns" style="grid-template-columns:repeat(${rows.length}, 1fr)">
+  // CENA 02A (approved): the two-positive comparison caps and centers the pair
+  // and assigns the tones by input order — never by value.
+  const tracks = spec.dualPositive
+    ? 'repeat(2, minmax(0, 280px))'
+    : `repeat(${rows.length}, minmax(0, 320px))`
+  return `<div class="columns" style="grid-template-columns:${tracks}">
     ${rows
-      .map((row) => {
-        const isHighlight = row.label === winner
+      .map((row, index) => {
+        const isHighlight = !spec.dualPositive && row.label === winner
+        const tone = spec.dualPositive ? ` positive-${index === 0 ? 'a' : 'b'}` : ''
         return `<div class="column-cell">
-        <span class="column-value">${formatValue(row.value)}</span>
-        <div class="column${isHighlight ? ' highlight' : ''}" style="height:${proportionalPercent(row.value, max)}%"></div>
+        <span class="column-value">${formatValue(row.value, spec.unit)}</span>
+        <div class="column${isHighlight ? ' highlight' : ''}${tone}" style="height:${proportionalPercent(row.value, max)}%"></div>
         <span class="column-label">${htmlEscape(row.label)}</span>
       </div>`
       })
@@ -123,8 +132,8 @@ const deltaBody = (spec) => {
             : `<span class="delta-ext" style="width:${formatPercent(((row.final - row.initial) / max) * 100)}%"></span>`
         }
       </div>
-      <span class="delta-value initial">${formatValue(row.initial)}</span>
-      <span class="delta-value final">${formatValue(row.final)}</span>
+      <span class="delta-value initial">${formatValue(row.initial, spec.unit)}</span>
+      <span class="delta-value final">${formatValue(row.final, spec.unit)}</span>
     </div>`
       })
       .join('')}
@@ -135,7 +144,7 @@ const anchorBody = (spec) => {
   const row = spec.rows[0]
   const copy = row.label || spec.subtitle || ''
   return `<div class="anchor">
-    <div class="anchor-number">${formatValue(row.value)}</div>
+    <div class="anchor-number">${formatValue(row.value, spec.unit)}</div>
     ${copy ? `<p class="anchor-copy">${htmlEscape(copy)}</p>` : ''}
   </div>`
 }
@@ -167,7 +176,7 @@ const dualBody = (spec) => {
     crossingLabel: spec.crossingLabel ?? null,
     colors: DUAL_COLORS,
     valence: DUAL_VALENCE,
-    format: (row) => formatValue(row.value),
+    format: (row) => formatValue(row.value, spec.unit),
   })}</div>`
 }
 
@@ -181,7 +190,7 @@ const plotBody = (spec) => {
       rows: spec.rows,
       width: 880,
       height: 430,
-      format: (row) => formatValue(row.value),
+      format: (row) => formatValue(row.value, spec.unit),
       stroke: SOLLA_PALETTE.axis,
       highlight: SOLLA_PALETTE.highlight,
       paper: SOLLA_PALETTE.paper,
@@ -280,12 +289,15 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
   text-align: right;
   white-space: nowrap;
 }
-.columns { display: grid; align-items: end; gap: 26px; height: 100%; padding-bottom: 46px; border-bottom: 3px solid ${SOLLA_PALETTE.barStrong}; }
+.columns { display: grid; justify-content: center; align-items: end; gap: 26px; height: 100%; padding-bottom: 46px; border-bottom: 3px solid ${SOLLA_PALETTE.barStrong}; }
+.plot.dual-positive-plot { flex: none; height: 500px; margin-top: 34px; }
+.column.positive-a { background: ${SOLLA_PALETTE.highlight}; }
+.column.positive-b { background: ${SOLLA_PALETTE.highlight}; }
 .column-cell { position: relative; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
 .column-value { margin-bottom: 10px; text-align: center; font-size: 31px; font-weight: 800; font-variant-numeric: tabular-nums; }
 .column { background: ${SOLLA_PALETTE.bar}; min-height: 6px; }
 .column.highlight { background: ${SOLLA_PALETTE.highlight}; }
-.column-label { position: absolute; bottom: -40px; left: 0; width: 100%; text-align: center; color: ${SOLLA_PALETTE.label}; font-size: 30px; font-weight: 650; }
+.column-label { position: absolute; bottom: -40px; left: 0; width: 100%; text-align: center; color: ${SOLLA_PALETTE.label}; font-size: 30px; font-weight: 650; white-space: nowrap; }
 .line-plot { height: 100%; display: flex; align-items: center; }
 .line-plot svg { width: 100%; height: auto; }
 .dual-line-plot { flex: none; }
@@ -373,6 +385,11 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
   const canvas = SIZES[sizeKey]
   const layout = layoutFor(sizeKey)
   const dual = Array.isArray(spec.series) && spec.series.length > 0
+  const dualPositive = Boolean(spec.dualPositive)
+  const dualPositiveStyles =
+    !dualPositive || sizeKey !== 'feed'
+      ? ''
+      : '.headline { font-size: 60px; max-width: 900px; } .subtitle { margin-top: 18px; font-size: 28px; }'
   const dualStyles = !dual
     ? ''
     : sizeKey === 'feed'
@@ -388,7 +405,8 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
       : sizeKey === 'square'
         ? '.inner { padding: 56px 84px 48px; } .plot { margin-top: 0; } .headline { font-size: 54px; } .subtitle { font-size: 28px; } .delta-grade { margin-top: 24px; --delta-bar-h: 42px; --delta-gap: 12px; --delta-v1-w: 84px; --delta-v2-w: 104px; } .delta-value { font-size: 30px; }'
         : '.plot { margin-top: 0; } .headline { font-size: 64px; } .delta-grade { margin-top: 40px; --delta-gap: 22px; --delta-bar-h: 52px; }'
-  const kicker = dual ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico')
+  const kicker =
+    spec.kicker ?? (dual ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico'))
   const anchorUsesSubtitle = spec.chartType === 'anchor' && !spec.rows[0]?.label
   const showSubtitle = Boolean(spec.subtitle) && !anchorUsesSubtitle
   return `<!doctype html>
@@ -406,6 +424,7 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
       .plot { margin-top: ${layout.plotGap}px; }
       ${dualStyles}
       ${deltaStyles}
+      ${dualPositiveStyles}
     </style>
   </head>
   <body>
@@ -415,7 +434,7 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
         <p class="context">${htmlEscape(kicker)}</p>
         <h1 class="headline">${htmlEscape(spec.headline)}</h1>
         ${showSubtitle ? `<p class="subtitle">${htmlEscape(spec.subtitle)}</p>` : ''}
-        <div class="plot">${plotBody(spec)}</div>
+        <div class="plot${dualPositive ? ' dual-positive-plot' : ''}">${plotBody(spec)}</div>
         ${footer(spec, brandLogoDataUri)}
       </div>
     </article>

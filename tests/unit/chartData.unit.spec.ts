@@ -218,6 +218,48 @@ describe('validateSpec — fail-closed guardrails', () => {
   it('refuses an unlabeled bar row', () => {
     expect(() => validateSpec({ ...base, rows: [{ label: '', value: 1 }] })).toThrow(/rótulo/)
   })
+
+  it('accepts an optional unit suffix and a relation kicker', () => {
+    expect(validateSpec({ ...base, unit: '%', kicker: 'Comparação' })).toMatchObject({
+      unit: '%',
+      kicker: 'Comparação',
+    })
+  })
+
+  it('refuses a non-string unit and an empty kicker', () => {
+    expect(() => validateSpec({ ...base, unit: 10 })).toThrow(/unidade/)
+    expect(() => validateSpec({ ...base, kicker: '  ' })).toThrow(/kicker/)
+  })
+
+  it('accepts the neutral piece flag and refuses the highlight conflict', () => {
+    expect(validateSpec({ ...base, noHighlight: true })).toMatchObject({ noHighlight: true })
+    expect(() => validateSpec({ ...base, noHighlight: 'sim' })).toThrow(/noHighlight/)
+    expect(() => validateSpec({ ...base, noHighlight: true, highlight: 'A' })).toThrow(/exclusivos/)
+  })
+
+  it('certifies the two-positive column pair and fails closed outside it', () => {
+    const pair = {
+      ...base,
+      chartType: 'column',
+      rows: [
+        { label: 'Municipal', value: 60.57 },
+        { label: 'Estadual', value: 54.67 },
+      ],
+    }
+    expect(validateSpec({ ...pair, dualPositive: true })).toMatchObject({ dualPositive: true })
+    expect(() => validateSpec({ ...pair, dualPositive: 'sim' })).toThrow(/dualPositive/)
+    expect(() => validateSpec({ ...base, dualPositive: true })).toThrow(/coluna/)
+    expect(() =>
+      validateSpec({ ...pair, dualPositive: true, rows: [{ label: 'A', value: 1 }] }),
+    ).toThrow(/2 categorias/)
+    expect(() => validateSpec({ ...pair, dualPositive: true, highlight: 'Municipal' })).toThrow(
+      /destaque/,
+    )
+    expect(() => validateSpec({ ...pair, dualPositive: true, noHighlight: true })).toThrow(
+      /no-highlight/,
+    )
+    expect(() => validateSpec({ ...pair, dualPositive: true, size: 'square' })).toThrow(/feed/)
+  })
 })
 
 describe('parseInput — two aligned measures become series, not a ranking', () => {

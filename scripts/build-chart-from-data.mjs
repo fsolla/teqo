@@ -10,8 +10,9 @@
  * Usage:
  *   node scripts/build-chart-from-data.mjs --in=data/graficos-instagram/dados.csv \
  *     --headline="Um território concentra o maior resultado" --source="TSE 2022" \
- *     [--subtitle=...] [--note=...] [--type=bar] [--size=feed|square|story] \
- *     [--highlight="Território A"] [--out=docs/research/graficos-instagram/x.png]
+ *     [--subtitle=...] [--note=...] [--type=bar|column|line|anchor|delta] [--size=feed|square|story] \
+ *     [--unit="%"] [--highlight="Território A"|--no-highlight|--dual-positive] \
+ *     [--out=docs/research/graficos-instagram/x.png]
  *   node scripts/build-chart-from-data.mjs --in=dados.csv --inspect
  */
 
@@ -25,6 +26,7 @@ import {
   MAX_POINTS,
   MAX_POINTS_LINE,
   MAX_POINTS_STORY,
+  RELATION_LABEL,
   SIZES,
   classifyRelation,
   parseInput,
@@ -154,9 +156,18 @@ export const main = async ({
       die('dado ambíguo ou faltando — pergunte à pessoa antes de gerar (nada é completado).')
     }
 
+    if (flags['dual-positive'] && hasSeries) {
+      die(
+        '--dual-positive é a coluna de duas categorias positivas — não combina com a linha de duas séries.',
+      )
+    }
+
     const chartType = hasSeries
       ? (forcedType ?? 'line')
       : classifyRelation(dataset.rows, forcedType)
+    // The kicker names the data relation, not the forced layout: categories in
+    // vertical columns still read "Comparação"; few periods keep their own.
+    const kicker = hasSeries ? null : RELATION_LABEL[classifyRelation(dataset.rows)]
     spec = {
       chartType,
       size: flags.size ? String(flags.size) : 'feed',
@@ -164,6 +175,8 @@ export const main = async ({
       subtitle: flags.subtitle ? String(flags.subtitle) : '',
       source: flags.source ? String(flags.source) : '',
       note: flags.note ? String(flags.note) : '',
+      ...(kicker ? { kicker } : {}),
+      ...(flags.unit ? { unit: String(flags.unit) } : {}),
       ...(hasSeries
         ? {
             ...(flags.projected ? { projectedLabel: String(flags.projected) } : {}),
@@ -171,7 +184,9 @@ export const main = async ({
             series: applyTones(dataset.series, flags, die),
           }
         : {
-            highlight: flags.highlight ? String(flags.highlight) : null,
+            ...(flags.highlight ? { highlight: String(flags.highlight) } : {}),
+            ...(flags['no-highlight'] ? { noHighlight: true } : {}),
+            ...(flags['dual-positive'] ? { dualPositive: true } : {}),
             rows: dataset.rows,
             ...(chartType === 'delta'
               ? { startLabel: dataset.startLabel, endLabel: dataset.endLabel }

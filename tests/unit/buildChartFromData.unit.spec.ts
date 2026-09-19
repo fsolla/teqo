@@ -252,6 +252,122 @@ describe('main — spec assembly, replay and the per-size log', () => {
     expect(stdout.join('')).toContain('tipo=delta')
   })
 
+  it('assembles a vertical category comparison with the relation kicker and the unit', async () => {
+    const input = await writeInput(
+      dir,
+      'Hospital;Moradores da cidade (%)\nMunicipal (Esaú Matos);60.57\nEstadual (CHVC);54.67\n',
+    )
+    const { launchBrowser, close } = launchTracker()
+    const screenshot = screenshotStub()
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--type=column',
+        '--unit=%',
+        '--headline=Maioria e da cidade',
+        '--source=Ministério da Saúde — SIH/SUS',
+        `--out=${join(dir, 'coluna.png')}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    expect(close).toHaveBeenCalledOnce()
+    const spec = JSON.parse(
+      await readFile(
+        join(dir, 'data/graficos-instagram/maioria-e-da-cidade.chart-spec.json'),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({ chartType: 'column', kicker: 'Comparação', unit: '%' })
+    expect(stdout.join('')).toContain('tipo=column')
+  })
+
+  it('assembles the neutral piece with --no-highlight and refuses mixing both flags', async () => {
+    const input = await writeInput(
+      dir,
+      'Hospital;Moradores da cidade\nHospital municipal;60.57\nHospital estadual;54.67\n',
+    )
+    const { launchBrowser } = launchTracker()
+    const screenshot = screenshotStub()
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--type=column',
+        '--unit=%',
+        '--no-highlight',
+        '--headline=Neutro',
+        '--source=Ministério da Saúde — SIH/SUS',
+        `--out=${join(dir, 'neutro.png')}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    const spec = JSON.parse(
+      await readFile(join(dir, 'data/graficos-instagram/neutro.chart-spec.json'), 'utf8'),
+    )
+    expect(spec.noHighlight).toBe(true)
+    expect(spec.highlight).toBeUndefined()
+
+    await expect(
+      main({
+        argv: [
+          `--in=${input}`,
+          '--type=column',
+          '--no-highlight',
+          '--highlight=Hospital municipal',
+          '--headline=Conflito',
+          '--source=TSE',
+        ],
+        repoRoot: dir,
+        launchBrowser,
+        screenshot,
+      }),
+    ).rejects.toThrow(/exclusivos/)
+  })
+
+  it('assembles the two-positive pair with --dual-positive', async () => {
+    const input = await writeInput(
+      dir,
+      'Hospital;Moradores da cidade\nMunicipal;60.57\nEstadual;54.67\n',
+    )
+    const { launchBrowser } = launchTracker()
+    const screenshot = screenshotStub()
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--type=column',
+        '--unit=%',
+        '--dual-positive',
+        '--headline=Duas boas noticias',
+        '--source=Ministério da Saúde — SIH/SUS',
+        `--out=${join(dir, 'positivo.png')}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    const spec = JSON.parse(
+      await readFile(
+        join(dir, 'data/graficos-instagram/duas-boas-noticias.chart-spec.json'),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({
+      chartType: 'column',
+      unit: '%',
+      dualPositive: true,
+      kicker: 'Comparação',
+    })
+  })
+
   it('replays a --spec without reparsing the input and closes the browser', async () => {
     const specPath = join(dir, 'replay.chart-spec.json')
     await writeFile(

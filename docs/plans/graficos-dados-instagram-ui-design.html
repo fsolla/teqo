@@ -461,6 +461,88 @@
       }
 
       /* ------------------------------------------------------------------ */
+      /* CENA 02A · comparação vertical de 2 categorias, ambas positivas.   */
+      /* Os tons distinguem as categorias; não codificam vencedor/perdedor. */
+      /* ------------------------------------------------------------------ */
+      .feed-canvas.dual-positive .chart-headline {
+        max-width: 900px;
+        font-size: 60px;
+      }
+      .feed-canvas.dual-positive .chart-subtitle {
+        margin-top: 18px;
+        font-size: 28px;
+      }
+      .dual-positive-plot {
+        flex: none;
+        height: 500px;
+        margin-top: 34px;
+      }
+      .feed-canvas.dual-positive .columns {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 280px));
+        justify-content: center;
+        align-items: end;
+        gap: 26px;
+        height: 100%;
+        padding: 0 0 46px;
+        border-bottom: 3px solid var(--bar-strong);
+      }
+      .feed-canvas.dual-positive .column-cell {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        height: 100%;
+      }
+      .feed-canvas.dual-positive .column-value {
+        margin-bottom: 10px;
+        color: var(--ink);
+        text-align: center;
+        font-size: 31px;
+        line-height: 1;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .feed-canvas.dual-positive .column {
+        min-height: 6px;
+      }
+      .feed-canvas.dual-positive .column.positive-a {
+        background: #c51414;
+      }
+      .feed-canvas.dual-positive .column.positive-b {
+        background: #a21c1c;
+      }
+      .feed-canvas.dual-positive .column-label {
+        position: absolute;
+        bottom: -40px;
+        left: 0;
+        width: 100%;
+        color: #57534e;
+        text-align: center;
+        white-space: nowrap;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 650;
+      }
+      .signoff-approved {
+        border: 1px solid rgb(24 78 146 / 30%);
+        background: rgb(24 78 146 / 5%);
+      }
+      .signoff-approved-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 6px;
+        color: #fff;
+        background: #184e92;
+        font-size: 12px;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+      }
+
+      /* ------------------------------------------------------------------ */
       /* CENA 02C · PROPOSTA DEGRADED — variante "delta": uma barra por      */
       /* categoria com base (0→inicial) e extensão (inicial→final). O        */
       /* vermelho NÃO entra no plot: a leitura é crítica e não há valência   */
@@ -911,6 +993,29 @@
               recriado. A paleta provisória saiu; grid, headline-manchete, um único destaque,
               formatos e guardrails permanecem.
               <strong>Revisão aprovada no gate em 2026-09-19.</strong>
+            </p>
+          </div>
+          <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
+            >APROVADA · GATE 2026-09-19</span
+          >
+        </div>
+      </section>
+
+      <section
+        class="signoff-approved mt-6 rounded-2xl p-5 sm:p-6"
+        aria-labelledby="c191-extension-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div class="max-w-3xl">
+            <span class="signoff-approved-badge">SIGN-OFF HUMANO · 2026-09-19</span>
+            <h2 id="c191-extension-title" class="mt-3 text-lg font-bold tracking-tight">
+              Extensão C191 · duas categorias, dois resultados positivos
+            </h2>
+            <p class="mt-2 text-sm leading-6 text-stone-700">
+              Variante <strong>certificada pelo designer de referência</strong> em 2026-09-19 e
+              pronta para avaliação na tela renderizada. Ela não altera as cenas já aprovadas: só
+              acrescenta a comparação vertical em dois tons de vermelho, sem semântica de vencedor e
+              perdedor. O dono do produto aprovou a peça final renderizada em 2026-09-19.
             </p>
           </div>
           <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
@@ -1398,6 +1503,192 @@
             <p class="mt-1 text-xs leading-4 text-stone-600">
               Tendências, valência redundante e projeção explícita.
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="scene-card signoff-approved mt-10 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="dual-positive-title"
+      >
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02A · SÉTIMA VARIAÇÃO · SIGN-OFF HUMANO 2026-09-19
+            </p>
+            <h2 id="dual-positive-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · duas colunas, dois resultados positivos
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">2 colunas · teto 280 px</span>
+            <span class="signoff-approved-badge">APROVADA · 2026-09-19</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas dual-positive"
+                aria-label="Comparação positiva: hospital municipal, 60,6 por cento; hospital estadual, 54,7 por cento das internações de 2025 são de moradores da cidade"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Comparação</p>
+                  <h3 class="chart-headline">
+                    Os dois hospitais atendem majoritariamente moradores da cidade
+                  </h3>
+                  <p class="chart-subtitle">
+                    Percentual das internações de 2025 de moradores da cidade
+                  </p>
+
+                  <div class="dual-positive-plot">
+                    <div
+                      class="columns tabular"
+                      role="img"
+                      aria-label="Hospital municipal: 60,6 por cento. Hospital estadual: 54,7 por cento. As duas colunas partem do zero e representam resultados positivos, sem vencedor ou perdedor."
+                    >
+                      <div class="column-cell">
+                        <span class="column-value">60,6%</span>
+                        <div class="column positive-a" style="height: 100%"></div>
+                        <span class="column-label">Municipal</span>
+                      </div>
+                      <div class="column-cell">
+                        <span class="column-value">54,7%</span>
+                        <div class="column positive-b" style="height: 90.3%"></div>
+                        <span class="column-label">Estadual</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> Ministério da Saúde — SIH/SUS<br />Internações de
+                      2025.
+                    </p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-red-200 bg-red-50/70 p-4">
+              <p class="text-xs font-extrabold text-[#a21c1c]">MESMA VALÊNCIA, SEM PÓDIO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                As duas colunas são boas notícias. O par vermelho só separa categorias; tom mais
+                claro ou mais escuro <strong>não significa</strong> melhor, pior, ganho, perda,
+                prioridade ou vencedor. A altura comunica exclusivamente o valor observado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">COR NÃO É A ÚNICA PISTA</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Cada coluna mantém valor próprio acima do topo e rótulo curto próprio abaixo da
+                base. A ordem recebida é preservada; nunca reordenar pelo valor nem atribuir o tom
+                mais vivo ao maior número.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">POR QUE 280 PX E RÓTULO CURTO</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                O teto cai de 320 para <strong>280 px</strong>, deixando as barras menos grossas e o
+                par mais leve. A categoria visível usa somente <strong>“Municipal”</strong> e
+                <strong>“Estadual”</strong>, ambos em uma linha a 30 px; “Hospital” já está
+                explícito na manchete e não se repete sob a base.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">EXCEÇÃO CONTROLADA DE DENSIDADE</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Esta variante contraria deliberadamente o teto geral de vermelho (~10% da peça): o
+                plot inteiro é a boa notícia dupla. Em compensação, não há coluna neutra, destaque,
+                contorno, badge ou terceira marca de cor dentro do plot.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div
+          class="mt-7 border-t border-stone-200 pt-6"
+          aria-labelledby="dual-positive-rules-title"
+        >
+          <p class="text-xs font-bold text-brand-dark">REGRAS DA COLUNA DUPLA POSITIVA</p>
+          <h3 id="dual-positive-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato visual para o porte classe-a-classe
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Entrada e semântica</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Exatamente <strong>2 categorias</strong>, um valor não negativo por categoria e
+                confirmação explícita de que <strong>ambos</strong> são resultados positivos. Kicker
+                fixo: <strong>“Comparação”</strong>. Se houver vencedor/perdedor, bom/ruim ou
+                valência incerta, esta variante não se aplica: perguntar, nunca inferir.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Par de vermelhos · fixo</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Categoria A = <span class="rule-code">#c51414</span>; categoria B =
+                <span class="rule-code">#a21c1c</span>. Atribuir por ordem de entrada, nunca pelo
+                maior valor. Sem classe <span class="rule-code">highlight</span>, sem cinza no plot
+                e sem opacidade. Ambos contrastam com o papel acima de 3:1 (5,73:1 e 7,34:1).
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Texto, contraste e redundância</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">column-value</span> usa tinta
+                <span class="rule-code">#1c1917</span> sobre papel
+                <span class="rule-code">#faf9f7</span> (16,62:1).
+                <span class="rule-code">column-label</span> usa
+                <span class="rule-code">#57534e</span> sobre papel (7,25:1). Se algum formato futuro
+                puser texto sobre as colunas, usar branco <span class="rule-code">#fff</span>:
+                6,03:1 sobre A e 7,73:1 sobre B.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Geometria e base zero</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">columns</span>: 2 × minmax(0, 280 px), gap 26 px, altura
+                100%, padding-bottom 46 px e borda-base 3 px <span class="rule-code">#a8a29e</span>.
+                Alturas proporcionais ao mesmo máximo e sempre partindo da base zero. Um valor por
+                coluna; sem 3D, recorte ou eixo truncado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Rótulos de categoria</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Uma linha obrigatória, 30 px/650,
+                <span class="rule-code">white-space: nowrap</span>, bottom −40 px. Para hospitais,
+                remover apenas o substantivo comum já dito na manchete: “Hospital
+                municipal/estadual” vira “Municipal/Estadual”. Se o qualificador ainda não couber em
+                280 px, pedir forma curta; nunca quebrar em duas linhas nem abreviar sozinho.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Mapa de classes</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Reusar <span class="rule-code">columns</span>,
+                <span class="rule-code">column-cell</span>,
+                <span class="rule-code">column-value</span>, <span class="rule-code">column</span> e
+                <span class="rule-code">column-label</span>. No estado positivo duplo, o container
+                recebe <span class="rule-code">dual-positive</span> e as barras recebem
+                <span class="rule-code">positive-a</span> /
+                <span class="rule-code">positive-b</span>; não emitir
+                <span class="rule-code">highlight</span>. Plot: 500 px de altura e margin-top 34 px
+                no feed.
+              </p>
+            </div>
           </div>
         </div>
       </section>
@@ -2499,7 +2790,8 @@
               <p class="text-sm font-bold">Fundo e sinal</p>
               <p class="mt-1 text-sm leading-5 text-stone-600">
                 Off-white #faf9f7. Vermelho oficial #e4102f ocupa no máximo ~10% da peça; a régua de
-                marca usa azul #184e92.
+                marca usa azul #184e92. Exceção estrita, ainda em gate: a cena 02A usa duas colunas
+                vermelhas quando as duas categorias forem explicitamente positivas.
               </p>
             </div>
           </div>
@@ -2509,7 +2801,10 @@
       <footer
         class="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-stone-300 py-5 text-xs text-stone-600"
       >
-        <span>revisão C203 · design hi-fi <strong>aprovado no gate</strong> · 2026-09-19</span>
+        <span
+          >base C203 <strong>aprovada</strong> · extensão C191
+          <strong>certificada pelo designer e aprovada pelo humano</strong> · 2026-09-19</span
+        >
         <span>Kit 1313 oficial · valência redundante · NEEDS ASSET resolvido</span>
       </footer>
     </main>
