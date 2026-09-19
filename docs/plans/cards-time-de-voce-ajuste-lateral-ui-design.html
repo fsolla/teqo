@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design S20 · Card Time de você: ajuste lateral</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --team-red: #e50e2f;
+        --team-yellow: #ffec01;
+        --team-blue: #0061a5;
+        --measure: #0f766e;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
+      button, input { font: inherit; }
+      button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+
+      .tcard {
+        position: relative;
+        aspect-ratio: 1080 / 1440;
+        overflow: hidden;
+        border-radius: 10px;
+        background: #cfe7f7;
+        container-type: inline-size;
+      }
+      .tcard-base, .tcard-front {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        pointer-events: none;
+      }
+      .tcard-front { z-index: 4; }
+      .person {
+        --person-x: 50%;
+        position: absolute;
+        z-index: 2;
+        top: 30.5%;
+        left: var(--person-x);
+        width: 40%;
+        height: 47%;
+        transform: translateX(-50%);
+        color: #0b2748;
+        filter: drop-shadow(0 2px 2px rgb(0 0 0 / 18%));
+      }
+      .person-head {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 29%;
+        aspect-ratio: 0.84;
+        transform: translateX(-50%);
+        border-radius: 48% 48% 45% 45%;
+        background: currentColor;
+      }
+      .person-neck {
+        position: absolute;
+        top: 17%;
+        left: 50%;
+        width: 13%;
+        height: 14%;
+        transform: translateX(-50%);
+        background: currentColor;
+      }
+      .person-body {
+        position: absolute;
+        top: 25%;
+        left: 50%;
+        width: 100%;
+        height: 75%;
+        transform: translateX(-50%);
+        border-radius: 48% 48% 10% 10% / 30% 30% 8% 8%;
+        background: currentColor;
+      }
+      .tcard-banner {
+        position: absolute;
+        z-index: 5;
+        left: 50.463%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%) rotate(var(--rot));
+        overflow: hidden;
+      }
+      .tcard-banner.red {
+        top: 11.25%; width: 64.167%; height: 8.194%;
+        --rot: -3.5deg; background: var(--team-red); color: var(--team-yellow);
+      }
+      .tcard-banner.blue {
+        top: 21.736%; width: 47.13%; height: 12.222%;
+        --rot: -4.1deg; background: var(--team-blue); color: white;
+      }
+      .tcard-banner span {
+        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-size: 12cqw;
+        font-weight: 900;
+        line-height: 1;
+        letter-spacing: -0.02em;
+        white-space: nowrap;
+      }
+      .photo-window-guide {
+        position: absolute;
+        z-index: 6;
+        left: 26.481%;
+        top: 30.486%;
+        width: 54.815%;
+        height: 40.069%;
+        border: 2px dashed rgb(15 118 110 / 95%);
+        pointer-events: none;
+      }
+      .face-dot {
+        position: absolute;
+        z-index: 7;
+        top: 36.2%;
+        left: var(--face-x, 50%);
+        width: 9px;
+        height: 9px;
+        transform: translate(-50%, -50%);
+        border: 2px solid white;
+        border-radius: 999px;
+        background: var(--measure);
+        box-shadow: 0 0 0 2px var(--measure);
+      }
+      .edge-tick {
+        position: absolute;
+        z-index: 7;
+        top: 29.2%;
+        height: 42.5%;
+        border-left: 2px solid var(--measure);
+      }
+      .edge-tick.left { left: 26.481%; }
+      .edge-tick.right { left: 81.296%; }
+      .control-button {
+        display: inline-flex;
+        width: 44px;
+        height: 44px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--campaign-line);
+        border-radius: 8px;
+        background: white;
+        color: var(--campaign-ink);
+        font-size: 18px;
+        line-height: 1;
+      }
+      .range {
+        appearance: none;
+        height: 4px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--pt-red) 0 45%, #d6d3d1 45% 100%);
+      }
+      .range::-webkit-slider-thumb {
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid white;
+        border-radius: 999px;
+        background: var(--pt-red);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+      }
+      .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 26px;
+        flex: none;
+        border-radius: 999px;
+        background: var(--pt-red);
+      }
+      .switch::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 21px;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: white;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+      }
+      .track {
+        position: relative;
+        height: 34px;
+      }
+      .track::before {
+        content: '';
+        position: absolute;
+        top: 16px;
+        right: 0;
+        left: 0;
+        height: 3px;
+        border-radius: 999px;
+        background: #d6d3d1;
+      }
+      .track .span {
+        position: absolute;
+        top: 16px;
+        height: 3px;
+        border-radius: 999px;
+      }
+      .track .span::before, .track .span::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        width: 12px;
+        height: 12px;
+        transform: translate(-50%, -50%);
+        border: 3px solid white;
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 0 1px currentColor;
+      }
+      .track .span::before { left: 0; }
+      .track .span::after { left: 100%; }
+      .track .center {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        height: 15px;
+        border-left: 2px solid #57534e;
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div class="border-b border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-center text-[11px] font-black tracking-[0.14em] text-emerald-300 uppercase">
+      Design tier: openai/gpt-5.6-sol · frontier · gate humano obrigatório
+    </div>
+
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="m-0 text-xs font-black tracking-[0.12em] text-red-400 uppercase">Gate visual · S20</p>
+        <h1 class="mt-2 text-2xl font-black tracking-[-0.02em] sm:text-3xl">
+          Card “Time de você”: o rosto alcança toda a área livre
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          O enquadramento automático continua no centro. Ao arrastar, usar as setas ou o teclado, o rosto
+          pode chegar às duas bordas da janela da foto; o corpo pode sair dela e tocar de leve os ombros
+          vizinhos, sem cobrir os rostos dos candidatos. Nenhum controle novo.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">1280px · desktop</span>
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">390px · mobile</span>
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">sem controle novo</span>
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">arte oficial intocada</span>
+        </div>
+      </header>
+
+      <!-- CENA 1 -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">
+          Cena 1 · desktop 1280 — envelope de posições + composer pronto
+        </h2>
+        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">
+          As marcações verdes ficam fora da UI final: servem apenas ao gate. Nas três prévias, escala e altura
+          são idênticas; muda somente a posição horizontal do visitante.
+        </p>
+
+        <div class="mt-4 min-h-[760px] overflow-hidden rounded-2xl border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl">
+          <div class="border-b border-black/10 bg-[#47130e] px-8 py-4 text-white">
+            <p class="text-[11px] font-black tracking-[0.14em] text-[#ffe607] uppercase">/cards?model=time-de-voce · viewport 1280</p>
+          </div>
+          <div class="relative px-8 py-8">
+            <div class="grid grid-cols-[1fr_512px] gap-8">
+              <aside class="rounded-xl border border-teal-700/25 bg-teal-50 p-5">
+                <p class="text-[11px] font-black tracking-[0.12em] text-teal-800 uppercase">Anotação de design · fora da UI</p>
+                <h3 class="mt-2 text-lg font-black">O envelope inteiro, sem limite fantasma</h3>
+                <p class="mt-2 text-xs leading-5 text-teal-950/75">
+                  A linha tracejada é a janela <strong>592 × 577</strong>. O ponto verde marca a âncora do rosto.
+                  No extremo, o corpo pode ultrapassar a linha; a cabeça continua no vão livre da composição.
+                </p>
+                <div class="mt-5 grid grid-cols-3 gap-3">
+                  <figure class="m-0">
+                    <div class="mx-auto w-full max-w-[158px] overflow-hidden rounded-lg border border-teal-700/30 shadow-sm">
+                      <div class="tcard">
+                        <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                        <div class="person" style="--person-x: 31%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div>
+                        <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                        <div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div>
+                        <div class="photo-window-guide"></div><span class="edge-tick left"></span><span class="edge-tick right"></span><span class="face-dot" style="--face-x: 27%"></span>
+                      </div>
+                    </div>
+                    <figcaption class="mt-2 text-center text-[10px] font-black text-teal-800">MÁX. ESQUERDA</figcaption>
+                  </figure>
+                  <figure class="m-0">
+                    <div class="mx-auto w-full max-w-[158px] overflow-hidden rounded-lg border-2 border-[var(--pt-red)] shadow-sm">
+                      <div class="tcard">
+                        <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                        <div class="person" style="--person-x: 54%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div>
+                        <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                        <div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div>
+                        <div class="photo-window-guide"></div><span class="edge-tick left"></span><span class="edge-tick right"></span><span class="face-dot" style="--face-x: 54%"></span>
+                      </div>
+                    </div>
+                    <figcaption class="mt-2 text-center text-[10px] font-black text-[var(--pt-red)]">AUTOMÁTICO</figcaption>
+                  </figure>
+                  <figure class="m-0">
+                    <div class="mx-auto w-full max-w-[158px] overflow-hidden rounded-lg border border-teal-700/30 shadow-sm">
+                      <div class="tcard">
+                        <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                        <div class="person" style="--person-x: 77%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div>
+                        <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                        <div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div>
+                        <div class="photo-window-guide"></div><span class="edge-tick left"></span><span class="edge-tick right"></span><span class="face-dot" style="--face-x: 81%"></span>
+                      </div>
+                    </div>
+                    <figcaption class="mt-2 text-center text-[10px] font-black text-teal-800">MÁX. DIREITA</figcaption>
+                  </figure>
+                </div>
+                <div class="mt-5 flex items-start gap-3 rounded-lg border border-teal-700/20 bg-white p-3">
+                  <span class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-teal-700 text-xs font-black text-white">✓</span>
+                  <p class="text-xs leading-5 text-teal-950/80">
+                    No máximo à direita, o torso encosta/sobrepõe de leve o ombro vizinho. Os rostos oficiais continuam livres.
+                  </p>
+                </div>
+              </aside>
+
+              <article role="dialog" aria-labelledby="desktop-title" class="overflow-hidden rounded-xl border border-black/10 bg-white shadow-xl">
+                <header class="flex items-start gap-3 px-5 pt-5">
+                  <div class="min-w-0 flex-1">
+                    <p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">Time de você</p>
+                    <h3 id="desktop-title" class="mt-1 text-xl font-black tracking-[-0.01em]">Confira seu card</h3>
+                    <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.</p>
+                  </div>
+                  <button aria-label="Fechar" class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-xl text-[var(--campaign-muted)]">×</button>
+                </header>
+                <div class="px-5 pt-4 pb-5">
+                  <div class="relative mx-auto w-[240px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm" tabindex="0" aria-label="Ajuste da foto">
+                    <div class="tcard">
+                      <img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" />
+                      <div class="person" style="--person-x: 54%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div>
+                      <img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" />
+                      <div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div>
+                    </div>
+                    <span class="absolute right-2 bottom-2 z-10 rounded bg-black/70 px-2 py-1 text-[10px] font-bold text-white">Arraste para ajustar</span>
+                  </div>
+                  <div class="mt-5 flex items-center gap-3">
+                    <label class="text-sm font-bold">Zoom</label>
+                    <button aria-label="Diminuir zoom" class="control-button">−</button>
+                    <input aria-label="Zoom" type="range" value="45" class="range h-11 min-w-0 flex-1" />
+                    <button aria-label="Aumentar zoom" class="control-button">+</button>
+                  </div>
+                  <div class="mt-4">
+                    <p class="text-sm font-bold">Ajuste fino</p>
+                    <div class="mt-2 grid grid-cols-4 gap-2">
+                      <button aria-label="Mover foto para a esquerda" class="control-button w-full">←</button><button aria-label="Mover foto para cima" class="control-button w-full">↑</button><button aria-label="Mover foto para baixo" class="control-button w-full">↓</button><button aria-label="Mover foto para a direita" class="control-button w-full">→</button>
+                    </div>
+                  </div>
+                  <button role="switch" aria-checked="true" class="mt-4 flex min-h-11 w-full items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3 text-left">
+                    <span class="switch mt-1.5"></span><span><span class="block text-sm font-bold">Harmonizar cores</span><span class="mt-0.5 block text-xs leading-5 text-[var(--campaign-muted)]">Ajusta suavemente a foto para combinar com a arte.</span></span>
+                  </button>
+                  <button class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]">Trocar foto</button>
+                  <p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">Sua foto fica neste aparelho e não é enviada para nós.</p>
+                </div>
+                <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+                  <button class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]">Cancelar</button>
+                  <button class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white">Criar meu card</button>
+                </footer>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 2 -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">Cena 2 · mobile 390 — drawer, dois extremos</h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">O drawer preserva o fluxo e todos os controles existentes. As duas miniaturas mostram os extremos da mesma prévia; a nota “Arraste para ajustar” permanece visível.</p>
+        <div class="mt-4 grid gap-6 lg:grid-cols-[390px_1fr]">
+          <div class="relative h-[844px] w-[390px] max-w-full overflow-hidden rounded-[24px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl">
+            <div class="absolute inset-0 bg-black/50"></div>
+            <article role="dialog" aria-labelledby="mobile-title" class="absolute inset-x-0 bottom-0 max-h-[92%] overflow-hidden rounded-t-2xl bg-white">
+              <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+              <header class="flex items-start gap-3 px-5 pt-3">
+                <div class="min-w-0 flex-1"><p class="text-[10px] font-black tracking-[0.1em] text-[var(--pt-red)] uppercase">Time de você</p><h3 id="mobile-title" class="mt-1 text-lg leading-6 font-black">Confira seu card</h3><p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.</p></div>
+                <button aria-label="Fechar" class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-xl text-[var(--campaign-muted)]">×</button>
+              </header>
+              <div class="max-h-[590px] overflow-hidden px-5 pt-3 pb-4">
+                <div class="grid grid-cols-2 gap-3">
+                  <figure class="m-0"><div class="relative mx-auto w-[155px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"><div class="tcard"><img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" /><div class="person" style="--person-x: 31%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div><img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" /><div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div></div><span class="absolute right-1.5 bottom-1.5 z-10 rounded bg-black/70 px-1.5 py-1 text-[9px] font-bold text-white">Arraste para ajustar</span></div><figcaption class="mt-1.5 text-center text-[9px] font-black tracking-wide text-[var(--campaign-muted)] uppercase">Máx. esquerda</figcaption></figure>
+                  <figure class="m-0"><div class="relative mx-auto w-[155px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"><div class="tcard"><img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" /><div class="person" style="--person-x: 77%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div><img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" /><div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div></div><span class="absolute right-1.5 bottom-1.5 z-10 rounded bg-black/70 px-1.5 py-1 text-[9px] font-bold text-white">Arraste para ajustar</span></div><figcaption class="mt-1.5 text-center text-[9px] font-black tracking-wide text-[var(--campaign-muted)] uppercase">Máx. direita</figcaption></figure>
+                </div>
+                <div class="mt-3 flex items-center gap-3"><label class="text-sm font-bold">Zoom</label><button class="control-button">−</button><input aria-label="Zoom" type="range" value="45" class="range h-11 min-w-0 flex-1" /><button class="control-button">+</button></div>
+                <div class="mt-3"><p class="text-sm font-bold">Ajuste fino</p><div class="mt-2 grid grid-cols-4 gap-2"><button class="control-button w-full">←</button><button class="control-button w-full">↑</button><button class="control-button w-full">↓</button><button class="control-button w-full">→</button></div></div>
+                <button role="switch" aria-checked="true" class="mt-3 flex min-h-11 w-full items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3 text-left"><span class="switch mt-1.5"></span><span><span class="block text-sm font-bold">Harmonizar cores</span><span class="block text-xs leading-5 text-[var(--campaign-muted)]">Ajusta suavemente a foto para combinar com a arte.</span></span></button>
+                <button class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]">Trocar foto</button>
+              </div>
+              <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4"><button class="min-h-11 flex-1 rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]">Cancelar</button><button class="min-h-11 flex-1 rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white">Criar meu card</button></footer>
+            </article>
+          </div>
+          <div class="rounded-xl border border-zinc-700 bg-zinc-900 p-5 self-start">
+            <p class="text-[11px] font-black tracking-[0.12em] text-emerald-300 uppercase">O que muda no toque</p>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-xs leading-5 text-zinc-300">
+              <li>O arrasto continua igual; apenas deixa de parar cedo demais.</li>
+              <li>As quatro setas e o teclado chegam ao mesmo envelope.</li>
+              <li>Zoom, harmonização, troca de foto e CTA permanecem intocados.</li>
+              <li>O enquadramento inicial continua centralizado, como hoje.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 3 -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">Cena 3 · regra visual — documentação, não é UI nova</h2>
+        <div class="mt-4 rounded-xl border border-zinc-700 bg-zinc-900 p-6">
+          <div class="flex items-center justify-between gap-4"><div><p class="text-[11px] font-black tracking-[0.12em] text-amber-300 uppercase">Anotação do gate · não portar para a tela</p><h3 class="mt-1 text-lg font-black">Rosto dentro da área livre; corpo pode ultrapassar</h3></div><span class="rounded-full border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-[10px] font-black text-amber-300 uppercase">Não é UI nova</span></div>
+          <div class="mt-6 grid gap-8 md:grid-cols-[280px_1fr]">
+            <div class="mx-auto w-[260px] overflow-hidden rounded-lg border border-zinc-600 shadow-xl">
+              <div class="tcard"><img src="../../public/cards/team-card-base.png" alt="" class="tcard-base" /><div class="person" style="--person-x: 68%"><div class="person-head"></div><div class="person-neck"></div><div class="person-body"></div></div><img src="../../public/cards/team-card-front.png" alt="" class="tcard-front" /><div class="tcard-banner red"><span>TIME DE</span></div><div class="tcard-banner blue"><span>MARIA</span></div><div class="photo-window-guide"></div><span class="face-dot" style="--face-x: 68%"></span></div>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+              <div class="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-4"><p class="text-sm font-black text-emerald-300">Com rosto detectado</p><p class="mt-2 text-xs leading-5 text-zinc-300">A caixa do rosto é a âncora. Ela pode ocupar qualquer posição horizontal dentro da janela <strong class="text-white">x=286 · y=439 · w=592 · h=577</strong>. O corpo não é recortado por essa janela e pode avançar sobre os ombros.</p></div>
+              <div class="rounded-lg border border-sky-400/30 bg-sky-400/10 p-4"><p class="text-sm font-black text-sky-300">Sem rosto detectado</p><p class="mt-2 text-xs leading-5 text-zinc-300">A âncora passa a ser a silhueta visível. Vale o limite de hoje como piso: o alcance nunca fica pior e não aparece aviso, erro ou controle adicional.</p></div>
+              <div class="rounded-lg border border-red-400/30 bg-red-400/10 p-4 sm:col-span-2"><p class="text-sm font-black text-red-300">Barreira da composição</p><p class="mt-2 text-xs leading-5 text-zinc-300">O corpo pode tocar os vizinhos; os rostos dos candidatos não podem ser cobertos. Não é liberdade até as bordas do card e não muda a arte-mestre.</p></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 4 -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[0.12em] text-zinc-500 uppercase">Cena 4 · antes × depois — curso lateral mensurável</h2>
+        <div class="mt-4 rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-6 text-black shadow-xl">
+          <div class="grid gap-7 md:grid-cols-2">
+            <article class="rounded-xl border border-black/10 bg-white p-5"><div class="flex items-center justify-between gap-3"><h3 class="text-base font-black">Antes · trava artificial</h3><span class="rounded-full bg-stone-200 px-3 py-1 text-[10px] font-black text-stone-600 uppercase">curso 248px</span></div><p class="mt-1 text-xs leading-5 text-[var(--campaign-muted)]">A foto inteira precisava permanecer presa à janela.</p><div class="track mt-5"><span class="span text-stone-500" style="left: 24.6%; width: 50.8%; background: currentColor"></span><span class="center"></span></div><div class="flex justify-between text-[10px] font-bold text-stone-500"><span>−124px</span><span>centro</span><span>+124px</span></div><p class="mt-4 rounded-lg bg-stone-100 p-3 text-xs leading-5 text-stone-600">Parte do gesto era consumida pelo espaço transparente ao redor da pessoa. O visitante via a foto parar antes do ponto desejado.</p></article>
+            <article class="rounded-xl border-2 border-teal-700 bg-white p-5"><div class="flex items-center justify-between gap-3"><h3 class="text-base font-black text-teal-900">Depois · rosto nas bordas</h3><span class="rounded-full bg-teal-700 px-3 py-1 text-[10px] font-black text-white uppercase">curso ≈488px</span></div><p class="mt-1 text-xs leading-5 text-[var(--campaign-muted)]">A posição responde à âncora do rosto, não ao canvas do recorte.</p><div class="track mt-5"><span class="span text-teal-700" style="left: 0; width: 100%; background: currentColor"></span><span class="center"></span></div><div class="flex justify-between text-[10px] font-bold text-teal-800"><span>≈−244px · borda</span><span>centro</span><span>≈+244px · borda</span></div><p class="mt-4 rounded-lg bg-teal-50 p-3 text-xs leading-5 text-teal-950/75">O automático abre no mesmo centro de hoje. Só quem ajusta percebe a diferença: aproximadamente o dobro do curso horizontal.</p></article>
+          </div>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p><strong class="text-zinc-300">Design tier:</strong> openai/gpt-5.6-sol (frontier). Decisão final continua no gate humano.</p>
+        <p class="mt-2"><strong class="text-zinc-300">Ativos:</strong> arte oficial existente em <code>team-card-base.png</code> e <code>team-card-front.png</code>; a silhueta é deliberadamente abstrata e não representa uma pessoa real.</p>
+        <p class="mt-2"><strong class="text-zinc-300">NEEDS ASSET:</strong> nenhum. Não é necessária foto real para aprovar a geometria; a validação humana de implementação pode usar foto local sem entrar no artefato.</p>
+        <p class="mt-2"><strong class="text-zinc-300">Intocados:</strong> banners, texto, zoom, setas, teclado, harmonização, troca de foto, privacidade e CTA.</p>
+      </aside>
+    </main>
+  </body>
+</html>
