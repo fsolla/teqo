@@ -338,3 +338,95 @@ describe('renderChartHtml — the variation bar (delta)', () => {
     expect((story.match(/class="delta-row/g) ?? []).length).toBe(deltaRows.length)
   })
 })
+
+// C205 approved extension: the three-series observed line runs on the feed
+// canvas only, with the triad good/neutral/neutral-dark (red circle "↑ amplia",
+// gray diamond "↗ cresce", ink triangle "↘ diminui") and no projection.
+const tripleAnnual = (values: number[]) =>
+  values.map((value, index) => ({ label: `${2015 + index}`, value }))
+const tripleSpec = (overrides = {}) => ({
+  chartType: 'line',
+  size: 'feed',
+  headline: 'Hospital estadual puxa a ampliação de leitos de internação',
+  subtitle: 'Vitória da Conquista (BA) · leitos existentes · 2015–2026',
+  source: 'Ministério da Saúde — CNES · leitos de internação por esfera jurídica',
+  note: 'Último ponto: jul/2026. Rede privada = leitos empresariais + sem fins lucrativos.',
+  series: [
+    {
+      name: 'Hospital Estadual',
+      tone: 'good',
+      rows: tripleAnnual([235, 235, 256, 256, 256, 256, 256, 256, 369, 369, 369, 369]),
+    },
+    {
+      name: 'Rede municipal',
+      tone: 'neutral',
+      rows: tripleAnnual([93, 93, 105, 93, 93, 93, 93, 93, 113, 113, 113, 113]),
+    },
+    {
+      name: 'Rede privada',
+      tone: 'neutral-dark',
+      rows: tripleAnnual([832, 724, 707, 644, 521, 496, 459, 489, 508, 536, 500, 510]),
+    },
+  ],
+  ...overrides,
+})
+
+describe('renderChartHtml — the three-series time line (C205)', () => {
+  it('renders the triple plot with the fixed kicker and the three valence words', () => {
+    const html = render(tripleSpec())
+    expect(html).toContain('triple-line-plot')
+    expect(html).toContain('canvas triple-series')
+    expect(html).toContain('Comparação no tempo')
+    expect(html).toContain('↑ amplia')
+    expect(html).toContain('↗ cresce')
+    expect(html).toContain('↘ diminui')
+    expect(html).not.toContain('↓ recua')
+    const svg = html.slice(html.indexOf('<svg'), html.indexOf('</svg>'))
+    expect(svg).not.toContain('#184e92')
+    expect(html).toContain('369 · +57%')
+    expect(html).toContain('510 · −39%')
+  })
+
+  it('uses the compact feed rhythm of the extension', () => {
+    const html = render(tripleSpec())
+    expect(html).toContain('font-size: 56px')
+    expect(html).toContain('.plot { margin-top: 16px; }')
+    expect(html).toContain('max-width: 570px')
+  })
+
+  it('keeps every projection artifact out of the observed series', () => {
+    const html = render(tripleSpec())
+    const svg = html.slice(html.indexOf('<svg'), html.indexOf('</svg>'))
+    expect(svg).not.toContain('dasharray')
+    expect(svg).not.toContain('projeção')
+    expect(svg).not.toContain('fill-opacity')
+  })
+
+  it('carries the source, the monthly note and the official mark inside the image', () => {
+    const html = render(tripleSpec())
+    expect(html).toContain('Ministério da Saúde — CNES')
+    expect(html).toContain('jul/2026')
+    expect(html).toContain('alt="Jorge Solla — Deputado Federal"')
+    expect(html).toContain('data:image/png;base64,')
+  })
+})
+
+describe('renderChartHtml — the shared footer (C206 brand mark)', () => {
+  it('hugs the official asset ratio on the feed canvas', () => {
+    const html = render(spec())
+    expect(html).toContain('min-height: 171px')
+    expect(html).toContain('.brand-logo-frame { width: 251px; height: 144px; flex: 0 0 251px; }')
+    expect(html).toContain('width: 100%; height: 100%; object-fit: contain;')
+  })
+
+  it('adapts the footer and the mark to square and to Stories', () => {
+    const square = render(spec({ size: 'square' }))
+    expect(square).toContain('min-height: 128px')
+    expect(square).toContain('width: 192px; height: 110px; flex-basis: 192px')
+    expect(square).toContain('.source { font-size: 25px; }')
+    const story = render(spec({ size: 'story' }))
+    expect(story).toContain('min-height: 190px')
+    expect(story).toContain('gap: 28px')
+    expect(story).toContain('width: 279px; height: 160px; flex-basis: 279px')
+  })
+})

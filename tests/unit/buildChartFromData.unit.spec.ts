@@ -368,6 +368,110 @@ describe('main — spec assembly, replay and the per-size log', () => {
     })
   })
 
+  it('assembles the three-series spec with the informed triad (C205)', async () => {
+    const input = await writeInput(
+      dir,
+      'Ano,Estadual,Municipal,Privada\n2015,235,93,832\n2016,235,93,724\n2017,256,105,707\n',
+    )
+    const { launchBrowser, close } = launchTracker()
+    const screenshot = screenshotStub()
+    const outPath = join(dir, 'triple.png')
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--type=line',
+        '--headline=Redes públicas ampliam leitos; a privada recua',
+        '--source=Ministério da Saúde — CNES',
+        '--good=Estadual',
+        '--neutral=Municipal',
+        '--neutral-dark=Privada',
+        `--out=${outPath}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    expect(screenshot).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ width: 1080, height: 1350, outPath }),
+    )
+    expect(close).toHaveBeenCalledOnce()
+
+    const spec = JSON.parse(
+      await readFile(
+        join(
+          dir,
+          'data/graficos-instagram/redes-publicas-ampliam-leitos-a-privada-recua.chart-spec.json',
+        ),
+        'utf8',
+      ),
+    )
+    expect(
+      spec.series.map((serie: { name: string; tone: string }) => [serie.name, serie.tone]),
+    ).toEqual([
+      ['Estadual', 'good'],
+      ['Municipal', 'neutral'],
+      ['Privada', 'neutral-dark'],
+    ])
+    expect(stdout.join('')).toContain('tipo=line')
+    expect(stdout.join('')).toContain('3 séries × 3')
+  })
+
+  it('refuses an incomplete triad and a 2-series tone on the three-series line', async () => {
+    const input = await writeInput(dir, 'Ano,Estadual,Municipal,Privada\n2015,1,2,3\n2016,2,2,2\n')
+    const { launchBrowser } = launchTracker()
+
+    await expect(
+      main({
+        argv: [`--in=${input}`, '--headline=X', '--source=Y', '--good=Estadual'],
+        repoRoot: dir,
+        launchBrowser,
+        die: throwingDie,
+      }),
+    ).rejects.toThrow(/juntos/)
+
+    await expect(
+      main({
+        argv: [`--in=${input}`, '--headline=X', '--source=Y', '--good=Estadual', '--bad=Municipal'],
+        repoRoot: dir,
+        launchBrowser,
+        die: throwingDie,
+      }),
+    ).rejects.toThrow(/par de duas séries/)
+
+    expect(launchBrowser).not.toHaveBeenCalled()
+  })
+
+  it('retires --medium and keeps the vocabularies apart', async () => {
+    const tripleInput = await writeInput(
+      dir,
+      'Ano,Estadual,Municipal,Privada\n2015,1,2,3\n2016,2,2,2\n',
+    )
+    const pairInput = await writeInput(dir, 'Ano,Estadual,Municipal\n2017,1,2\n2018,2,1\n')
+    const { launchBrowser } = launchTracker()
+
+    await expect(
+      main({
+        argv: [`--in=${tripleInput}`, '--headline=X', '--source=Y', '--medium=Estadual'],
+        repoRoot: dir,
+        launchBrowser,
+        die: throwingDie,
+      }),
+    ).rejects.toThrow(/saiu na revisão C205/)
+
+    await expect(
+      main({
+        argv: [`--in=${pairInput}`, '--headline=X', '--source=Y', '--neutral=Estadual'],
+        repoRoot: dir,
+        launchBrowser,
+        die: throwingDie,
+      }),
+    ).rejects.toThrow(/trio de três séries/)
+    expect(launchBrowser).not.toHaveBeenCalled()
+  })
+
   it('replays a --spec without reparsing the input and closes the browser', async () => {
     const specPath = join(dir, 'replay.chart-spec.json')
     await writeFile(

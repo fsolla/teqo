@@ -14,13 +14,14 @@ comunicação transformar o gráfico no material final (legenda, carrossel,
 contexto). É a **base visual confiável**, não a peça acabada.
 
 O template visual é o artefato aprovado
-`docs/plans/graficos-dados-instagram-ui-design.html` (revisão C203 — marca e
-paleta oficiais do kit 1313); o renderer
+`docs/plans/graficos-dados-instagram-ui-design.html` (base C203 aprovada — marca
+e paleta oficiais do kit 1313 —, com as revisões C205 da linha de três séries e
+C206 do rodapé/marca aguardando gate humano); o renderer
 (`scripts/lib/graficosInstagramRender.mjs`) porta esse design classe-a-classe.
 **Nunca invente estrutura visual** — o dono é o `designer`. O rodapé usa o
 ativo oficial `public/campaign-kit/jorge-solla-positivo.png` (nunca recriar
-lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência boa),
-`#184e92` (sinal de marca), com amarelo/verde só dentro dos ativos.
+lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
+`#184e92` (sinal de marca, nunca dado), com amarelo/verde só dentro dos ativos.
 
 ## Quando usar
 
@@ -48,10 +49,15 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência boa),
      rótulo direto e valor na ponta);
    - **poucos períodos (≤4) → `column`** (base zero comum);
    - **série de tempo contínua → `line`** (ponto final destacado);
-   - **duas séries no mesmo período → `line` multi-série**: tabela com 2 colunas
-     de medida e a primeira coluna temporal; `--good=`/`--bad=` marcam a valência
-     bom/ruim (par ou nenhum), `--projected=` marca o último período projetado e
-     `--crossing=<período>` confirma a ultrapassagem que ganha anotação;
+   - **duas ou três séries no mesmo período → `line` multi-série**: tabela com 2
+     ou 3 colunas de medida e a primeira coluna temporal; o par
+     `--good=`/`--bad=` marca a valência bom/ruim (par ou nenhum), `--projected=`
+     marca o último período projetado e `--crossing=<período>` confirma a
+     ultrapassagem que ganha anotação. A **extensão de três séries** (C205) usa o
+     trio `--good=`/`--neutral=`/`--neutral-dark=` informado junto — melhor =
+     vermelho/círculo/"↑ amplia", neutro = cinza/losango/"↗ cresce", neutro
+     escuro = tinta/triângulo/"↘ diminui" —, só no feed e sem projeção nem
+     cruzamento;
    - **duas medidas por categoria → `delta`**: barra de variação com a base
      (0 → inicial) num tom e a extensão (inicial → final) noutro, os dois valores
      numa gutter de duas colunas e o vermelho fora do plot (sem valência);
@@ -81,6 +87,15 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência boa),
      --note="2026 é projeção pela média de janeiro a junho × 2." \
      --type=line --size=feed \
      --good="Estadual" --bad="Municipal" --projected=2026 --crossing=2024
+   ```
+   Três séries no feed (extensão C205, os três tons entram juntos):
+   ```bash
+   node scripts/build-chart-from-data.mjs --in=<arquivo> \
+     --headline="Hospital estadual puxa a ampliação de leitos de internação" \
+     --subtitle="Vitória da Conquista (BA) · leitos existentes · 2015–2026" \
+     --source="Ministério da Saúde — CNES · leitos de internação por esfera jurídica" \
+     --type=line --size=feed \
+     --good="Hospital Estadual" --neutral="Rede municipal" --neutral-dark="Rede privada"
    ```
    Barra de variação (base + extensão, tabela de rótulo + inicial + final):
    ```bash
@@ -139,13 +154,31 @@ Na linha de 2 séries, `series` substitui `rows` e `projectedLabel` marca o
 }
 ```
 
+Na extensão de três séries (C205), o mesmo `series` carrega o trio de tons:
+
+```json
+{
+  "chartType": "line",
+  "size": "feed",
+  "headline": "Hospital estadual puxa a ampliação de leitos de internação",
+  "source": "Ministério da Saúde — CNES · leitos de internação por esfera jurídica",
+  "series": [
+    { "name": "Hospital Estadual", "tone": "good", "rows": [{ "label": "2015", "value": 235 }] },
+    { "name": "Rede municipal", "tone": "neutral", "rows": [{ "label": "2015", "value": 93 }] },
+    { "name": "Rede privada", "tone": "neutral-dark", "rows": [{ "label": "2015", "value": 832 }] }
+  ]
+}
+```
+
 `chartType` ∈ `bar | column | line | anchor | delta`; `highlight` é o rótulo que
 recebe o único vermelho `#e4102f` (default: o maior valor); `unit` anexa o
 sufixo aos rótulos de valor (ex.: `"%"`). O `kicker` (spec) segue a **relação**
 dos dados, não o layout — colunas verticais de categorias leem "Comparação",
 poucos períodos leem "Poucos períodos". Em `series`, `tone` ∈
-`good | bad` (os dois tons ou nenhum) e as duas séries compartilham os mesmos
-rótulos temporais; `rows` e `highlight` não entram nessa variante.
+`good | bad` (os dois tons ou nenhum) ou `good | neutral | neutral-dark` (o trio
+da extensão C205, só no feed, sem `projectedLabel` nem `crossingLabel`); as
+séries compartilham os mesmos rótulos temporais; `rows` e `highlight` não entram
+nessas variantes.
 `projectedLabel` marca a projeção no último período e `crossingLabel` só é aceito
 quando a série boa de fato ultrapassa a ruim naquele período (confirmação
 textual, nunca inferência automática). Os rótulos finais trazem a variação
@@ -179,44 +212,50 @@ O builder **recusa** em vez de desenhar algo enganoso:
 
 - **Barras e colunas partem do zero**; valor negativo é recusado; sem 3D/eixo
   truncado.
-- **Até 7 pontos** por gráfico (barra, coluna e linha simples); a **linha de 2
-  séries** comporta **até 12 pontos por série**, sempre com os mesmos rótulos
-  temporais alinhados. Em **stories**, o ranking comporta **até 5** pontos (a
-  adaptação vertical reduz um ponto, conforme o design aprovado). Acima disso,
-  resuma as categorias e explique. A **barra de variação** (`delta`) também
+- **Até 7 pontos** por gráfico (barra, coluna e linha simples); a **linha
+  multi-série** (2 ou 3) comporta **até 12 pontos por série**, sempre com os
+  mesmos rótulos temporais alinhados. Em **stories**, o ranking comporta **até 5**
+  pontos (a adaptação vertical reduz um ponto, conforme o design aprovado). Acima
+  disso, resuma as categorias e explique. A **barra de variação** (`delta`) também
   comporta **até 7 categorias**, e no story ela **não corta** (um top-N apagaria
   a manchete "quatro dos sete").
 - **Barra de variação (`delta`)** parte do zero com `0 ≤ inicial ≤ final`;
-  retração (final < inicial) é recusada com a linha de 2 séries no lugar;
+  retração (final < inicial) é recusada com a linha multi-série no lugar;
   `--highlight`/valência não entram (o par de tons é fixo e o vermelho fica fora
   do plot).
 - **Comparação positiva dupla (`--dual-positive`)** exige `column`, exatamente 2
   categorias e `feed`; recusa `--highlight` e `--no-highlight`; os tons seguem a
   ordem de entrada (nunca o maior) e ambos leem como resultado bom — cor nunca
   carrega sozinha (cada coluna tem rótulo e valor).
-- **Valência só na linha de 2 séries**, em par (`good`/`bad`) e sempre por
-  palavra + seta + forma do marcador + cor — **cor nunca carrega sozinha**:
-  bom = vermelho `#e4102f`, círculo, "↑ amplia" (o vermelho é a cor do
-  mandato/PT e nunca marca a perda); ruim = cinza `#78716c`, quadrado,
-  "↓ recua". Sem tons, a comparação é neutra: sem setas, sem palavras de
-  valência e **sem vermelho no plot**.
-- **Projeção** (`--projected=`) só no último período das duas séries: último
-  segmento tracejado, marcador final vazado e nota do método; sem projeção não
-  há faixa, tracejado nem ressalva automática.
-- **Cruzamento** (`--crossing=<período>`) só com confirmação textual e quando a
-  série boa realmente ultrapassa a ruim naquele período; a anotação nunca é
-  inferida sozinha.
+- **Valência só na linha multi-série** e sempre por palavra + seta + forma do
+  marcador + cor — **cor nunca carrega sozinha**. No par de 2 séries
+  (`good`/`bad`): bom = vermelho `#e4102f`, círculo, "↑ amplia" (o vermelho é a
+  cor do mandato/PT e nunca marca a perda); ruim = cinza `#78716c`, quadrado,
+  "↓ recua"; sem tons, a comparação é neutra (sem setas, sem palavras de
+  valência e **sem vermelho no plot**). Na extensão de 3 séries (C205, só no
+  feed): o trio `good`/`neutral`/`neutral-dark` entra junto — melhor = vermelho,
+  círculo, "↑ amplia"; neutro = cinza `#78716c`, losango, "↗ cresce"; neutro
+  escuro = tinta `#1c1917`, triângulo, "↘ diminui" (direções factuais, nunca
+  "recua"/perda) — e o azul `#184e92` não entra em dado nesta variante.
+- **Projeção** (`--projected=`) só no último período das duas séries (o trio de
+  três séries não certifica projeção): último segmento tracejado, marcador final
+  vazado e nota do método; sem projeção não há faixa, tracejado nem ressalva
+  automática.
+- **Cruzamento** (`--crossing=<período>`, só no par de 2 séries) só com
+  confirmação textual e quando a série boa realmente ultrapassa a ruim naquele
+  período; a anotação nunca é inferida sozinha.
 - **Número-âncora:** a manchete é o takeaway (não repete o número) e o valor
   aparece uma vez, grande, seguido da frase que explica.
 - **Pizza não é gerada no v1** — pedido `pie` é recusado com sugestão de barras.
 - **Dado faltando/ambíguo → pergunta, nunca completa.** O builder sai com
   `{ needsQuestion: true, issues: [...] }` e não gera imagem.
 - **Sem fonte, sem peça:** `--source` é obrigatório.
-- **Marca oficial (C203):** o rodapé usa o ativo
-  `public/campaign-kit/jorge-solla-positivo.png` como data URI (paleta oficial:
-  destaque/valência boa `#e4102f`, sinal de marca `#184e92`; amarelo/verde só
-  dentro dos ativos). Sem o ativo, o builder falha — nunca recria o lockup
-  tipográfico.
+- **Marca oficial (C203/C206):** o rodapé usa o ativo
+  `public/campaign-kit/jorge-solla-positivo.png` como data URI numa moldura na
+  razão do próprio ativo (feed 251×144, quadrado 192×110, story 279×160) —
+  paleta oficial: destaque/valência melhor `#e4102f`, sinal de marca `#184e92`
+  (nunca dado); amarelo/verde só dentro dos ativos. Sem o ativo, o builder
+  falha — nunca recria o lockup tipográfico.
 - Legibilidade: headline ≥48px e rótulos ≥30px no canvas 1080; contraste ≥4.5:1
   no texto e ≥3:1 nas marcas; **cor nunca é a única pista** (o destaque tem
   valor e posição).
@@ -230,11 +269,12 @@ O builder **recusa** em vez de desenhar algo enganoso:
 
 - **"dado ambíguo ou faltando"** → leia `issues` no JSON de saída: linha sem
   rótulo, valor não numérico, rótulo repetido. Pergunte à pessoa; não invente.
-- **"N pontos (> 7)"** → agrupe/remova categorias com a pessoa. Na linha de 2
-  séries o teto é 12 por série.
-- **Séries desalinhadas / tom ímpar / projeção fora do último ponto /
-  cruzamento não confirmado** → o builder pede a correção com mensagem
-  acionável; nunca interpola, completa nem infere ultrapassagem.
+- **"N pontos (> 7)"** → agrupe/remova categorias com a pessoa. Na linha
+  multi-série o teto é 12 por série.
+- **Séries desalinhadas / tom ímpar (par ou trio incompletos) / projeção ou
+  cruzamento na linha de três séries / três séries fora do feed / cruzamento não
+  confirmado** → o builder pede a correção com mensagem acionável; nunca
+  interpola, completa nem infere ultrapassagem.
 - **"pizza não é gerada"** → ofereça barras horizontais.
 - **Número pt-BR:** `1.234,56` é lido como 1234,56; `1,5` como 1,5.
   **Separador único é sempre decimal:** `1.234` é lido como 1,234 e `1.500`
@@ -245,8 +285,10 @@ O builder **recusa** em vez de desenhar algo enganoso:
 ## Referências
 
 - Design aprovado: `docs/plans/graficos-dados-instagram-ui-design.html` (inclui
-  a variação certificada de linha de duas séries, com valência bom/ruim; revisão
-  C203 — marca e paleta oficiais do kit 1313).
+  a variação certificada de linha de duas séries, com valência bom/ruim; a
+  extensão C205 de três séries observadas e a revisão C206 do rodapé/marca,
+  ambas pendentes de gate humano; base C203 — marca e paleta oficiais do kit
+  1313).
 - Plano de intenção: `docs/plans/graficos-dados-instagram.md`; impl:
   `docs/plans/graficos-dados-instagram-impl.md`.
 - Marca oficial: `docs/plans/graficos-dados-marca-kit-1313.md` (impl:

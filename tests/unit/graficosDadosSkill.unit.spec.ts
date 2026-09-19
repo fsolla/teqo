@@ -49,6 +49,21 @@ describe('skill /graficos-dados documents the flow', () => {
     expect(skill).toContain('#184e92')
     expect(skill).not.toContain('#c51414')
   })
+
+  it('pins the three-series extension and its triad (C205)', () => {
+    expect(skill).toMatch(/três séries/)
+    expect(skill).toContain('--neutral=')
+    expect(skill).toContain('--neutral-dark=')
+    expect(skill).toContain('↗ cresce')
+    expect(skill).toContain('↘ diminui')
+    expect(skill).toMatch(/só no feed/)
+  })
+
+  it('pins the larger brand mark of the shared footer (C206)', () => {
+    expect(skill).toContain('251×144')
+    expect(skill).toContain('192×110')
+    expect(skill).toContain('279×160')
+  })
 })
 
 describe('command /graficos-dados couples to the skill', () => {

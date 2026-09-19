@@ -8,6 +8,7 @@ import {
   lineChart,
   proportionalPercent,
   stackedColumnChart,
+  tripleLineChart,
   valueList,
 } from '../../scripts/lib/chartPrimitives.mjs'
 
@@ -287,6 +288,114 @@ describe('dualLineChart — the approved two-series time line', () => {
       series: [{ ...series[0], name: '<b>x</b>' }, series[1]],
       size: 'feed',
       projected: false,
+      colors,
+      valence,
+      format,
+    })
+    expect(evil).toContain('&lt;b&gt;x&lt;/b&gt;')
+  })
+})
+
+describe('tripleLineChart — the approved three-series extension (C205, feed)', () => {
+  const annual = (values: number[]) =>
+    values.map((value, index) => ({ label: `${2015 + index}`, value }))
+  const series = [
+    {
+      name: 'Hospital Estadual',
+      tone: 'good',
+      rows: annual([235, 235, 256, 256, 256, 256, 256, 256, 369, 369, 369, 369]),
+    },
+    {
+      name: 'Rede municipal',
+      tone: 'neutral',
+      rows: annual([93, 93, 105, 93, 93, 93, 93, 93, 113, 113, 113, 113]),
+    },
+    {
+      name: 'Rede privada',
+      tone: 'neutral-dark',
+      rows: annual([832, 724, 707, 644, 521, 496, 459, 489, 508, 536, 500, 510]),
+    },
+  ]
+  const colors = {
+    good: '#e4102f',
+    neutral: '#78716c',
+    'neutral-dark': '#1c1917',
+    grid: '#a8a29e',
+    ink: '#1c1917',
+  }
+  const valence = { good: '↑ amplia', neutral: '↗ cresce', 'neutral-dark': '↘ diminui' }
+  const format = (row: { value: number }) =>
+    new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 1 }).format(row.value)
+  const svg = tripleLineChart({ series, colors, valence, format })
+
+  it('draws the triad with color, word and one marker shape per tone', () => {
+    expect(svg).toContain('class="triple-series triple-series-good"')
+    expect(svg).toContain('stroke="#e4102f"')
+    expect(svg).toContain('class="triple-series triple-series-neutral"')
+    expect(svg).toContain('stroke="#78716c"')
+    expect(svg).toContain('class="triple-series triple-series-neutral-dark"')
+    expect(svg).toContain('stroke="#1c1917"')
+    expect(svg).toContain('<g class="triple-markers-good" fill="#e4102f"><circle')
+    expect(svg).toContain('<g class="triple-markers-neutral" fill="#78716c"><rect')
+    expect(svg).toContain('transform="rotate(45 52 499)"')
+    expect(svg).toContain('<g class="triple-markers-neutral-dark" fill="#1c1917"><path')
+    expect(svg).toContain('>↑ amplia<')
+    expect(svg).toContain('>↗ cresce<')
+    expect(svg).toContain('>↘ diminui<')
+    expect(svg).not.toContain('#184e92')
+  })
+
+  it('stacks the three-line end blocks by final point, metric and valence', () => {
+    expect(svg).toContain('>Rede privada<')
+    expect(svg).toContain('>510 · −39%<')
+    expect(svg).toContain('>Hospital Estadual<')
+    expect(svg).toContain('>369 · +57%<')
+    expect(svg).toContain('>Rede municipal<')
+    expect(svg).toContain('>113 · +22%<')
+    expect(svg.indexOf('>Rede privada<')).toBeLessThan(svg.indexOf('>Hospital Estadual<'))
+    expect(svg.indexOf('>Hospital Estadual<')).toBeLessThan(svg.indexOf('>Rede municipal<'))
+  })
+
+  it('keeps the wider data box, the shared zero base and the leader band', () => {
+    expect(svg).toContain('viewBox="0 0 880 650"')
+    expect(svg).toContain('x2="560"')
+    expect(svg).toContain('y1="544"')
+    expect(svg).toContain('>0<')
+    expect(svg.match(/class="triple-grid-line"/g)).toHaveLength(2)
+    expect(svg).toContain('points="570,295 580,295 590,108 594,108"')
+    expect(svg).toContain('class="triple-end-leader"')
+    expect(svg).toContain('x="600"')
+  })
+
+  it('draws every point observed — no projection artifact', () => {
+    expect(svg).not.toContain('dasharray')
+    expect(svg).not.toContain('projeção')
+    expect(svg).not.toContain('fill-opacity')
+    expect((svg.match(/class="triple-series/g) ?? []).length).toBe(3)
+  })
+
+  it('alternates the twelve annual labels, always keeping the first and the last', () => {
+    for (const label of ['2015', '2017', '2019', '2021', '2023', '2026']) {
+      expect(svg).toContain(`>${label}<`)
+    }
+    for (const label of ['2016', '2018', '2020', '2022', '2025']) {
+      expect(svg).not.toContain(`>${label}<`)
+    }
+  })
+
+  it('carries the observed series in the aria label', () => {
+    expect(svg).toContain(
+      'Hospital Estadual: de 235 em 2015 para 369 em 2026, aumento de 57 por cento',
+    )
+    expect(svg).toContain(
+      'Rede privada: de 832 em 2015 para 510 em 2026, diminuição de 39 por cento',
+    )
+    expect(svg).toContain('Todos os pontos de cada série são observados')
+  })
+
+  it('escapes untrusted series names', () => {
+    const evil = tripleLineChart({
+      series: [{ ...series[0], name: '<b>x</b>' }, series[1], series[2]],
       colors,
       valence,
       format,

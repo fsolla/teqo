@@ -6,6 +6,7 @@ import {
   MAX_POINTS_LINE,
   MAX_POINTS_STORY,
   MAX_SERIES,
+  MIN_SERIES,
   RELATION_LABEL,
   SIZES,
   classifyRelation,
@@ -288,6 +289,16 @@ describe('parseInput — two aligned measures become series, not a ranking', () 
     expect(dataset.issues).toEqual([])
   })
 
+  it('reads a time table with three measures as three series (C204)', () => {
+    const dataset = parseInput({
+      text: 'Ano,Estadual,Municipal,Privada\n2015,235,93,832\n2016,235,93,724\n',
+      format: 'csv',
+    })
+    expect(dataset.series).toHaveLength(3)
+    expect(dataset.series?.[2]).toMatchObject({ name: 'Privada' })
+    expect(dataset.issues).toEqual([])
+  })
+
   it('keeps a two-column table on the single-series path', () => {
     const dataset = parseInput({ text: 'cidade,votos\nIlhéus,84\nItabuna,68\n', format: 'csv' })
     expect(dataset.series).toBeUndefined()
@@ -372,10 +383,12 @@ describe('validateSpec — the two-series time line', () => {
     expect(() => validateSpec(seriesSpec({ chartType: 'bar' }))).toThrow(/linha/)
   })
 
-  it(`refuses more than ${MAX_SERIES} series`, () => {
+  it(`refuses fewer than ${MIN_SERIES} and more than ${MAX_SERIES} series`, () => {
     const [first, second] = seriesSpec().series
+    const third = { ...first, name: 'Terceira' }
+    expect(() => validateSpec(seriesSpec({ series: [first] }))).toThrow(/séries/)
     expect(() =>
-      validateSpec(seriesSpec({ series: [first, second, { ...first, name: 'Total' }] })),
+      validateSpec(seriesSpec({ series: [first, second, third, { ...third, name: 'Quarta' }] })),
     ).toThrow(/séries/)
   })
 
@@ -462,6 +475,87 @@ describe('validateSpec — the two-series time line', () => {
     const neutral = series.map(({ name, rows }) => ({ name, rows }))
     expect(() => validateSpec(seriesSpec({ crossingLabel: '2026', series: neutral }))).toThrow(
       /tons/,
+    )
+  })
+})
+
+describe('validateSpec — the three-series time line (C205 extension)', () => {
+  const annual = (values: number[]) =>
+    values.map((value, index) => ({ label: `${2015 + index}`, value }))
+  const tripleSpec = (overrides = {}) => ({
+    chartType: 'line',
+    size: 'feed',
+    headline: 'Hospital estadual puxa a ampliação de leitos de internação',
+    series: [
+      {
+        name: 'Hospital Estadual',
+        tone: 'good',
+        rows: annual([235, 235, 256, 256, 256, 256, 256, 256, 369, 369, 369, 369]),
+      },
+      {
+        name: 'Rede municipal',
+        tone: 'neutral',
+        rows: annual([93, 93, 105, 93, 93, 93, 93, 93, 113, 113, 113, 113]),
+      },
+      {
+        name: 'Rede privada',
+        tone: 'neutral-dark',
+        rows: annual([832, 724, 707, 644, 521, 496, 459, 489, 508, 536, 500, 510]),
+      },
+    ],
+    ...overrides,
+  })
+
+  it('accepts three aligned temporal series with the informed triad', () => {
+    expect(validateSpec(tripleSpec())).toBeTruthy()
+  })
+
+  it('accepts the twelve points per series of the certified extension', () => {
+    expect(tripleSpec().series[0].rows).toHaveLength(MAX_POINTS_LINE)
+  })
+
+  it('refuses a partial or repeated triad', () => {
+    const [first, second, third] = tripleSpec().series
+    expect(() =>
+      validateSpec(tripleSpec({ series: [{ ...first, tone: undefined }, second, third] })),
+    ).toThrow(/três tons/)
+    expect(() =>
+      validateSpec(tripleSpec({ series: [{ ...first, tone: 'neutral' }, second, third] })),
+    ).toThrow(/distintos/)
+    expect(() =>
+      validateSpec(tripleSpec({ series: [first, second, { ...third, tone: 'bad' }] })),
+    ).toThrow(/tom inválido/)
+    expect(() =>
+      validateSpec(tripleSpec({ series: [first, second, { ...third, tone: 'medium' }] })),
+    ).toThrow(/tom inválido/)
+  })
+
+  it('refuses projection and crossing on the three-series extension', () => {
+    expect(() => validateSpec(tripleSpec({ projectedLabel: '2026' }))).toThrow(/projeção/)
+    expect(() => validateSpec(tripleSpec({ crossingLabel: '2026' }))).toThrow(/cruzamento/)
+  })
+
+  it('certifies the three-series line on the feed canvas only', () => {
+    expect(validateSpec(tripleSpec({ size: 'feed' }))).toBeTruthy()
+    expect(() => validateSpec(tripleSpec({ size: 'square' }))).toThrow(/feed/)
+    expect(() => validateSpec(tripleSpec({ size: 'story' }))).toThrow(/feed/)
+  })
+
+  it('keeps the alignment, temporal and ceiling guardrails of the pair', () => {
+    const [first, second, third] = tripleSpec().series
+    const drifted = {
+      ...third,
+      rows: third.rows.map((row, index) => (index === 0 ? { ...row, label: '2014' } : row)),
+    }
+    expect(() => validateSpec(tripleSpec({ series: [first, second, drifted] }))).toThrow(
+      /mesmos períodos/,
+    )
+    const rows = Array.from({ length: MAX_POINTS_LINE + 1 }, (_v, index) => ({
+      label: `${2000 + index}`,
+      value: index + 1,
+    }))
+    expect(() => validateSpec(tripleSpec({ series: [{ ...first, rows }, second, third] }))).toThrow(
+      /resuma/,
     )
   })
 })
