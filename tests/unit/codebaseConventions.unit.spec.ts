@@ -851,7 +851,10 @@ describe('no conflict markers in committed files', () => {
   it('keeps conflict markers out of tracked files', () => {
     const offenders: string[] = []
 
-    for (const file of execSync('git ls-files', { encoding: 'utf8' }).split('\n')) {
+    // `-z` (NUL-separated, never quoted) keeps non-ASCII tracked paths (e.g.
+    // `public/campaign-kit/coração.png`) readable as-is: the default quoting
+    // returned `"public/...` and every read failed with ENOENT.
+    for (const file of execSync('git ls-files -z', { encoding: 'utf8' }).split('\0')) {
       if (!file) continue
       const lines = readFileSync(resolve(repoRoot, file), 'utf8').split('\n')
       for (const [index, line] of lines.entries()) {
