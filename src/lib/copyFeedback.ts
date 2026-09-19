@@ -6,17 +6,47 @@ const COPY_FEEDBACK_RESET_MS = 2000
 
 export type CopyFeedback = 'idle' | 'copied' | 'error'
 
-export const copyFeedbackLabels: Record<CopyFeedback, string> = {
-  idle: 'Copiar link',
-  copied: 'Link copiado',
-  error: 'Não foi possível copiar',
+/**
+ * C194 — what is being copied changes the wording. `link` is the share
+ * controls' default; `text` serves the reel transcript.
+ */
+export type CopySubject = 'link' | 'text'
+
+const copyFeedbackLabelsBySubject: Record<CopySubject, Record<CopyFeedback, string>> = {
+  link: {
+    idle: 'Copiar link',
+    copied: 'Link copiado',
+    error: 'Não foi possível copiar',
+  },
+  text: {
+    idle: 'Copiar texto',
+    copied: 'Texto copiado',
+    error: 'Não foi possível copiar',
+  },
 }
 
-export const copyFeedbackLiveMessages: Record<CopyFeedback, string> = {
-  idle: '',
-  copied: 'Link copiado.',
-  error: 'Não foi possível copiar o link.',
+const copyFeedbackLiveMessagesBySubject: Record<CopySubject, Record<CopyFeedback, string>> = {
+  link: {
+    idle: '',
+    copied: 'Link copiado.',
+    error: 'Não foi possível copiar o link.',
+  },
+  text: {
+    idle: '',
+    copied: 'Texto copiado.',
+    error: 'Não foi possível copiar o texto.',
+  },
 }
+
+export const copyFeedbackLabelsFor = (subject: CopySubject): Record<CopyFeedback, string> =>
+  copyFeedbackLabelsBySubject[subject]
+
+export const copyFeedbackLiveMessagesFor = (subject: CopySubject): Record<CopyFeedback, string> =>
+  copyFeedbackLiveMessagesBySubject[subject]
+
+/** The link wording the existing share controls import (unchanged). */
+export const copyFeedbackLabels = copyFeedbackLabelsBySubject.link
+export const copyFeedbackLiveMessages = copyFeedbackLiveMessagesBySubject.link
 
 /**
  * The one copy-to-clipboard feedback contract of the share controls (C166 share

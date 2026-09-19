@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: SpeechDetailPageProps) {
   if (!speechId) return campaignPageMetadata({ title: 'Fala' })
 
   const [user, payload] = await Promise.all([
-    requireCampaignPageActor({ gate: 'speechCatalog' }),
+    requireCampaignPageActor({ gate: 'communicationCatalog' }),
     getPayload({ config }),
   ])
 
@@ -49,7 +49,7 @@ export default async function SpeechDetailPage({ params, searchParams }: SpeechD
   const [{ id }, query, user, payload] = await Promise.all([
     params,
     searchParams,
-    requireCampaignPageActor({ gate: 'speechCatalog' }),
+    requireCampaignPageActor({ gate: 'communicationCatalog' }),
     getPayload({ config }),
   ])
   const speechId = strictDecimalInteger(id)

@@ -28,6 +28,17 @@ export const CAMPAIGN_COMMUNICATION_ACERVO = '/campanha/comunicacao/acervo' as c
 /** C168 — library of cuts made from the acervo (list + `/<id>` detail). */
 export const CAMPAIGN_COMMUNICATION_CORTES = '/campanha/comunicacao/acervo/cortes' as const
 
+/** C194 — private library of reels (list + `/<id>` detail). */
+export const CAMPAIGN_COMMUNICATION_REELS = '/campanha/comunicacao/reels' as const
+
+/** C194 — internal detail of one reel (id is immutable). */
+export const campaignReelDetailHref = (id: number): string =>
+  `${CAMPAIGN_COMMUNICATION_REELS}/${id}`
+
+/** C194 — JSON endpoint the detail's kill switch calls to publish/unpublish. */
+export const campaignReelPublicationHref = (id: number): string =>
+  `${campaignReelDetailHref(id)}/publicacao`
+
 /** C168/C174 — internal detail of one cut in the library (id is immutable). */
 export const campaignSpeechCutDetailHref = (id: number): string =>
   `${CAMPAIGN_COMMUNICATION_CORTES}/${id}`

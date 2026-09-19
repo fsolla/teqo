@@ -266,9 +266,14 @@ export const E2E_AFFECTED_MANIFEST = [
     // Zod input schemas surface in the browser through form flows; the
     // public-site and newsletter specs exercise those flows end to end. C167
     // adds the cut schemas, whose HTTP contract is the cut spec; C168's library
-    // mutations live in the same `speech` actions file.
-    prefixes: ['src/lib/schemas', 'src/app/(campaign)/campanha/actions/speech.ts'],
-    specs: ['frontend', 'campaignNewsletter', 'campaignSpeechCut'],
+    // mutations live in the same `speech` actions file; C194 adds the reel
+    // schemas and its kill-switch action.
+    prefixes: [
+      'src/lib/schemas',
+      'src/app/(campaign)/campanha/actions/speech.ts',
+      'src/app/(campaign)/campanha/actions/reels.ts',
+    ],
+    specs: ['frontend', 'campaignNewsletter', 'campaignSpeechCut', 'campaignReel'],
   },
   {
     // Web Push client — the opt-in toast mounts on the campaign shell, so a
@@ -303,18 +308,22 @@ export const E2E_AFFECTED_MANIFEST = [
   },
   {
     // C154 — the communication vertical: the acervo search/filters/detail and
-    // the `speechCatalog` role gate. `src/lib/speech*` carries the pure
+    // the `communicationCatalog` role gate. `src/lib/speech*` carries the pure
     // search/highlight modules the RSC list renders with. C167 adds the cut
-    // routes/player/dialog and the public cut page below.
+    // routes/player/dialog and the public cut page below. C194 adds the reel
+    // library (list/detail/downloads/kill switch) to the same vertical.
     prefixes: [
       `${CAMPAIGN_APP}/comunicacao`,
       'src/components/campaign/speech',
+      'src/components/campaign/reels',
       'src/utilities/speech',
+      'src/utilities/reels',
       'src/lib/speech',
+      'src/lib/reel',
       // The role predicates drive the vertical gate and the assistant surfaces.
       'src/lib/campaignRoles',
     ],
-    specs: ['campaignSpeechAcervo', 'campaignSpeechCut'],
+    specs: ['campaignSpeechAcervo', 'campaignSpeechCut', 'campaignReel'],
   },
   {
     // C167 — the unlisted public page of a cut: 200 with the stored file and

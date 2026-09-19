@@ -31,7 +31,7 @@ type SpeechAcervoPageProps = {
 
 export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPageProps) {
   const [user, payload] = await Promise.all([
-    requireCampaignPageActor({ gate: 'speechCatalog' }),
+    requireCampaignPageActor({ gate: 'communicationCatalog' }),
     getPayload({ config }),
   ])
 

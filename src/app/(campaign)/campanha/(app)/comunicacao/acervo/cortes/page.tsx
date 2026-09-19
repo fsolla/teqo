@@ -32,7 +32,7 @@ type SpeechCutLibraryPageProps = {
 /** C168 — the cut library: what was already cut, newest first, searchable. */
 export default async function SpeechCutLibraryPage({ searchParams }: SpeechCutLibraryPageProps) {
   const [user, payload] = await Promise.all([
-    requireCampaignPageActor({ gate: 'speechCatalog' }),
+    requireCampaignPageActor({ gate: 'communicationCatalog' }),
     getPayload({ config }),
   ])
 
