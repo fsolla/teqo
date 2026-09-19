@@ -159,12 +159,12 @@ describe('reel view models (C194)', () => {
     expect(item).toEqual({
       id: 42,
       title: 'Como criar seu card de apoio',
-      featureLabel: 'Cards de apoio (#cards)',
+      featureLabel: 'Cards de apoio',
       status: 'published',
       statusLabel: 'Publicado',
       coverUrl: '/campanha/comunicacao/reels/42/media/cover',
       coverAlt: 'Capa do tutorial',
-      publishedAtLabel: '18/09/2026 às 14:00',
+      publishedAtLabel: '18/09/2026',
       detailHref: '/campanha/comunicacao/reels/42',
     })
   })

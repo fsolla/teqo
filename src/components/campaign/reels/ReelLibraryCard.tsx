@@ -32,9 +32,14 @@ export const ReelLibraryCard = ({ reel }: { reel: ReelLibraryItemViewModel }) =>
         <h3 className="text-sm leading-5 font-medium">{reel.title}</h3>
         <p className="mt-1.5 text-xs text-muted-foreground">{reel.featureLabel}</p>
         {reel.publishedAtLabel ? (
-          <p className="mt-1 text-xs text-muted-foreground">Publicado em {reel.publishedAtLabel}</p>
+          <p className="mt-1 text-xs text-muted-foreground max-lg:hidden">
+            Publicado em {reel.publishedAtLabel}
+          </p>
         ) : null}
-        <span className="mt-3 inline-flex h-8 items-center text-xs font-medium underline underline-offset-4 group-hover:text-primary">
+        <span
+          aria-hidden="true"
+          className="mt-3 hidden h-8 items-center text-xs font-medium underline underline-offset-4 group-hover:text-primary lg:inline-flex"
+        >
           Abrir reel
         </span>
       </div>

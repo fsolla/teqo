@@ -59,6 +59,7 @@ export default async function ReelDetailPage({ params }: ReelDetailPageProps) {
     if (error instanceof ReelNotFoundError) notFound()
     throw error
   })
+  const blocked = !reel.canServeMedia
 
   return (
     <CampaignPageShell>
@@ -85,22 +86,25 @@ export default async function ReelDetailPage({ params }: ReelDetailPageProps) {
           </div>
         </div>
 
+        {blocked ? (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-lg bg-muted p-3">
+              <p className="text-sm font-medium">Fora da lista</p>
+              <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                Este reel não aparece na biblioteca. O registro e os arquivos continuam guardados,
+                mas nenhuma mídia é servida enquanto ele não estiver publicado.
+              </p>
+            </div>
+            <ReelPublicationPanel reelId={reel.id} status={reel.status} />
+          </div>
+        ) : null}
+
         <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)_280px]">
           <div>
             <ReelPlayer reel={reel} />
           </div>
 
           <div className="min-w-0">
-            {reel.canServeMedia ? null : (
-              <div className="mb-4 rounded-lg bg-muted p-3">
-                <p className="text-sm font-medium">Fora da lista</p>
-                <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                  Este reel não aparece na biblioteca. O registro e os arquivos continuam guardados,
-                  mas nenhuma mídia é servida enquanto ele não estiver publicado.
-                </p>
-              </div>
-            )}
-
             <ReelDownloadPanel reel={reel} />
 
             {reel.transcript ? (
@@ -125,7 +129,7 @@ export default async function ReelDetailPage({ params }: ReelDetailPageProps) {
               </dl>
             </section>
 
-            <ReelPublicationPanel reelId={reel.id} status={reel.status} />
+            {blocked ? null : <ReelPublicationPanel reelId={reel.id} status={reel.status} />}
 
             <p className="rounded-lg bg-muted px-3 py-2 text-xs leading-5 text-muted-foreground">
               Nada é publicado no Instagram por esta tela.

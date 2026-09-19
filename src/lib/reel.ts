@@ -6,7 +6,7 @@
  */
 
 import { campaignReelDetailHref } from '@/lib/campaignPaths'
-import { formatBahiaDateTimeLabel } from '@/lib/campaignTime'
+import { formatBahiaCivilDate } from '@/lib/campaignTime'
 
 /** Upload collection of the artifacts; also its local disk directory in dev. */
 export const REEL_MEDIA_SLUG = 'reelMedia'
@@ -33,8 +33,14 @@ export const isReelStatus = (value: unknown): value is ReelStatus =>
 export const REEL_FEATURES = ['cards'] as const
 export type ReelFeature = (typeof REEL_FEATURES)[number]
 
+/** Admin/select wording: keeps the public anchor the tutorial teaches. */
 export const reelFeatureLabels: Record<ReelFeature, string> = {
   cards: 'Cards de apoio (#cards)',
+}
+
+/** Library UI wording: the anchor belongs to the admin context, not the card. */
+const reelFeatureDisplayLabels: Record<ReelFeature, string> = {
+  cards: 'Cards de apoio',
 }
 
 /**
@@ -179,11 +185,13 @@ const mediaAlt = (value: ReelMediaRef, fallback: string): string => {
   return alt ? alt : fallback
 }
 
+/** Date-only (`dd/mm/aaaa`) publication label — the library never shows the hour. */
 const publishedAtLabel = (iso: string | null | undefined): string | null => {
   if (!iso) return null
   const instant = new Date(iso)
   if (Number.isNaN(instant.getTime())) return null
-  return formatBahiaDateTimeLabel(iso)
+  const [year, month, day] = formatBahiaCivilDate(instant).split('-')
+  return `${day}/${month}/${year}`
 }
 
 const reelCover = (record: ReelRecordForView): { coverUrl: string; coverAlt: string } => ({
@@ -199,7 +207,7 @@ export const toReelLibraryItemViewModel = (record: ReelRecordForView): ReelLibra
     id: record.id,
     title: record.title,
     featureLabel: isReelFeature(record.feature)
-      ? reelFeatureLabels[record.feature]
+      ? reelFeatureDisplayLabels[record.feature]
       : record.feature,
     status,
     statusLabel: reelStatusLabels[status],
