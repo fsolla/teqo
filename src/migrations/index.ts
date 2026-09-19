@@ -76,6 +76,7 @@ import * as migration_20260918_201009_add_reel from './20260918_201009_add_reel'
 import * as migration_20260919_002605_add_reel_source_hash from './20260919_002605_add_reel_source_hash';
 import * as migration_20260919_003440_add_recording from './20260919_003440_add_recording';
 import * as migration_20260919_032729_add_recording_speakers from './20260919_032729_add_recording_speakers';
+import * as migration_20260919_155232_add_share_link from './20260919_155232_add_share_link';
 
 export const migrations = [
   {
@@ -466,6 +467,11 @@ export const migrations = [
   {
     up: migration_20260919_032729_add_recording_speakers.up,
     down: migration_20260919_032729_add_recording_speakers.down,
-    name: '20260919_032729_add_recording_speakers'
+    name: '20260919_032729_add_recording_speakers',
+  },
+  {
+    up: migration_20260919_155232_add_share_link.up,
+    down: migration_20260919_155232_add_share_link.down,
+    name: '20260919_155232_add_share_link'
   },
 ];
