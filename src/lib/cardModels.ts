@@ -109,6 +109,8 @@ export type CardBanner = {
   centerY: number
   width: number
   height: number
+  /** Model-pixel ceiling the width may grow to (S16); equals `width` when fixed. */
+  maxWidth: number
   rotationDeg: number
   background: string
 }
@@ -154,6 +156,7 @@ export const TEAM_CARD_LABEL = {
   centerX: 545,
   centerY: 162,
   width: 693,
+  maxWidth: 693,
   height: 118,
   rotationDeg: -3.5,
   background: '#e50e2f',
@@ -161,22 +164,38 @@ export const TEAM_CARD_LABEL = {
   capHeight: 93,
 } as const
 
+/**
+ * S16 — the blue name banner is dynamic: `width` is the S15 reference kept while
+ * the fitted ink fits the reference band (`width - padding` = 470) and
+ * `maxWidth` (1000) is the ceiling the banner grows to only as needed. The
+ * ceiling keeps the lowest rotated corner (`313 + 500·sin 4.1° + 88·cos 4.1°`
+ * ≈ 436.5 — conservative corner check) above the photo window top (y=439); it is
+ * also the pair that fixes the ink padding: `maxWidth - slot.maxInkWidth = 39`
+ * (= the S15 pair `509 - 470`).
+ */
 export const TEAM_CARD_NAME_BANNER = {
   centerX: 545,
   centerY: 313,
   width: 509,
+  maxWidth: 1000,
   height: 176,
   rotationDeg: -4.1,
   background: '#0061a5',
   fill: '#ffffff',
 } as const
 
+/**
+ * S16 — the readable floor drops to a 40px cap (the human gate decision of
+ * 2026-09-19: long compound names fit and only clearly absurd names are asked
+ * to shorten) and the ink ceiling becomes the banner ceiling pair: 961 = 1000
+ * (banner) − 39 (padding), the same padding measured in the S15 pair 509 − 470.
+ */
 export const TEAM_CARD_NAME_SLOT = {
   align: 'center',
   banner: TEAM_CARD_NAME_BANNER,
   capHeight: 130,
-  minCapHeight: 56,
-  maxInkWidth: 470,
+  minCapHeight: 40,
+  maxInkWidth: 961,
   fill: TEAM_CARD_NAME_BANNER.fill,
   maxLines: 1,
 } as const satisfies CardNameBannerSlot

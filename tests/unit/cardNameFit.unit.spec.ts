@@ -8,9 +8,9 @@ import {
   type CardMeasureText,
 } from '@/lib/cardNameFit'
 
-/** Deterministic fake: 0.6em per char, 0.72em cap, 0.2em descent. */
+/** Deterministic fake: 0.84em per char (Brexter-like), 0.72em cap, 0.2em descent. */
 const measure: CardMeasureText = (text, fontSize) => ({
-  width: text.length * fontSize * 0.6,
+  width: text.length * fontSize * 0.84,
   actualBoundingBoxAscent: fontSize * 0.72,
   actualBoundingBoxDescent: fontSize * 0.2,
 })
@@ -47,6 +47,7 @@ describe('fitCardName', () => {
     if (fit.ok) {
       expect(fit.capHeight).toBeCloseTo(NAME_CARD_SLOT.capHeight, 5)
       expect(inkWidth(fit.lines[0], fit.fontSize)).toBeLessThanOrEqual(NAME_CARD_SLOT.maxInkWidth)
+      expect(fit.inkWidth).toBeCloseTo(inkWidth(fit.lines[0], fit.fontSize), 5)
     }
   })
 
@@ -127,13 +128,14 @@ describe('fitCardName', () => {
         expect(inkWidth(fit.lines[0], fit.fontSize)).toBeLessThanOrEqual(
           TEAM_CARD_NAME_SLOT.maxInkWidth,
         )
+        expect(fit.inkWidth).toBeCloseTo(inkWidth(fit.lines[0], fit.fontSize), 5)
       }
     })
 
     it('shrinks a name that overflows the ink width down to the readable minimum', () => {
-      const fit = fitCardName('Maria', measure, TEAM_CARD_NAME_SLOT)
+      const fit = fitCardName('Guilherme', measure, TEAM_CARD_NAME_SLOT)
 
-      expect(fit).toMatchObject({ ok: true, lines: ['MARIA'] })
+      expect(fit).toMatchObject({ ok: true, lines: ['GUILHERME'] })
       if (fit.ok) {
         expect(fit.capHeight).toBeLessThan(TEAM_CARD_NAME_SLOT.capHeight)
         expect(fit.fontSize).toBeGreaterThanOrEqual(
@@ -145,12 +147,23 @@ describe('fitCardName', () => {
       }
     })
 
+    it('fits a long compound name within the new ceiling (S16)', () => {
+      const fit = fitCardName('Maria da Conceição', measure, TEAM_CARD_NAME_SLOT)
+
+      expect(fit).toMatchObject({ ok: true, lines: ['MARIA DA CONCEIÇÃO'] })
+      if (fit.ok) {
+        expect(fit.capHeight).toBeGreaterThanOrEqual(TEAM_CARD_NAME_SLOT.minCapHeight)
+        expect(fit.inkWidth).toBeLessThanOrEqual(TEAM_CARD_NAME_SLOT.maxInkWidth)
+        expect(fit.inkWidth).toBeCloseTo(inkWidth(fit.lines[0], fit.fontSize), 5)
+      }
+    })
+
     it('fails with too-long instead of wrapping below the readable minimum', () => {
-      expect(fitCardName('Maria da Conceição', measure, TEAM_CARD_NAME_SLOT)).toEqual({
+      expect(fitCardName('Bartolomeucostajunior', measure, TEAM_CARD_NAME_SLOT)).toEqual({
         ok: false,
         reason: 'too-long',
       })
-      expect(fitCardName('Bartolomeucostajunior', measure, TEAM_CARD_NAME_SLOT)).toEqual({
+      expect(fitCardName('Anticonstitucionalissimamente', measure, TEAM_CARD_NAME_SLOT)).toEqual({
         ok: false,
         reason: 'too-long',
       })
