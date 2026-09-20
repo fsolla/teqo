@@ -139,7 +139,8 @@ export const assertSkillAutoSupported = ({
       '`--stay` suprime o launch — `--auto` ficaria sem efeito. Remova `--auto` ou `--stay`.',
     )
   }
-  const supported = purpose === 'next' || purpose === 'fix' || (purpose === 'plan' && hasBag(bag))
+  const supported =
+    purpose === 'next' || (purpose === 'fix' && hasBag(bag)) || (purpose === 'plan' && hasBag(bag))
   if (!supported) {
     if (purpose === 'plan') {
       throw new Error(
