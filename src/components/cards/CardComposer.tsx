@@ -34,13 +34,10 @@ import { fitCardName, type CardNameFit } from '@/lib/cardNameFit'
 import {
   CARD_PHOTO_MAX_ZOOM,
   CARD_PHOTO_MIN_ZOOM,
-  CARD_TEAM_PHOTO_MIN_ZOOM,
   cardPhotoTransformsEqual,
   centerCardPhotoTransform,
   panCardPhotoTransform,
-  resolveCardPhotoAnchor,
   zoomCardPhotoTransform,
-  type CardPhotoClamp,
   type CardPhotoSize,
   type CardPhotoTransform,
 } from '@/lib/cardPhotoTransform'
@@ -180,8 +177,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const photoWindow = model.photoWindow
   const isNameModel = model.kind === 'name'
   const isTeamModel = model.kind === 'team'
-  /** S18 — the team framing may sit below the S13 cover floor. */
-  const photoMinZoom = isTeamModel ? CARD_TEAM_PHOTO_MIN_ZOOM : CARD_PHOTO_MIN_ZOOM
   const cutout = useCardCutout(photoWindow, isTeamModel ? model.assetSrc : undefined)
   const cutoutState = cutout.state
 
@@ -206,18 +201,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const effectiveTransform = isTeamModel
     ? (photoTransform ?? teamReady?.transform ?? null)
     : photoTransform
-
-  /**
-   * S20 — the fine-tuning clamp context: the team's anchor is the detected face
-   * when usable, else the silhouette; the photo models keep the S13 defaults.
-   */
-  const photoClamp = useMemo<CardPhotoClamp>(
-    () => ({
-      minZoom: photoMinZoom,
-      anchorBox: teamReady ? resolveCardPhotoAnchor(teamReady.bbox, teamReady.face) : null,
-    }),
-    [photoMinZoom, teamReady],
-  )
 
   // Assets + font load once per model: typing/panning must not flip the preview
   // back into the loading state (flicker) nor re-announce the live region.
@@ -282,7 +265,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
           photoSize: { width: teamReady.width, height: teamReady.height },
           transform: effectiveTransform,
           window: photoWindow,
-          anchorBox: photoClamp.anchorBox,
           name,
           fontFamily,
           measure,
@@ -337,7 +319,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     photoSize,
     effectiveTransform,
     photoWindow,
-    photoClamp,
   ])
 
   const handlePhotoFile = async (file: File | undefined) => {
@@ -401,7 +382,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     const dy = (event.clientY - drag.y) * scale
     dragRef.current = { ...drag, x: event.clientX, y: event.clientY }
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy, photoClamp),
+      panCardPhotoTransform(transform, size, window, dx, dy),
     )
   }
 
@@ -411,13 +392,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
 
   const panBy = (dx: number, dy: number) => {
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy, photoClamp),
+      panCardPhotoTransform(transform, size, window, dx, dy),
     )
   }
 
   const zoomTo = (zoom: number) => {
     withTransform((transform, size, window) =>
-      zoomCardPhotoTransform(transform, size, window, zoom, photoClamp),
+      zoomCardPhotoTransform(transform, size, window, zoom),
     )
   }
 
@@ -529,7 +510,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         <input
           id={zoomInputId}
           type="range"
-          min={photoMinZoom}
+          min={CARD_PHOTO_MIN_ZOOM}
           max={CARD_PHOTO_MAX_ZOOM}
           step={0.05}
           value={effectiveTransform.zoom}
@@ -753,15 +734,21 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
           <div className="mt-5">
             <div role="alert" className="rounded-lg border border-(--pt-red) bg-red-50 p-4">
               <p className="text-sm font-black text-(--pt-red)">
-                Não foi possível remover o fundo desta foto.
+                {teamError.reason === 'unsupported'
+                  ? 'Seu navegador está bloqueando o recorte de fundo.'
+                  : 'Não foi possível remover o fundo desta foto.'}
               </p>
               <p className="mt-1 text-sm leading-5 text-(--campaign-ink)">
-                Tente de novo ou escolha outra foto.
+                {teamError.reason === 'unsupported'
+                  ? 'O recorte roda no seu aparelho e precisa de WebAssembly e WebGL, que navegadores com proteções avançadas (como IronFox e Tor) desligam por padrão. Ative essas opções para este site nas configurações do navegador — ou abra a página em outro navegador — e toque em “Tentar de novo”.'
+                  : 'Tente de novo ou escolha outra foto.'}
               </p>
             </div>
-            <p className="mt-4 text-sm leading-5 text-(--campaign-muted)">
-              Fotos de busto, nítidas e com fundo simples costumam funcionar melhor.
-            </p>
+            {teamError.reason === 'unsupported' ? null : (
+              <p className="mt-4 text-sm leading-5 text-(--campaign-muted)">
+                Fotos de busto, nítidas e com fundo simples costumam funcionar melhor.
+              </p>
+            )}
             <p className="mt-3 text-xs leading-5 text-(--campaign-muted)">
               {CARD_PHOTO_PRIVACY_NOTE}
             </p>
