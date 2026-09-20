@@ -117,6 +117,20 @@
         width: 4px;
         border-radius: 999px;
         background: var(--pt-yellow);
+        animation: radio-wave-pulse 1.15s ease-in-out infinite alternate;
+        transform-origin: center;
+      }
+      .radio-wave span:nth-child(2n) {
+        animation-delay: -420ms;
+      }
+      .radio-wave span:nth-child(3n) {
+        animation-delay: -760ms;
+      }
+      @keyframes radio-wave-pulse {
+        to {
+          transform: scaleY(0.55);
+          opacity: 0.72;
+        }
       }
       .primary-control {
         display: inline-flex;
@@ -302,11 +316,46 @@
         border-radius: 12px;
         background: repeating-linear-gradient(-45deg, #fff, #fff 12px, #fff8f2 12px, #fff8f2 24px);
       }
+      /* O mesmo painel reserva o maior footprint nos três estados: facade → loading → loaded. */
+      .radio-state-panel {
+        min-height: 260px;
+      }
+      .radio-widget-slot {
+        height: 150px;
+        min-height: 150px;
+      }
+      .radio-loading-spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid rgb(162 28 28 / 18%);
+        border-top-color: var(--pt-red);
+        border-radius: 999px;
+        animation: radio-spinner 850ms linear infinite;
+      }
+      @keyframes radio-spinner {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      [data-radio-state='loading'] .radio-facade,
       [data-radio-state='loaded'] .radio-facade {
         display: none;
       }
-      [data-radio-state='facade'] .radio-loaded {
+      [data-radio-state='facade'] .radio-loading,
+      [data-radio-state='facade'] .radio-loaded,
+      [data-radio-state='loading'] .radio-loaded,
+      [data-radio-state='loaded'] .radio-loading {
         display: none;
+      }
+
+      @media (min-width: 48rem) {
+        .radio-state-panel {
+          min-height: 300px;
+        }
+        .radio-widget-slot {
+          height: 168px;
+          min-height: 168px;
+        }
       }
 
       @media (prefers-reduced-motion: reduce) {
@@ -321,6 +370,10 @@
         .primary-control:hover,
         .play-control:hover {
           transform: none;
+        }
+        .radio-wave span,
+        .radio-loading-spinner {
+          animation: none;
         }
       }
     </style>
@@ -361,7 +414,7 @@
               Cena 01 · Desktop 1280
             </p>
             <h2 id="scene-desktop" class="font-display mt-1 text-xl font-black text-[#211b19]">
-              Facade da rádio + três jingles · no ritmo real da home
+              Facade da rádio + três de um acervo maior · no ritmo real da home
             </h2>
           </div>
           <p class="m-0 max-w-lg text-right text-xs leading-5 text-[#6c615e]">
@@ -481,7 +534,7 @@
                       ><span class="h-3"></span>
                     </div>
                   </div>
-                  <div class="radio-facade flex flex-col justify-center p-9">
+                  <div class="radio-facade radio-state-panel flex flex-col justify-center p-9">
                     <p
                       class="font-display m-0 text-xs font-black tracking-[0.1em] text-[#a21c1c] uppercase"
                     >
@@ -533,9 +586,40 @@
                       >O player do zeno.fm só é carregado depois do seu clique.
                     </p>
                   </div>
-                  <div class="radio-loaded col-start-2 flex flex-col justify-center p-8">
+                  <div
+                    class="radio-loading radio-state-panel col-start-2 flex flex-col justify-center p-8"
+                    role="status"
+                    aria-live="polite"
+                    aria-busy="true"
+                  >
+                    <div class="flex items-start justify-between gap-5">
+                      <div>
+                        <p
+                          class="font-display text-xs font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+                        >
+                          Sintonize com a gente
+                        </p>
+                        <h3 class="font-display mt-1 text-[28px] leading-tight font-black">
+                          Rádio Jorge Solla 1313
+                        </h3>
+                        <p class="mt-3 text-sm font-bold">Carregando o player da rádio…</p>
+                        <p class="mt-1 text-xs text-[#6c615e]">Isso pode levar alguns segundos.</p>
+                      </div>
+                      <div class="radio-loading-spinner mt-2 flex-none" aria-hidden="true"></div>
+                    </div>
+                    <a
+                      href="https://zeno.fm/radio/jorge-solla-1313/"
+                      class="secondary-link safe-focus mt-4 w-fit text-sm"
+                      target="_blank"
+                      rel="noreferrer"
+                      >Abrir no Zeno</a
+                    >
+                  </div>
+                  <div
+                    class="radio-loaded radio-state-panel col-start-2 flex flex-col justify-center p-8"
+                  >
                     <div
-                      class="iframe-placeholder flex items-center justify-center p-5 text-center"
+                      class="iframe-placeholder radio-widget-slot flex items-center justify-center p-5 text-center"
                     >
                       <div>
                         <p
@@ -817,7 +901,7 @@
             Cena 02 · Mobile 390
           </p>
           <h2 id="scene-mobile" class="font-display mt-1 text-xl font-black text-[#211b19]">
-            Uma coluna · facade antes de qualquer terceiro
+            Uma coluna · três exibidos de um acervo maior
           </h2>
         </div>
         <div
@@ -893,7 +977,7 @@
                     ><span class="h-6"></span><span class="h-4"></span>
                   </div>
                 </div>
-                <div class="radio-facade p-5">
+                <div class="radio-facade radio-state-panel p-5">
                   <h3 class="font-display text-2xl leading-tight font-black tracking-[-0.02em]">
                     Rádio Jorge Solla 1313
                   </h3>
@@ -931,9 +1015,33 @@
                     O player do zeno.fm só carrega depois do clique.
                   </p>
                 </div>
-                <div class="radio-loaded p-4">
+                <div
+                  class="radio-loading radio-state-panel flex flex-col justify-center p-5"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy="true"
+                >
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                      <h3 class="font-display text-2xl leading-tight font-black">
+                        Rádio Jorge Solla 1313
+                      </h3>
+                      <p class="mt-3 text-sm font-bold">Carregando o player da rádio…</p>
+                      <p class="mt-1 text-xs text-[#6c615e]">Isso pode levar alguns segundos.</p>
+                    </div>
+                    <div class="radio-loading-spinner mt-1 flex-none" aria-hidden="true"></div>
+                  </div>
+                  <a
+                    href="https://zeno.fm/radio/jorge-solla-1313/"
+                    class="secondary-link safe-focus mt-3 w-fit text-sm"
+                    target="_blank"
+                    rel="noreferrer"
+                    >Abrir no Zeno</a
+                  >
+                </div>
+                <div class="radio-loaded radio-state-panel p-4">
                   <div
-                    class="iframe-placeholder flex min-h-[150px] items-center justify-center p-4 text-center"
+                    class="iframe-placeholder radio-widget-slot flex items-center justify-center p-4 text-center"
                   >
                     <div>
                       <p
@@ -1211,7 +1319,7 @@
                 ><span class="h-7"></span><span class="h-5"></span>
               </div>
             </div>
-            <div class="radio-loaded flex flex-col justify-center p-5 sm:p-8">
+            <div class="radio-loaded radio-state-panel flex flex-col justify-center p-5 sm:p-8">
               <div class="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h3 class="font-display text-2xl font-black tracking-[-0.02em]">
                   Rádio Jorge Solla 1313
@@ -1235,7 +1343,9 @@
                     /></svg
                 ></a>
               </div>
-              <div class="iframe-placeholder flex items-center justify-center p-5 text-center">
+              <div
+                class="iframe-placeholder radio-widget-slot flex items-center justify-center p-5 text-center"
+              >
                 <div>
                   <svg
                     viewBox="0 0 24 24"
@@ -1266,11 +1376,250 @@
         </div>
       </section>
 
-      <!-- CENA 04: ESTADO DE INTERAÇÃO HERDADO DO S21 -->
+      <!-- CENA 04: RADIO CARREGANDO, MOBILE-FIRST + DESKTOP -->
+      <section id="radio-loading" aria-labelledby="scene-loading" class="mb-16">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p
+              class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Cena 04 · Rádio carregando · 390 primeiro
+            </p>
+            <h2 id="scene-loading" class="font-display mt-1 text-xl font-black text-[#211b19]">
+              Presença intacta enquanto o serviço externo responde
+            </h2>
+          </div>
+          <p class="m-0 max-w-xl text-xs leading-5 text-[#6c615e]">
+            O clique monta o iframe; até o <code>onLoad</code>, o mesmo footprint fica reservado e a
+            região anuncia “Carregando o player da rádio”.
+          </p>
+        </div>
+
+        <div class="grid items-start gap-6 xl:grid-cols-[390px_1fr]">
+          <div
+            class="stage-shadow mx-auto w-[390px] max-w-full overflow-hidden rounded-[28px] border-[6px] border-[#2a2523] bg-[#fff8f2] p-4"
+          >
+            <p
+              class="font-display mb-3 text-[10px] font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Mobile · 390px
+            </p>
+            <article class="radio-card" data-radio data-radio-state="loading">
+              <div class="radio-art flex h-[190px] flex-col justify-between p-5 text-white">
+                <div class="flex items-center justify-between">
+                  <span
+                    class="font-display rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[10px] font-black tracking-[0.1em] uppercase"
+                    >Rádio online</span
+                  >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="h-6 w-6 text-[#ffe607]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M8.5 15.5a5 5 0 0 1 0-7M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2M15.5 8.5a5 5 0 0 1 0 7"
+                    />
+                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                  </svg>
+                </div>
+                <img
+                  src="../../public/campaign-kit/numero-negativo.png"
+                  alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                  class="w-[155px] self-center object-contain"
+                />
+                <div
+                  class="radio-wave flex h-6 items-center justify-center gap-1.5"
+                  aria-hidden="true"
+                >
+                  <span class="h-2"></span><span class="h-5"></span><span class="h-3"></span
+                  ><span class="h-6"></span><span class="h-4"></span>
+                </div>
+              </div>
+              <div
+                class="radio-loading radio-state-panel flex flex-col justify-center p-5"
+                role="status"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div class="flex items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <p
+                      class="font-display text-[10px] font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+                    >
+                      Sintonize com a gente
+                    </p>
+                    <h3
+                      class="font-display mt-1 text-2xl leading-tight font-black tracking-[-0.02em]"
+                    >
+                      Rádio Jorge Solla 1313
+                    </h3>
+                  </div>
+                  <div class="radio-loading-spinner mt-1 flex-none" aria-hidden="true"></div>
+                </div>
+                <p class="mt-4 text-sm font-bold text-[#211b19]">Carregando o player da rádio…</p>
+                <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                  Isso pode levar alguns segundos.
+                </p>
+                <a
+                  href="https://zeno.fm/radio/jorge-solla-1313/"
+                  class="secondary-link safe-focus mt-3 w-fit text-sm"
+                  target="_blank"
+                  rel="noreferrer"
+                  >Abrir no Zeno
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                    />
+                  </svg>
+                </a>
+                <button
+                  type="button"
+                  class="mt-3 min-h-11 w-full rounded-[10px] bg-[#a21c1c]/10 px-4 text-sm font-bold text-[#7d4848]"
+                  aria-busy="true"
+                  disabled
+                >
+                  Carregando…
+                </button>
+              </div>
+            </article>
+          </div>
+
+          <div
+            class="stage-shadow overflow-hidden rounded-[18px] border border-black/10 bg-[#fff8f2] p-6 lg:p-8"
+          >
+            <p
+              class="font-display mb-4 text-[10px] font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Desktop · painel reservado em 300px
+            </p>
+            <article
+              class="radio-card grid md:grid-cols-[250px_1fr]"
+              data-radio
+              data-radio-state="loading"
+            >
+              <div class="radio-art flex min-h-[300px] flex-col justify-between p-6 text-white">
+                <div class="flex items-center justify-between">
+                  <span
+                    class="font-display rounded-full border border-white/30 bg-white/10 px-3 py-1 text-[10px] font-black tracking-[0.1em] uppercase"
+                    >Rádio online</span
+                  >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="h-7 w-7 text-[#ffe607]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path
+                      d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M8.5 15.5a5 5 0 0 1 0-7M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2M15.5 8.5a5 5 0 0 1 0 7"
+                    />
+                    <circle cx="12" cy="12" r="1" fill="currentColor" />
+                  </svg>
+                </div>
+                <img
+                  src="../../public/campaign-kit/numero-negativo.png"
+                  alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                  class="w-[175px] self-center object-contain"
+                />
+                <div
+                  class="radio-wave flex h-7 items-center justify-center gap-1.5"
+                  aria-hidden="true"
+                >
+                  <span class="h-3"></span><span class="h-6"></span><span class="h-4"></span
+                  ><span class="h-7"></span><span class="h-5"></span>
+                </div>
+              </div>
+              <div
+                class="radio-loading radio-state-panel flex flex-col justify-center p-7"
+                role="status"
+                aria-live="polite"
+                aria-busy="true"
+              >
+                <div class="flex items-start justify-between gap-5">
+                  <div>
+                    <p
+                      class="font-display text-xs font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+                    >
+                      Sintonize com a gente
+                    </p>
+                    <h3
+                      class="font-display mt-1 text-[28px] leading-tight font-black tracking-[-0.025em]"
+                    >
+                      Rádio Jorge Solla 1313
+                    </h3>
+                    <p class="mt-3 text-sm font-bold text-[#211b19]">
+                      Carregando o player da rádio…
+                    </p>
+                    <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                      Isso pode levar alguns segundos.
+                    </p>
+                  </div>
+                  <div class="radio-loading-spinner mt-2 flex-none" aria-hidden="true"></div>
+                </div>
+                <div class="mt-5 flex flex-wrap items-center gap-5">
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-[10px] bg-[#a21c1c]/10 px-5 text-sm font-bold text-[#7d4848]"
+                    aria-busy="true"
+                    disabled
+                  >
+                    Carregando…
+                  </button>
+                  <a
+                    href="https://zeno.fm/radio/jorge-solla-1313/"
+                    class="secondary-link safe-focus text-sm"
+                    target="_blank"
+                    rel="noreferrer"
+                    >Abrir no Zeno
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                      />
+                    </svg>
+                  </a>
+                </div>
+                <p class="mt-4 text-xs leading-5 text-[#6c615e]">
+                  Player fornecido por zeno.fm. Ao usar, você acessa um serviço externo.
+                </p>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div
+          class="mt-4 rounded-xl border border-[#a21c1c]/20 bg-white px-4 py-3 text-xs leading-5 text-[#4f4642]"
+        >
+          <strong class="text-black">Contrato visual:</strong>
+          <code>.radio-state-panel</code> existe nos três estados e reserva 260px no mobile / 300px
+          no desktop; o slot do widget reserva 150px / 168px. No estado <code>loading</code>, o
+          iframe já foi montado pelo gesto, mas o design mostra só o affordance até
+          <code>onLoad</code>. Antes do clique, não existe iframe, request ou script de zeno.fm.
+        </div>
+      </section>
+
+      <!-- CENA 05: ESTADO DE INTERAÇÃO HERDADO DO S21 -->
       <section aria-labelledby="scene-playing" class="mb-16">
         <div class="mb-4">
           <p class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase">
-            Cena 04 · Tocando + download em foco
+            Cena 05 · Tocando + download em foco
           </p>
           <h2 id="scene-playing" class="font-display mt-1 text-xl font-black text-[#211b19]">
             O play amarelo continua dominante; download é secundário e acessível
@@ -1344,11 +1693,383 @@
         </div>
       </section>
 
-      <!-- CENA 05: ZERO JINGLES -->
+      <!-- CENA 06: UM OU DOIS JINGLES -->
+      <section id="one-two-jingles" aria-labelledby="scene-one-two" class="mb-16">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <p
+              class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Cena 06 · Um ou dois jingles
+            </p>
+            <h2 id="scene-one-two" class="font-display mt-1 text-xl font-black text-[#211b19]">
+              A grade não inventa conteúdo nem exibe “Ver todos”
+            </h2>
+          </div>
+          <p class="m-0 max-w-xl text-xs leading-5 text-[#6c615e]">
+            À esquerda, 390px com um publicado. À direita, desktop com dois. O card da rádio
+            permanece acima nos dois casos.
+          </p>
+        </div>
+
+        <div class="grid items-start gap-6 xl:grid-cols-[390px_1fr]">
+          <div
+            class="stage-shadow mx-auto w-[390px] max-w-full overflow-hidden rounded-[28px] border-[6px] border-[#2a2523] bg-[#fff8f2]"
+          >
+            <section aria-label="Seção de som com um jingle" class="overflow-hidden px-4 py-9">
+              <p
+                class="campaign-section-eyebrow text-center font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+              >
+                A trilha da nossa caminhada
+              </p>
+              <h3
+                class="font-display mt-1 text-center text-[30px] leading-none font-black tracking-[-0.03em]"
+              >
+                Cante, baixe e espalhe
+              </h3>
+
+              <article class="radio-card mt-6" data-radio data-radio-state="facade">
+                <div class="radio-art flex h-[150px] flex-col justify-between p-4 text-white">
+                  <div class="flex items-center justify-between">
+                    <span
+                      class="font-display rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[9px] font-black tracking-[0.1em] uppercase"
+                      >Rádio online</span
+                    >
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="h-5 w-5 text-[#ffe607]"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9M8.5 15.5a5 5 0 0 1 0-7M19.1 4.9c3.9 3.9 3.9 10.3 0 14.2M15.5 8.5a5 5 0 0 1 0 7"
+                      />
+                      <circle cx="12" cy="12" r="1" fill="currentColor" />
+                    </svg>
+                  </div>
+                  <img
+                    src="../../public/campaign-kit/numero-negativo.png"
+                    alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                    class="w-[132px] self-center object-contain"
+                  />
+                  <div
+                    class="radio-wave flex h-5 items-center justify-center gap-1.5"
+                    aria-hidden="true"
+                  >
+                    <span class="h-2"></span><span class="h-4"></span><span class="h-3"></span
+                    ><span class="h-5"></span>
+                  </div>
+                </div>
+                <div class="radio-facade radio-state-panel flex flex-col justify-center p-5">
+                  <h4 class="font-display text-xl font-black">Rádio Jorge Solla 1313</h4>
+                  <p class="mt-2 text-sm leading-5 text-[#6c615e]">
+                    Carregue o player oficial só quando quiser ouvir.
+                  </p>
+                  <button type="button" class="primary-control safe-focus mt-4 w-full">
+                    <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                    Ouvir a rádio
+                  </button>
+                  <a
+                    href="https://zeno.fm/radio/jorge-solla-1313/"
+                    class="secondary-link safe-focus mt-2 justify-center"
+                    target="_blank"
+                    rel="noreferrer"
+                    >Abrir no Zeno</a
+                  >
+                  <p class="mt-2 text-center text-[11px] leading-4 text-black/50">
+                    O player só carrega depois do clique.
+                  </p>
+                </div>
+              </article>
+
+              <div class="mt-9">
+                <p
+                  class="campaign-section-eyebrow font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+                >
+                  Jingles oficiais
+                </p>
+                <h4 class="font-display mt-1 text-2xl font-black">Dê o play</h4>
+                <p class="mt-2 text-sm text-[#6c615e]">Um jingle toca por vez.</p>
+              </div>
+              <div class="mt-5">
+                <article class="jingle-card" data-jingle data-state="stopped">
+                  <!-- No port: next/image com fill; este wrapper relative + aspect-square é o contrato. -->
+                  <div class="cover-wrap">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                      alt="Capa do jingle Axé de Jorge Solla 1313"
+                    />
+                  </div>
+                  <div class="p-4">
+                    <div class="flex items-center gap-4">
+                      <button
+                        type="button"
+                        class="play-control safe-focus"
+                        data-play
+                        aria-label="Tocar jingle Axé"
+                        aria-pressed="false"
+                      >
+                        <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" />
+                        </svg>
+                        <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                        </svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="font-display truncate text-2xl leading-none font-black">Axé</h4>
+                        <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                        <p
+                          class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                        >
+                          <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5">
+                      <div class="progress-track"><div class="progress-value"></div></div>
+                      <div
+                        class="mt-2 flex justify-between text-[10px] font-bold tracking-wide text-black/50 uppercase"
+                      >
+                        <span>Tempo —:—</span><span>Duração —:—</span>
+                      </div>
+                    </div>
+                    <a
+                      href="#"
+                      class="download-control safe-focus mt-5 w-full"
+                      aria-label="Baixar Axé em MP3"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" />
+                      </svg>
+                      Baixar MP3
+                    </a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-axe.mp3
+                    </p>
+                  </div>
+                </article>
+              </div>
+              <p
+                class="mt-5 text-center text-[11px] font-bold tracking-wide text-[#6c615e] uppercase"
+              >
+                1 publicado · sem link “Ver todos”
+              </p>
+            </section>
+          </div>
+
+          <div
+            class="stage-shadow overflow-hidden rounded-[18px] border border-black/10 bg-[#fff8f2] px-7 py-10"
+          >
+            <section aria-label="Seção de som com dois jingles">
+              <div class="mx-auto max-w-xl text-center">
+                <p
+                  class="campaign-section-eyebrow font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+                >
+                  A trilha da nossa caminhada
+                </p>
+                <h3 class="campaign-section-title mt-2 font-black tracking-[-0.03em]">
+                  Cante, baixe e espalhe
+                </h3>
+              </div>
+              <article
+                class="radio-card mt-7 grid md:grid-cols-[190px_1fr]"
+                data-radio
+                data-radio-state="facade"
+              >
+                <div class="radio-art flex min-h-[220px] flex-col justify-between p-5 text-white">
+                  <span
+                    class="font-display w-fit rounded-full border border-white/30 bg-white/10 px-2.5 py-1 text-[9px] font-black tracking-[0.1em] uppercase"
+                    >Rádio online</span
+                  >
+                  <img
+                    src="../../public/campaign-kit/numero-negativo.png"
+                    alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                    class="w-[145px] self-center object-contain"
+                  />
+                  <div
+                    class="radio-wave flex h-5 items-center justify-center gap-1.5"
+                    aria-hidden="true"
+                  >
+                    <span class="h-2"></span><span class="h-4"></span><span class="h-3"></span
+                    ><span class="h-5"></span>
+                  </div>
+                </div>
+                <div class="radio-facade radio-state-panel flex flex-col justify-center p-6">
+                  <h4 class="font-display text-2xl font-black">Rádio Jorge Solla 1313</h4>
+                  <p class="mt-2 text-sm text-[#6c615e]">Clique para carregar o player oficial.</p>
+                  <div class="mt-4 flex flex-wrap items-center gap-5">
+                    <button type="button" class="primary-control safe-focus">
+                      <svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                      Ouvir a rádio
+                    </button>
+                    <a
+                      href="https://zeno.fm/radio/jorge-solla-1313/"
+                      class="secondary-link safe-focus"
+                      target="_blank"
+                      rel="noreferrer"
+                      >Abrir no Zeno</a
+                    >
+                  </div>
+                </div>
+              </article>
+
+              <div class="mt-9 flex items-end justify-between gap-5">
+                <div>
+                  <p
+                    class="campaign-section-eyebrow font-black tracking-[0.1em] text-[#a21c1c] uppercase"
+                  >
+                    Jingles oficiais
+                  </p>
+                  <h4 class="font-display mt-1 text-2xl font-black">
+                    Dê o play. O próximo ritmo é seu.
+                  </h4>
+                </div>
+                <span class="text-sm text-[#6c615e]">Um jingle toca por vez.</span>
+              </div>
+              <div class="mt-5 grid gap-6 md:grid-cols-3" data-player-group>
+                <article class="jingle-card" data-jingle data-state="stopped">
+                  <div class="cover-wrap">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                      alt="Capa do jingle Axé de Jorge Solla 1313"
+                    />
+                  </div>
+                  <div class="p-4">
+                    <div class="flex items-center gap-3">
+                      <button
+                        type="button"
+                        class="play-control safe-focus"
+                        data-play
+                        aria-label="Tocar jingle Axé"
+                        aria-pressed="false"
+                      >
+                        <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" /></svg
+                        ><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                        </svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="font-display truncate text-2xl leading-none font-black">Axé</h4>
+                        <p class="stopped-only mt-2 text-xs text-[#6c615e]">Pronto para tocar</p>
+                        <p
+                          class="playing-only mt-2 items-center gap-2 text-xs font-bold text-[#a21c1c]"
+                        >
+                          Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5">
+                      <div class="progress-track"><div class="progress-value"></div></div>
+                      <div
+                        class="mt-2 flex justify-between text-[10px] font-bold text-black/50 uppercase"
+                      >
+                        <span>—:—</span><span>—:—</span>
+                      </div>
+                    </div>
+                    <a href="#" class="download-control safe-focus mt-5 w-full"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" /></svg
+                      >Baixar MP3</a
+                    >
+                  </div>
+                </article>
+                <article class="jingle-card" data-jingle data-state="stopped">
+                  <div class="cover-wrap">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                      alt="Capa do jingle Forró de Jorge Solla 1313"
+                    />
+                  </div>
+                  <div class="p-4">
+                    <div class="flex items-center gap-3">
+                      <button
+                        type="button"
+                        class="play-control safe-focus"
+                        data-play
+                        aria-label="Tocar jingle Forró"
+                        aria-pressed="false"
+                      >
+                        <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" /></svg
+                        ><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                        </svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="font-display truncate text-2xl leading-none font-black">
+                          Forró
+                        </h4>
+                        <p class="stopped-only mt-2 text-xs text-[#6c615e]">Pronto para tocar</p>
+                        <p
+                          class="playing-only mt-2 items-center gap-2 text-xs font-bold text-[#a21c1c]"
+                        >
+                          Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5">
+                      <div class="progress-track"><div class="progress-value"></div></div>
+                      <div
+                        class="mt-2 flex justify-between text-[10px] font-bold text-black/50 uppercase"
+                      >
+                        <span>—:—</span><span>—:—</span>
+                      </div>
+                    </div>
+                    <a href="#" class="download-control safe-focus mt-5 w-full"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" /></svg
+                      >Baixar MP3</a
+                    >
+                  </div>
+                </article>
+              </div>
+              <p
+                class="mt-6 text-center text-[11px] font-bold tracking-wide text-[#6c615e] uppercase"
+              >
+                2 publicados · terceira coluna vazia · sem link “Ver todos”
+              </p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 07: ZERO JINGLES -->
       <section aria-labelledby="scene-empty" class="mb-12">
         <div class="mb-4">
           <p class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase">
-            Cena 05 · Zero jingles publicados
+            Cena 07 · Zero jingles publicados
           </p>
           <h2 id="scene-empty" class="font-display mt-1 text-xl font-black text-[#211b19]">
             Só a rádio permanece · sem grade e sem “Ver todos”
@@ -1408,7 +2129,7 @@
                 ><span class="h-6"></span><span class="h-4"></span>
               </div>
             </div>
-            <div class="radio-facade flex flex-col justify-center p-6 sm:p-8">
+            <div class="radio-facade radio-state-panel flex flex-col justify-center p-6 sm:p-8">
               <h4 class="font-display text-2xl font-black tracking-[-0.02em]">
                 Rádio Jorge Solla 1313
               </h4>
@@ -1429,8 +2150,32 @@
                 >
               </div>
             </div>
-            <div class="radio-loaded p-5 sm:p-7">
-              <div class="iframe-placeholder flex items-center justify-center p-4 text-center">
+            <div
+              class="radio-loading radio-state-panel flex flex-col justify-center p-6 sm:p-8"
+              role="status"
+              aria-live="polite"
+              aria-busy="true"
+            >
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h4 class="font-display text-2xl font-black">Rádio Jorge Solla 1313</h4>
+                  <p class="mt-3 text-sm font-bold">Carregando o player da rádio…</p>
+                  <p class="mt-1 text-xs text-[#6c615e]">Isso pode levar alguns segundos.</p>
+                </div>
+                <div class="radio-loading-spinner mt-1 flex-none" aria-hidden="true"></div>
+              </div>
+              <a
+                href="https://zeno.fm/radio/jorge-solla-1313/"
+                class="secondary-link safe-focus mt-4 w-fit text-sm"
+                target="_blank"
+                rel="noreferrer"
+                >Abrir no Zeno</a
+              >
+            </div>
+            <div class="radio-loaded radio-state-panel p-5 sm:p-7">
+              <div
+                class="iframe-placeholder radio-widget-slot flex items-center justify-center p-4 text-center"
+              >
                 <div>
                   <p
                     class="font-display text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase"
@@ -1450,6 +2195,14 @@
         <h2 class="font-display text-base font-black text-black">Notas do gate</h2>
         <ul class="mt-3 grid list-disc gap-2 pl-5 leading-6 sm:grid-cols-2 sm:gap-x-10">
           <li>Facade não contém iframe: zeno.fm só entra após “Ouvir a rádio”.</li>
+          <li>
+            Pós-clique: <code>loading</code> mantém logo, título e “Abrir no Zeno”; região e botão
+            usam <code>aria-busy="true"</code> até o <code>onLoad</code>.
+          </li>
+          <li>
+            <code>.radio-state-panel</code> reserva 260px no mobile e 300px no desktop; slot do
+            widget, 150px / 168px — sem salto entre facade, loading e loaded.
+          </li>
           <li>“Rádio online” identifica o canal sem afirmar status “ao vivo” não verificado.</li>
           <li>Cards, play de 56px, download de 44px, foco e progresso preservam o S21.</li>
           <li>
@@ -1457,6 +2210,23 @@
           </li>
           <li>
             Com zero publicados, nenhum card ou link de jingles é renderizado; a rádio permanece.
+          </li>
+          <li>
+            Com 1–2 publicados, a grade continua <code>md:grid-cols-3</code>, ocupa só as primeiras
+            colunas e não renderiza “Ver todos”; com 3 também não renderiza — o link exige &gt;3.
+          </li>
+          <li>
+            Capas portam para <code>next/image fill</code> no wrapper
+            <code>relative aspect-square</code>; mobile 390 nunca cria largura mínima nem overflow
+            horizontal.
+          </li>
+          <li>
+            Reusar tokens <code>[data-theme='campaign-site']</code>, shells
+            <code>campaign-section-eyebrow/title/copy</code> e o card do S21 classe a classe.
+          </li>
+          <li>
+            A wave é <code>aria-hidden</code>; <code>prefers-reduced-motion</code> remove sua
+            animação e a do spinner sem remover o affordance visual.
           </li>
           <li>Sem autoplay, captação de dados ou request de terceiro antes da ação explícita.</li>
         </ul>
@@ -1468,7 +2238,10 @@
       document.querySelectorAll('[data-load-radio]').forEach((button) => {
         button.addEventListener('click', () => {
           const card = button.closest('[data-radio]')
-          card.dataset.radioState = 'loaded'
+          // O artefato para em loading para deixá-lo inspecionável; a Cena 03 mostra o onLoad.
+          // Nenhum iframe/src é criado aqui: é somente apresentação, sem request de terceiro.
+          button.setAttribute('aria-busy', 'true')
+          card.dataset.radioState = 'loading'
         })
       })
 
