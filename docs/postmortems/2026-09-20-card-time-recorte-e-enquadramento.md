@@ -10,7 +10,7 @@
 | Severidade          | alta (funil público quebrado para o relator; enquadramento errado para todos os visitantes que usam o modelo time)  |
 | Ambiente            | prod (jorgessolla1313.com.br)                                                                                       |
 | Issue(s)            | sem Issue — relato do humano na sessão do worktree `fix/8` (o post-mortem é o registro, conforme a skill `bug-fix`) |
-| PR do fix           | este PR                                                                                                             |
+| PR do fix           | #1231                                                                                                               |
 | Detectado por       | humano (relato na sessão)                                                                                           |
 
 ## Timeline
