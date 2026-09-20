@@ -40,6 +40,9 @@ export const E2E_CURATED_SPECS = [
   // S19 — deliberate: the share-link OG/redirect contract is new and the
   // migration makes every PR of this delivery high-risk (curated only).
   'frontendShareLink',
+  // S21 — deliberate: the jingles page/player/download contract is new and the
+  // migration makes every PR of this delivery high-risk (curated only).
+  'frontendJingles',
 ]
 
 /**
@@ -88,6 +91,27 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/ShareLinkRedirect.tsx',
     ],
     specs: ['frontendShareLink'],
+  },
+  {
+    // S21 — the public jingles page: ordered published cards, the lazy
+    // in-page player (one at a time), the slug-based download name and the
+    // fail-closed publish contract of the collection.
+    prefixes: [
+      'src/app/(frontend)/jingles',
+      'src/lib/jingle',
+      'src/utilities/jingleReads.ts',
+      // The tag/revalidation vocabulary owner for the jingles listing.
+      'src/utilities/documents.ts',
+      'src/collections/Jingle.ts',
+      'src/components/jingles',
+    ],
+    specs: ['frontendJingles'],
+  },
+  {
+    // S21 — the campaign footer owns the conditional "Jingles" discovery link
+    // (it renders on the home, the cards page and `/jingles`).
+    prefixes: ['src/components/CampaignFooter.tsx'],
+    specs: ['frontend', 'frontendJingles'],
   },
   {
     // S13 — the personalized-cards studio lives in shared cards components and

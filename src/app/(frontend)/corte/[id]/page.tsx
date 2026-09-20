@@ -9,7 +9,7 @@ import { formatSpeechClock, formatSpeechDate } from '@/lib/speechClock'
 import { speechCutPublicPath } from '@/lib/speechCut'
 import { speechCoverUrl } from '@/lib/speechVod'
 import type { Media, Speech, SpeechCut } from '@/payload-types'
-import { getCachedDocumentById } from '@/utilities/documentReads'
+import { getCachedDocumentById, isNotFoundError } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
 import type { Metadata } from 'next'
@@ -17,15 +17,6 @@ import { notFound } from 'next/navigation'
 
 const MAX_DESCRIPTION_LENGTH = 200
 const CREDIT = 'Fonte: Câmara dos Deputados · CC BY 4.0'
-
-/**
- * `findByID` answers 404 for an unknown id; on the production (bundled) server
- * that error can cross a module boundary where `instanceof APIError` is false,
- * so the status is the contract — an unknown id is "not found" (renders 404),
- * anything else keeps failing loudly.
- */
-const isNotFoundError = (error: unknown): boolean =>
-  typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 404
 
 const parseCutId = (raw: string): number | null => {
   if (!/^\d+$/.test(raw)) return null

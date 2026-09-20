@@ -68,6 +68,9 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // S19 — deliberate: the share-link OG/redirect contract is new and the
       // migration makes every PR of this delivery high-risk (curated only).
       'frontendShareLink',
+      // S21 — deliberate: the jingles page/player/download contract is new and
+      // the migration makes every PR of this delivery high-risk (curated only).
+      'frontendJingles',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

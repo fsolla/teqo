@@ -10,9 +10,9 @@ import {
   isValidShareLinkSlug,
 } from '@/lib/shareLink'
 import { slugify } from '@/lib/slug'
-import { canManagePublishedContent, hasPayloadPanelAccess } from '@/utilities/campaignAccess'
+import { canManagePublishedContent, publishedOrPanelAccess } from '@/utilities/campaignAccess'
 import { revalidateShareLinksListing } from '@/utilities/documents'
-import type { Access, CollectionConfig, TextFieldSingleValidation } from 'payload'
+import type { CollectionConfig, TextFieldSingleValidation } from 'payload'
 
 /**
  * S19 — share links: `jorgesolla1313.com.br/<slug>` serves our own HTML with
@@ -20,9 +20,6 @@ import type { Access, CollectionConfig, TextFieldSingleValidation } from 'payloa
  * external destination. `published` is the kill switch (unchecked → 404);
  * anonymous reads fail closed through the `where` constraint.
  */
-const readShareLink: Access = ({ req }) =>
-  hasPayloadPanelAccess(req.user) ? true : { published: { equals: true } }
-
 const validateSlug: TextFieldSingleValidation = async (value, { req, id }) => {
   if (typeof value !== 'string' || !value) return SHARE_LINK_SLUG_INVALID_MESSAGE
   if (!isValidShareLinkSlug(value)) return SHARE_LINK_SLUG_INVALID_MESSAGE
@@ -66,7 +63,7 @@ export const ShareLink: CollectionConfig = {
       'Links curtos com miniatura personalizada para compartilhar no WhatsApp. O endereço é jorgesolla1313.com.br/<slug> e o clique leva direto ao destino.',
   },
   access: {
-    read: readShareLink,
+    read: publishedOrPanelAccess,
     create: canManagePublishedContent,
     update: canManagePublishedContent,
     delete: canManagePublishedContent,

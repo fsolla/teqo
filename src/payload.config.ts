@@ -23,6 +23,7 @@ import { ElectionCandidate } from './collections/ElectionCandidate'
 import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
 import { GoogleCalendarSync } from './collections/GoogleCalendarSync'
+import { Jingle } from './collections/Jingle'
 import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
 import { Municipality } from './collections/Municipality'
@@ -142,6 +143,7 @@ export default buildConfig({
     Post,
     Tag,
     ShareLink,
+    Jingle,
   ],
   globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy, CampaignGoals, SocialFeedSettings],
   editor: lexicalEditor(),

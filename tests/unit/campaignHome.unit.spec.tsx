@@ -35,6 +35,13 @@ vi.mock('@/utilities/campaignHomeTracking', () => ({
   getCampaignHomeMetaPixelId: async () => null,
 }))
 
+// S21 — the footer discovery flag reads the jingle listing through the Payload
+// DB + unstable_cache; the unit env has neither, and the discovery/kill-switch
+// behavior is e2e-covered (frontendJingles.e2e.spec.ts).
+vi.mock('@/utilities/jingleReads', () => ({
+  hasPublishedJingles: async () => false,
+}))
+
 // S14 — the card section renders the client studio island (next/font local
 // face + matchMedia + canvas); its behavior is e2e-covered, so the unit
 // skeleton mocks both the face module and the island.

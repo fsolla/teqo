@@ -108,6 +108,15 @@ export const payloadAdminOnly: Access = ({ req }) => isPayloadAdmin(req.user)
 /** Admin or editor — write access to public published content (`post`/`tag`/`media`). */
 export const canManagePublishedContent: Access = ({ req }) => hasPayloadPanelAccess(req.user)
 
+/**
+ * Read access for public content with a `published` kill switch (ShareLink,
+ * Jingle): the admin panel sees everything, anonymous reads only the published
+ * rows — the `where` is part of the access result, so a caller can never leak
+ * drafts by forgetting the filter.
+ */
+export const publishedOrPanelAccess: Access = ({ req }) =>
+  hasPayloadPanelAccess(req.user) ? true : { published: { equals: true } }
+
 export const isCampaignUser = (user: CampaignActor): user is CampaignUser =>
   user?.collection === 'campaignUser'
 

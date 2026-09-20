@@ -190,6 +190,15 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
+      // S21 — the jingles public page (cards, lazy player, download, kill
+      // switch). Owns its jingle rows only, so it serializes behind frontend
+      // in dev (shared dev-server boot) and runs parallel to it in prod.
+      name: 'frontendJingles',
+      testMatch: /frontendJingles\.e2e\.spec\.ts/,
+      dependencies: isProdMode ? [] : ['frontend'],
+      use: { ...devices['Desktop Chrome'], channel: 'chromium' },
+    },
+    {
       name: 'admin',
       testMatch: /admin\.e2e\.spec\.ts/,
       // Serialize behind `frontend` (and the S19 share-link spec) in BOTH modes:
