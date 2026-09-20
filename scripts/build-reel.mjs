@@ -20,7 +20,7 @@ import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import { readKitAssets } from './lib/campaignKitAssets.mjs'
+import { readImageDataUris, readKitAssets } from './lib/campaignKitAssets.mjs'
 import { dieWithLabel, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import {
   gotoReelSite,
@@ -61,11 +61,12 @@ import {
 } from './lib/reelScript.mjs'
 import { captureScenes, graphicScenes, loadShotList } from './lib/reelShotList.mjs'
 import {
-  captionOverlayHtml,
-  chromeOverlayHtml,
+  captureChromeHtml,
+  commandRailHtml,
   coverHtml,
   ctaHtml,
   hookHtml,
+  profileHtml,
 } from './lib/reelTemplates.mjs'
 import { captureScenePlan, graphicScenePlan, REEL, totalDurationMs } from './lib/reelTimeline.mjs'
 import { buildNarrationTrack, DEFAULT_TTS_VOICE, resolveEdgeTts } from './lib/reelTts.mjs'
@@ -143,6 +144,18 @@ const main = async () => {
   await mkdir(workDir, { recursive: true })
   await mkdir(outDir, { recursive: true })
   const assets = await readKitAssets({ root: ROOT })
+  if (graphicScenes(shotList).some((scene) => scene.template === 'profile')) {
+    Object.assign(
+      assets,
+      await readImageDataUris({
+        root: ROOT,
+        files: {
+          cardFrame: 'public/cards/photo-square-frame.png',
+          fixturePhoto: shotList.fixture.photo,
+        },
+      }),
+    )
+  }
   const browser = await launchReelBrowser()
   const plans = new Map()
   const graphics = new Map()
@@ -167,7 +180,7 @@ const main = async () => {
       }
     }
     const fontFaces = await extractFontFaces(page)
-    const actions = await runCaptureScenes({ page, shotList, log: [] })
+    const actions = await runCaptureScenes({ page, shotList, log: [], root: ROOT })
     const stats = await recorder.stop()
     if (stats.firstFrameWallMs === null)
       throw new Error('Nenhum frame foi gravado — o site não renderizou?')
@@ -208,23 +221,31 @@ const main = async () => {
       for (const scene of captureScenes(shotList)) {
         await renderOverlay({
           page: renderPage,
-          html: chromeOverlayHtml({ fontCss, badge: scene.badge, assets }),
+          html: captureChromeHtml({ assets }),
           output: join(workDir, `chrome-${scene.id}.png`),
         })
         await renderOverlay({
           page: renderPage,
-          html: captionOverlayHtml({ fontCss, caption: scene.caption }),
-          output: join(workDir, `caption-${scene.id}.png`),
+          html: commandRailHtml({ fontCss, badge: scene.badge, caption: scene.caption }),
+          output: join(workDir, `command-${scene.id}.png`),
         })
       }
       await renderCover({
         page: renderPage,
-        html: coverHtml({ fontCss, assets }),
+        html: coverHtml({ fontCss, assets, copy: shotList.graphics.cover }),
         output: join(outDir, 'capa.png'),
       })
+      const graphicHtmls = {
+        hook: hookHtml,
+        cta: ctaHtml,
+        profile: profileHtml,
+      }
       for (const scene of graphicScenes(shotList)) {
-        const html =
-          scene.template === 'hook' ? hookHtml({ fontCss, assets }) : ctaHtml({ fontCss, assets })
+        const html = graphicHtmls[scene.template]({
+          fontCss,
+          assets,
+          copy: shotList.graphics[scene.template],
+        })
         const graphic = await recordGraphicScene({
           context: renderContext,
           template: scene.template,
@@ -263,20 +284,16 @@ const main = async () => {
     const plan = plans.get(scene.id)
     const output = join(workDir, `clip-${scene.id}.mp4`)
     const input = scene.kind === 'capture' ? capturePath : graphics.get(scene.id)
-    const captions =
+    const overlays =
       scene.kind === 'capture'
-        ? plan.captions.map((window) => ({
-            path: join(workDir, `caption-${scene.id}.png`),
-            ...window,
-          }))
+        ? [
+            { path: join(workDir, `chrome-${scene.id}.png`), startMs: 0, endMs: plan.durationMs },
+            ...plan.captions.map((window) => ({
+              path: join(workDir, `command-${scene.id}.png`),
+              ...window,
+            })),
+          ]
         : []
-    if (scene.kind === 'capture') {
-      captions.unshift({
-        path: join(workDir, `chrome-${scene.id}.png`),
-        startMs: 0,
-        endMs: plan.durationMs,
-      })
-    }
     await runFfmpeg(
       ffmpeg.bin,
       buildSceneClipArgs({
@@ -285,7 +302,7 @@ const main = async () => {
         startMs: plan.startMs,
         durationMs: plan.durationMs,
         zoom: plan.zoom,
-        captions,
+        captions: overlays,
         fadeInMs: scene.id === firstScene ? FADE_IN_MS : 0,
         fadeOutMs: scene.id === lastScene ? FADE_OUT_MS : 0,
         fps: REEL.fps,

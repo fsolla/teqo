@@ -10,12 +10,37 @@ import {
 // C196 — the shot list is the single source of truth of a reel: the schema is
 // fail-closed and the hash identifies the rendered version (C195 ingests by it).
 
+const rawGraphics = (overrides: Record<string, unknown> = {}) => ({
+  hook: {
+    eyebrow: 'FAÇA PARTE',
+    headlineLines: ['Seu apoio', 'vira card'],
+    accentIndex: 1,
+    sub: 'Veja como criar o seu pelo celular.',
+  },
+  cta: {
+    eyebrow: 'Seu card, sua voz',
+    headlineLines: ['Agora é', 'com você.'],
+    actionLines: ['Acesse o site pelo', 'link na bio'],
+    sub: 'Escolha seu modelo, crie e compartilhe.',
+    url: 'jorgesolla1313.com.br',
+  },
+  cover: {
+    eyebrow: 'TUTORIAL DO SITE',
+    headlineLines: ['Crie seu', 'card de', 'apoio.'],
+    accentIndex: 2,
+    sub: 'Seu nome ou sua foto, direto pelo celular.',
+    tag: '#cards',
+  },
+  ...overrides,
+})
+
 const rawShotList = (overrides: Record<string, unknown> = {}) => ({
   slug: 'cards',
   title: 'Crie seu card de apoio',
   feature: 'cards',
   route: '/',
   fixture: { cardName: 'Joana' },
+  graphics: rawGraphics(),
   scenes: [
     { id: 'hook', kind: 'graphic', template: 'hook', durationMs: 2400 },
     {
@@ -117,6 +142,161 @@ describe('reelShotList', () => {
       steps: [{ action: 'fill', selector: 'role=textbox[name="Seu nome"]' }],
     }
     expect(() => normalizeShotList({ ...withoutFixture, scenes })).toThrow(/fixture.cardName/)
+  })
+
+  const withUpload = (step: Record<string, unknown>, overrides: Record<string, unknown> = {}) => {
+    const base = rawShotList(overrides)
+    const scenes = (base.scenes as Array<Record<string, unknown>>).slice()
+    scenes[1] = { ...scenes[1], steps: [step] }
+    return { ...base, scenes }
+  }
+
+  it('normalizes an upload step with the fixture.photo fallback', () => {
+    const shotList = normalizeShotList(
+      withUpload(
+        { action: 'upload', selector: 'role=button[name="Escolher foto"]' },
+        { fixture: { photo: 'scripts/reels/fixtures/profile-photo.png' } },
+      ),
+    )
+    const step = captureScenes(shotList)[0].steps[0]
+    expect(step.action).toBe('upload')
+    expect(step.value).toBeUndefined()
+  })
+
+  it('accepts an inline upload value and hashes the fixture photo', () => {
+    const inline = normalizeShotList(
+      withUpload({
+        action: 'upload',
+        selector: '#foto',
+        value: 'scripts/reels/fixtures/a.png',
+      }),
+    )
+    expect(captureScenes(inline)[0].steps[0].value).toBe('scripts/reels/fixtures/a.png')
+
+    const photoA = normalizeShotList(
+      withUpload(
+        { action: 'upload', selector: '#foto' },
+        { fixture: { photo: 'scripts/reels/fixtures/profile-photo.png' } },
+      ),
+    )
+    const photoB = normalizeShotList(
+      withUpload(
+        { action: 'upload', selector: '#foto' },
+        { fixture: { photo: 'scripts/reels/fixtures/outra.png' } },
+      ),
+    )
+    expect(shotListHash(photoA)).not.toBe(shotListHash(photoB))
+  })
+
+  it('requires fixture.photo when an upload step has no value', () => {
+    expect(() =>
+      normalizeShotList(withUpload({ action: 'upload', selector: '#foto' }, { fixture: {} })),
+    ).toThrow(/fixture.photo/)
+  })
+
+  it('requires the copy of every used graphic template', () => {
+    const graphics = rawGraphics()
+    delete (graphics as Record<string, unknown>).cover
+    expect(() => normalizeShotList(rawShotList({ graphics }))).toThrow(/graphics.cover/)
+    const unknown = rawGraphics({ banner: { eyebrow: 'x', headlineLines: ['y'] } })
+    expect(() => normalizeShotList(rawShotList({ graphics: unknown }))).toThrow(
+      /graphics.banner não é um template válido/,
+    )
+  })
+
+  it('normalizes the graphic copy and validates the accent line', () => {
+    const shotList = normalizeShotList(rawShotList())
+    expect(shotList.graphics.hook).toMatchObject({
+      eyebrow: 'FAÇA PARTE',
+      headlineLines: ['Seu apoio', 'vira card'],
+      accentIndex: 1,
+    })
+    expect(shotList.graphics.cta.actionLines).toEqual(['Acesse o site pelo', 'link na bio'])
+
+    const graphics = rawGraphics({
+      hook: { eyebrow: 'x', headlineLines: ['uma linha'], accentIndex: 2 },
+    })
+    expect(() => normalizeShotList(rawShotList({ graphics }))).toThrow(/accentIndex/)
+
+    const first = normalizeShotList(rawShotList())
+    const changed = normalizeShotList(
+      rawShotList({
+        graphics: rawGraphics({
+          hook: {
+            eyebrow: 'FAÇA PARTE',
+            headlineLines: ['Seu apoio', 'vira vídeo'],
+            accentIndex: 1,
+            sub: 'Veja como criar o seu pelo celular.',
+          },
+        }),
+      }),
+    )
+    expect(shotListHash(changed)).not.toBe(shotListHash(first))
+  })
+
+  it('accepts a label-only badge and a swipe distance', () => {
+    const base = rawShotList()
+    const scenes = (base.scenes as Array<Record<string, unknown>>).slice()
+    scenes[1] = {
+      ...scenes[1],
+      badge: { label: 'COMECE' },
+      steps: [{ action: 'swipe', selector: '#track', distance: 300 }],
+    }
+    const shotList = normalizeShotList({ ...base, scenes })
+    expect(captureScenes(shotList)[0].badge).toEqual({ label: 'COMECE' })
+    expect(captureScenes(shotList)[0].steps[0].distance).toBe(300)
+
+    const invalid = (base.scenes as Array<Record<string, unknown>>).slice()
+    invalid[1] = { ...invalid[1], steps: [{ action: 'click', selector: '#a', distance: 300 }] }
+    expect(() => normalizeShotList({ ...base, scenes: invalid })).toThrow(/distance/)
+  })
+
+  it('requires fixture.photo for the profile scene and normalizes its copy', () => {
+    const profileCopy = {
+      eyebrow: 'PASSO FINAL',
+      headlineLines: ['Use a arte', 'no seu perfil.'],
+      instruction: 'Escolha a imagem baixada como nova foto de perfil.',
+      apps: ['Instagram', 'WhatsApp'],
+    }
+    const graphics = rawGraphics({ profile: profileCopy })
+    const profileScene = {
+      id: 'profile',
+      kind: 'graphic',
+      template: 'profile',
+      durationMs: 4000,
+    }
+    const withoutPhoto = rawShotList({ graphics, fixture: {} })
+    const withoutScenes = (withoutPhoto.scenes as Array<Record<string, unknown>>).slice()
+    withoutScenes.splice(1, 0, profileScene)
+    expect(() => normalizeShotList({ ...withoutPhoto, scenes: withoutScenes })).toThrow(
+      /fixture.photo/,
+    )
+
+    const withPhoto = rawShotList({
+      graphics,
+      fixture: { photo: 'scripts/reels/fixtures/profile-photo.png' },
+    })
+    const withScenes = (withPhoto.scenes as Array<Record<string, unknown>>).slice()
+    withScenes.splice(1, 0, profileScene)
+    const shotList = normalizeShotList({ ...withPhoto, scenes: withScenes })
+    expect(graphicScenes(shotList).map((scene: { template: string }) => scene.template)).toEqual([
+      'hook',
+      'profile',
+      'cta',
+    ])
+    expect(shotList.graphics.profile).toMatchObject({
+      accentIndex: null,
+      apps: ['Instagram', 'WhatsApp'],
+    })
+  })
+
+  it('rejects value on an action that takes no value', () => {
+    const scenes = (rawShotList().scenes as Array<Record<string, unknown>>).slice()
+    scenes[1] = {
+      ...scenes[1],
+      steps: [{ action: 'click', selector: '#a', value: 'não' }],
+    }
+    expect(() => normalizeShotList({ ...rawShotList(), scenes })).toThrow(/value só é válido/)
   })
 
   it('normalizes the narration and preserves the authored caption spacing', () => {

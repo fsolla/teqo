@@ -1,0 +1,1544 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design revisado — Reel foto de perfil</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--cream);
+        --color-foreground: #111111;
+        --color-primary: var(--red);
+        --color-primary-foreground: #ffffff;
+        --color-muted: #ebe9e9;
+        --color-muted-foreground: #6c615e;
+        --color-border: rgb(0 0 0 / 12%);
+      }
+    </style>
+    <style>
+      @font-face {
+        font-family: ArtifactBrexter;
+        src: url('../../src/app/(frontend)/fonts/Brexter-Bold.ttf') format('truetype');
+        font-weight: 700;
+        font-display: swap;
+      }
+      :root {
+        --red: #e4102f;
+        --blue: #184e92;
+        --yellow: #ffeb00;
+        --green: #009647;
+        --cream: #fff8f2;
+        --ink: #111111;
+        --muted: #6c615e;
+        --line: rgb(0 0 0 / 12%);
+        --shadow: 0 22px 62px rgb(71 19 14 / 18%);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .artifact-grid {
+        background-color: #ebe9e9;
+        background-image: radial-gradient(rgb(71 19 14 / 10%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .brexter {
+        font-family: ArtifactBrexter, Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+      .reel-frame {
+        position: relative;
+        width: 360px;
+        height: 640px;
+        flex: 0 0 360px;
+        overflow: hidden;
+        border-radius: 22px;
+        background: var(--cream);
+        box-shadow: var(--shadow);
+        border: 1px solid rgb(0 0 0 / 14%);
+      }
+      .kit-asset {
+        display: block;
+        height: auto;
+        object-fit: contain;
+      }
+      .pattern-wash {
+        position: absolute;
+        inset: 0 0 auto;
+        width: 360px;
+        height: 540px;
+        object-fit: cover;
+        object-position: top center;
+        opacity: 0.16;
+        pointer-events: none;
+      }
+      .official-mark {
+        position: absolute;
+        display: block;
+        height: auto;
+      }
+
+      /* Revised capture chrome — one quiet rail, never a central caption card. */
+      .capture-brand-cap {
+        position: absolute;
+        z-index: 20;
+        inset: 0 0 auto;
+        height: 38px;
+        background: linear-gradient(90deg, var(--red) 0 78%, var(--blue) 100%);
+        border-bottom: 2px solid var(--yellow);
+        box-shadow: 0 4px 12px rgb(0 0 0 / 14%);
+      }
+      .capture-brand-cap img {
+        position: absolute;
+        right: 16px;
+        top: 7px;
+        width: 86px;
+        height: auto;
+      }
+      .command-rail {
+        position: absolute;
+        z-index: 24;
+        left: 16px;
+        top: 88px;
+        width: 328px;
+        min-height: 50px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 10px;
+        padding: 8px 12px 8px 8px;
+        border: 1px solid rgb(0 0 0 / 10%);
+        border-left: 4px solid var(--red);
+        border-radius: 12px;
+        background: rgb(255 255 255 / 96%);
+        box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+        color: var(--ink);
+      }
+      .step-badge {
+        display: grid;
+        width: 34px;
+        height: 34px;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--yellow);
+        color: #000;
+        font-size: 11px;
+        font-weight: 900;
+        line-height: 1;
+        box-shadow: inset 0 0 0 1px rgb(0 0 0 / 8%);
+      }
+      .step-badge--label {
+        width: auto;
+        min-width: 70px;
+        border-radius: 999px;
+        padding: 0 10px;
+      }
+      .command-copy {
+        margin: 0;
+        max-width: 258px;
+        font-size: 12.5px;
+        font-weight: 750;
+        line-height: 1.2;
+        letter-spacing: -0.01em;
+      }
+      .command-copy strong {
+        color: #a21c1c;
+        font-weight: 900;
+      }
+      .site-mock {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        background: #fffaf6;
+        color: #171717;
+      }
+      .site-header {
+        height: 56px;
+        background: #a21c1c;
+      }
+      .site-copy {
+        position: absolute;
+        top: 158px;
+        left: 24px;
+        right: 24px;
+        text-align: center;
+      }
+      .site-gallery {
+        position: absolute;
+        top: 285px;
+        left: 22px;
+        display: flex;
+        gap: 14px;
+        width: 540px;
+      }
+      .site-tile {
+        width: 246px;
+        padding: 10px;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid var(--line);
+      }
+      .site-drawer {
+        position: absolute;
+        inset: 58px 0 0;
+        border-radius: 22px 22px 0 0;
+        background: #fff;
+        box-shadow: 0 -12px 40px rgb(0 0 0 / 18%);
+      }
+      .card-preview {
+        position: relative;
+        overflow: hidden;
+        background: #dfe9f0;
+      }
+      .card-preview > img:first-child {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .card-preview > img:last-child {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: fill;
+      }
+
+      /* Graphic scene: hook. */
+      .hook-scene {
+        background: linear-gradient(156deg, var(--red) 0 68%, var(--blue) 145%);
+      }
+      .hook-illustration {
+        position: absolute;
+        right: -30px;
+        top: 58px;
+        width: 154px;
+        opacity: 0.98;
+      }
+      .hook-copy {
+        position: absolute;
+        left: 22px;
+        right: 20px;
+        top: 94px;
+        color: #fff;
+      }
+      .hook-eyebrow {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 6px 12px;
+        background: var(--yellow);
+        color: #000;
+        font-size: 10.5px;
+        font-weight: 900;
+        letter-spacing: 0.06em;
+      }
+      .hook-title {
+        width: 310px;
+        margin: 24px 0 0;
+        font-size: 40px;
+        line-height: 0.88;
+        letter-spacing: -0.035em;
+      }
+      .hook-sub {
+        width: 205px;
+        margin: 20px 0 0;
+        font-size: 14px;
+        line-height: 1.3;
+        font-weight: 650;
+      }
+
+      /* Graphic scene: profile handoff. Class names are the port contract. */
+      .profile-scene {
+        background: linear-gradient(180deg, #fff8f2 0%, #fff 72%, #f3f6fb 100%);
+      }
+      .profile-scene::before {
+        content: '';
+        position: absolute;
+        inset: 0 0 auto;
+        height: 64px;
+        background: var(--red);
+        border-bottom: 4px solid var(--yellow);
+      }
+      .profile-brand {
+        position: absolute;
+        z-index: 3;
+        right: 18px;
+        top: 16px;
+        width: 95px;
+      }
+      .profile-heading {
+        position: absolute;
+        z-index: 3;
+        left: 22px;
+        right: 22px;
+        top: 88px;
+        text-align: center;
+      }
+      .profile-eyebrow {
+        color: var(--red);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .profile-title {
+        margin-top: 5px;
+        color: var(--blue);
+        font-size: 27px;
+        line-height: 0.92;
+        letter-spacing: -0.02em;
+      }
+      .profile-phones {
+        position: absolute;
+        left: 18px;
+        right: 18px;
+        top: 176px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      .profile-phone {
+        position: relative;
+        height: 226px;
+        overflow: hidden;
+        border: 1px solid rgb(0 0 0 / 12%);
+        border-radius: 22px;
+        background: #fff;
+        box-shadow: 0 12px 30px rgb(24 78 146 / 13%);
+      }
+      .profile-phone__top {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid var(--line);
+        font-size: 11px;
+        font-weight: 850;
+      }
+      .profile-phone--ig .profile-phone__top {
+        color: #9d174d;
+      }
+      .profile-phone--wa .profile-phone__top {
+        color: #087a3f;
+      }
+      .profile-avatar-shell {
+        position: absolute;
+        left: 50%;
+        top: 58px;
+        width: 82px;
+        height: 82px;
+        transform: translateX(-50%);
+        border-radius: 50%;
+        padding: 4px;
+        background: linear-gradient(135deg, var(--red), var(--yellow), var(--green));
+      }
+      .profile-phone--wa .profile-avatar-shell {
+        background: #d9f6e5;
+      }
+      .profile-avatar {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        background: #e7eaee;
+      }
+      .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(0.72);
+        opacity: 0.58;
+      }
+      .profile-handle {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        top: 151px;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 850;
+      }
+      .profile-lines {
+        position: absolute;
+        left: 34px;
+        right: 34px;
+        top: 172px;
+        display: grid;
+        gap: 6px;
+      }
+      .profile-lines span {
+        height: 5px;
+        border-radius: 999px;
+        background: #e7e7e7;
+      }
+      .profile-lines span:last-child {
+        margin-inline: 11px;
+      }
+      .profile-card {
+        position: absolute;
+        z-index: 10;
+        left: 145px;
+        top: 330px;
+        width: 70px;
+        height: 70px;
+        overflow: hidden;
+        border: 3px solid #fff;
+        border-radius: 12px;
+        background: #dfe9f0;
+        box-shadow: 0 10px 24px rgb(0 0 0 / 24%);
+        opacity: 0;
+      }
+      .profile-card__photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .profile-card__frame {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .profile-check {
+        position: absolute;
+        z-index: 12;
+        top: 344px;
+        display: grid;
+        width: 28px;
+        height: 28px;
+        place-items: center;
+        border: 3px solid #fff;
+        border-radius: 50%;
+        background: var(--green);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 900;
+        opacity: 0;
+        transform: scale(0.65);
+      }
+      .profile-check--ig {
+        left: 118px;
+      }
+      .profile-check--wa {
+        right: 34px;
+      }
+      .profile-footnote {
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        top: 370px;
+        text-align: center;
+        color: var(--blue);
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      @keyframes profile-heading-in {
+        0% {
+          opacity: 0;
+          transform: translateY(12px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes profile-phones-in {
+        0% {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes profile-to-instagram {
+        0%,
+        12% {
+          opacity: 0;
+          transform: translate(0, 12px) scale(0.88);
+          border-radius: 12px;
+        }
+        24% {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+          border-radius: 12px;
+        }
+        62%,
+        100% {
+          opacity: 1;
+          transform: translate(-87px, -100px) scale(1.06);
+          border-radius: 50%;
+        }
+      }
+      @keyframes profile-to-whatsapp {
+        0%,
+        46% {
+          opacity: 0;
+          transform: translate(0, 12px) scale(0.88);
+          border-radius: 12px;
+        }
+        58% {
+          opacity: 1;
+          transform: translate(0, 0) scale(1);
+          border-radius: 12px;
+        }
+        88%,
+        100% {
+          opacity: 1;
+          transform: translate(87px, -100px) scale(1.06);
+          border-radius: 50%;
+        }
+      }
+      @keyframes profile-check-in {
+        0%,
+        78% {
+          opacity: 0;
+          transform: scale(0.65);
+        }
+        88% {
+          opacity: 1;
+          transform: scale(1.15);
+        }
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+      @keyframes profile-done-pulse {
+        0%,
+        85%,
+        100% {
+          box-shadow: 0 12px 30px rgb(24 78 146 / 13%);
+        }
+        92% {
+          box-shadow:
+            0 0 0 4px rgb(255 235 0 / 65%),
+            0 12px 30px rgb(24 78 146 / 13%);
+        }
+      }
+      .play .profile-heading {
+        animation: profile-heading-in 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      }
+      .play .profile-phones {
+        animation: profile-phones-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s both;
+      }
+      .play .profile-card--ig {
+        animation: profile-to-instagram 2.15s cubic-bezier(0.2, 0.7, 0.2, 1) 0.55s both;
+      }
+      .play .profile-card--wa {
+        animation: profile-to-whatsapp 2.9s cubic-bezier(0.2, 0.7, 0.2, 1) 0.55s both;
+      }
+      .play .profile-check {
+        animation: profile-check-in 3.35s cubic-bezier(0.2, 0.8, 0.2, 1) 0.35s both;
+      }
+      .play .profile-phone {
+        animation: profile-done-pulse 4s ease-out both;
+      }
+
+      /* Graphic scene: CTA. */
+      .cta-scene {
+        background: var(--cream);
+      }
+      .cta-red {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 306px;
+        overflow: hidden;
+        background: var(--red);
+      }
+      .cta-punho {
+        position: absolute;
+        left: -38px;
+        top: 42px;
+        width: 180px;
+        opacity: 0.98;
+      }
+      .cta-copy {
+        position: absolute;
+        left: 132px;
+        right: 20px;
+        top: 90px;
+        color: #fff;
+        text-align: left;
+      }
+      .cta-copy p {
+        margin: 0;
+        color: var(--yellow);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .cta-copy h3 {
+        margin: 10px 0 0;
+        font-size: 36px;
+        line-height: 0.88;
+        letter-spacing: -0.025em;
+      }
+      .cta-card {
+        position: absolute;
+        left: 22px;
+        right: 22px;
+        top: 328px;
+        padding: 20px 18px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: #fff;
+        text-align: center;
+        box-shadow: 0 14px 36px rgb(71 19 14 / 14%);
+      }
+      .cta-card__eyebrow {
+        color: var(--red);
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .cta-card__action {
+        margin-top: 5px;
+        color: var(--blue);
+        font-size: 29px;
+        line-height: 0.95;
+      }
+      .cta-card__sub {
+        margin-top: 8px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.35;
+      }
+      .cta-url {
+        position: absolute;
+        left: 22px;
+        bottom: 30px;
+        color: var(--blue);
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      /* Cover. */
+      .cover-scene {
+        background: linear-gradient(156deg, var(--red) 0 72%, var(--blue) 155%);
+      }
+      .cover-copy {
+        position: absolute;
+        left: 24px;
+        right: 20px;
+        top: 132px;
+        color: #fff;
+      }
+      .cover-copy h3 {
+        margin: 24px 0 0;
+        font-size: 44px;
+        line-height: 0.86;
+        letter-spacing: -0.035em;
+      }
+      .cover-copy p {
+        width: 232px;
+        margin: 20px 0 0;
+        font-size: 13px;
+        line-height: 1.3;
+        font-weight: 650;
+      }
+
+      @media (max-width: 760px) {
+        .reel-frame {
+          transform-origin: top left;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .play * {
+          animation-duration: 0.01ms !important;
+          animation-delay: 0ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="artifact-grid min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1500px] px-4 py-10 md:px-8 md:py-14">
+      <header class="max-w-5xl">
+        <div class="flex flex-wrap gap-2">
+          <span class="rounded-full bg-(--red) px-3 py-1 text-xs font-bold text-white"
+            >REVISÃO DO GATE</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
+            >foto-de-perfil</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
+            >360 × 640 CSS · @3x</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-semibold"
+            >8 cenas · ~25s</span
+          >
+        </div>
+        <h1 class="mt-5 text-3xl font-semibold tracking-tight md:text-4xl">
+          A tela não salta: ela conduz.
+        </h1>
+        <p class="mt-3 max-w-4xl text-sm leading-6 text-muted-foreground">
+          Extensão do design aprovado da família em <code>reels-tutoriais-ui-design.html</code>.
+          Esta revisão troca a abertura genérica por copy de foto de perfil, mostra a chegada à
+          home, o scroll e o swipe da galeria, cria uma ponte visual até Instagram/WhatsApp e reduz
+          os comandos a um único trilho no topo. Nenhum lockup foi redesenhado: marca e ilustrações
+          vêm do kit oficial.
+        </p>
+        <nav class="mt-5 flex flex-wrap gap-2 text-xs font-semibold">
+          <a href="#keyframes" class="rounded-full bg-white px-3 py-2 ring-1 ring-black/10"
+            >Frames-chave</a
+          >
+          <a href="#sequencia" class="rounded-full bg-white px-3 py-2 ring-1 ring-black/10"
+            >8 cenas</a
+          >
+          <a href="#profile-spec" class="rounded-full bg-white px-3 py-2 ring-1 ring-black/10"
+            >Cena profile</a
+          >
+          <a href="#copy" class="rounded-full bg-white px-3 py-2 ring-1 ring-black/10"
+            >Copy variável</a
+          >
+          <a href="#port" class="rounded-full bg-white px-3 py-2 ring-1 ring-black/10"
+            >Port classe-a-classe</a
+          >
+          <a href="#aceite" class="rounded-full bg-white px-3 py-2 ring-1 ring-black/10"
+            >Aceite visual</a
+          >
+        </nav>
+      </header>
+
+      <section id="keyframes" class="mt-16" aria-labelledby="keyframes-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">01 · SUPERFÍCIE REVISADA</p>
+        <h2 id="keyframes-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          Quatro frames que definem o reel
+        </h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+          Hook e fechamento usam ilustrações oficiais em escala grande, nunca uma estrela solta como
+          selo. A captura mantém o produto visível. A cena profile conclui o trabalho que o site
+          começou.
+        </p>
+        <div class="mt-7 flex gap-8 overflow-x-auto pb-8">
+          <!-- HOOK -->
+          <article class="w-[360px] shrink-0">
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-bold">01 · Hook</p>
+                <p class="text-xs text-muted-foreground">0–2,6s</p>
+              </div>
+              <span class="rounded-full bg-black px-2 py-1 text-[10px] font-bold text-white"
+                >GRÁFICA</span
+              >
+            </div>
+            <div class="reel-frame hook-scene">
+              <img class="pattern-wash" src="../../public/campaign-kit/pattern-shapes.png" alt="" />
+              <img
+                class="kit-asset hook-illustration"
+                src="../../public/campaign-kit/coração.png"
+                alt="Ilustração oficial de coração com pulso"
+              />
+              <div class="hook-copy">
+                <span class="hook-eyebrow">TUTORIAL · FOTO DE PERFIL</span>
+                <h3 class="brexter hook-title">
+                  Sua foto<br />com a moldura<br /><span style="color: var(--yellow)"
+                    >do Solla.</span
+                  >
+                </h3>
+                <p class="hook-sub">
+                  Veja como fazer pelo celular e usar no Instagram ou WhatsApp.
+                </p>
+              </div>
+              <img
+                class="official-mark"
+                style="left: 204px; top: 498px; width: 134px"
+                src="../../public/campaign-kit/marca-negativa-completa.png"
+                alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+              />
+            </div>
+            <p class="mt-3 text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Correção:</strong> o tema aparece na primeira frase.
+              Pattern + coração são ilustrações do kit; a única assinatura é a marca completa
+              oficial.
+            </p>
+          </article>
+
+          <!-- CAPTURE -->
+          <article class="w-[360px] shrink-0">
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-bold">03 · Galeria</p>
+                <p class="text-xs text-muted-foreground">swipe → tile → drawer</p>
+              </div>
+              <span class="rounded-full bg-(--yellow) px-2 py-1 text-[10px] font-black"
+                >CAPTURA</span
+              >
+            </div>
+            <div class="reel-frame">
+              <div class="site-mock">
+                <div class="site-header"></div>
+                <div class="site-copy">
+                  <p
+                    style="
+                      margin: 0;
+                      color: #a21c1c;
+                      font-size: 10px;
+                      font-weight: 900;
+                      letter-spacing: 0.1em;
+                    "
+                  >
+                    FAÇA PARTE
+                  </p>
+                  <h3 style="margin: 4px 0 0; font-size: 24px; line-height: 1; font-weight: 900">
+                    Mostre que você<br />está com Solla
+                  </h3>
+                  <p
+                    style="
+                      margin: 8px auto 0;
+                      max-width: 290px;
+                      color: #6c615e;
+                      font-size: 12px;
+                      line-height: 1.35;
+                    "
+                  >
+                    Escolha um modelo, coloque seu nome ou sua foto e baixe seu card.
+                  </p>
+                </div>
+                <div class="site-gallery" style="transform: translateX(-204px)">
+                  <div class="site-tile">
+                    <div style="height: 200px; border-radius: 10px; background: #d7d3d0"></div>
+                    <p
+                      style="
+                        margin: 10px 0 2px;
+                        text-align: center;
+                        font-size: 13px;
+                        font-weight: 800;
+                      "
+                    >
+                      Card com seu nome
+                    </p>
+                  </div>
+                  <div class="site-tile" style="box-shadow: 0 0 0 3px var(--yellow)">
+                    <div class="card-preview" style="height: 200px; border-radius: 10px">
+                      <img
+                        src="../../scripts/reels/fixtures/profile-photo.png"
+                        alt="Foto ilustrada de exemplo"
+                      />
+                      <img src="../../public/cards/photo-square-frame.png" alt="" />
+                    </div>
+                    <p
+                      style="
+                        margin: 10px 0 2px;
+                        text-align: center;
+                        font-size: 13px;
+                        font-weight: 900;
+                      "
+                    >
+                      Moldura quadrada
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div class="capture-brand-cap">
+                <img
+                  src="../../public/campaign-kit/jorge-solla-negativo.png"
+                  alt="Jorge Solla — Deputado Federal"
+                />
+              </div>
+              <div class="command-rail">
+                <span class="step-badge">1/4</span>
+                <p class="command-copy">Deslize e toque em <strong>“Moldura quadrada”</strong>.</p>
+              </div>
+            </div>
+            <p class="mt-3 text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Correção:</strong> badge e comando viram um só trilho
+              a y=88. Sem caixa preta no centro; foto, moldura e botão permanecem descobertos.
+            </p>
+          </article>
+
+          <!-- PROFILE -->
+          <article class="w-[360px] shrink-0">
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-bold">07 · Profile</p>
+                <p class="text-xs text-muted-foreground">~4s · clique para repetir</p>
+              </div>
+              <button
+                id="play-profile"
+                class="rounded-full bg-(--blue) px-3 py-1 text-[10px] font-black text-white"
+              >
+                REPLAY
+              </button>
+            </div>
+            <div id="profile-demo" class="reel-frame profile-scene play">
+              <img
+                class="kit-asset profile-brand"
+                src="../../public/campaign-kit/jorge-solla-negativo.png"
+                alt="Jorge Solla — Deputado Federal"
+              />
+              <div class="profile-heading">
+                <p class="profile-eyebrow">PASSO FINAL</p>
+                <h3 class="brexter profile-title">Use a arte<br />no seu perfil.</h3>
+              </div>
+              <div class="profile-phones">
+                <div class="profile-phone profile-phone--ig">
+                  <div class="profile-phone__top">Instagram</div>
+                  <div class="profile-avatar-shell">
+                    <div class="profile-avatar">
+                      <img
+                        src="../../scripts/reels/fixtures/profile-photo.png"
+                        alt="Avatar anterior"
+                      />
+                    </div>
+                  </div>
+                  <p class="profile-handle">@seuperfil</p>
+                  <div class="profile-lines"><span></span><span></span></div>
+                </div>
+                <div class="profile-phone profile-phone--wa">
+                  <div class="profile-phone__top">WhatsApp</div>
+                  <div class="profile-avatar-shell">
+                    <div class="profile-avatar">
+                      <img
+                        src="../../scripts/reels/fixtures/profile-photo.png"
+                        alt="Avatar anterior"
+                      />
+                    </div>
+                  </div>
+                  <p class="profile-handle">Seu perfil</p>
+                  <div class="profile-lines"><span></span><span></span></div>
+                </div>
+              </div>
+              <div class="profile-card profile-card--ig" aria-hidden="true">
+                <img
+                  class="profile-card__photo"
+                  src="../../scripts/reels/fixtures/profile-photo.png"
+                  alt=""
+                /><img
+                  class="profile-card__frame"
+                  src="../../public/cards/photo-square-frame.png"
+                  alt=""
+                />
+              </div>
+              <div class="profile-card profile-card--wa" aria-hidden="true">
+                <img
+                  class="profile-card__photo"
+                  src="../../scripts/reels/fixtures/profile-photo.png"
+                  alt=""
+                /><img
+                  class="profile-card__frame"
+                  src="../../public/cards/photo-square-frame.png"
+                  alt=""
+                />
+              </div>
+              <span class="profile-check profile-check--ig">✓</span
+              ><span class="profile-check profile-check--wa">✓</span>
+              <p class="profile-footnote">Escolha a imagem baixada como nova foto de perfil.</p>
+            </div>
+            <p class="mt-3 text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Leitura:</strong> a própria arte baixada viaja para os
+              dois avatares. Mock genérico, sem rede e sem imitar telas proprietárias em detalhe.
+            </p>
+          </article>
+
+          <!-- CTA -->
+          <article class="w-[360px] shrink-0">
+            <div class="mb-3 flex items-end justify-between">
+              <div>
+                <p class="text-sm font-bold">08 · CTA</p>
+                <p class="text-xs text-muted-foreground">últimos 3s</p>
+              </div>
+              <span class="rounded-full bg-black px-2 py-1 text-[10px] font-bold text-white"
+                >GRÁFICA</span
+              >
+            </div>
+            <div class="reel-frame cta-scene">
+              <div class="cta-red">
+                <img
+                  class="kit-asset cta-punho"
+                  src="../../public/campaign-kit/punho.png"
+                  alt="Ilustração oficial de punho erguido"
+                />
+              </div>
+              <div class="cta-copy">
+                <p>AGORA É COM VOCÊ</p>
+                <h3 class="brexter">
+                  Troque sua foto.<br /><span style="color: var(--yellow)">Mostre seu apoio.</span>
+                </h3>
+              </div>
+              <div class="cta-card">
+                <p class="cta-card__eyebrow">FAÇA A SUA</p>
+                <p class="brexter cta-card__action">Acesse pelo<br />link na bio</p>
+                <p class="cta-card__sub">Escolha “Moldura quadrada”, coloque sua foto e baixe.</p>
+              </div>
+              <p class="cta-url">jorgesolla1313.com.br</p>
+              <img
+                class="official-mark"
+                style="right: 20px; top: 520px; width: 132px"
+                src="../../public/campaign-kit/marca-positiva-completa.png"
+                alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+              />
+            </div>
+            <p class="mt-3 text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Correção:</strong> o punho oficial é claramente
+              ilustração, não “logo de canto”. A marca completa positiva assina no fundo claro, sem
+              sombra ou alteração.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="sequencia" class="mt-16" aria-labelledby="sequencia-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">02 · ROTEIRO VISUAL</p>
+        <h2 id="sequencia-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          Oito cenas, uma continuidade espacial
+        </h2>
+        <div class="mt-6 overflow-hidden rounded-2xl border border-black/10 bg-white">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[1050px] border-collapse text-left text-sm">
+              <thead class="bg-[#ebe9e9]">
+                <tr>
+                  <th class="px-4 py-3">Cena</th>
+                  <th class="px-4 py-3">Duração</th>
+                  <th class="px-4 py-3">O que aparece</th>
+                  <th class="px-4 py-3">Movimento</th>
+                  <th class="px-4 py-3">Trilho de comando</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-black/10">
+                <tr>
+                  <td class="px-4 py-3 font-bold">1 · hook</td>
+                  <td class="px-4 py-3 font-mono text-xs">2,6s</td>
+                  <td class="px-4 py-3">Copy específica + coração + marca completa</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    eyebrow .15s; título em 2 beats; coração deriva 8px
+                  </td>
+                  <td class="px-4 py-3 text-muted-foreground">não se aplica</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">2 · entrada</td>
+                  <td class="px-4 py-3 font-mono text-xs">3,2s</td>
+                  <td class="px-4 py-3">topo real da home → seção #cards</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    pausa 450ms; scroll suave 1,6s; repouso 700ms
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong>COMECE</strong> · “Role até ‘Mostre que você está com Solla’.”
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">3 · galeria</td>
+                  <td class="px-4 py-3 font-mono text-xs">4,0s</td>
+                  <td class="px-4 py-3">track mobile real + Moldura quadrada + drawer</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    swipe 900ms; pausa; cursor chega; toque; drawer sobe
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong>1/4</strong> · “Deslize e toque em ‘Moldura quadrada’.”
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">4 · foto</td>
+                  <td class="px-4 py-3 font-mono text-xs">3,8s</td>
+                  <td class="px-4 py-3">Escolher foto → reveal dentro da moldura</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    toque; 300ms de espera; crossfade da foto 450ms
+                  </td>
+                  <td class="px-4 py-3"><strong>2/4</strong> · “Escolha uma foto sua.”</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">5 · criar</td>
+                  <td class="px-4 py-3 font-mono text-xs">2,4s</td>
+                  <td class="px-4 py-3">botão “Criar meu card” → resultado</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    zoom 1→1,14; clique; release 500ms
+                  </td>
+                  <td class="px-4 py-3">
+                    <strong>3/4</strong> · “Confira e toque em ‘Criar meu card’.”
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">6 · baixar</td>
+                  <td class="px-4 py-3 font-mono text-xs">2,0s</td>
+                  <td class="px-4 py-3">resultado + botão “Baixar meu card”</td>
+                  <td class="px-4 py-3 text-muted-foreground">cursor; toque; microcheck 350ms</td>
+                  <td class="px-4 py-3"><strong>4/4</strong> · “Baixe o card no celular.”</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">7 · profile</td>
+                  <td class="px-4 py-3 font-mono text-xs">4,0s</td>
+                  <td class="px-4 py-3">mock Instagram + WhatsApp</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    arte viaja ao Instagram; depois WhatsApp; checks
+                  </td>
+                  <td class="px-4 py-3"><strong>PASSO FINAL</strong> no próprio frame</td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-bold">8 · cta</td>
+                  <td class="px-4 py-3 font-mono text-xs">3,0s</td>
+                  <td class="px-4 py-3">punho + CTA + marca completa</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    punho entra pela esquerda; card sobe 18px; segura 1,8s
+                  </td>
+                  <td class="px-4 py-3 text-muted-foreground">não se aplica</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="mt-5 rounded-xl border border-(--red)/25 bg-[#fff8f2] p-4 text-sm leading-6">
+          <strong>Sem teletransporte:</strong> a cena 2 começa no topo carregado da home, com 450ms
+          de repouso para orientação. O scroll é visível e contínuo até <code>#cards</code>. A cena
+          3 começa no mesmo enquadramento final, faz um swipe horizontal humano no track e só então
+          abre o tile. O corte acontece depois do drawer terminar de subir, nunca entre gesto e
+          resposta.
+        </div>
+      </section>
+
+      <section id="profile-spec" class="mt-16" aria-labelledby="profile-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">03 · CENA NOVA “PROFILE”</p>
+        <h2 id="profile-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          A arte baixada vira avatar — sem rede
+        </h2>
+        <div class="mt-6 grid gap-5 lg:grid-cols-2">
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <h3 class="font-semibold">Geometria @ 360 × 640 CSS</h3>
+            <dl class="mt-4 grid grid-cols-[145px_1fr] gap-x-4 gap-y-3 text-sm">
+              <dt class="font-mono text-xs">.profile-heading</dt>
+              <dd class="text-muted-foreground">
+                x22 · y88 · w316; eyebrow 10px/900; título Brexter 27px/.92.
+              </dd>
+              <dt class="font-mono text-xs">.profile-phones</dt>
+              <dd class="text-muted-foreground">
+                x18 · y176 · w324; 2 colunas de 154px; gap 16px.
+              </dd>
+              <dt class="font-mono text-xs">.profile-phone</dt>
+              <dd class="text-muted-foreground">
+                154 × 226px; raio 22px; borda preta 12%; sombra azul 13%.
+              </dd>
+              <dt class="font-mono text-xs">.profile-avatar-shell</dt>
+              <dd class="text-muted-foreground">
+                82 × 82px; top 58px do painel; padding 4px; círculo.
+              </dd>
+              <dt class="font-mono text-xs">.profile-card</dt>
+              <dd class="text-muted-foreground">
+                x145 · y330 · 70²; fixture atrás + <code>photo-square-frame.png</code> na frente.
+              </dd>
+              <dt class="font-mono text-xs">.profile-footnote</dt>
+              <dd class="text-muted-foreground">x22 · y370 · w316; Inter 11px/800 azul.</dd>
+            </dl>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <h3 class="font-semibold">Timeline CSS em 4,0s</h3>
+            <ol class="mt-4 space-y-3 text-sm leading-6 text-muted-foreground">
+              <li>
+                <strong class="text-foreground">0–0,8s:</strong> heading entra em 420ms; os dois
+                painéis sobem 20px e estabilizam.
+              </li>
+              <li>
+                <strong class="text-foreground">0,55–2,70s:</strong>
+                <code>.profile-card--ig</code> aparece no centro, percorre −87/−100px e fecha em
+                círculo no avatar do Instagram.
+              </li>
+              <li>
+                <strong class="text-foreground">0,55–3,45s:</strong>
+                <code>.profile-card--wa</code> repete o gesto com +87/−100px até o WhatsApp.
+              </li>
+              <li>
+                <strong class="text-foreground">3,05–3,70s:</strong> checks verdes entram com
+                overshoot 1,15→1; os dois painéis recebem um único halo amarelo.
+              </li>
+              <li>
+                <strong class="text-foreground">3,70–4,0s:</strong> frame final parado. Nada depende
+                de áudio.
+              </li>
+            </ol>
+            <p class="mt-4 rounded-xl bg-[#f3f6fb] p-3 text-xs leading-5 text-muted-foreground">
+              <strong class="text-foreground">Renderer:</strong> recebe o mesmo
+              <code>fontCss</code> já embutido por <code>loadFontCss</code>; o HTML não importa
+              fontes nem chama rede. O executor adiciona <code>body.play</code> depois de o frame
+              recorder estar pronto.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="copy" class="mt-16" aria-labelledby="copy-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">04 · COPY POR SHOT LIST</p>
+        <h2 id="copy-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          O template carrega estrutura; o reel carrega a mensagem
+        </h2>
+        <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-black text-(--red)">HOOK</p>
+            <p class="mt-3 text-sm"><code>eyebrow</code></p>
+            <p class="text-sm text-muted-foreground">Tutorial · Foto de perfil</p>
+            <p class="mt-3 text-sm"><code>headlineLines</code></p>
+            <p class="brexter mt-1 text-2xl leading-[.9]">
+              Sua foto<br />com a moldura<br /><span class="text-(--red)">do Solla.</span>
+            </p>
+            <p class="mt-3 text-sm"><code>sub</code></p>
+            <p class="text-sm text-muted-foreground">
+              Veja como fazer pelo celular e usar no Instagram ou WhatsApp.
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-black text-(--red)">CAPA</p>
+            <p class="mt-3 text-sm"><code>eyebrow</code></p>
+            <p class="text-sm text-muted-foreground">Tutorial do site</p>
+            <p class="mt-3 text-sm"><code>headlineLines</code></p>
+            <p class="brexter mt-1 text-2xl leading-[.9]">
+              Use a moldura<br />na sua foto<br /><span class="text-(--red)">de perfil.</span>
+            </p>
+            <p class="mt-3 text-sm"><code>sub</code></p>
+            <p class="text-sm text-muted-foreground">Instagram e WhatsApp, direto pelo celular.</p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-black text-(--red)">CTA</p>
+            <p class="mt-3 text-sm"><code>eyebrow</code></p>
+            <p class="text-sm text-muted-foreground">Agora é com você</p>
+            <p class="mt-3 text-sm"><code>headlineLines</code></p>
+            <p class="brexter mt-1 text-2xl leading-[.9]">
+              Troque sua foto.<br /><span class="text-(--red)">Mostre seu apoio.</span>
+            </p>
+            <p class="mt-3 text-sm"><code>action</code></p>
+            <p class="text-sm font-bold text-(--blue)">Acesse pelo link na bio</p>
+            <p class="mt-3 text-sm"><code>sub</code></p>
+            <p class="text-sm text-muted-foreground">
+              Escolha “Moldura quadrada”, coloque sua foto e baixe.
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-black text-(--red)">LABELS</p>
+            <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li><code>entry.label</code>: COMECE</li>
+              <li><code>step1.label</code>: ESCOLHA A MOLDURA</li>
+              <li><code>step2.label</code>: COLOQUE SUA FOTO</li>
+              <li><code>step3.label</code>: CRIE SEU CARD</li>
+              <li><code>step4.label</code>: BAIXE O CARD</li>
+              <li><code>profile.eyebrow</code>: PASSO FINAL</li>
+              <li><code>cover.tag</code>: #cards</li>
+            </ul>
+          </article>
+        </div>
+        <p class="mt-5 rounded-xl border border-black/10 bg-[#fff8f2] p-4 text-sm leading-6">
+          <strong>Variáveis mínimas do shot list:</strong>
+          <code>graphics.hook.{eyebrow,headlineLines,accentLine,sub}</code>,
+          <code>graphics.cover.{eyebrow,headlineLines,accentLine,sub,tag}</code>,
+          <code>graphics.cta.{eyebrow,headlineLines,accentLine,action,sub,url}</code>,
+          <code>graphics.profile.{eyebrow,headlineLines,instruction,apps}</code> e, em cada captura,
+          <code>badge.{number,total,label}</code> + <code>caption.parts</code>. Nenhum texto
+          temático (“Crie seu card de apoio”) permanece hardcoded no template.
+        </p>
+      </section>
+
+      <section id="cover" class="mt-16" aria-labelledby="cover-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">05 · CAPA ESPECÍFICA</p>
+        <h2 id="cover-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          A promessa sobrevive ao recorte central
+        </h2>
+        <div class="mt-6 grid gap-8 lg:grid-cols-[360px_1fr]">
+          <div class="reel-frame cover-scene">
+            <img class="pattern-wash" src="../../public/campaign-kit/pattern-shapes.png" alt="" />
+            <div class="cover-copy">
+              <span class="hook-eyebrow">TUTORIAL DO SITE</span>
+              <h3 class="brexter">
+                Use a moldura<br />na sua foto<br /><span style="color: var(--yellow)"
+                  >de perfil.</span
+                >
+              </h3>
+              <p>Instagram e WhatsApp, direto pelo celular.</p>
+            </div>
+            <span
+              style="
+                position: absolute;
+                left: 24px;
+                top: 500px;
+                border-radius: 7px;
+                background: rgb(0 0 0 / 35%);
+                padding: 6px 11px;
+                color: #fff;
+                font-size: 10px;
+                font-weight: 800;
+              "
+              >#cards</span
+            >
+            <img
+              class="official-mark"
+              style="right: 20px; top: 455px; width: 134px"
+              src="../../public/campaign-kit/marca-negativa-completa.png"
+              alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+            />
+            <div
+              style="
+                position: absolute;
+                left: 0;
+                right: 0;
+                top: 95px;
+                height: 450px;
+                border-top: 2px dashed rgb(255 255 255 / 72%);
+                border-bottom: 2px dashed rgb(255 255 255 / 72%);
+                pointer-events: none;
+              "
+            ></div>
+          </div>
+          <div
+            class="rounded-2xl border border-black/10 bg-white p-6 text-sm leading-6 text-muted-foreground"
+          >
+            <h3 class="text-base font-semibold text-foreground">Regra do recorte</h3>
+            <p class="mt-3">
+              O núcleo central 1080×1350 equivale a
+              <strong class="text-foreground">y95–545 @360</strong>. Eyebrow, headline inteira,
+              <code>#cards</code> e marca completa ficam dentro dele. O pattern pode ser cortado
+              porque é decoração redundante.
+            </p>
+            <p class="mt-3">
+              Brexter: <strong class="text-foreground">44px / .86 / tracking −.035em</strong>. As
+              três linhas são explícitas; o renderer não decide quebras. Se a fonte oficial não
+              carregar, o render falha fechado — não aceita fallback em produção.
+            </p>
+            <p class="mt-3">
+              Sem estrela isolada no canto. A assinatura única é
+              <code>marca-negativa-completa.png</code>, a 134px CSS (402px físicos), inteira e sem
+              filtro.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="port" class="mt-16" aria-labelledby="port-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">
+          06 · ESPECIFICAÇÃO CLASSE-A-CLASSE
+        </p>
+        <h2 id="port-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          Contrato visual para o port
+        </h2>
+        <div class="mt-6 overflow-hidden rounded-2xl border border-black/10 bg-white">
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[1050px] border-collapse text-left text-sm">
+              <thead class="bg-[#ebe9e9]">
+                <tr>
+                  <th class="px-4 py-3">Classe</th>
+                  <th class="px-4 py-3">Posição / tamanho</th>
+                  <th class="px-4 py-3">Visual</th>
+                  <th class="px-4 py-3">Motion / regra</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-black/10">
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.capture-brand-cap</td>
+                  <td class="px-4 py-3 font-mono text-xs">x0 y0 w360 h38</td>
+                  <td class="px-4 py-3">gradiente #E4102F→#184E92; borda inferior 2px #FFEB00</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    redundante no topo inseguro; usa <code>jorge-solla-negativo.png</code> 86px, sem
+                    plate branco
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.command-rail</td>
+                  <td class="px-4 py-3 font-mono text-xs">x16 y88 w328 min-h50</td>
+                  <td class="px-4 py-3">
+                    branco 96%; raio 12; borda 1px; barra esquerda vermelha 4px; sombra 0 8 24 /18%
+                  </td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    entra 10px→0 em 220ms; sai em 160ms antes de qualquer target cruzar y88–138
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.step-badge</td>
+                  <td class="px-4 py-3 font-mono text-xs">34² dentro do rail</td>
+                  <td class="px-4 py-3">#FFEB00; círculo; Inter 11px/900 preto</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    “1/4”, nunca mini-logo, número de campanha ou estrela
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.command-copy</td>
+                  <td class="px-4 py-3 font-mono text-xs">max-w258; máx. 2 linhas</td>
+                  <td class="px-4 py-3">Inter 12.5px/750, line-height 1.2; ação em #A21C1C/900</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    copy curta e literal; não repete label; sem caixa separada no centro
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.hook-title</td>
+                  <td class="px-4 py-3 font-mono text-xs">x22 y143 w310</td>
+                  <td class="px-4 py-3">Brexter 40px/.88; tracking −.035em; branco/amarelo</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    linha 1–2 em .55s; linha de acento +.24s
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.hook-illustration</td>
+                  <td class="px-4 py-3 font-mono text-xs">right −30 top58 w154</td>
+                  <td class="px-4 py-3"><code>coração.png</code> intacto, sem recolorir</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    fade + translateX(8→0) .65s; não gira nem pulsa
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.cta-punho</td>
+                  <td class="px-4 py-3 font-mono text-xs">x−38 y42 w180</td>
+                  <td class="px-4 py-3">
+                    <code>punho.png</code> intacto e deliberadamente sangrado
+                  </td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    translateX(−16→0) .6s; lê como ilustração, não assinatura
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.cta-card</td>
+                  <td class="px-4 py-3 font-mono text-xs">x22 y328 w316</td>
+                  <td class="px-4 py-3">branco; raio 18; padding 20/18; sombra 0 14 36 /14%</td>
+                  <td class="px-4 py-3 text-muted-foreground">
+                    rise 18px/.5s; segura ≥1,8s; um único CTA verbal
+                  </td>
+                </tr>
+                <tr>
+                  <td class="px-4 py-3 font-mono text-xs">.cover-copy h3</td>
+                  <td class="px-4 py-3 font-mono text-xs">x24 y181 w316</td>
+                  <td class="px-4 py-3">Brexter 44px/.86; tracking −.035em</td>
+                  <td class="px-4 py-3 text-muted-foreground">estático; três linhas explícitas</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="mt-5 grid gap-5 md:grid-cols-3">
+          <article class="rounded-2xl bg-(--red) p-5 text-white">
+            <p class="text-xs font-black text-(--yellow)">CORES DO KIT</p>
+            <p class="mt-3 font-mono text-sm">
+              #E4102F · vermelho<br />#184E92 · azul<br />#FFEB00 · amarelo<br />#009647 · verde<br />#FFF8F2
+              · creme de superfície
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-black text-(--red)">TIPOGRAFIA</p>
+            <p class="brexter mt-3 text-3xl leading-[.9]">Impacto só<br />onde importa.</p>
+            <p class="mt-3 text-sm leading-6 text-muted-foreground">
+              Brexter: hook, capa, títulos de profile e CTA. Inter: comando, labels, app mocks e
+              URL.
+            </p>
+          </article>
+          <article class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="text-xs font-black text-(--red)">CÂMERA</p>
+            <p class="mt-3 text-sm leading-6 text-muted-foreground">
+              Scroll e swipe sem zoom. Toques usam 108–114% por padrão; 118% só se o alvo continuar
+              inteiro. Cursor chega 180ms antes. Halo amarelo dura um pulso e some ao abrir o
+              drawer.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="aceite" class="mt-16" aria-labelledby="aceite-title">
+        <p class="text-xs font-black tracking-wider text-(--red)">07 · CRITÉRIO DE ACEITE VISUAL</p>
+        <h2 id="aceite-title" class="mt-1 text-2xl font-semibold tracking-tight">
+          O que conferir no MP4 e na capa
+        </h2>
+        <ol class="mt-6 grid gap-4 md:grid-cols-2">
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">1. Entrada compreensível</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              Há um frame orientador no topo da home, scroll contínuo até #cards e swipe real até
+              “Moldura quadrada”. Nenhum jump cut substitui navegação.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">2. Produto não é encoberto</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              O rail fica em y88–138; nunca atravessa foto, moldura, controles ou CTAs. Não existe
+              legenda preta no centro. Em conflito real, o rail sai antes — não muda de lado em cima
+              do alvo.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">3. Safe zone do Instagram</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              Instrução crítica permanece entre x22–338 e y83–416 CSS (65px laterais, 250px topo e
+              672px base no arquivo @3x). Marca no cap/topo e URL no rodapé são redundantes.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">4. Legibilidade no mudo</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              Cada rail tem uma ação, no máximo duas linhas, contraste AA e ≥37,5px físicos. Hook,
+              profile e CTA seguram o frame final pelo tempo indicado.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">5. Ponte até o perfil</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              A arte quadrada vista no resultado é visualmente a mesma que entra nos avatares.
+              Instagram aparece primeiro, WhatsApp depois; os dois terminam com a moldura visível.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">6. Marca sem invenção</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              Lockups oficiais intactos, variante negativa sobre vermelho e positiva sobre claro.
+              Nada de estrela isolada como logo de canto, texto recriando “Jorge Solla”, filtros,
+              recoloração ou sombra nos PNGs.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">7. Capa recortável</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              Eyebrow, headline, #cards e marca estão inteiros em y95–545. Conferir 9:16, recorte
+              4:5 e grade 1:1; pattern pode sangrar.
+            </p>
+          </li>
+          <li class="rounded-2xl border border-black/10 bg-white p-5">
+            <p class="font-bold">8. Fontes e nitidez</p>
+            <p class="mt-1 text-sm leading-6 text-muted-foreground">
+              Brexter e Inter vêm embutidas; render falha fechado se faltarem. Conferir bordas
+              nítidas a 1080×1920, sem PNG escalado além da resolução útil e sem artefato de
+              compressão sobre amarelo/vermelho.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <footer class="mt-16 border-t border-black/15 pt-6 text-xs leading-5 text-muted-foreground">
+        <p>
+          <strong class="text-foreground">ATIVOS USADOS — KIT:</strong>
+          <code>public/campaign-kit/pattern-shapes.png</code>,
+          <code>public/campaign-kit/coração.png</code>, <code>public/campaign-kit/punho.png</code>,
+          <code>public/campaign-kit/jorge-solla-negativo.png</code>,
+          <code>public/campaign-kit/marca-negativa-completa.png</code>,
+          <code>public/campaign-kit/marca-positiva-completa.png</code>.
+        </p>
+        <p class="mt-1">
+          <strong class="text-foreground">ATIVOS DE PRODUTO/FIXTURE:</strong>
+          <code>public/cards/photo-square-frame.png</code> e
+          <code>scripts/reels/fixtures/profile-photo.png</code>. São a moldura real e a pessoa
+          fictícia já usada no reel; não são marca nova.
+        </p>
+        <p class="mt-1">
+          <strong class="text-foreground"
+            >CHAVES A ADICIONAR EM <code>campaignKitAssets.mjs</code>:</strong
+          >
+          <code>patternShapes: 'pattern-shapes.png'</code>, <code>heart: 'coração.png'</code> e
+          <code>fist: 'punho.png'</code>. As chaves <code>nameNegative</code>,
+          <code>completeNegative</code> e <code>completePositive</code> já existem. Não adicionar
+          <code>star</code> a este reel.
+        </p>
+        <p class="mt-1">
+          <strong class="text-foreground">GATE:</strong> este arquivo é a revisão material pedida
+          pelo operador; exige aprovação humana antes do port. A referência da família continua
+          válida para codec, cursor/halo e matemática geral de safe zone, exceto onde esta extensão
+          substitui explicitamente hook, capa, CTA, chrome e legenda.
+        </p>
+      </footer>
+    </main>
+    <script>
+      const demo = document.getElementById('profile-demo')
+      document.getElementById('play-profile').addEventListener('click', () => {
+        demo.classList.remove('play')
+        void demo.offsetWidth
+        demo.classList.add('play')
+      })
+    </script>
+  </body>
+</html>

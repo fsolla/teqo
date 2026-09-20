@@ -14,8 +14,8 @@
  * cursor) and therefore captured by the screencast.
  */
 
-import { mkdir, rm, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
+import { access, mkdir, rm, writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
 
 import { chromium } from '@playwright/test'
 
@@ -33,7 +33,7 @@ const CURSOR_SVG =
   '<svg viewBox="0 0 24 30" fill="#ffffff" stroke="#000000" stroke-width="1.4" aria-hidden="true">' +
   '<path d="M3 2v22l6-6 4 9 4-2-4-9h8L3 2Z"/></svg>'
 
-const CURSOR_INIT = `
+const cursorInit = (startX, startY) => `
 ;(() => {
   const install = () => {
     if (!document.body || document.getElementById('${CURSOR_ID}')) return
@@ -56,6 +56,7 @@ const CURSOR_INIT = `
     const cursor = document.createElement('div')
     cursor.id = '${CURSOR_ID}'
     cursor.innerHTML = '${CURSOR_SVG}'
+    cursor.style.transform = 'translate(${startX}px,${startY}px)'
     document.body.appendChild(cursor)
     const ticker = document.createElement('div')
     ticker.id = '${TICKER_ID}'
@@ -87,7 +88,9 @@ export const openReelContext = (browser) =>
   })
 
 export const installCursor = async (page) => {
-  await page.addInitScript({ content: CURSOR_INIT })
+  await page.addInitScript({
+    content: cursorInit(REEL_VIEWPORT.width / 2, REEL_VIEWPORT.height / 2),
+  })
 }
 
 const cursorPositions = new WeakMap()
@@ -157,6 +160,23 @@ const resolveLocator = async (page, selector) => {
   return locator
 }
 
+/** Waits until the element's box stops moving (smooth scroll/snap settle). */
+const waitForSettle = async (locator, timeoutMs = 2000) => {
+  const deadline = Date.now() + timeoutMs
+  let previous = await locator.boundingBox().catch(() => null)
+  for (;;) {
+    await sleep(120)
+    const current = await locator.boundingBox().catch(() => null)
+    if (!current || !previous) return
+    const stable =
+      Math.abs(current.x - previous.x) < 1 &&
+      Math.abs(current.y - previous.y) < 1 &&
+      Math.abs(current.width - previous.width) < 1
+    if (stable || Date.now() > deadline) return
+    previous = current
+  }
+}
+
 const waitForEnabled = async (locator, timeoutMs = 12000) => {
   const deadline = Date.now() + timeoutMs
   for (;;) {
@@ -198,7 +218,7 @@ const clickTarget = async ({ page, selector, log, scene, zoom }) => {
   await hideTargetRing(page)
 }
 
-const runStep = async ({ page, scene, step, log, fixture }) => {
+const runStep = async ({ page, scene, step, log, fixture, root }) => {
   if (step.action === 'click') {
     await clickTarget({ page, selector: step.selector, log, scene: scene.id, zoom: step.zoom })
     await sleep(step.pauseMs ?? 650)
@@ -223,6 +243,49 @@ const runStep = async ({ page, scene, step, log, fixture }) => {
   if (step.action === 'waitFor') {
     await resolveLocator(page, step.selector)
     await sleep(step.pauseMs ?? 450)
+    return
+  }
+  if (step.action === 'scrollIntoView') {
+    const locator = await resolveLocator(page, step.selector)
+    await locator.evaluate((element) =>
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+    )
+    await waitForSettle(locator, 2200)
+    await sleep(step.pauseMs ?? 700)
+    return
+  }
+  if (step.action === 'swipe') {
+    const locator = await resolveLocator(page, step.selector)
+    await locator.scrollIntoViewIfNeeded()
+    const box = await locator.boundingBox()
+    if (!box) throw new Error(`Cena "${scene.id}": swipe "${step.selector}" sem bounding box.`)
+    const distance = step.distance ?? 220
+    const y = Math.round(box.y + box.height / 2)
+    const startX = Math.round(box.x + box.width * 0.82)
+    const endX = Math.round(Math.max(box.x + 8, startX - distance))
+    const client = await page.context().newCDPSession(page)
+    try {
+      await client.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: startX, y }],
+      })
+      const steps = 10
+      for (let index = 1; index <= steps; index += 1) {
+        const x = Math.round(startX + ((endX - startX) * index) / steps)
+        await client.send('Input.dispatchTouchEvent', {
+          type: 'touchMove',
+          touchPoints: [{ x, y }],
+        })
+        await sleep(35)
+      }
+      // Hold before lifting so the gesture does not fling past the next snap.
+      await sleep(160)
+      await client.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+    } finally {
+      await client.detach().catch(() => undefined)
+    }
+    await waitForSettle(locator, 1600)
+    await sleep(step.pauseMs ?? 700)
     return
   }
   if (step.action === 'download') {
@@ -258,6 +321,61 @@ const runStep = async ({ page, scene, step, log, fixture }) => {
     await sleep(step.pauseMs ?? 650)
     return
   }
+  if (step.action === 'upload') {
+    const value = step.value ?? fixture.photo
+    if (typeof value !== 'string' || value.trim() === '') {
+      throw new Error(`Cena "${scene.id}": upload sem valor e sem fixture.photo.`)
+    }
+    const filePath = resolve(root, value)
+    try {
+      await access(filePath)
+    } catch {
+      throw new Error(`Cena "${scene.id}": arquivo de upload não encontrado em "${value}".`)
+    }
+    const locator = await resolveLocator(page, step.selector)
+    await waitForEnabled(locator)
+    await locator.scrollIntoViewIfNeeded()
+    const center = await centerOf(locator)
+    if (!center) throw new Error(`Cena "${scene.id}": upload "${step.selector}" sem bounding box.`)
+    const approachAt = Date.now()
+    await moveCursor({ page, x: center.x, y: center.y })
+    const arriveAt = Date.now()
+    await showTargetRing({ page, box: center.box })
+    await sleep(180)
+    const at = Date.now()
+    pushClick({
+      log,
+      scene: scene.id,
+      selector: step.selector,
+      center,
+      zoom: true,
+      approachAt,
+      arriveAt,
+      at,
+    })
+    const chooserPromise = page.waitForEvent('filechooser', { timeout: 15000 })
+    await page.mouse.click(center.x, center.y)
+    await showTargetRing({ page, box: center.box, pulse: true })
+    let chooser
+    try {
+      chooser = await chooserPromise
+    } catch {
+      throw new Error(
+        `Cena "${scene.id}": o clique em "${step.selector}" não abriu o seletor de arquivo.`,
+      )
+    }
+    try {
+      await chooser.setFiles(filePath)
+    } catch (error) {
+      throw new Error(
+        `Cena "${scene.id}": falha ao enviar "${value}" — ${error instanceof Error ? error.message : error}`,
+      )
+    }
+    await sleep(250)
+    await hideTargetRing(page)
+    await sleep(step.pauseMs ?? 900)
+    return
+  }
   throw new Error(`Cena "${scene.id}": ação "${step.action}" não implementada.`)
 }
 
@@ -276,7 +394,7 @@ const setTicking = (page, on) =>
  * Drives the recorded capture scenes. `setup` steps run before the scene's
  * `sceneStart` marker (invisible prep), then the visible steps are paced.
  */
-export const runCaptureScenes = async ({ page, shotList, log = [] }) => {
+export const runCaptureScenes = async ({ page, shotList, log = [], root = process.cwd() }) => {
   const capture = shotList.scenes.filter((scene) => scene.kind === 'capture')
   for (const scene of capture) {
     for (const step of scene.setup) {
@@ -288,7 +406,7 @@ export const runCaptureScenes = async ({ page, shotList, log = [] }) => {
     log.push({ scene: scene.id, kind: 'sceneStart', at: Date.now() })
     await sleep(scene.leadInMs)
     for (const step of scene.steps) {
-      await runStep({ page, scene, step, log, fixture: shotList.fixture })
+      await runStep({ page, scene, step, log, fixture: shotList.fixture, root })
     }
     await sleep(scene.trailOutMs)
     log.push({ scene: scene.id, kind: 'sceneEnd', at: Date.now() })

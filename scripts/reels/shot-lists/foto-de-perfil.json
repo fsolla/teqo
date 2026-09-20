@@ -1,0 +1,179 @@
+{
+  "slug": "foto-de-perfil",
+  "title": "Use a moldura na sua foto de perfil",
+  "feature": "cards",
+  "route": "/",
+  "coverAlt": "Capa do tutorial com o título “Use a moldura na sua foto de perfil” sobre o fundo vermelho da campanha",
+  "fixture": {
+    "photo": "scripts/reels/fixtures/profile-photo.png"
+  },
+  "graphics": {
+    "hook": {
+      "eyebrow": "TUTORIAL · FOTO DE PERFIL",
+      "headlineLines": ["Sua foto", "com a moldura", "do Solla."],
+      "accentIndex": 2,
+      "sub": "Veja como fazer pelo celular e usar no Instagram ou WhatsApp."
+    },
+    "cta": {
+      "eyebrow": "AGORA É COM VOCÊ",
+      "headlineLines": ["Troque sua foto.", "Mostre seu apoio."],
+      "accentIndex": 1,
+      "actionLines": ["Acesse pelo", "link na bio"],
+      "sub": "Escolha “Moldura quadrada”, coloque sua foto e baixe.",
+      "url": "jorgesolla1313.com.br"
+    },
+    "profile": {
+      "eyebrow": "PASSO FINAL",
+      "headlineLines": ["Use a arte", "no seu perfil."],
+      "accentIndex": null,
+      "instruction": "Escolha a imagem baixada como nova foto de perfil.",
+      "apps": ["Instagram", "WhatsApp"]
+    },
+    "cover": {
+      "eyebrow": "TUTORIAL DO SITE",
+      "headlineLines": ["Use a moldura", "na sua foto", "de perfil."],
+      "accentIndex": 2,
+      "sub": "Instagram e WhatsApp, direto pelo celular.",
+      "tag": "#cards"
+    }
+  },
+  "scenes": [
+    {
+      "id": "hook",
+      "kind": "graphic",
+      "template": "hook",
+      "durationMs": 2600,
+      "narration": "Bora mostrar que você está com Solla?"
+    },
+    {
+      "id": "step-1",
+      "kind": "capture",
+      "badge": { "label": "COMECE" },
+      "caption": {
+        "parts": [
+          { "text": "Role até " },
+          { "text": "“Mostre que você está com Solla”", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 350,
+      "captionDurationMs": 2800,
+      "leadInMs": 450,
+      "trailOutMs": 600,
+      "narration": "Acesse o site e desça até os cards.",
+      "setup": [],
+      "steps": [{ "action": "scrollIntoView", "selector": "#cards-title", "pauseMs": 800 }]
+    },
+    {
+      "id": "step-2",
+      "kind": "capture",
+      "badge": { "number": 1, "total": 4, "label": "Escolha a moldura" },
+      "caption": {
+        "parts": [
+          { "text": "Deslize e toque em " },
+          { "text": "“Moldura quadrada”", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 350,
+      "captionDurationMs": 2400,
+      "leadInMs": 400,
+      "trailOutMs": 900,
+      "narration": "Deslize e escolha a Moldura quadrada!",
+      "setup": [],
+      "steps": [
+        {
+          "action": "swipe",
+          "selector": "[aria-label=\"Modelos de card (mobile)\"]",
+          "distance": 300,
+          "pauseMs": 500
+        },
+        { "action": "click", "selector": "[data-card-model-tile=\"perfil-quadrado\"]" },
+        { "action": "waitFor", "selector": "role=heading[name=\"Enquadre sua foto\"]" }
+      ]
+    },
+    {
+      "id": "step-3",
+      "kind": "capture",
+      "badge": { "number": 2, "total": 4, "label": "Coloque sua foto" },
+      "caption": {
+        "parts": [
+          { "text": "Escolha uma " },
+          { "text": "foto sua", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 350,
+      "captionDurationMs": 3400,
+      "leadInMs": 500,
+      "trailOutMs": 800,
+      "narration": "Agora coloque uma foto sua. Vai ficar com a sua cara!",
+      "setup": [{ "action": "scrollIntoView", "selector": "role=button[name=\"Escolher foto\"]" }],
+      "steps": [
+        { "action": "upload", "selector": "role=button[name=\"Escolher foto\"]", "pauseMs": 1000 },
+        {
+          "action": "scrollIntoView",
+          "selector": "role=group[name=\"Ajuste da foto\"]",
+          "pauseMs": 900
+        }
+      ]
+    },
+    {
+      "id": "step-4",
+      "kind": "capture",
+      "badge": { "number": 3, "total": 4, "label": "Crie seu card" },
+      "caption": {
+        "parts": [
+          { "text": "Confira e toque em " },
+          { "text": "“Criar meu card”", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 350,
+      "captionDurationMs": 2600,
+      "leadInMs": 600,
+      "trailOutMs": 800,
+      "narration": "Ficou show, né? Toque em Criar meu card.",
+      "setup": [{ "action": "scrollIntoView", "selector": "role=button[name=\"Criar meu card\"]" }],
+      "steps": [
+        { "action": "click", "selector": "role=button[name=\"Criar meu card\"]" },
+        { "action": "waitFor", "selector": "text=Seu card está pronto para compartilhar." }
+      ]
+    },
+    {
+      "id": "step-5",
+      "kind": "capture",
+      "badge": { "number": 4, "total": 4, "label": "Baixe o card" },
+      "caption": {
+        "parts": [
+          { "text": "Baixe o card " },
+          { "text": "no celular", "accent": true },
+          { "text": "." }
+        ]
+      },
+      "captionDelayMs": 300,
+      "captionDurationMs": 2200,
+      "leadInMs": 500,
+      "trailOutMs": 700,
+      "narration": "Baixe agora e use como foto de perfil!",
+      "setup": [
+        { "action": "scrollIntoView", "selector": "role=button[name=\"Baixar meu card\"]" }
+      ],
+      "steps": [{ "action": "download", "selector": "role=button[name=\"Baixar meu card\"]" }]
+    },
+    {
+      "id": "profile",
+      "kind": "graphic",
+      "template": "profile",
+      "durationMs": 4000,
+      "narration": "Pronto! É só trocar no Instagram e no WhatsApp."
+    },
+    {
+      "id": "cta",
+      "kind": "graphic",
+      "template": "cta",
+      "durationMs": 3000,
+      "narration": "Corre no site pelo link na bio!"
+    }
+  ]
+}

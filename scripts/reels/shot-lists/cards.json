@@ -7,6 +7,29 @@
   "fixture": {
     "cardName": "Joana"
   },
+  "graphics": {
+    "hook": {
+      "eyebrow": "FAÇA PARTE",
+      "headlineLines": ["Seu apoio", "vira card", "em segundos."],
+      "accentIndex": 2,
+      "sub": "Veja como criar o seu pelo celular."
+    },
+    "cta": {
+      "eyebrow": "Seu card, sua voz",
+      "headlineLines": ["Agora é", "com você."],
+      "accentIndex": null,
+      "actionLines": ["Acesse o site pelo", "link na bio"],
+      "sub": "Escolha seu modelo, crie e compartilhe.",
+      "url": "jorgesolla1313.com.br"
+    },
+    "cover": {
+      "eyebrow": "TUTORIAL DO SITE",
+      "headlineLines": ["Crie seu", "card de", "apoio."],
+      "accentIndex": 2,
+      "sub": "Seu nome ou sua foto, direto pelo celular.",
+      "tag": "#cards"
+    }
+  },
   "scenes": [
     {
       "id": "hook",
