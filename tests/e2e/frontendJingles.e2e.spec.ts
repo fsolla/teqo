@@ -199,6 +199,12 @@ test.describe('Frontend jingles (S21)', () => {
     await expect(page.getByRole('link', { name: 'Jingles' })).toHaveCount(0)
     await page.goto('/')
     await expect(page.getByRole('link', { name: 'Jingles' })).toHaveCount(0)
+    // S22 — the home sound section keeps the radio and drops the empty grid.
+    const sound = page.locator('[data-home-section="sound"]')
+    await expect(sound.getByRole('heading', { name: 'Sintonize com a Rádio 1313' })).toBeVisible()
+    await expect(sound.locator('[data-radio][data-radio-state="facade"]')).toBeVisible()
+    await expect(sound.locator('article[data-jingle]')).toHaveCount(0)
+    await expect(sound.getByRole('link', { name: 'Ver todos os jingles' })).toHaveCount(0)
     expect((await request.get(`${BASE_URL}/jingles`)).status()).toBe(200)
     await expect
       .poll(async () =>
@@ -236,5 +242,82 @@ test.describe('Frontend jingles (S21)', () => {
     await expect(page.getByRole('heading', { name: 'Pagodão oficial' })).toBeVisible()
     await page.goto('/')
     await expect(page.getByRole('link', { name: 'Jingles' })).toBeVisible()
+  })
+
+  test('shows the sound section on the home and loads the radio only on click', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryJingle(request, headers)
+    for (const title of ['Axé na home', 'Forró na home', 'Pagodão na home']) {
+      await createJingle(request, headers, { title, slug: uniqueSlug() })
+    }
+
+    const zenoRequests: string[] = []
+    const audioRequests: string[] = []
+    page.on('request', (req) => {
+      if (req.url().includes('zeno.fm')) zenoRequests.push(req.url())
+      if (/\/api\/media\/file\/.*\.mp3/.test(req.url())) audioRequests.push(req.url())
+    })
+    // Hermetic e2e: the official widget comes from the local double, never the
+    // real network (the fixture guard fails on external console errors).
+    await page.route('https://zeno.fm/**', (route) =>
+      route.fulfill({ body: '<!doctype html><title>zeno stub</title>', contentType: 'text/html' }),
+    )
+
+    await page.goto(`/?e2e=${Date.now()}`)
+    const sound = page.locator('[data-home-section="sound"]')
+    await expect(sound).toBeVisible()
+    await expect(sound.getByText('A trilha da nossa caminhada')).toBeVisible()
+    await expect(sound.locator('article[data-jingle]')).toHaveCount(3)
+    // Three of three: the handoff only exists when more are published.
+    await expect(sound.getByRole('link', { name: 'Ver todos os jingles' })).toHaveCount(0)
+
+    // The facade is inert: no iframe, no zeno request and no audio fetch
+    // before the gesture (`preload="none"` on every card).
+    await expect(sound.locator('[data-radio][data-radio-state="facade"]')).toBeVisible()
+    await expect(sound.locator('iframe')).toHaveCount(0)
+    expect(zenoRequests).toHaveLength(0)
+    expect(audioRequests).toHaveLength(0)
+    await expect(sound.getByRole('link', { name: 'Abrir no Zeno' })).toHaveAttribute(
+      'href',
+      'https://zeno.fm/radio/jorge-solla-1313/',
+    )
+
+    // The click mounts the official player (loading → loaded on onLoad).
+    await sound.getByRole('button', { name: 'Ouvir a rádio' }).click()
+    await expect(sound.locator('[data-radio]')).toHaveAttribute('data-radio-state', 'loaded')
+    const frame = sound.locator('iframe')
+    await expect(frame).toHaveCount(1)
+    await expect(frame).toHaveAttribute('src', 'https://zeno.fm/player/jorge-solla-1313/')
+    expect(zenoRequests.length).toBeGreaterThan(0)
+
+    // Mobile 390: the section never overflows horizontally.
+    await page.setViewportSize({ width: 390, height: 844 })
+    const overflow = await page.evaluate(() => {
+      const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+      return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0
+    })
+    expect(overflow).toBeLessThanOrEqual(1)
+  })
+
+  test('shows three of a larger collection and hands off to /jingles', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryJingle(request, headers)
+    for (let index = 0; index < 4; index += 1) {
+      await createJingle(request, headers, { title: `Jingle extra ${index}`, slug: uniqueSlug() })
+    }
+
+    await page.goto(`/?e2e=${Date.now()}`)
+    const sound = page.locator('[data-home-section="sound"]')
+    await expect(sound.locator('article[data-jingle]')).toHaveCount(3)
+
+    const seeAll = sound.getByRole('link', { name: 'Ver todos os jingles' })
+    await expect(seeAll).toBeVisible()
+    await expect(seeAll).toHaveAttribute('href', '/jingles')
   })
 })

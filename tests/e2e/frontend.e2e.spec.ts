@@ -557,6 +557,52 @@ test.describe('Frontend', () => {
     expect(overflow).toBeLessThanOrEqual(1)
   })
 
+  test('shows the sound section between the story and the cards with the inert radio facade', async ({
+    page,
+  }) => {
+    await page.goto('/')
+
+    const sound = page.locator('[data-home-section="sound"]')
+    await expect(sound).toBeVisible()
+    await expect(sound.getByText('A trilha da nossa caminhada')).toBeVisible()
+
+    // Position: after the story, before the cards (the conversion block stays
+    // last). The jingle grid is content-dependent, so this spec never counts
+    // cards — counts belong to the serial frontendJingles spec.
+    const tops = await page.evaluate(() => {
+      const top = (selector: string) => {
+        const element = document.querySelector<HTMLElement>(selector)
+        if (!element) throw new Error(`Seção ausente: ${selector}`)
+        return element.getBoundingClientRect().top
+      }
+      return {
+        story: top('[data-home-section="story"]'),
+        sound: top('[data-home-section="sound"]'),
+        cards: top('[data-home-section="cards"]'),
+      }
+    })
+    expect(tops.sound).toBeGreaterThan(tops.story)
+    expect(tops.cards).toBeGreaterThan(tops.sound)
+
+    // S22 — the official player only mounts after the gesture; until then the
+    // facade holds no iframe and the external link is the alternative.
+    await expect(sound.locator('[data-radio][data-radio-state="facade"]')).toBeVisible()
+    await expect(sound.locator('iframe')).toHaveCount(0)
+    await expect(sound.getByRole('button', { name: 'Ouvir a rádio' })).toBeVisible()
+    await expect(sound.getByRole('link', { name: 'Abrir no Zeno' })).toHaveAttribute(
+      'href',
+      'https://zeno.fm/radio/jorge-solla-1313/',
+    )
+
+    // Mobile 390: the section never overflows horizontally.
+    await page.setViewportSize({ width: 390, height: 844 })
+    const overflow = await page.evaluate(() => {
+      const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+      return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0
+    })
+    expect(overflow).toBeLessThanOrEqual(1)
+  })
+
   test('keeps carousel auto-advance and chips on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
@@ -1702,7 +1748,10 @@ test.describe('Cards personalizados (S14)', () => {
       .evaluateAll((sections) =>
         sections.map((section) => section.getAttribute('data-home-section')),
       )
-    expect(order.indexOf('cards')).toBe(order.indexOf('story') + 1)
+    // S22 — the sound section sits between the story and the cards; the
+    // conversion block (cards + newsletter) stays last.
+    expect(order.indexOf('sound')).toBe(order.indexOf('story') + 1)
+    expect(order.indexOf('cards')).toBe(order.indexOf('sound') + 1)
     expect(order.indexOf('cards')).toBe(order.indexOf('newsletter') - 1)
 
     const section = page.locator('section#cards')

@@ -5,8 +5,9 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
+import { JingleHomeSection } from '@/components/jingles/JingleHomeSection'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
-import { hasPublishedJingles } from '@/utilities/jingleReads'
+import { getPublishedJingleItems } from '@/utilities/jingleReads'
 import type { ReactNode } from 'react'
 import { CampaignCardsSection } from './CampaignCardsSection'
 import { CampaignNewsletterSection } from './CampaignNewsletterSection'
@@ -115,8 +116,10 @@ const proofItems = [
 export default async function HomePage() {
   // S10 — site-level Meta pixel for the campaign home (cached read, fail-closed).
   const pixelId = await getCampaignHomeMetaPixelId()
-  // S21 — the footer's "Jingles" discovery link (cached, keeps the home static).
-  const showJingles = await hasPublishedJingles()
+  // S21/S22 — one cached listing (`unstable_cache` tag `jingles`) serves the
+  // home sound section and the footer's discovery flag, keeping the home static.
+  const jingles = await getPublishedJingleItems()
+  const homeJingles = jingles.slice(0, 3)
 
   return (
     <>
@@ -239,11 +242,12 @@ export default async function HomePage() {
         </section>
 
         <CampaignStorySection />
+        <JingleHomeSection jingles={homeJingles} showAll={jingles.length > homeJingles.length} />
         <CampaignCardsSection />
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
-      <CampaignFooter showJingles={showJingles} />
+      <CampaignFooter showJingles={jingles.length > 0} />
     </>
   )
 }

@@ -35,11 +35,12 @@ vi.mock('@/utilities/campaignHomeTracking', () => ({
   getCampaignHomeMetaPixelId: async () => null,
 }))
 
-// S21 — the footer discovery flag reads the jingle listing through the Payload
-// DB + unstable_cache; the unit env has neither, and the discovery/kill-switch
-// behavior is e2e-covered (frontendJingles.e2e.spec.ts).
+// S21/S22 — the home reads the jingle listing through the Payload DB +
+// unstable_cache for the sound section and the footer discovery flag; the unit
+// env has neither, and the real listing/kill-switch behavior is e2e-covered
+// (frontendJingles.e2e.spec.ts).
 vi.mock('@/utilities/jingleReads', () => ({
-  hasPublishedJingles: async () => false,
+  getPublishedJingleItems: async () => [],
 }))
 
 // S14 — the card section renders the client studio island (next/font local
@@ -56,7 +57,7 @@ vi.mock('@/components/cards/CardsStudio', () => ({
 afterEach(cleanup)
 
 describe('Campaign home', () => {
-  it('monta as cinco seções previstas e o rodapé eleitoral', async () => {
+  it('monta as seis seções previstas e o rodapé eleitoral', async () => {
     render(await HomePage())
 
     expect(screen.getByRole('heading', { level: 1, name: 'MAIS SAÚDE MAIS FUTURO' })).toBeTruthy()
@@ -69,6 +70,8 @@ describe('Campaign home', () => {
         name: /Junto com o trabalhador e do lado de quem mais precisa, sempre/i,
       }),
     ).toBeTruthy()
+    // S22 — with zero published jingles the sound section shows only the radio.
+    expect(screen.getByRole('heading', { name: 'Sintonize com a Rádio 1313' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /Mostre que você está com Solla/i })).toBeTruthy()
     expect(screen.getByRole('heading', { name: /Receba as novidades da campanha/i })).toBeTruthy()
     expect(screen.getByText(/CNPJ: 68\.430\.467\/0001-05/)).toBeTruthy()
