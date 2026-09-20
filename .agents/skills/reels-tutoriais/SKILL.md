@@ -57,7 +57,7 @@ pnpm reels:build <slug> [--audio]
     └─ captura: Chromium mobile (360×640 @3x = 1080×1920 nativo)
          ├─ cursor sintético + halo amarelo no alvo do clique
          └─ screencast com timestamps de parede (sem drift) → frames JPEG
-              └─ assets: legendas/etiqueta em PNG transparente + capa.png
+              └─ assets: trilho de comando/cap em PNG transparente + capa.png
                    └─ clipes por cena: zoompan (do log de cliques) + overlay
                         └─ concat H.264/yuv420p 30fps
                              ├─ transcrição SEMPRE: narracao.srt + roteiro.md
@@ -81,12 +81,23 @@ pnpm reels:tts:setup                   # venv do edge-tts (só para --audio)
 ## Contrato do shot list
 
 `scripts/reels/shot-lists/<slug>.json` é **versionado** e é a fonte única da
-verdade. A primeira cena é o `hook`, a última é o `cta` (gráficas) e no meio
-ficam as cenas de captura com `badge` (etiqueta de passo), `caption` (legenda
-queimada), `setup` (preparo invisível, ex. `scrollIntoView`) e `steps`
-(`click`, `fill`, `waitFor`, `download`). O `fixture.cardName` é fictício
+verdade. A primeira cena é o `hook`, a última é o `cta` (gráficas); o meio
+pode ter mais gráficas (ex. `profile`, a ponte para Instagram/WhatsApp) e as
+cenas de captura com `badge` (passo `n/total` ou pílula de rótulo, ex.
+`COMECE`), `caption` (o comando do trilho), `setup` (preparo invisível, ex.
+`scrollIntoView`) e `steps` (`click`, `fill`, `waitFor`, `download`, `upload`,
+`scrollIntoView`, `swipe`). O `upload` clica no alvo visível (ex. “Escolher
+foto”) e envia o arquivo de `fixture.photo` (ou do `value` do passo) pelo
+seletor de arquivo do navegador; o `swipe` arrasta o track mobile com toque
+real (`distance` em px). `fixture.cardName` e `fixture.photo` são fictícios
 (zero PII de terceiros). Qualquer ajuste de roteiro, texto, ordem, ritmo ou
 alvo de clique é feito **aqui** — nunca no MP4.
+
+A copy das cenas gráficas e da capa vive no bloco `graphics` do shot list
+(`hook`, `cta`, `profile` e `cover`, cada um com `eyebrow`, `headlineLines`,
+`accentIndex`, `sub`/`tag`/`actionLines`/`url`/`instruction`/`apps` conforme o
+template): o template carrega a estrutura, o reel carrega a mensagem — nenhum
+texto temático fica hardcoded no renderer.
 
 A fala de cada cena vive **no shot list**, no campo `narration` (opcional, até
 600 caracteres): as cenas de captura caem no texto da própria `caption` quando
@@ -148,9 +159,12 @@ sem) e então mostre os artefatos e o resumo (duração, cenas, hash). Depois:
 
 ## Design
 
-A superfície gráfica (hook, legenda, etiqueta de passo, cursor/halo, capa,
-safe zone) vem do artefato aprovado `docs/plans/reels-tutoriais-ui-design.html`
-+ assets; o port é classe-a-classe em `scripts/lib/reelTemplates.mjs`. O
+A superfície gráfica (hook, cap de marca, trilho de comando, cursor/halo,
+capa, cena `profile`, safe zone) vem dos artefatos aprovados
+`docs/plans/reels-tutoriais-ui-design.html` (família) e
+`docs/plans/reels-tutoriais-foto-de-perfil-ui-design.html` (revisão: trilho no
+topo em vez de legenda no centro, copy por reel, ilustrações do kit, ponte
+para o perfil); o port é classe-a-classe em `scripts/lib/reelTemplates.mjs`. O
 `designer` é dono da estrutura visual — não improvise layout.
 
 ## Marca oficial (kit 1313)
