@@ -1,0 +1,1092 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Jingles de Jorge Solla</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --pt-yellow-ink: #000000;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --kit-red: #e4102f;
+        --kit-blue: #184e92;
+        --kit-yellow: #ffeb00;
+        --radius: 10px;
+        --font-exo2: 'Exo 2', 'Arial Black', sans-serif;
+        --font-arimo: Arimo, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        color-scheme: light;
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        background: #dedbd8;
+        color: var(--foreground);
+        font-family: var(--font-arimo);
+      }
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      button {
+        cursor: pointer;
+      }
+
+      .font-display {
+        font-family: var(--font-exo2);
+      }
+      .stage-shadow {
+        box-shadow: 0 24px 70px rgb(55 30 24 / 16%);
+      }
+      .screen {
+        background: var(--background);
+        color: var(--foreground);
+        overflow: hidden;
+      }
+      .safe-focus:focus-visible {
+        outline: 3px solid var(--pt-yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 2px var(--pt-red-dark);
+      }
+
+      .jingle-card {
+        border: 1px solid var(--campaign-line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 12px 34px rgb(71 19 14 / 8%);
+        overflow: hidden;
+      }
+
+      .jingle-card[data-state='playing'] {
+        border-color: rgb(162 28 28 / 36%);
+        box-shadow: 0 14px 38px rgb(162 28 28 / 14%);
+      }
+
+      .cover-wrap {
+        position: relative;
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        background: var(--campaign-band);
+      }
+      .cover-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+      .cover-wrap::after {
+        content: '';
+        position: absolute;
+        inset: 58% 0 0;
+        background: linear-gradient(to bottom, transparent, rgb(24 10 9 / 42%));
+        pointer-events: none;
+      }
+
+      .play-control {
+        display: inline-flex;
+        width: 56px;
+        height: 56px;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 999px;
+        background: var(--pt-yellow);
+        color: var(--pt-yellow-ink);
+        box-shadow:
+          0 6px 0 #cfb900,
+          0 10px 22px rgb(0 0 0 / 15%);
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease,
+          filter 160ms ease;
+      }
+      .play-control:hover {
+        transform: translateY(-2px);
+        filter: brightness(0.98);
+        box-shadow:
+          0 8px 0 #cfb900,
+          0 12px 24px rgb(0 0 0 / 18%);
+      }
+      .play-control:active {
+        transform: translateY(3px);
+        box-shadow: 0 3px 0 #cfb900;
+      }
+      .play-control svg {
+        width: 25px;
+        height: 25px;
+        fill: currentColor;
+        stroke: currentColor;
+      }
+      .play-control .pause-icon {
+        display: none;
+      }
+      [data-state='playing'] .play-control .play-icon {
+        display: none;
+      }
+      [data-state='playing'] .play-control .pause-icon {
+        display: block;
+      }
+
+      .progress-track {
+        height: 6px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #dedbd8;
+      }
+      .progress-value {
+        height: 100%;
+        width: 0;
+        border-radius: inherit;
+        background: var(--pt-red);
+      }
+      [data-state='playing'] .progress-value {
+        width: 38%;
+      }
+      .playing-only {
+        display: none;
+      }
+      [data-state='playing'] .playing-only {
+        display: inline-flex;
+      }
+      [data-state='playing'] .stopped-only {
+        display: none;
+      }
+
+      .download-control {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1.5px solid rgb(162 28 28 / 32%);
+        border-radius: 10px;
+        background: transparent;
+        color: var(--pt-red);
+        font-family: var(--font-exo2);
+        font-weight: 800;
+        text-decoration: none;
+        transition:
+          background-color 160ms ease,
+          border-color 160ms ease,
+          transform 160ms ease;
+      }
+      .download-control:hover {
+        border-color: var(--pt-red);
+        background: rgb(162 28 28 / 7%);
+      }
+      .download-control:active {
+        transform: scale(0.99);
+      }
+      .download-control svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      .footer-link {
+        color: rgb(255 248 242 / 75%);
+        text-decoration: none;
+      }
+      .footer-link:hover {
+        color: white;
+      }
+      .footer-link:focus-visible {
+        outline: 2px solid var(--pt-yellow);
+        outline-offset: 3px;
+        border-radius: 2px;
+        color: white;
+      }
+
+      .detail-focus-demo .download-control {
+        outline: 3px solid var(--pt-yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 2px var(--pt-red-dark);
+        border-color: var(--pt-red);
+        background: rgb(162 28 28 / 7%);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        .play-control,
+        .download-control {
+          transition: none;
+        }
+        .play-control:hover {
+          transform: none;
+        }
+      }
+    </style>
+  </head>
+  <body class="antialiased">
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-8 sm:py-14">
+      <header
+        class="mb-10 flex flex-col gap-3 border-b border-black/10 pb-6 sm:flex-row sm:items-end sm:justify-between"
+      >
+        <div>
+          <p class="font-display m-0 text-xs font-black tracking-[0.14em] text-[#a21c1c] uppercase">
+            S21 · Design hi-fi
+          </p>
+          <h1
+            class="font-display mt-2 text-3xl leading-tight font-black tracking-[-0.03em] text-[#211b19] sm:text-4xl"
+          >
+            Jingles no site público
+          </h1>
+          <p class="mt-2 max-w-2xl text-sm leading-6 text-[#6c615e]">
+            Alvo visual para a página pública: ouvir primeiro, baixar sem cadastro e manter um único
+            jingle tocando.
+          </p>
+        </div>
+        <p
+          class="m-0 rounded-full border border-black/10 bg-white px-4 py-2 text-xs font-bold text-[#6c615e]"
+        >
+          Tema: campaign-site · 390 / 1280
+        </p>
+      </header>
+
+      <!-- CENA 1 + 3: DESKTOP COMPLETO, COM FORRÓ TOCANDO -->
+      <section aria-labelledby="scene-desktop" class="mb-16">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p
+              class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Cena 01 · Desktop 1280
+            </p>
+            <h2 id="scene-desktop" class="font-display mt-1 text-xl font-black text-[#211b19]">
+              Página completa · estado tocando
+            </h2>
+          </div>
+          <p class="m-0 text-xs text-[#6c615e]">
+            Forró ativo; Axé e Pagodão parados. Os botões de play alternam o estado apenas para
+            apresentação.
+          </p>
+        </div>
+
+        <div
+          class="stage-shadow mx-auto w-full max-w-[1280px] overflow-hidden rounded-[18px] border border-black/10 bg-white"
+        >
+          <div class="screen" data-player-group>
+            <header class="border-b border-black/10 bg-[var(--campaign-cream)]">
+              <div class="mx-auto flex h-[92px] max-w-6xl items-center justify-between px-8">
+                <a href="#" aria-label="Início — Jorge Solla 1313" class="safe-focus rounded-md">
+                  <img
+                    src="../../public/campaign-kit/marca-positiva-completa.png"
+                    alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                    class="h-[74px] w-auto object-contain"
+                  />
+                </a>
+                <span
+                  class="font-display rounded-full bg-[#a21c1c] px-4 py-2 text-xs font-black tracking-[0.08em] text-white uppercase"
+                  >Jingles oficiais</span
+                >
+              </div>
+            </header>
+
+            <div class="relative overflow-hidden bg-[var(--campaign-cream)]">
+              <div
+                class="absolute -top-32 -right-24 h-72 w-72 rounded-full bg-[#ffe607]/55"
+                aria-hidden="true"
+              ></div>
+              <div
+                class="absolute top-16 -left-28 h-60 w-60 rounded-full bg-[#184e92]/8"
+                aria-hidden="true"
+              ></div>
+              <div class="relative mx-auto max-w-6xl px-8 pt-16 pb-12">
+                <p
+                  class="font-display m-0 text-xs font-black tracking-[0.14em] text-[#a21c1c] uppercase"
+                >
+                  A trilha da nossa caminhada
+                </p>
+                <div class="mt-3 grid grid-cols-[1fr_auto] items-end gap-10">
+                  <div>
+                    <h3
+                      class="font-display m-0 max-w-2xl text-[52px] leading-[0.98] font-black tracking-[-0.04em] text-[#000]"
+                    >
+                      Jingles de Jorge Solla
+                    </h3>
+                    <p class="mt-5 max-w-xl text-[17px] leading-7 text-black/70">
+                      Escolha um jingle, dê o play e escute aqui mesmo. Para levar com você, baixe o
+                      MP3.
+                    </p>
+                  </div>
+                  <div
+                    class="mb-1 flex items-center gap-3 rounded-xl border border-black/10 bg-white/75 px-4 py-3 text-sm text-black/65 backdrop-blur"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      class="h-5 w-5 text-[#a21c1c]"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M9 18V5l12-2v13" />
+                      <circle cx="6" cy="18" r="3" />
+                      <circle cx="18" cy="16" r="3" />
+                    </svg>
+                    <span
+                      ><strong class="text-black">Um por vez.</strong><br />Ao tocar outro, o
+                      anterior para.</span
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <section aria-label="Jingles publicados" class="bg-white px-8 py-14">
+              <div class="mx-auto grid max-w-6xl grid-cols-3 gap-6">
+                <article class="jingle-card" data-jingle data-state="stopped">
+                  <div class="cover-wrap">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                      alt="Capa do jingle Axé de Jorge Solla 1313"
+                    />
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-center gap-4">
+                      <button
+                        type="button"
+                        class="play-control safe-focus"
+                        data-play
+                        aria-label="Tocar jingle Axé"
+                        aria-pressed="false"
+                      >
+                        <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" />
+                        </svg>
+                        <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                        </svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4
+                          class="font-display m-0 text-[26px] leading-none font-black tracking-[-0.02em]"
+                        >
+                          Axé
+                        </h4>
+                        <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                        <p
+                          class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                        >
+                          <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5" aria-label="Progresso do jingle Axé">
+                      <div class="progress-track"><div class="progress-value"></div></div>
+                      <div
+                        class="mt-2 flex justify-between text-[11px] font-bold tracking-wide text-black/50 uppercase"
+                      >
+                        <span>Tempo —:—</span><span>Duração —:—</span>
+                      </div>
+                    </div>
+                    <a
+                      href="#"
+                      class="download-control safe-focus mt-5 w-full"
+                      aria-label="Baixar Axé em MP3"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" /></svg
+                      >Baixar MP3
+                    </a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-axe.mp3
+                    </p>
+                  </div>
+                </article>
+
+                <article class="jingle-card" data-jingle data-state="playing">
+                  <div class="cover-wrap">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                      alt="Capa do jingle Forró de Jorge Solla 1313"
+                    />
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-center gap-4">
+                      <button
+                        type="button"
+                        class="play-control safe-focus"
+                        data-play
+                        aria-label="Pausar jingle Forró"
+                        aria-pressed="true"
+                      >
+                        <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" />
+                        </svg>
+                        <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                        </svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4
+                          class="font-display m-0 text-[26px] leading-none font-black tracking-[-0.02em]"
+                        >
+                          Forró
+                        </h4>
+                        <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                        <p
+                          class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                        >
+                          <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5" aria-label="Progresso do jingle Forró">
+                      <div class="progress-track"><div class="progress-value"></div></div>
+                      <div
+                        class="mt-2 flex justify-between text-[11px] font-bold tracking-wide text-black/50 uppercase"
+                      >
+                        <span>Tempo —:—</span><span>Duração —:—</span>
+                      </div>
+                    </div>
+                    <a
+                      href="#"
+                      class="download-control safe-focus mt-5 w-full"
+                      aria-label="Baixar Forró em MP3"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" /></svg
+                      >Baixar MP3
+                    </a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-forro.mp3
+                    </p>
+                  </div>
+                </article>
+
+                <article class="jingle-card" data-jingle data-state="stopped">
+                  <div class="cover-wrap">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-pagodao.jpg"
+                      alt="Capa do jingle Pagodão de Jorge Solla 1313"
+                    />
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-center gap-4">
+                      <button
+                        type="button"
+                        class="play-control safe-focus"
+                        data-play
+                        aria-label="Tocar jingle Pagodão"
+                        aria-pressed="false"
+                      >
+                        <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" />
+                        </svg>
+                        <svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                        </svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4
+                          class="font-display m-0 text-[26px] leading-none font-black tracking-[-0.02em]"
+                        >
+                          Pagodão
+                        </h4>
+                        <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                        <p
+                          class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                        >
+                          <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5" aria-label="Progresso do jingle Pagodão">
+                      <div class="progress-track"><div class="progress-value"></div></div>
+                      <div
+                        class="mt-2 flex justify-between text-[11px] font-bold tracking-wide text-black/50 uppercase"
+                      >
+                        <span>Tempo —:—</span><span>Duração —:—</span>
+                      </div>
+                    </div>
+                    <a
+                      href="#"
+                      class="download-control safe-focus mt-5 w-full"
+                      aria-label="Baixar Pagodão em MP3"
+                    >
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M12 3v12" />
+                        <path d="m7 10 5 5 5-5" />
+                        <path d="M5 21h14" /></svg
+                      >Baixar MP3
+                    </a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-pagodao.mp3
+                    </p>
+                  </div>
+                </article>
+              </div>
+              <p class="mx-auto mt-8 max-w-6xl text-center text-xs leading-5 text-[#6c615e]">
+                Ouvir não inicia sozinho. O áudio só é carregado quando a pessoa dá o play.
+              </p>
+            </section>
+
+            <footer class="bg-[#180a09] text-[rgb(255_248_242/75%)]">
+              <div
+                class="mx-auto grid w-full max-w-6xl grid-cols-[2fr_1fr_1fr] gap-6 px-8 py-10 text-sm"
+              >
+                <div>
+                  <h4 class="font-display mb-2 text-base font-extrabold text-white">
+                    Jorge Solla 1313
+                  </h4>
+                  <p class="m-0 leading-6">
+                    Deputado Federal · PT · Bahia<br />Mais saúde mais futuro.
+                  </p>
+                </div>
+                <div>
+                  <h4 class="font-display mb-2 text-sm font-bold text-white">Navegue</h4>
+                  <ul class="m-0 grid list-none gap-1.5 p-0">
+                    <li><a class="footer-link" href="#">Bandeiras</a></li>
+                    <li><a class="footer-link font-bold text-white" href="#">Jingles</a></li>
+                    <li><a class="footer-link" href="#">Quero apoiar</a></li>
+                    <li><a class="footer-link" href="#">Privacidade</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 class="font-display mb-2 text-sm font-bold text-white">Redes</h4>
+                  <ul class="m-0 grid list-none gap-1.5 p-0">
+                    <li><a class="footer-link" href="#">Instagram</a></li>
+                    <li><a class="footer-link" href="#">YouTube</a></li>
+                    <li><a class="footer-link" href="#">Facebook</a></li>
+                  </ul>
+                </div>
+              </div>
+              <div class="border-t border-white/10">
+                <p
+                  class="mx-auto my-0 w-full max-w-6xl px-8 py-5 text-xs leading-relaxed text-[rgb(255_248_242/65%)]"
+                >
+                  Jorge José Santos Pereira Solla · Candidato a Deputado Federal · Nº 1313 ·
+                  Federação Brasil da Esperança (PT/PCdoB/PV) · CNPJ: 68.430.467/0001-05 ·
+                  Propaganda eleitoral gratuita. Site de campanha — conteúdo sob responsabilidade do
+                  candidato. Eleições 2026 · 1º turno: 04/10/2026.
+                </p>
+              </div>
+            </footer>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 2: MOBILE COMPLETO -->
+      <section aria-labelledby="scene-mobile" class="mb-16">
+        <div class="mb-4">
+          <p class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase">
+            Cena 02 · Mobile 390
+          </p>
+          <h2 id="scene-mobile" class="font-display mt-1 text-xl font-black text-[#211b19]">
+            Uma capa por linha · controles ao alcance do polegar
+          </h2>
+        </div>
+        <div
+          class="stage-shadow mx-auto w-[390px] max-w-full overflow-hidden rounded-[28px] border-[6px] border-[#2a2523] bg-white"
+        >
+          <div class="screen" data-player-group>
+            <header class="border-b border-black/10 bg-[var(--campaign-cream)] px-5 py-3">
+              <img
+                src="../../public/campaign-kit/marca-positiva-completa.png"
+                alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                class="h-[66px] w-auto object-contain"
+              />
+            </header>
+            <section class="relative overflow-hidden bg-[var(--campaign-cream)] px-5 pt-9 pb-8">
+              <div
+                class="absolute -top-14 -right-14 h-40 w-40 rounded-full bg-[#ffe607]/60"
+                aria-hidden="true"
+              ></div>
+              <p
+                class="font-display relative m-0 text-[10px] font-black tracking-[0.14em] text-[#a21c1c] uppercase"
+              >
+                A trilha da nossa caminhada
+              </p>
+              <h3
+                class="font-display relative mt-2 text-[34px] leading-[1] font-black tracking-[-0.04em]"
+              >
+                Jingles de<br />Jorge Solla
+              </h3>
+              <p class="relative mt-4 text-[15px] leading-6 text-black/70">
+                Dê o play para ouvir aqui. Se quiser levar, baixe o MP3.
+              </p>
+              <div class="relative mt-5 flex items-center gap-2 text-xs font-bold text-black/60">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  class="h-4 w-4 text-[#a21c1c]"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M9 18V5l12-2v13" />
+                  <circle cx="6" cy="18" r="3" />
+                  <circle cx="18" cy="16" r="3" /></svg
+                >Um jingle toca por vez.
+              </div>
+            </section>
+            <section aria-label="Jingles publicados" class="space-y-5 bg-white px-4 py-7">
+              <article class="jingle-card" data-jingle data-state="playing">
+                <div class="cover-wrap">
+                  <img
+                    src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                    alt="Capa do jingle Axé de Jorge Solla 1313"
+                  />
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center gap-4">
+                    <button
+                      type="button"
+                      class="play-control safe-focus"
+                      data-play
+                      aria-label="Pausar jingle Axé"
+                      aria-pressed="true"
+                    >
+                      <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                    <div>
+                      <h4 class="font-display m-0 text-2xl leading-none font-black">Axé</h4>
+                      <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                      <p
+                        class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                      >
+                        <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-5">
+                    <div class="progress-track"><div class="progress-value"></div></div>
+                    <div
+                      class="mt-2 flex justify-between text-[10px] font-bold tracking-wide text-black/50 uppercase"
+                    >
+                      <span>Tempo —:—</span><span>Duração —:—</span>
+                    </div>
+                  </div>
+                  <a
+                    href="#"
+                    class="download-control safe-focus mt-5 w-full"
+                    aria-label="Baixar Axé em MP3"
+                    ><svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M12 3v12" />
+                      <path d="m7 10 5 5 5-5" />
+                      <path d="M5 21h14" /></svg
+                    >Baixar MP3</a
+                  >
+                  <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                    jorge-solla-1313-axe.mp3
+                  </p>
+                </div>
+              </article>
+              <article class="jingle-card" data-jingle data-state="stopped">
+                <div class="cover-wrap">
+                  <img
+                    src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                    alt="Capa do jingle Forró de Jorge Solla 1313"
+                  />
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center gap-4">
+                    <button
+                      type="button"
+                      class="play-control safe-focus"
+                      data-play
+                      aria-label="Tocar jingle Forró"
+                      aria-pressed="false"
+                    >
+                      <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                    <div>
+                      <h4 class="font-display m-0 text-2xl leading-none font-black">Forró</h4>
+                      <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                      <p
+                        class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                      >
+                        <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-5">
+                    <div class="progress-track"><div class="progress-value"></div></div>
+                    <div
+                      class="mt-2 flex justify-between text-[10px] font-bold tracking-wide text-black/50 uppercase"
+                    >
+                      <span>Tempo —:—</span><span>Duração —:—</span>
+                    </div>
+                  </div>
+                  <a
+                    href="#"
+                    class="download-control safe-focus mt-5 w-full"
+                    aria-label="Baixar Forró em MP3"
+                    ><svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M12 3v12" />
+                      <path d="m7 10 5 5 5-5" />
+                      <path d="M5 21h14" /></svg
+                    >Baixar MP3</a
+                  >
+                  <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                    jorge-solla-1313-forro.mp3
+                  </p>
+                </div>
+              </article>
+              <article class="jingle-card" data-jingle data-state="stopped">
+                <div class="cover-wrap">
+                  <img
+                    src="jingles-site-publico-ui-design-assets/capa-pagodao.jpg"
+                    alt="Capa do jingle Pagodão de Jorge Solla 1313"
+                  />
+                </div>
+                <div class="p-4">
+                  <div class="flex items-center gap-4">
+                    <button
+                      type="button"
+                      class="play-control safe-focus"
+                      data-play
+                      aria-label="Tocar jingle Pagodão"
+                      aria-pressed="false"
+                    >
+                      <svg class="play-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="pause-icon" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                    <div>
+                      <h4 class="font-display m-0 text-2xl leading-none font-black">Pagodão</h4>
+                      <p class="stopped-only mt-2 text-sm text-[#6c615e]">Pronto para tocar</p>
+                      <p
+                        class="playing-only mt-2 items-center gap-2 text-sm font-bold text-[#a21c1c]"
+                      >
+                        <span class="h-2 w-2 rounded-full bg-[#a21c1c]"></span>Em reprodução
+                      </p>
+                    </div>
+                  </div>
+                  <div class="mt-5">
+                    <div class="progress-track"><div class="progress-value"></div></div>
+                    <div
+                      class="mt-2 flex justify-between text-[10px] font-bold tracking-wide text-black/50 uppercase"
+                    >
+                      <span>Tempo —:—</span><span>Duração —:—</span>
+                    </div>
+                  </div>
+                  <a
+                    href="#"
+                    class="download-control safe-focus mt-5 w-full"
+                    aria-label="Baixar Pagodão em MP3"
+                    ><svg
+                      aria-hidden="true"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M12 3v12" />
+                      <path d="m7 10 5 5 5-5" />
+                      <path d="M5 21h14" /></svg
+                    >Baixar MP3</a
+                  >
+                  <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                    jorge-solla-1313-pagodao.mp3
+                  </p>
+                </div>
+              </article>
+              <p class="m-0 px-3 text-center text-xs leading-5 text-[#6c615e]">
+                Sem autoplay. O áudio só é carregado depois do play.
+              </p>
+            </section>
+            <footer class="bg-[#180a09] px-5 pt-8 text-sm text-[rgb(255_248_242/75%)]">
+              <h4 class="font-display mb-2 text-base font-extrabold text-white">
+                Jorge Solla 1313
+              </h4>
+              <p class="m-0 leading-6">
+                Deputado Federal · PT · Bahia<br />Mais saúde mais futuro.
+              </p>
+              <div class="mt-7 grid grid-cols-2 gap-8">
+                <div>
+                  <h4 class="font-display mb-2 font-bold text-white">Navegue</h4>
+                  <ul class="m-0 grid list-none gap-2 p-0">
+                    <li><a class="footer-link" href="#">Bandeiras</a></li>
+                    <li><a class="footer-link font-bold text-white" href="#">Jingles</a></li>
+                    <li><a class="footer-link" href="#">Quero apoiar</a></li>
+                    <li><a class="footer-link" href="#">Privacidade</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 class="font-display mb-2 font-bold text-white">Redes</h4>
+                  <ul class="m-0 grid list-none gap-2 p-0">
+                    <li><a class="footer-link" href="#">Instagram</a></li>
+                    <li><a class="footer-link" href="#">YouTube</a></li>
+                    <li><a class="footer-link" href="#">Facebook</a></li>
+                  </ul>
+                </div>
+              </div>
+              <p
+                class="mt-8 border-t border-white/10 py-5 text-[10px] leading-4 text-[rgb(255_248_242/65%)]"
+              >
+                Jorge José Santos Pereira Solla · Candidato a Deputado Federal · Nº 1313 · Federação
+                Brasil da Esperança (PT/PCdoB/PV) · CNPJ: 68.430.467/0001-05 · Propaganda eleitoral
+                gratuita. Eleições 2026.
+              </p>
+            </footer>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 4: ESTADO VAZIO -->
+      <section aria-labelledby="scene-empty" class="mb-16">
+        <div class="mb-4">
+          <p class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase">
+            Cena 03 · Estado vazio
+          </p>
+          <h2 id="scene-empty" class="font-display mt-1 text-xl font-black text-[#211b19]">
+            Acesso direto sem jingles publicados · descoberta ausente
+          </h2>
+        </div>
+        <div
+          class="stage-shadow mx-auto w-full max-w-[1280px] overflow-hidden rounded-[18px] border border-black/10 bg-white"
+        >
+          <div class="screen">
+            <header class="border-b border-black/10 bg-[var(--campaign-cream)]">
+              <div class="mx-auto flex h-[92px] max-w-6xl items-center px-8">
+                <img
+                  src="../../public/campaign-kit/marca-positiva-completa.png"
+                  alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                  class="h-[74px] w-auto object-contain"
+                />
+              </div>
+            </header>
+            <section class="bg-[var(--campaign-cream)] px-6 py-20 text-center">
+              <div
+                class="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-[#ebe9e9] text-[#a21c1c]"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  class="h-9 w-9"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                >
+                  <path d="M9 18V5l12-2v13" />
+                  <circle cx="6" cy="18" r="3" />
+                  <circle cx="18" cy="16" r="3" />
+                  <path d="M3 3l18 18" />
+                </svg>
+              </div>
+              <p
+                class="font-display mt-7 text-xs font-black tracking-[0.14em] text-[#a21c1c] uppercase"
+              >
+                Jingles
+              </p>
+              <h3
+                class="font-display mx-auto mt-2 max-w-2xl text-4xl font-black tracking-[-0.035em]"
+              >
+                Nenhum jingle publicado por enquanto
+              </h3>
+              <p class="mx-auto mt-4 max-w-xl text-base leading-7 text-[#6c615e]">
+                Quando houver jingles disponíveis, eles aparecerão nesta página para ouvir e baixar.
+              </p>
+              <p class="mt-8 text-sm text-black/55">Você pode voltar ao site de Jorge Solla.</p>
+              <a
+                href="#"
+                class="safe-focus font-display mt-3 inline-flex min-h-11 items-center rounded-[10px] border-2 border-[#a21c1c] px-5 font-extrabold text-[#a21c1c] no-underline hover:bg-[#a21c1c] hover:text-white"
+                >Voltar ao início</a
+              >
+            </section>
+            <footer class="bg-[#180a09] text-[rgb(255_248_242/75%)]">
+              <div
+                class="mx-auto grid w-full max-w-6xl grid-cols-[2fr_1fr_1fr] gap-6 px-8 py-10 text-sm"
+              >
+                <div>
+                  <h4 class="font-display mb-2 text-base font-extrabold text-white">
+                    Jorge Solla 1313
+                  </h4>
+                  <p class="m-0 leading-6">
+                    Deputado Federal · PT · Bahia<br />Mais saúde mais futuro.
+                  </p>
+                </div>
+                <div>
+                  <h4 class="font-display mb-2 font-bold text-white">Navegue</h4>
+                  <ul class="m-0 grid list-none gap-1.5 p-0">
+                    <li><a class="footer-link" href="#">Bandeiras</a></li>
+                    <li><a class="footer-link" href="#">Quero apoiar</a></li>
+                    <li><a class="footer-link" href="#">Privacidade</a></li>
+                  </ul>
+                  <p class="mt-4 text-[11px] text-white/40">
+                    “Jingles” ausente enquanto não há publicação.
+                  </p>
+                </div>
+                <div>
+                  <h4 class="font-display mb-2 font-bold text-white">Redes</h4>
+                  <ul class="m-0 grid list-none gap-1.5 p-0">
+                    <li><a class="footer-link" href="#">Instagram</a></li>
+                    <li><a class="footer-link" href="#">YouTube</a></li>
+                    <li><a class="footer-link" href="#">Facebook</a></li>
+                  </ul>
+                </div>
+              </div>
+            </footer>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 5: DETALHE DE DOWNLOAD -->
+      <section aria-labelledby="scene-detail" class="mb-12">
+        <div class="mb-4">
+          <p class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase">
+            Cena 04 · Detalhe de interação
+          </p>
+          <h2 id="scene-detail" class="font-display mt-1 text-xl font-black text-[#211b19]">
+            Download secundário · hover e foco visíveis
+          </h2>
+        </div>
+        <div
+          class="detail-focus-demo stage-shadow mx-auto grid max-w-4xl gap-8 rounded-[18px] border border-black/10 bg-[var(--campaign-cream)] p-6 sm:grid-cols-[260px_1fr] sm:p-8"
+        >
+          <img
+            src="jingles-site-publico-ui-design-assets/capa-pagodao.jpg"
+            alt="Capa do jingle Pagodão de Jorge Solla 1313"
+            class="aspect-square w-full rounded-xl object-cover"
+          />
+          <div class="flex flex-col justify-center">
+            <span
+              class="font-display text-[10px] font-black tracking-[0.14em] text-[#a21c1c] uppercase"
+              >Exemplo: foco de teclado</span
+            >
+            <h3 class="font-display mt-2 text-3xl font-black">Pagodão</h3>
+            <p class="mt-3 max-w-lg text-sm leading-6 text-[#6c615e]">
+              O play amarelo continua sendo a ação de maior destaque. “Baixar MP3” é uma ação
+              secundária clara, com anel de foco de alto contraste e alvo de toque confortável.
+            </p>
+            <a
+              href="#"
+              class="download-control mt-6 w-full max-w-sm"
+              aria-label="Baixar Pagodão em MP3"
+              ><svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M12 3v12" />
+                <path d="m7 10 5 5 5-5" />
+                <path d="M5 21h14" /></svg
+              >Baixar MP3</a
+            >
+            <p class="mt-3 max-w-sm break-all text-center text-xs text-black/50">
+              jorge-solla-1313-pagodao.mp3
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="rounded-[14px] border border-black/10 bg-white p-6 text-sm text-[#4f4642]">
+        <h2 class="font-display text-base font-black text-black">Notas do gate</h2>
+        <ul class="mt-3 grid list-disc gap-2 pl-5 leading-6 sm:grid-cols-2 sm:gap-x-10">
+          <li>Players representam controles HTML5: play/pausa, progresso e tempo; sem autoplay.</li>
+          <li>
+            O carregamento do áudio começa só após a ação de play; abrir a página não baixa os MP3.
+          </li>
+          <li>Ao iniciar outro jingle, o anterior volta ao estado parado.</li>
+          <li>
+            Capas têm texto alternativo sugerido; botões e links têm foco visível e alvo mínimo de
+            44px.
+          </li>
+          <li>
+            Com zero publicados, a mensagem é honesta e o link “Jingles” desaparece do rodapé.
+          </li>
+          <li>Sem formulário, captura de dados ou consentimento nesta superfície.</li>
+        </ul>
+      </aside>
+    </main>
+
+    <script>
+      // Interação mínima de apresentação: demonstra pausa e exclusividade dentro de cada cena.
+      document.querySelectorAll('[data-player-group]').forEach((group) => {
+        group.querySelectorAll('[data-play]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const selected = button.closest('[data-jingle]')
+            const wasPlaying = selected.dataset.state === 'playing'
+
+            group.querySelectorAll('[data-jingle]').forEach((card) => {
+              card.dataset.state = 'stopped'
+              const control = card.querySelector('[data-play]')
+              const title = card.querySelector('h4').textContent
+              control.setAttribute('aria-pressed', 'false')
+              control.setAttribute('aria-label', `Tocar jingle ${title}`)
+            })
+
+            if (!wasPlaying) {
+              selected.dataset.state = 'playing'
+              button.setAttribute('aria-pressed', 'true')
+              button.setAttribute(
+                'aria-label',
+                `Pausar jingle ${selected.querySelector('h4').textContent}`,
+              )
+            }
+          })
+        })
+      })
+
+      document
+        .querySelectorAll('a[href="#"]')
+        .forEach((link) => link.addEventListener('click', (event) => event.preventDefault()))
+    </script>
+  </body>
+</html>
