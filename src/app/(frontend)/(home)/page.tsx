@@ -6,6 +6,7 @@ import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
+import { hasPublishedJingles } from '@/utilities/jingleReads'
 import type { ReactNode } from 'react'
 import { CampaignCardsSection } from './CampaignCardsSection'
 import { CampaignNewsletterSection } from './CampaignNewsletterSection'
@@ -114,6 +115,8 @@ const proofItems = [
 export default async function HomePage() {
   // S10 — site-level Meta pixel for the campaign home (cached read, fail-closed).
   const pixelId = await getCampaignHomeMetaPixelId()
+  // S21 — the footer's "Jingles" discovery link (cached, keeps the home static).
+  const showJingles = await hasPublishedJingles()
 
   return (
     <>
@@ -240,7 +243,7 @@ export default async function HomePage() {
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
-      <CampaignFooter />
+      <CampaignFooter showJingles={showJingles} />
     </>
   )
 }

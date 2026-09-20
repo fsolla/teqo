@@ -16,6 +16,7 @@ export {
   isCampaignUnrestricted,
   isPayloadAdmin,
   payloadAdminOnly,
+  publishedOrPanelAccess,
 } from '@/utilities/access/shared'
 
 export {

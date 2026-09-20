@@ -124,6 +124,9 @@ next-env.d.ts
 *.m4a
 *.mp3
 *.webm
+# S21 — the int/e2e jingle fixture (~5 KB, sine tone): the only audio the repo
+# commits; every real jingle lives in the media collection.
+!tests/fixtures/*.mp3
 
 # opencode secrets (Penpot MCP token, etc.)
 .opencode/secrets/

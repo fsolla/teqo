@@ -13,6 +13,15 @@ import { getPayload } from 'payload'
 
 type Collection = keyof Config['collections']
 
+/**
+ * `findByID` answers 404 for an unknown id; on the production (bundled) server
+ * that error can cross a module boundary where `instanceof APIError` is false,
+ * so the status is the contract — an unknown id is "not found", anything else
+ * keeps failing loudly.
+ */
+export const isNotFoundError = (error: unknown): boolean =>
+  typeof error === 'object' && error !== null && (error as { status?: unknown }).status === 404
+
 /** Bare petition ids (no relationship population) — for `generateStaticParams`. */
 export const getPetitionIds = async (): Promise<string[]> => {
   const payload = await getPayload({ config: configPromise })

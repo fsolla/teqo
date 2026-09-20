@@ -108,6 +108,7 @@ export interface Config {
     post: Post;
     tag: Tag;
     shareLink: ShareLink;
+    jingle: Jingle;
     exports: Export;
     imports: Import;
     'payload-kv': PayloadKv;
@@ -158,6 +159,7 @@ export interface Config {
     post: PostSelect<false> | PostSelect<true>;
     tag: TagSelect<false> | TagSelect<true>;
     shareLink: ShareLinkSelect<false> | ShareLinkSelect<true>;
+    jingle: JingleSelect<false> | JingleSelect<true>;
     exports: ExportsSelect<false> | ExportsSelect<true>;
     imports: ImportsSelect<false> | ImportsSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -1560,6 +1562,41 @@ export interface ShareLink {
   createdAt: string;
 }
 /**
+ * Peças de áudio do site público (/jingles). Suba o MP3 e a capa pela Mídia; desmarcar "Publicado" tira o jingle do ar na hora, sem apagar arquivo.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "jingle".
+ */
+export interface Jingle {
+  id: number;
+  /**
+   * Nome curto exibido no card (ex.: Axé).
+   */
+  title: string;
+  /**
+   * Gerado automaticamente a partir do título quando vazio. Vira o nome do arquivo no download (jorge-solla-1313-<slug>.mp3).
+   */
+  slug?: string | null;
+  /**
+   * Imagem quadrada exibida acima do player (JPG/PNG otimizados).
+   */
+  coverImage: number | Media;
+  /**
+   * O MP3 que toca e baixa. O mesmo arquivo serve para ouvir e baixar; não suba WAV. A Mídia pede um texto alternativo — use algo como "Jingle Axé — áudio".
+   */
+  audio: number | Media;
+  /**
+   * Menor vem primeiro; vazio vai ao fim. Empate desempata pelo título.
+   */
+  order?: number | null;
+  /**
+   * Desmarcado, o jingle some do site e do rodapé na hora (kill switch).
+   */
+  published?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports".
  */
@@ -1908,6 +1945,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'shareLink';
         value: number | ShareLink;
+      } | null)
+    | ({
+        relationTo: 'jingle';
+        value: number | Jingle;
       } | null);
   globalSlug?: string | null;
   user:
@@ -2791,6 +2832,20 @@ export interface ShareLinkSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "jingle_select".
+ */
+export interface JingleSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  coverImage?: T;
+  audio?: T;
+  order?: T;
+  published?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "exports_select".
  */
 export interface ExportsSelect<T extends boolean = true> {
@@ -3301,6 +3356,7 @@ export interface TaskCreateCollectionExport {
       | 'post'
       | 'tag'
       | 'shareLink'
+      | 'jingle'
       | 'exports'
       | 'imports';
     drafts?: ('yes' | 'no') | null;

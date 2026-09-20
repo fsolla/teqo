@@ -504,6 +504,10 @@ describe('src/utilities top-level is pinned', () => {
     // 'use server' action module).
     'leadershipConflict.ts',
     'hookFilledData.ts',
+    // S21 — cached published-jingles listing + per-media resolution for the
+    // public `/jingles` page and the footer discovery link (the tag side lives
+    // in `documents.ts`, the config side here, the sibling of `posts.ts`).
+    'jingleReads.ts',
     'leaderContactsPageData.ts',
     'loadNamesByIds.ts',
     // OPS52 — media storage env resolution; shared by payload.config.ts

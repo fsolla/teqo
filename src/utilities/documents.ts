@@ -31,3 +31,5 @@ const revalidateCollectionListing = <Slug extends Collection>(collection: Slug) 
 export const revalidatePostsListing = () => revalidateCollectionListing('post')
 
 export const revalidateShareLinksListing = () => revalidateCollectionListing('shareLink')
+
+export const revalidateJinglesListing = () => revalidateCollectionListing('jingle')
