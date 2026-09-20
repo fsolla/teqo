@@ -209,7 +209,7 @@ export const purposeInvocation = ({
     // Mesma sanitização da diretiva de launch (fronteira dupla de propósito:
     // o xargs da camada shell e o argv do `opencode run` não honram escapes).
     const sanitized = typeof argument === 'string' ? argument.replace(/["\\]/g, '').trim() : ''
-    if (purpose === 'plan' && !sanitized) return null
+    if ((purpose === 'plan' || purpose === 'fix') && !sanitized) return null
     if (auto) return { command, arguments: sanitized ? `--auto ${sanitized}` : '--auto' }
     return { command, arguments: sanitized }
   }

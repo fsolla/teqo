@@ -240,15 +240,13 @@ describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => 
     expect(purposeInvocation({ purpose: 'new' })).toBeNull()
   })
 
-  it('fix sends the sanitized bag (xargs/argv-safe); empty bag sends the bare command', () => {
+  it('fix sends the sanitized bag (xargs/argv-safe); empty bag is driverless (OPS71)', () => {
     expect(purposeInvocation({ purpose: 'fix', argument: 'a"b\\c bug' })).toEqual({
       command: 'bug-fix',
       arguments: 'abc bug',
     })
-    expect(purposeInvocation({ purpose: 'fix', argument: '  ""  ' })).toEqual({
-      command: 'bug-fix',
-      arguments: '',
-    })
+    expect(purposeInvocation({ purpose: 'fix', argument: '  ""  ' })).toBeNull()
+    expect(purposeInvocation({ purpose: 'fix' })).toBeNull()
   })
 
   it('unknown purpose degrades to no command (fail-safe direction)', () => {
@@ -274,11 +272,8 @@ describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => 
     })
   })
 
-  it('auto=true with an empty fix bag still submits the bare flag — /bug-fix --auto', () => {
-    expect(purposeInvocation({ purpose: 'fix', auto: true })).toEqual({
-      command: 'bug-fix',
-      arguments: '--auto',
-    })
+  it('auto=true with an empty fix bag is driverless (OPS71)', () => {
+    expect(purposeInvocation({ purpose: 'fix', auto: true })).toBeNull()
   })
 
   it('auto=false (default) keeps the supervised forms byte-identical', () => {
@@ -289,7 +284,7 @@ describe('purposeInvocation (mapa purpose→comando movido do worktree)', () => 
     expect(purposeInvocation({ purpose: 'fix', argument: 'b' })).toMatchObject({
       arguments: 'b',
     })
-    expect(purposeInvocation({ purpose: 'fix' })).toMatchObject({ arguments: '' })
+    expect(purposeInvocation({ purpose: 'fix' })).toBeNull()
     expect(purposeInvocation({ purpose: 'plan', argument: 'b' })).toMatchObject({
       arguments: 'b',
     })

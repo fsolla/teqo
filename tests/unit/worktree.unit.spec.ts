@@ -597,9 +597,8 @@ describe('validateWorktreeFlags + WORKTREE_FLAG_ALLOWLIST (OPS122 — flag desco
 })
 
 describe('assertSkillAutoSupported (OPS122 — `--auto` não-honrável falha alto)', () => {
-  it('honors next/fix always and plan only with a bag', () => {
+  it('honors next always and fix/plan only with a bag', () => {
     expect(() => assertSkillAutoSupported({ purpose: 'next' })).not.toThrow()
-    expect(() => assertSkillAutoSupported({ purpose: 'fix' })).not.toThrow()
     expect(() => assertSkillAutoSupported({ purpose: 'fix', bag: 'bug' })).not.toThrow()
     expect(() => assertSkillAutoSupported({ purpose: 'plan', bag: 'uma ideia' })).not.toThrow()
   })
