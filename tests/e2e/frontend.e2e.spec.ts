@@ -1837,7 +1837,7 @@ test.describe('Cards personalizados (S14)', () => {
 /** Mirrors the stub's deterministic `slow` download progress (cardCutout.ts). */
 const STUB_CUTOUT_PERCENT = 36
 
-const setCutoutStub = (page: Page, mode: 'ok' | 'slow' | 'error' | 'noface') =>
+const setCutoutStub = (page: Page, mode: 'ok' | 'slow' | 'error') =>
   page.addInitScript((value: string) => {
     ;(window as unknown as { __cardsCutoutStub?: string }).__cardsCutoutStub = value
   }, mode)
@@ -1995,10 +1995,9 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
     const readSample = () =>
       canvas.evaluate((element) => {
         const node = element as HTMLCanvasElement
-        // S18 — the proportional framing draws the stub photo smaller than the
-        // slot, so the sample sits inside the drawn ellipse (window center)
-        // instead of the S15 cover point (582, 727).
-        return [...node.getContext('2d')!.getImageData(582, 550, 1, 1).data]
+        // S15 — the auto-framing covers the slot, so the window center is the
+        // stub ellipse center.
+        return [...node.getContext('2d')!.getImageData(582, 727, 1, 1).data]
       })
 
     // Default ON: the preview pixel is the harmonized variant, not the raw photo.
@@ -2055,43 +2054,14 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
 })
 
 /**
- * S18 — the proportional face framing. The stub carries a synthetic face box
- * (`ok`/`slow`) or none (`noface`), so both branches run through the composer
- * without touching the real detector; the unit specs pin the framing math.
+ * S15 — the auto-framing after the S18 proportional framing was reverted: the
+ * stub cutout (bbox = whole canvas) must cover the photo window at the cover
+ * floor (zoom 1), the person filling the slot instead of a small sticker. The
+ * engine failure paths (WebGL/WASM blocked) are covered by the adapter unit
+ * specs; the real engine is exercised in craft.
  */
-test.describe('Cards personalizados (S18 — cabeça proporcional)', () => {
-  test('a cutout without a detected face falls back to the S15 framing in silence', async ({
-    page,
-  }) => {
-    await setCutoutStub(page, 'noface')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await uploadBustPhoto(dialog)
-
-    // The fallback is invisible: no detection alert, no error state, S15 zoom.
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(dialog.getByRole('alert')).toHaveCount(0)
-    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBe(1)
-    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
-    await expect(primary).toBeEnabled()
-
-    await primary.click()
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
-    ])
-    expect(
-      readFileSync((await download.path())!)
-        .subarray(0, 8)
-        .equals(PNG_SIGNATURE),
-    ).toBe(true)
-  })
-
-  test('a detected face reaches the proportional framing without surfacing errors', async ({
-    page,
-  }) => {
+test.describe('Cards personalizados (S15 — enquadramento automático)', () => {
+  test('covers the photo window at the cover floor and downloads the PNG', async ({ page }) => {
     await setCutoutStub(page, 'ok')
     await page.goto('/cards?model=time-de-voce')
 
@@ -2101,9 +2071,36 @@ test.describe('Cards personalizados (S18 — cabeça proporcional)', () => {
 
     await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
     await expect(dialog.getByRole('alert')).toHaveCount(0)
-    // The proportional framing sits well below the S13 cover floor (team min).
-    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBeLessThan(0.5)
-    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
-    await expect(dialog.getByText('Arraste para ajustar')).toBeVisible()
+    // The S18 proportional framing sat well below the cover floor; the reverted
+    // auto-framing always covers (zoom 1 for the stub's full-canvas bbox).
+    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBe(1)
+
+    // Scale proof: the stub ellipse (rx 180 on a 400px canvas) reaches x=300 in
+    // card pixels only under the cover framing — the small S18 sticker did not.
+    // Harmony is ON by default; turn it off to sample the raw fixture.
+    await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
+    const canvas = dialog.locator('canvas')
+    await expect
+      .poll(() =>
+        canvas.evaluate((element) => {
+          const node = element as HTMLCanvasElement
+          return [...node.getContext('2d')!.getImageData(300, 727, 1, 1).data]
+        }),
+      )
+      .toEqual([30, 120, 200, 255])
+
+    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
+    await expect(primary).toBeEnabled()
+    await primary.click()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
+    ])
+    expect(
+      readFileSync((await download.path())!)
+        .subarray(0, 8)
+        .equals(PNG_SIGNATURE),
+    ).toBe(true)
   })
 })

@@ -12,7 +12,6 @@ import { fitCardName } from '@/lib/cardNameFit'
 import {
   centerCardPhotoTransform,
   frameCardPhotoOnBbox,
-  type CardAlphaBbox,
   type CardPhotoSize,
 } from '@/lib/cardPhotoTransform'
 import {
@@ -244,37 +243,6 @@ describe('renderTeamCard', () => {
     expect(result.fit).toEqual({ ok: false, reason: 'too-long' })
     expect(rectCalls).toHaveLength(1)
     expect(textCalls.map((call) => call.text)).toEqual(['TIME DE'])
-  })
-
-  it('S20 — draws and returns the anchored reach instead of the S18 bound', () => {
-    const face: CardAlphaBbox = { x: 80, y: 100, width: 60, height: 60 }
-    const pushed = { ...transform, offsetX: 9999 }
-    const draw = (anchorBox?: CardAlphaBbox | null) => {
-      const fake = createFakeContext()
-      const result = renderTeamCard(fake.ctx, teamModel, {
-        base: { id: 'base' } as unknown as CanvasImageSource,
-        overlay: { id: 'overlay' } as unknown as CanvasImageSource,
-        photo: { id: 'photo' } as unknown as CanvasImageSource,
-        photoSize,
-        transform: pushed,
-        window,
-        anchorBox,
-        name: 'Maria',
-        fontFamily: 'Brexter',
-        measure: createCardMeasure(fake.ctx, 'Brexter'),
-      })
-
-      return { dx: fake.drawCalls[1]!.dx, result }
-    }
-
-    const s18 = draw()
-    const anchored = draw(face)
-
-    // the face box reaches further right than the S18 cover bound, in the draw
-    // and in the write-back contract, with Y untouched
-    expect(anchored.dx).toBeGreaterThan(s18.dx)
-    expect(anchored.result.transform.offsetX).toBeGreaterThan(s18.result.transform.offsetX)
-    expect(anchored.result.transform.offsetY).toBe(s18.result.transform.offsetY)
   })
 })
 

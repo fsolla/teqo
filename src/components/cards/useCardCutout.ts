@@ -4,13 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { removeCardPhotoBackground } from '@/components/cards/cardCutout'
 import { harmonizeCardCutout } from '@/components/cards/cardPhotoHarmonyCanvas'
-import { TEAM_CARD_FACE_REFERENCE_SIZE, type CardRect } from '@/lib/cardModels'
-import {
-  frameCardPhotoOnFace,
-  type CardAlphaBbox,
-  type CardFaceBox,
-  type CardPhotoTransform,
-} from '@/lib/cardPhotoTransform'
+import type { CardRect } from '@/lib/cardModels'
+import { frameCardPhotoOnBbox, type CardPhotoTransform } from '@/lib/cardPhotoTransform'
 
 export type CardCutoutState =
   | { status: 'idle' }
@@ -26,13 +21,10 @@ export type CardCutoutState =
       harmonized: HTMLCanvasElement | null
       width: number
       height: number
-      /** Initial framing: cutout top on the slot top, face centered (S18). */
+      /** Initial framing: cutout top on the slot top, centered (S15). */
       transform: CardPhotoTransform
-      /** S20 — silhouette and detected face, kept for the fine-tuning anchor. */
-      bbox: CardAlphaBbox
-      face: CardFaceBox | null
     }
-  | { status: 'error'; reason: 'engine' | 'empty' }
+  | { status: 'error'; reason: 'engine' | 'empty' | 'unsupported' }
 
 /**
  * S15 — owns the cutout lifecycle for the team model: engine import, progress,
@@ -75,12 +67,10 @@ export const useCardCutout = (photoWindow: CardRect | undefined, harmonyReferenc
       }
 
       const transform = photoWindow
-        ? frameCardPhotoOnFace(
+        ? frameCardPhotoOnBbox(
             { width: result.width, height: result.height },
             photoWindow,
             result.bbox,
-            result.face,
-            TEAM_CARD_FACE_REFERENCE_SIZE,
           )
         : null
       if (!transform) {
@@ -100,8 +90,6 @@ export const useCardCutout = (photoWindow: CardRect | undefined, harmonyReferenc
         width: result.width,
         height: result.height,
         transform,
-        bbox: result.bbox,
-        face: result.face,
       })
     },
     [photoWindow, harmonyReferenceSrc],
