@@ -8,6 +8,7 @@ import {
   GENERATED_ENV_MARKER,
   hashSlotOf,
   isGeneratedDatabaseName,
+  mirroredEnvCopiedLines,
   numericSlotOfCode,
   s3EnvCopiedLines,
   testDatabaseForSlot,
@@ -883,6 +884,33 @@ describe('s3EnvCopiedLines (OPS52 media storage, all-or-nothing)', () => {
     delete partial.S3_SECRET_ACCESS_KEY
     expect(s3EnvCopiedLines(partial)).toEqual([])
     expect(s3EnvCopiedLines({ ...full(), S3_BUCKET: '' })).toEqual([])
+  })
+})
+
+describe('mirroredEnvCopiedLines (optional envs mirrored into the worktree)', () => {
+  it('copies PORTAL_TRANSPARENCIA_API_KEY from the main env (C163/C190 reports)', () => {
+    expect(mirroredEnvCopiedLines({ PORTAL_TRANSPARENCIA_API_KEY: 'eb32-key' })).toEqual([
+      'PORTAL_TRANSPARENCIA_API_KEY=eb32-key',
+    ])
+  })
+
+  it('copies every mirrored key present, in a stable order, skipping absent ones', () => {
+    expect(
+      mirroredEnvCopiedLines({
+        RESEND_API_KEY: 're_1',
+        VAPID_PRIVATE_KEY: 'priv',
+        PORTAL_TRANSPARENCIA_API_KEY: 'eb32-key',
+      }),
+    ).toEqual([
+      'VAPID_PRIVATE_KEY=priv',
+      'RESEND_API_KEY=re_1',
+      'PORTAL_TRANSPARENCIA_API_KEY=eb32-key',
+    ])
+  })
+
+  it('copies nothing when no mirrored key is set', () => {
+    expect(mirroredEnvCopiedLines({ DATABASE_URL: 'x' })).toEqual([])
+    expect(mirroredEnvCopiedLines({ PORTAL_TRANSPARENCIA_API_KEY: '' })).toEqual([])
   })
 })
 

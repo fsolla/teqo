@@ -182,6 +182,7 @@ import {
   DEV_PORT_BASE,
   GENERATED_ENV_MARKER,
   isGeneratedDatabaseName,
+  mirroredEnvCopiedLines,
   s3EnvCopiedLines,
   worktreeEnvFileContents,
   worktreeEnvironment,
@@ -503,8 +504,6 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
   const devUrl = `postgresql://teqo:teqo@localhost:5432/${devDatabase}`
   const testUrl = `postgresql://teqo:teqo@localhost:5432/${testDatabase}`
 
-  const copy = (key) => (mainEnv[key] ? [`${key}=${mainEnv[key]}`] : [])
-
   const issueLabel = issue ? ` · issue #${issue.number}` : ''
   const generatedBy = `gerado por pnpm worktree ${purpose}`
 
@@ -517,13 +516,9 @@ const provision = async ({ dir, branch, issue, env, skipMigrate, mainRoot, purpo
     copiedLines: [
       // Media storage (OPS52): all-or-nothing (see s3EnvCopiedLines).
       ...s3EnvCopiedLines(mainEnv),
-      ...copy('NEXT_PUBLIC_VAPID_PUBLIC_KEY'),
-      ...copy('VAPID_PUBLIC_KEY'),
-      ...copy('VAPID_PRIVATE_KEY'),
-      ...copy('VAPID_SUBJECT'),
-      ...copy('RESEND_API_KEY'),
-      ...copy('CAMPAIGN_EMAIL_FROM'),
-      ...copy('CAMPAIGN_EMAIL_FROM_NAME'),
+      // Optional secrets mirrored from the main env (single owner:
+      // MIRRORED_WORKTREE_ENV_KEYS in scripts/lib/worktree-env.mjs).
+      ...mirroredEnvCopiedLines(mainEnv),
     ],
   })
   writeFileSync(join(dir, '.env.local'), devLines.join('\n'))
