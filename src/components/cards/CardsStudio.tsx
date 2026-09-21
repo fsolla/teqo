@@ -60,7 +60,7 @@ export const CardsStudio = ({
           <Drawer open={open} onOpenChange={setOpen} swipeDirection="down" showSwipeHandle>
             <DrawerContent
               data-theme="campaign-site"
-              className="bg-background text-foreground [--drawer-content-max-height:92dvh]"
+              className="h-dvh max-h-dvh bg-background pt-[max(0px,env(safe-area-inset-top))] text-foreground"
             >
               <CardComposer
                 model={selectedModel}
