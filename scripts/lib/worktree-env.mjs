@@ -78,6 +78,36 @@ export const s3EnvCopiedLines = (env) =>
     : []
 
 /**
+ * Optional env keys mirrored from the main checkout into a worktree's
+ * `.env.local` when present there (PAYLOAD_SECRET, DB and port come from the
+ * caller). This list is the single owner of "what `pnpm worktree next`
+ * copies": a key that exists in the main env but is missing here silently
+ * degrades every worktree — `PORTAL_TRANSPARENCIA_API_KEY` is the report
+ * scripts' case (C163/C190: without the mirror, official emendas became a
+ * gap in the worktree even though the main env had the key).
+ */
+const MIRRORED_WORKTREE_ENV_KEYS = [
+  'NEXT_PUBLIC_VAPID_PUBLIC_KEY',
+  'VAPID_PUBLIC_KEY',
+  'VAPID_PRIVATE_KEY',
+  'VAPID_SUBJECT',
+  'RESEND_API_KEY',
+  'CAMPAIGN_EMAIL_FROM',
+  'CAMPAIGN_EMAIL_FROM_NAME',
+  'PORTAL_TRANSPARENCIA_API_KEY',
+]
+
+/**
+ * `KEY=value` lines for the mirrored keys present in `env`, in list order.
+ * An absent/empty key copies nothing (same fail-open semantics as before).
+ *
+ * @param {Record<string, string | undefined>} env
+ * @returns {string[]}
+ */
+export const mirroredEnvCopiedLines = (env) =>
+  MIRRORED_WORKTREE_ENV_KEYS.filter((key) => env[key]).map((key) => `${key}=${env[key]}`)
+
+/**
  * Final environment for a branch. `takenSlots` = slots already claimed by
  * OTHER live worktrees; bumps +1 until free (bounded — live slot sets are
  * tiny). Every value a consumer needs derives from the one final slot.
