@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { jingleDownloadFilename, toJingleViewModel } from '@/lib/jingle'
+import { jingleDownloadFilename, splitJingleTitle, toJingleViewModel } from '@/lib/jingle'
 
 describe('jingleDownloadFilename', () => {
   it.each([
@@ -21,6 +21,31 @@ describe('jingleDownloadFilename', () => {
     expect(jingleDownloadFilename('axe', 'Jorge Solla 1313 - Axé')).toBe('jorge-solla-1313-axe.mp3')
     expect(jingleDownloadFilename('axe', 'audio.')).toBe('jorge-solla-1313-axe.mp3')
     expect(jingleDownloadFilename('axe', 'audio')).toBe('jorge-solla-1313-axe.mp3')
+  })
+})
+
+describe('splitJingleTitle', () => {
+  it.each([
+    ['Jorge Solla 1313 (feat. Felipe Forrozeiro)', 'Jorge Solla 1313', 'feat. Felipe Forrozeiro'],
+    ['Jorge Solla 1313 (feat. Nagib Barroso)', 'Jorge Solla 1313', 'feat. Nagib Barroso'],
+    ['Jorge Solla 1313 (feat. É O MT)', 'Jorge Solla 1313', 'feat. É O MT'],
+    ['Jorge Solla 1313 (FEAT. É O MT)', 'Jorge Solla 1313', 'feat. É O MT'],
+    ['Jorge Solla 1313 ( feat.  É O MT )', 'Jorge Solla 1313', 'feat. É O MT'],
+    ['Jorge Solla 1313 (feat. Felipe Forrozeiro) ', 'Jorge Solla 1313', 'feat. Felipe Forrozeiro'],
+    ['Jorge Solla 1313 (feat. A) (feat. B)', 'Jorge Solla 1313 (feat. A)', 'feat. B'],
+  ])('splits %s', (title, base, credit) => {
+    expect(splitJingleTitle(title)).toEqual({ base, credit })
+  })
+
+  it.each([
+    'Axé',
+    'Forró',
+    'Jorge Solla 1313 (ao vivo)',
+    'Jorge Solla 1313 (feat. )',
+    '(feat. Felipe Forrozeiro)',
+    'Jorge Solla 1313 (feat. X) ao vivo',
+  ])('keeps %s verbatim without a credit line', (title) => {
+    expect(splitJingleTitle(title)).toEqual({ base: title, credit: null })
   })
 })
 

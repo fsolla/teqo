@@ -26,6 +26,17 @@ const JINGLES: readonly JingleViewModel[] = [
 const playMock = vi.fn(() => Promise.resolve())
 const pauseMock = vi.fn()
 
+// S26 — own fixture: the specs above count the "Pronto para tocar" texts of
+// the shared array, so the credited title stays out of `JINGLES`.
+const FEAT_JINGLE: JingleViewModel = {
+  id: 9,
+  title: 'Jorge Solla 1313 (feat. Felipe Forrozeiro)',
+  coverUrl: '/api/media/file/capa-forro.jpg',
+  coverAlt: 'Capa do jingle Jorge Solla 1313 (feat. Felipe Forrozeiro) de Jorge Solla 1313',
+  audioUrl: '/api/media/file/forro.mp3',
+  downloadFilename: 'jorge-solla-1313-forro.mp3',
+}
+
 const cards = () => Array.from(document.querySelectorAll<HTMLElement>('[data-jingle]'))
 const cardState = (index: number) => cards()[index]?.getAttribute('data-state')
 const playButton = (index: number) =>
@@ -169,5 +180,42 @@ describe('JinglePlayer', () => {
     fireEvent.ended(audio)
     expect(cardState(0)).toBe('stopped')
     expect(screen.getAllByText(/Tempo —:—/)).toHaveLength(2)
+  })
+})
+
+describe('JinglePlayer — título e crédito do artista (S26)', () => {
+  it('shows the base title untruncated and the credit on its own line, stopped and playing', () => {
+    render(<JinglePlayer jingles={[FEAT_JINGLE]} />)
+
+    const heading = screen.getByRole('heading', { level: 2, name: 'Jorge Solla 1313' })
+    expect(heading.className).not.toContain('truncate')
+    expect(heading.className).toContain('wrap-anywhere')
+    expect(screen.getByText('feat. Felipe Forrozeiro')).toBeDefined()
+    expect(screen.getByText('Pronto para tocar')).toBeDefined()
+
+    fireEvent.click(playButton(0))
+
+    expect(cardState(0)).toBe('playing')
+    expect(screen.getByText('Em reprodução')).toBeDefined()
+    expect(screen.getByText('feat. Felipe Forrozeiro')).toBeDefined()
+  })
+
+  it('keeps the full title in the play, progress and download labels', () => {
+    render(<JinglePlayer jingles={[FEAT_JINGLE]} />)
+
+    const fullTitle = 'Jorge Solla 1313 (feat. Felipe Forrozeiro)'
+    expect(playButton(0).getAttribute('aria-label')).toBe(`Tocar jingle ${fullTitle}`)
+    expect(document.querySelector(`[aria-label="Progresso do jingle ${fullTitle}"]`)).not.toBeNull()
+    expect(screen.getByRole('link', { name: `Baixar ${fullTitle} em MP3` })).toBeDefined()
+  })
+
+  it('reserves no credit line and still drops the truncation without a feat. segment', () => {
+    render(<JinglePlayer jingles={JINGLES} />)
+
+    expect(screen.queryByText(/^feat\./)).toBeNull()
+    for (const heading of screen.getAllByRole('heading', { level: 2 })) {
+      expect(heading.className).not.toContain('truncate')
+      expect(heading.className).toContain('wrap-anywhere')
+    }
   })
 })

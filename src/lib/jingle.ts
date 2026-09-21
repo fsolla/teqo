@@ -50,6 +50,26 @@ export const jingleDownloadFilename = (
   return `${DOWNLOAD_PREFIX}-${base}.${safeExtension}`
 }
 
+const FEAT_CREDIT_PATTERN = /\s*\(\s*feat\.\s+([^()]+?)\s*\)\s*$/i
+
+/**
+ * S26 — display-only split of the featured artist. Published titles carry the
+ * guest as a trailing `(feat. …)` segment; the card shows the base on its own
+ * heading and the credit on a second line. The stored title is never rewritten:
+ * the full string keeps feeding the aria-labels and the cover alt, and a title
+ * without the segment falls back to itself with no credit line.
+ */
+export const splitJingleTitle = (title: string) => {
+  const match = title.match(FEAT_CREDIT_PATTERN)
+  if (!match) return { base: title, credit: null }
+
+  const base = title.slice(0, match.index).trim()
+  const artist = match[1].trim()
+  if (!base || !artist) return { base: title, credit: null }
+
+  return { base, credit: `feat. ${artist}` }
+}
+
 /**
  * A card only exists when both media are readable: an unpopulated/missing
  * cover or audio fails closed (the jingle is skipped, never rendered broken).

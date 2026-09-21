@@ -308,4 +308,53 @@ test.describe('Frontend jingles (S21)', () => {
     await expect(seeAll).toBeVisible()
     await expect(seeAll).toHaveAttribute('href', '/jingles')
   })
+
+  // S26 — the artist credit never disappears: its own line under the base
+  // title, untruncated, stopped and playing, on /jingles and the home; the
+  // full title (credit included) keeps feeding the aria-labels.
+  test('shows the featured artist credit without truncating the title', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryJingle(request, headers)
+    const slug = uniqueSlug()
+    const fullTitle = 'Jorge Solla 1313 (feat. Felipe Forrozeiro)'
+    await createJingle(request, headers, { title: fullTitle, slug })
+
+    await page.goto('/jingles')
+    const card = page.locator('article[data-jingle]')
+    await expect(card).toHaveCount(1)
+    const heading = card.getByRole('heading', { name: 'Jorge Solla 1313', exact: true })
+    await expect(heading).toBeVisible()
+    // Visibility alone does not catch CSS clipping: the heading must wrap
+    // (never `nowrap`) and its text must fit the box without hidden overflow.
+    const headingLayout = await heading.evaluate((el) => ({
+      whiteSpace: getComputedStyle(el).whiteSpace,
+      overflows: el.scrollWidth > el.clientWidth + 1,
+    }))
+    expect(headingLayout.whiteSpace).not.toBe('nowrap')
+    expect(headingLayout.overflows).toBe(false)
+    await expect(card.getByText('feat. Felipe Forrozeiro')).toBeVisible()
+    await expect(page.getByRole('button', { name: `Tocar jingle ${fullTitle}` })).toBeVisible()
+    await expect(page.getByRole('link', { name: `Baixar ${fullTitle} em MP3` })).toHaveAttribute(
+      'download',
+      `jorge-solla-1313-${slug}.mp3`,
+    )
+    await expect(page.getByText(`jorge-solla-1313-${slug}.mp3`)).toBeVisible()
+
+    // Playing keeps the credit on the card.
+    await page.getByRole('button', { name: `Tocar jingle ${fullTitle}` }).click()
+    await expect(card.getByText('Em reprodução')).toBeVisible()
+    await expect(card.getByText('feat. Felipe Forrozeiro')).toBeVisible()
+
+    // The home reuses the same card and the same credit.
+    await page.goto(`/?e2e=${Date.now()}`)
+    const homeCard = page.locator('[data-home-section="sound"] article[data-jingle]')
+    await expect(homeCard).toHaveCount(1)
+    await expect(
+      homeCard.getByRole('heading', { name: 'Jorge Solla 1313', exact: true }),
+    ).toBeVisible()
+    await expect(homeCard.getByText('feat. Felipe Forrozeiro')).toBeVisible()
+  })
 })
