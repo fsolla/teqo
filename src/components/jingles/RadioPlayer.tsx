@@ -305,11 +305,11 @@ export const RadioPlayer = ({ compact = false }: { compact?: boolean }) => {
                 className="absolute inset-[13%] rounded-full border border-[rgb(0_0_0/8%)] bg-white shadow-[0_7px_18px_rgb(71_19_14/10%)]"
               />
               <Image
-                src="/campaign-kit/estrela.png"
-                alt="Estrela oficial da campanha Jorge Solla 1313"
-                width={72}
-                height={72}
-                className="relative z-[1] h-[64%] w-[64%] object-contain"
+                src="/campaign-kit/radio/radio-jorge-solla-1313-logo.png"
+                alt="Logo da Rádio Jorge Solla 1313"
+                width={112}
+                height={112}
+                className="relative z-[1] aspect-square w-[74%] rounded-full object-cover"
               />
             </div>
 
