@@ -199,11 +199,12 @@ test.describe('Frontend jingles (S21)', () => {
     await expect(page.getByRole('link', { name: 'Jingles' })).toHaveCount(0)
     await page.goto('/')
     await expect(page.getByRole('link', { name: 'Jingles' })).toHaveCount(0)
-    // S24 — the home sound section keeps the radio (direct embed) and drops the empty grid.
+    // S25 — the home sound section keeps the own radio player and drops the empty grid.
     const sound = page.locator('[data-home-section="sound"]')
     await expect(sound.getByRole('heading', { name: 'Sintonize com a Rádio 1313' })).toBeVisible()
     await expect(sound.locator('[data-radio]')).toBeVisible()
-    await expect(sound.locator('[data-radio] iframe')).toHaveCount(1)
+    await expect(sound.locator('[data-radio] iframe')).toHaveCount(0)
+    await expect(sound.locator('[data-radio] audio[preload="none"]')).toHaveCount(1)
     await expect(sound.locator('article[data-jingle]')).toHaveCount(0)
     await expect(sound.getByRole('link', { name: 'Ver todos os jingles' })).toHaveCount(0)
     expect((await request.get(`${BASE_URL}/jingles`)).status()).toBe(200)
@@ -245,7 +246,7 @@ test.describe('Frontend jingles (S21)', () => {
     await expect(page.getByRole('link', { name: 'Jingles' })).toBeVisible()
   })
 
-  test('shows the sound section on the home and mounts the radio directly', async ({
+  test('shows the sound section on the home with the own radio and one audio at a time', async ({
     page,
     request,
   }) => {
@@ -270,16 +271,33 @@ test.describe('Frontend jingles (S21)', () => {
     // Three of three: the handoff only exists when more are published.
     await expect(sound.getByRole('link', { name: 'Ver todos os jingles' })).toHaveCount(0)
 
-    // S24 — the direct embed mounts with the pageview, no gesture (the fixture
-    // stubs the zeno request): the frame is there and the stub was requested
-    // before any click.
-    const frame = sound.locator('[data-radio] iframe')
-    await expect(frame).toHaveCount(1)
-    await expect(frame).toHaveAttribute('src', 'https://zeno.fm/player/jorge-solla-1313/')
-    await expect(frame).toHaveAttribute('title', 'Player da Rádio Jorge Solla 1313 no zeno.fm')
-    await expect.poll(() => zenoRequests.length).toBeGreaterThan(0)
-    // The cards still fetch nothing until a play (`preload="none"` on every card).
+    // S25 — the own player mounts with `preload="none"`: neither the stream nor
+    // the card audios are requested before a gesture.
+    const radio = sound.locator('[data-radio]')
+    await expect(radio.locator('iframe')).toHaveCount(0)
+    const radioAudio = radio.locator('audio')
+    await expect(radioAudio).toHaveCount(1)
+    await expect(radioAudio).toHaveAttribute('preload', 'none')
+    await expect(radioAudio).toHaveAttribute('src', 'https://stream.zeno.fm/hys86kx6k16tv')
+    expect(zenoRequests).toHaveLength(0)
     expect(audioRequests).toHaveLength(0)
+
+    // Playing the radio is what requests the stream (the fixture stubs it).
+    await radio.getByRole('button', { name: 'Ouvir Rádio Jorge Solla 1313' }).click()
+    await expect.poll(() => zenoRequests.length).toBeGreaterThan(0)
+    await expect(radio).toHaveAttribute('data-state', 'playing')
+    await expect(radio.getByText('Em reprodução')).toBeVisible()
+
+    // Starting a jingle pauses the radio (one audio at a time).
+    await sound.getByRole('button', { name: 'Tocar jingle Axé na home' }).click()
+    await expect(radio).toHaveAttribute('data-state', 'idle')
+    await expect(radio.getByText('Pronta para tocar')).toBeVisible()
+    await expect(sound.locator('article[data-jingle][data-state="playing"]')).toHaveCount(1)
+
+    // And playing the radio pauses the jingle back.
+    await radio.getByRole('button', { name: 'Ouvir Rádio Jorge Solla 1313' }).click()
+    await expect(radio).toHaveAttribute('data-state', 'playing')
+    await expect(sound.locator('article[data-jingle][data-state="playing"]')).toHaveCount(0)
 
     // Mobile 390: the section never overflows horizontally.
     await page.setViewportSize({ width: 390, height: 844 })

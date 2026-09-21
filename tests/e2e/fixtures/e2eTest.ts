@@ -1,3 +1,5 @@
+import path from 'node:path'
+
 import {
   test as base,
   expect,
@@ -115,16 +117,15 @@ export const test = base.extend<E2EFailureGuardFixtures>({
         route.fulfill({ body: '', contentType: 'application/javascript' }),
       )
 
-      // S24 — the home radio is a direct zeno.fm iframe that loads eagerly with
-      // the pageview, so every spec rendering the home requests it. Fulfill the
-      // player locally (an aborted frame logs an external-origin console error
-      // and the guard above would fail); the request event still fires, which is
-      // how the sound-section specs prove the eager mount. The glob is scoped to
-      // the player path: any other zeno.fm request stays a real failure.
-      await context.route('https://zeno.fm/player/**', (route) =>
+      // S25 — the home radio is an own `<audio preload="none">` pointed at the
+      // stream, so nothing is requested with the pageview (the S24 iframe stub
+      // is gone: a residual zeno.fm/player request would now be a real failure).
+      // The stub serves the short MP3 only when a spec presses play; the player
+      // ignores `ended` (a live stream never ends), which keeps "playing" stable.
+      await context.route('https://stream.zeno.fm/**', (route) =>
         route.fulfill({
-          body: '<!doctype html><title>zeno stub</title>',
-          contentType: 'text/html',
+          path: path.resolve(process.cwd(), 'tests/fixtures/jingle-tone.mp3'),
+          contentType: 'audio/mpeg',
         }),
       )
 

@@ -1157,8 +1157,8 @@ body,
 
 /* S22 — home "A trilha da nossa caminhada": the section title scales above the
    neighbours' (Cenas 01/02: 40px desktop, 34px mobile) without touching the
-   shared token. The radio frame and the direct zeno.fm embed (S24) live as
-   Tailwind utilities in RadioEmbed — no painted art, wave or spinner here. */
+   shared token. The radio player (S25, own `<audio preload="none">`) lives as
+   Tailwind utilities in RadioPlayer — no painted art, wave or spinner here. */
 .campaign-sound-title {
   font-size: clamp(34px, calc(1.7vw + 18px), 40px);
 }

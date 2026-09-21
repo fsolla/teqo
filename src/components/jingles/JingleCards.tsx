@@ -1,9 +1,10 @@
 'use client'
 
 import Image from 'next/image'
-import { useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { splitJingleTitle, type JingleViewModel } from '@/lib/jingle'
+import { JINGLE_PLAY_EVENT, RADIO_PLAY_EVENT } from '@/lib/radio'
 import { formatSpeechClock } from '@/lib/speechClock'
 import { cn } from '@/lib/utils'
 
@@ -92,9 +93,31 @@ export const JingleCards = ({
   const [activeId, setActiveId] = useState<JingleViewModel['id'] | null>(null)
   const [playback, setPlayback] = useState<Record<number, Playback>>({})
   const audioRefs = useRef(new Map<number, HTMLAudioElement>())
+  // S25 — the radio:play listener reads the live active id without
+  // re-subscribing on every card change.
+  const activeIdRef = useRef<JingleViewModel['id'] | null>(null)
   // One stable ref callback per id: an inline arrow would be detached and
   // reattached on every render (each `timeupdate` re-renders the list).
   const audioRefCallbacks = useRef(new Map<number, (node: HTMLAudioElement | null) => void>())
+
+  useEffect(() => {
+    activeIdRef.current = activeId
+  }, [activeId])
+
+  // S25 — one audio at a time with the home radio: a `radio:play` pauses only
+  // this component's active card. Inert on `/jingles` (no radio broadcasts
+  // there), so the exclusivity never leaks into the page's own behaviour.
+  const stopActiveCard = useCallback(() => {
+    const current = activeIdRef.current
+    if (current === null) return
+    audioRefs.current.get(current)?.pause()
+    setActiveId(null)
+  }, [])
+
+  useEffect(() => {
+    window.addEventListener(RADIO_PLAY_EVENT, stopActiveCard)
+    return () => window.removeEventListener(RADIO_PLAY_EVENT, stopActiveCard)
+  }, [stopActiveCard])
 
   const audioRef = (id: number) => {
     const cached = audioRefCallbacks.current.get(id)
@@ -124,8 +147,7 @@ export const JingleCards = ({
     if (!audio) return
 
     if (activeId === id) {
-      audio.pause()
-      setActiveId(null)
+      stopActiveCard()
       return
     }
 
@@ -134,6 +156,7 @@ export const JingleCards = ({
     }
 
     setActiveId(id)
+    window.dispatchEvent(new CustomEvent(JINGLE_PLAY_EVENT))
     // A pending play() of another card rejects when we pause it; the catch
     // must only clear the state of THIS card, never the one now playing.
     void audio.play().catch(() => setActiveId((current) => (current === id ? null : current)))

@@ -4,7 +4,7 @@ import type { JingleViewModel } from '@/lib/jingle'
 
 import { JINGLE_FOCUS_RING } from './focusRing'
 import { JingleCards } from './JingleCards'
-import { RadioEmbed } from './RadioEmbed'
+import { RadioPlayer } from './RadioPlayer'
 
 type JingleHomeSectionProps = {
   jingles: readonly JingleViewModel[]
@@ -14,12 +14,12 @@ type JingleHomeSectionProps = {
 const SEE_ALL_CONTROL = `inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 font-bold text-(--pt-red) underline-offset-4 hover:underline ${JINGLE_FOCUS_RING}`
 
 /**
- * S22 — the home sound section (artefato: cenas 01/02/06/07 do S22; a moldura
- * da rádio agora é a do S24, cenas 01/02/03): the Rádio 1313 embed (direto
- * desde o S24) followed by up to three published jingles and the "Ver todos"
- * handoff to `/jingles` when more exist. With zero published jingles the grid
- * and the handoff are gone and only the radio stays (fail-closed, same kill
- * switch as S21); the page passes the already-cached
+ * S22/S25 — the home sound section (artefato: cenas 01/02/06/07 do S22; o
+ * player da rádio é o do S25, cenas 01–05): the Rádio 1313 player (próprio,
+ * `preload="none"`, desde o S25) followed by up to three published jingles and
+ * the "Ver todos" handoff to `/jingles` when more exist. With zero published
+ * jingles the grid and the handoff are gone and only the radio stays
+ * (fail-closed, same kill switch as S21); the page passes the already-cached
  * `getPublishedJingleItems()` listing in, so the section never re-reads.
  */
 export const JingleHomeSection = ({ jingles, showAll }: JingleHomeSectionProps) => {
@@ -60,7 +60,7 @@ export const JingleHomeSection = ({ jingles, showAll }: JingleHomeSectionProps) 
           </p>
         </div>
 
-        <RadioEmbed compact={!hasJingles} />
+        <RadioPlayer compact={!hasJingles} />
 
         {hasJingles ? (
           <>
