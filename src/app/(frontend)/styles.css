@@ -1155,91 +1155,10 @@ body,
   }
 }
 
-/* S22 — home "A trilha da nossa caminhada": the Rádio 1313 card art (port
-   classe-a-classe de docs/plans/jingles-radio-homepage-ui-design.html). The
-   frame, panels and states live as Tailwind utilities in RadioFacade; only the
-   painted art, the decorative wave and the loading spinner are CSS here. */
+/* S22 — home "A trilha da nossa caminhada": the section title scales above the
+   neighbours' (Cenas 01/02: 40px desktop, 34px mobile) without touching the
+   shared token. The radio frame and the direct zeno.fm embed (S24) live as
+   Tailwind utilities in RadioEmbed — no painted art, wave or spinner here. */
 .campaign-sound-title {
-  /* The artefact scales this section's title above the neighbours' (Cenas
-     01/02: 40px desktop, 34px mobile) without touching the shared token. */
   font-size: clamp(34px, calc(1.7vw + 18px), 40px);
-}
-
-.campaign-radio-art {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 18% 20%, rgb(255 230 7 / 100%) 0 8%, transparent 8.4%),
-    radial-gradient(circle at 85% 75%, rgb(24 78 146 / 90%) 0 14%, transparent 14.5%),
-    linear-gradient(140deg, #c52626 0%, #8d1414 58%, #47130e 100%);
-}
-
-.campaign-radio-art::before,
-.campaign-radio-art::after {
-  content: '';
-  position: absolute;
-  z-index: -1;
-  border: 1px solid rgb(255 255 255 / 28%);
-  border-radius: 999px;
-}
-
-.campaign-radio-art::before {
-  width: 190px;
-  height: 190px;
-  right: -56px;
-  top: -74px;
-}
-
-.campaign-radio-art::after {
-  width: 250px;
-  height: 250px;
-  right: -86px;
-  top: -104px;
-}
-
-.campaign-radio-wave span {
-  display: block;
-  width: 4px;
-  border-radius: 999px;
-  background: var(--pt-yellow);
-  animation: campaign-radio-wave-pulse 1.15s ease-in-out infinite alternate;
-  transform-origin: center;
-}
-
-.campaign-radio-wave span:nth-child(2n) {
-  animation-delay: -420ms;
-}
-
-.campaign-radio-wave span:nth-child(3n) {
-  animation-delay: -760ms;
-}
-
-@keyframes campaign-radio-wave-pulse {
-  to {
-    transform: scaleY(0.55);
-    opacity: 0.72;
-  }
-}
-
-.campaign-radio-spinner {
-  width: 34px;
-  height: 34px;
-  border: 3px solid rgb(162 28 28 / 18%);
-  border-top-color: var(--pt-red);
-  border-radius: 999px;
-  animation: campaign-radio-spin 850ms linear infinite;
-}
-
-@keyframes campaign-radio-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .campaign-radio-wave span,
-  .campaign-radio-spinner {
-    animation: none;
-  }
 }

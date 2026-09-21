@@ -557,9 +557,14 @@ test.describe('Frontend', () => {
     expect(overflow).toBeLessThanOrEqual(1)
   })
 
-  test('shows the sound section between the story and the cards with the inert radio facade', async ({
+  test('shows the sound section between the story and the cards with the direct radio embed', async ({
     page,
   }) => {
+    const zenoRequests: string[] = []
+    page.on('request', (req) => {
+      if (req.url().includes('zeno.fm')) zenoRequests.push(req.url())
+    })
+
     await page.goto('/')
 
     const sound = page.locator('[data-home-section="sound"]')
@@ -584,18 +589,25 @@ test.describe('Frontend', () => {
     expect(tops.sound).toBeGreaterThan(tops.story)
     expect(tops.cards).toBeGreaterThan(tops.sound)
 
-    // S22 — the official player only mounts after the gesture; until then the
-    // facade holds no iframe and the external link is the alternative.
-    await expect(sound.locator('[data-radio][data-radio-state="facade"]')).toBeVisible()
-    await expect(sound.locator('iframe')).toHaveCount(0)
-    await expect(sound.getByRole('button', { name: 'Ouvir a rádio' })).toBeVisible()
-    await expect(sound.getByRole('link', { name: 'Abrir no Zeno' })).toHaveAttribute(
-      'href',
-      'https://zeno.fm/radio/jorge-solla-1313/',
-    )
+    // S24 — the official player is mounted from the first paint (the fixture
+    // stubs the zeno request): no facade, no button, no click gate, and the
+    // frame was actually requested before any gesture.
+    await expect(sound.locator('[data-radio]')).toBeVisible()
+    const radioFrame = sound.locator('[data-radio] iframe')
+    await expect(radioFrame).toHaveCount(1)
+    await expect(radioFrame).toHaveAttribute('src', 'https://zeno.fm/player/jorge-solla-1313/')
+    await expect(radioFrame).toHaveAttribute('title', 'Player da Rádio Jorge Solla 1313 no zeno.fm')
+    await expect(sound.locator('[data-radio] button')).toHaveCount(0)
+    await expect(sound.locator('[data-radio] a')).toHaveCount(0)
+    await expect.poll(() => zenoRequests.length).toBeGreaterThan(0)
 
-    // Mobile 390: the section never overflows horizontally.
+    // The reserved footprint comes from the frame itself: 168px desktop.
+    await expect(radioFrame).toHaveCSS('height', '168px')
+
+    // Mobile 390: the footprint narrows to 150px and the section never
+    // overflows horizontally.
     await page.setViewportSize({ width: 390, height: 844 })
+    await expect(radioFrame).toHaveCSS('height', '150px')
     const overflow = await page.evaluate(() => {
       const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
       return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0

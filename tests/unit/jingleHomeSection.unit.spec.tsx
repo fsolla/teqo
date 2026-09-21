@@ -43,7 +43,9 @@ describe('JingleHomeSection', () => {
     render(<JingleHomeSection jingles={[]} showAll={false} />)
 
     expect(document.querySelector('[data-home-section="sound"]')).not.toBeNull()
-    expect(document.querySelector('[data-radio][data-radio-state="facade"]')).not.toBeNull()
+    expect(document.querySelector('[data-radio] iframe')).not.toBeNull()
+    // Cena 01/02 (S24): zero jingles keeps the compact, centered frame.
+    expect(document.querySelector('[data-radio]')?.className).toContain('max-w-[880px]')
     expect(cards()).toHaveLength(0)
     expect(screen.queryByText('Jingles oficiais')).toBeNull()
     expect(screen.queryByRole('link', { name: /Ver todos os jingles/ })).toBeNull()
@@ -54,6 +56,8 @@ describe('JingleHomeSection', () => {
     render(<JingleHomeSection jingles={[jingle(1, 'Axé')]} showAll={false} />)
 
     expect(cards()).toHaveLength(1)
+    // Cena 03: with jingles the frame takes the full column width.
+    expect(document.querySelector('[data-radio]')?.className).not.toContain('max-w-[880px]')
     expect(screen.queryByRole('link', { name: /Ver todos os jingles/ })).toBeNull()
     expect(screen.getByText('Jingles oficiais')).toBeDefined()
   })

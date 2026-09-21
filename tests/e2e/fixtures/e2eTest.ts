@@ -115,6 +115,19 @@ export const test = base.extend<E2EFailureGuardFixtures>({
         route.fulfill({ body: '', contentType: 'application/javascript' }),
       )
 
+      // S24 — the home radio is a direct zeno.fm iframe that loads eagerly with
+      // the pageview, so every spec rendering the home requests it. Fulfill the
+      // player locally (an aborted frame logs an external-origin console error
+      // and the guard above would fail); the request event still fires, which is
+      // how the sound-section specs prove the eager mount. The glob is scoped to
+      // the player path: any other zeno.fm request stays a real failure.
+      await context.route('https://zeno.fm/player/**', (route) =>
+        route.fulfill({
+          body: '<!doctype html><title>zeno stub</title>',
+          contentType: 'text/html',
+        }),
+      )
+
       await use()
 
       page.off('console', onConsole)
