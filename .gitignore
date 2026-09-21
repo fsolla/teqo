@@ -111,6 +111,10 @@ next-env.d.ts
 # workstation, nunca versionado (o deploy npm não o toca).
 /scripts/reels/.venv/
 
+# C208 — artes da Rádio Jorge Solla 1313 (zeno.fm): o que é versionado mora em
+# public/campaign-kit/radio/; aqui ficam só rascunhos/previews locais.
+/data/radio-artes/
+
 # Local-only sensitive material (agents may read; never commit content)
 /private/**
 !/private/README.md
