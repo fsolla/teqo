@@ -21,7 +21,7 @@
     "src/components/ui/marker.tsx",
     "src/components/ui/message.tsx"
   ],
-  "ignoreBinaries": ["opencode", "ffmpeg", "ffprobe"],
+  "ignoreBinaries": ["opencode", "ffmpeg", "ffprobe", "fc-match"],
   "ignoreDependencies": [
     "tailwindcss-animate",
     "tw-animate-css",

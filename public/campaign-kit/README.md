@@ -76,3 +76,35 @@ manual; as entradas abaixo descrevem a forma (uso a confirmar).
   não é uma quarta mensagem nem headline solta.
 - O nome e o número são os elementos de memorização: não recriar lockups
   tipográficos quando o ativo oficial existe.
+
+## Rádio Jorge Solla 1313 (zeno.fm)
+
+Artes da estação [`zeno.fm/radio/jorge-solla-1313`](https://zeno.fm/radio/jorge-solla-1313/),
+geradas por [`scripts/build-radio-artes.mjs`](../../scripts/build-radio-artes.mjs)
+a partir dos ativos deste kit e dos artboards de alta em `public/`. Os campos do
+painel do zeno têm contratos diferentes — medidos na própria página da estação:
+
+| Arquivo | Campo | Como o zeno exibe |
+| --- | --- | --- |
+| `radio/radio-jorge-solla-1313-logo.png` (1024², fundo branco opaco) | Logo | círculo pequeno (CDN entrega 152², `rounded-full`) — o desenho tem de ler dentro do círculo e em ~40 px |
+| `radio/radio-jorge-solla-1313-capa.png` (2048×1024) | Cover Image | 2:1 no celular, 3:1 e 4:1 no desktop (`object-cover` central) → todo o conteúdo na **faixa segura central 2048×512**; a área do logo circular sobreposto no desktop (x 60..380, y ≥700) fica branca |
+| `radio/radio-jorge-solla-1313-website-card.png` (1200×720) | Station Website Card | quadrado (`aspect-square`, corte central 720×720) → o conteúdo vive nesse quadrado |
+
+- **Logo escolhida (2026-09-21):** o "O" do SOLLA da marca positiva em fundo
+  branco — recorte do artboard `public/Prancheta 1@3x.png`, com a estrela vazada
+  e o rastro verde/amarelo/azul. As finalistas (arquivo da decisão) ficam em
+  `radio/finalistas/`: "1313" no vermelho, marca completa positiva no branco e o
+  "O" branco no vermelho.
+- **Capa:** `RÁDIO` (Brexter Bold) + marca vertical oficial (o "1313" embaixo do
+  JORGE SOLLA, com o slogan) + o candidato à direita, em conjunto centralizado —
+  ilustração (padrão) ou foto (`radio/capa-com-foto.png`, alternativa).
+- **Ilustração em alta:** `radio/ilustracao-solla-1313.png` (769×1122, RGBA)
+  parte da ilustração do card de foto de perfil
+  (`cards/photo-portrait-frame.png`, recorte em x 100..355, y 840..1265),
+  sobe 4× por IA (Real-ESRGAN ncnn-vulkan, modelo `realesrgan-x4plus-anime`) e
+  perde o fundo por flood fill + abertura morfológica (a faixa do frame é
+  `#b72031`, não a cor do kit). A receita completa está no cabeçalho do builder.
+- **Regenerar:** `node scripts/build-radio-artes.mjs` — exige Brexter e Arimo no
+  fontconfig local (instruções no cabeçalho do script). O builder revalida o
+  contrato da capa e do card (faixa segura, área do logo do zeno, quadrado
+  central) e falha fechado.
