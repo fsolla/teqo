@@ -557,7 +557,7 @@ test.describe('Frontend', () => {
     expect(overflow).toBeLessThanOrEqual(1)
   })
 
-  test('shows the sound section between the story and the cards with the direct radio embed', async ({
+  test('shows the sound section between the story and the cards with the own radio player', async ({
     page,
   }) => {
     const zenoRequests: string[] = []
@@ -589,25 +589,38 @@ test.describe('Frontend', () => {
     expect(tops.sound).toBeGreaterThan(tops.story)
     expect(tops.cards).toBeGreaterThan(tops.sound)
 
-    // S24 — the official player is mounted from the first paint (the fixture
-    // stubs the zeno request): no facade, no button, no click gate, and the
-    // frame was actually requested before any gesture.
-    await expect(sound.locator('[data-radio]')).toBeVisible()
-    const radioFrame = sound.locator('[data-radio] iframe')
-    await expect(radioFrame).toHaveCount(1)
-    await expect(radioFrame).toHaveAttribute('src', 'https://zeno.fm/player/jorge-solla-1313/')
-    await expect(radioFrame).toHaveAttribute('title', 'Player da Rádio Jorge Solla 1313 no zeno.fm')
-    await expect(sound.locator('[data-radio] button')).toHaveCount(0)
-    await expect(sound.locator('[data-radio] a')).toHaveCount(0)
+    // S25 — the own player replaces the S24 iframe: one lazy `<audio>` and no
+    // request at all before the visitor's gesture.
+    const radio = sound.locator('[data-radio]')
+    await expect(radio).toBeVisible()
+    await expect(radio.locator('iframe')).toHaveCount(0)
+    const radioAudio = radio.locator('audio')
+    await expect(radioAudio).toHaveCount(1)
+    await expect(radioAudio).toHaveAttribute('preload', 'none')
+    await expect(radioAudio).toHaveAttribute('src', 'https://stream.zeno.fm/hys86kx6k16tv')
+    await expect(radio.getByRole('heading', { name: 'Rádio Jorge Solla 1313' })).toBeVisible()
+    await expect(radio.getByText('Ao vivo')).toBeVisible()
+    expect(zenoRequests).toHaveLength(0)
+
+    // The play is the only exit to the stream: the request leaves after the
+    // gesture (the fixture stubs it) and the state says so.
+    await radio.getByRole('button', { name: 'Ouvir Rádio Jorge Solla 1313' }).click()
     await expect.poll(() => zenoRequests.length).toBeGreaterThan(0)
+    await expect(radio).toHaveAttribute('data-state', 'playing')
+    await expect(radio.getByText('Em reprodução')).toBeVisible()
 
-    // The reserved footprint comes from the frame itself: 168px desktop.
-    await expect(radioFrame).toHaveCSS('height', '168px')
+    // Desktop 1280: the gate's 56px play hit.
+    await expect(radio.getByRole('button', { name: 'Pausar Rádio Jorge Solla 1313' })).toHaveCSS(
+      'width',
+      '56px',
+    )
 
-    // Mobile 390: the footprint narrows to 150px and the section never
-    // overflows horizontally.
+    // Mobile 390: the hit narrows to 48px and the section never overflows.
     await page.setViewportSize({ width: 390, height: 844 })
-    await expect(radioFrame).toHaveCSS('height', '150px')
+    await expect(radio.getByRole('button', { name: 'Pausar Rádio Jorge Solla 1313' })).toHaveCSS(
+      'width',
+      '48px',
+    )
     const overflow = await page.evaluate(() => {
       const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
       return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0

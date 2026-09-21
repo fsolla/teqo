@@ -96,9 +96,12 @@ export const E2E_AFFECTED_MANIFEST = [
     // S21 — the public jingles page: ordered published cards, the lazy
     // in-page player (one at a time), the slug-based download name and the
     // fail-closed publish contract of the collection.
+    // S25 — the same spec owns the home sound section, now with the own radio
+    // player (`lib/radio` holds the stream/share contract).
     prefixes: [
       'src/app/(frontend)/jingles',
       'src/lib/jingle',
+      'src/lib/radio',
       'src/utilities/jingleReads.ts',
       // The tag/revalidation vocabulary owner for the jingles listing.
       'src/utilities/documents.ts',

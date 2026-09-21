@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 
 import { JinglePlayer } from '@/components/jingles/JinglePlayer'
 import type { JingleViewModel } from '@/lib/jingle'
+import { JINGLE_PLAY_EVENT, RADIO_PLAY_EVENT } from '@/lib/radio'
 
 const JINGLES: readonly JingleViewModel[] = [
   {
@@ -122,6 +123,45 @@ describe('JinglePlayer', () => {
     expect(cardState(0)).toBe('stopped')
     expect(cardState(1)).toBe('playing')
     expect(playMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('broadcasts jingle:play when a card starts', () => {
+    let broadcasts = 0
+    const listener = () => {
+      broadcasts += 1
+    }
+    window.addEventListener(JINGLE_PLAY_EVENT, listener)
+    render(<JinglePlayer jingles={JINGLES} />)
+
+    fireEvent.click(playButton(0))
+    window.removeEventListener(JINGLE_PLAY_EVENT, listener)
+
+    expect(broadcasts).toBe(1)
+  })
+
+  it('pauses the active card when the radio starts', () => {
+    render(<JinglePlayer jingles={JINGLES} />)
+
+    fireEvent.click(playButton(0))
+    pauseMock.mockClear()
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent(RADIO_PLAY_EVENT, { detail: { source: 'radio' } }))
+    })
+
+    expect(pauseMock).toHaveBeenCalledTimes(1)
+    expect(cardState(0)).toBe('stopped')
+    expect(playButton(0).getAttribute('aria-pressed')).toBe('false')
+  })
+
+  it('ignores radio:play with no active card', () => {
+    render(<JinglePlayer jingles={JINGLES} />)
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent(RADIO_PLAY_EVENT, { detail: { source: 'radio' } }))
+    })
+
+    expect(pauseMock).not.toHaveBeenCalled()
   })
 
   it('reverts the card when the browser refuses to play', async () => {
