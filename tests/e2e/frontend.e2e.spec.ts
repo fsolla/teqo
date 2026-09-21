@@ -1971,10 +1971,16 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
       String(STUB_CUTOUT_PERCENT),
     )
 
-    // The cutout lands framed: CTA enabled, pan/zoom escape offered.
+    // The cutout lands framed: CTA enabled, pan/zoom escape offered, and the
+    // guidance notice lives in the scrollable body — nothing over the preview.
     await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
     await expect(primary).toBeEnabled()
-    await expect(dialog.getByText('Arraste para ajustar')).toBeVisible()
+    await expect(
+      dialog.getByText(
+        'O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.',
+      ),
+    ).toBeVisible()
+    await expect(dialog.getByText('Arraste para ajustar')).toHaveCount(0)
 
     // S16 — `Maria Eduarda` only fits by widening the blue banner beyond the
     // 509 reference (the real Brexter ink goes to ~954 → banner ~993).
@@ -2097,6 +2103,14 @@ test.describe('Cards personalizados (S15 — Time de você)', () => {
     const drawer = page.locator('[data-slot="drawer-popup"]')
     await expect(drawer).toBeVisible()
     await expect(drawer.getByRole('heading', { name: 'Entre para o time' })).toBeVisible()
+    // S23 — the drawer reaches the top of the viewport instead of the old 92dvh
+    // gap: y=0 and the full viewport height once the open animation settles.
+    await expect
+      .poll(async () => {
+        const box = await drawer.boundingBox()
+        return box ? `${Math.round(box.y)}x${Math.round(box.height)}` : null
+      })
+      .toBe('0x844')
     await page.keyboard.press('Escape')
     await expect(drawer).toHaveCount(0)
   })

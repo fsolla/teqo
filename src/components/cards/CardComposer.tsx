@@ -437,15 +437,15 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     if (teamReady) return 'Confira seu card'
     return 'Entre para o time'
   })()
-  const description = (() => {
-    if (step === 'result' || isNameModel) return null
-    if (isTeamModel) {
-      return teamReady && !nameError
-        ? 'O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.'
-        : null
-    }
-    return 'Arraste para posicionar e use os controles para aproximar ou ajustar.'
-  })()
+  const photoHeaderDescription =
+    step === 'compose' && !isNameModel && !isTeamModel
+      ? 'Arraste para posicionar e use os controles para aproximar ou ajustar.'
+      : null
+  const teamBodyNotice =
+    isTeamModel && step === 'compose' && teamReady && !nameError
+      ? 'O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.'
+      : null
+  const ShellDescription = shell === 'dialog' ? DialogDescription : DrawerDescription
   const eyebrow = isTeamModel
     ? step === 'result'
       ? 'Tudo certo'
@@ -471,7 +471,9 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         <DialogTitle className="text-xl font-black tracking-[-0.01em] text-balance">
           {title}
         </DialogTitle>
-        {description ? <DialogDescription>{description}</DialogDescription> : null}
+        {photoHeaderDescription ? (
+          <ShellDescription>{photoHeaderDescription}</ShellDescription>
+        ) : null}
       </DialogHeader>
     ) : (
       <DrawerHeader className="min-w-0 flex-1 text-left!">
@@ -479,7 +481,9 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         <DrawerTitle className="text-lg font-black tracking-[-0.01em] text-balance">
           {title}
         </DrawerTitle>
-        {description ? <DrawerDescription>{description}</DrawerDescription> : null}
+        {photoHeaderDescription ? (
+          <ShellDescription>{photoHeaderDescription}</ShellDescription>
+        ) : null}
       </DrawerHeader>
     )
 
@@ -567,6 +571,12 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     </>
   ) : null
 
+  // S23 design gate (scene 02): the drawer body carries a scroll tail so the
+  // team notice leaves the viewport by the end of the scroll.
+  const bodyScrollClassName = `min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 ${
+    teamBodyNotice && shell === 'drawer' ? 'pb-14' : 'pb-5'
+  }`
+
   return (
     <div className="flex min-h-0 flex-1 flex-col bg-(--background) text-(--foreground)">
       <div className="flex items-start gap-3 px-5 pt-5">
@@ -581,10 +591,20 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 pb-5">
+      <div className={bodyScrollClassName}>
         <p className="sr-only" role="status" aria-live="polite">
           {loadState === 'loading' ? 'Carregando prévia…' : ''}
         </p>
+
+        {teamBodyNotice ? (
+          <ShellDescription
+            className={`mx-auto text-sm leading-5 text-(--campaign-muted) ${
+              shell === 'dialog' ? 'mb-4 max-w-[420px]' : 'mb-3 max-w-[350px]'
+            }`}
+          >
+            {teamBodyNotice}
+          </ShellDescription>
+        ) : null}
 
         <div
           className={`relative mx-auto w-full ${previewWidthClassName} ${adjustable ? 'touch-none' : ''}`}
@@ -620,11 +640,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
             onPointerUp={adjustable ? handlePointerEnd : undefined}
             onPointerCancel={adjustable ? handlePointerEnd : undefined}
           />
-          {teamReady && step === 'compose' && !nameError ? (
-            <span className="pointer-events-none absolute right-2 bottom-2 rounded bg-black/70 px-2 py-1 text-[10px] font-bold text-white">
-              Arraste para ajustar
-            </span>
-          ) : null}
         </div>
 
         {loadState === 'error' ? (
