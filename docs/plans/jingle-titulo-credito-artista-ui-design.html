@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design S26 · Título e crédito do artista no jingle</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --pt-yellow-ink: #000000;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --font-exo2: 'Exo 2', 'Arial Black', sans-serif;
+        --font-arimo: Arimo, Arial, sans-serif;
+        --radius: 0.875rem;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font-arimo);
+      }
+      .font-display,
+      .eyebrow {
+        font-family: var(--font-exo2);
+      }
+      .eyebrow {
+        font-size: clamp(10px, calc(0.32vw + 8.75px), 12px);
+        line-height: 1.25;
+      }
+      .stage {
+        box-shadow: 0 26px 80px rgb(0 0 0 / 30%);
+      }
+      .focus-ring:focus-visible {
+        outline: 3px solid var(--pt-yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 2px var(--pt-red-dark);
+      }
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--campaign-line);
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 12px 34px rgb(71 19 14 / 8%);
+      }
+      .card[data-state='playing'] {
+        border-color: rgb(162 28 28 / 36%);
+        box-shadow: 0 14px 38px rgb(162 28 28 / 14%);
+      }
+      .cover {
+        position: relative;
+        aspect-ratio: 1;
+        overflow: hidden;
+        background: var(--campaign-band);
+      }
+      .cover img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .cover::after {
+        content: '';
+        position: absolute;
+        inset: 58% 0 0;
+        background: linear-gradient(to bottom, transparent, rgb(24 10 9 / 42%));
+      }
+      .play {
+        display: grid;
+        width: 56px;
+        height: 56px;
+        flex: none;
+        place-items: center;
+        border: 0;
+        border-radius: 999px;
+        background: var(--pt-yellow);
+        color: #000;
+        box-shadow:
+          0 6px 0 #cfb900,
+          0 10px 22px rgb(0 0 0 / 15%);
+      }
+      .play svg {
+        width: 25px;
+        height: 25px;
+        fill: currentColor;
+      }
+      .jingle-title {
+        overflow-wrap: anywhere;
+        font-family: var(--font-exo2);
+        font-size: 24px;
+        line-height: 1.02;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+      }
+      .credit {
+        margin-top: 6px;
+        color: var(--campaign-muted);
+        font-size: 13px;
+        line-height: 1.25;
+        font-weight: 700;
+      }
+      .progress {
+        height: 6px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: #dedbd8;
+      }
+      .progress > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--pt-red);
+      }
+      .download {
+        display: flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1.5px solid rgb(162 28 28 / 32%);
+        border-radius: 10px;
+        color: var(--pt-red);
+        font-family: var(--font-exo2);
+        font-weight: 800;
+      }
+      .proof-card .jingle-title {
+        font-size: 22px;
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div
+      class="border-b border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-center text-[11px] font-black tracking-[0.14em] text-emerald-300 uppercase"
+    >
+      Design tier: openai/gpt-5.6-sol · gate humano obrigatório
+    </div>
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="font-display text-xs font-black tracking-[0.12em] text-red-400 uppercase">
+          Gate visual · S26
+        </p>
+        <h1 class="font-display mt-2 text-3xl font-black tracking-[-0.03em]">
+          O nome do artista não vira reticências
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          O card mantém capa, controles, progresso e download. Só o bloco textual muda: título-base
+          em até duas linhas e <strong class="text-zinc-200">feat. artista</strong> em linha
+          própria, menor e sempre visível.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · 3 títulos reais</span
+          ><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · tocando + provas de estresse</span
+          ><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >Sem ativo novo</span
+          >
+        </div>
+      </header>
+
+      <section class="mt-12" aria-labelledby="desktop-cards">
+        <div class="mb-5">
+          <p
+            class="font-display text-[11px] font-black tracking-[0.12em] text-emerald-300 uppercase"
+          >
+            Cena 01 · desktop 1280 · parado e tocando
+          </p>
+          <h2 id="desktop-cards" class="font-display mt-1 text-xl font-black">
+            Os três créditos reais cabem sem diminuir a capa
+          </h2>
+        </div>
+        <div class="overflow-x-auto pb-4">
+          <div
+            class="stage mx-auto w-[1280px] overflow-hidden bg-(--campaign-cream) text-black"
+            data-theme="campaign"
+          >
+            <section class="relative px-[60px] py-16">
+              <div
+                class="absolute -top-28 -right-20 size-64 rounded-full bg-(--pt-yellow)/45"
+              ></div>
+              <div class="relative flex items-end justify-between gap-6">
+                <div>
+                  <p class="eyebrow font-black tracking-[.1em] text-(--pt-red) uppercase">
+                    Jingles oficiais
+                  </p>
+                  <h3 class="font-display mt-1 text-2xl font-black tracking-[-.02em]">
+                    Dê o play. O próximo ritmo é seu.
+                  </h3>
+                </div>
+                <span class="text-sm text-(--campaign-muted)">Um jingle toca por vez.</span>
+              </div>
+              <div class="relative mt-6 grid grid-cols-3 gap-6">
+                <article class="card" data-state="stopped">
+                  <div class="cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                      alt="Capa oficial do jingle Forró"
+                    />
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-start gap-4">
+                      <button
+                        class="play focus-ring"
+                        aria-label="Tocar jingle Jorge Solla 1313 (feat. Felipe Forrozeiro)"
+                        aria-pressed="false"
+                      >
+                        <svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z" /></svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="jingle-title">Jorge Solla 1313</h4>
+                        <p class="credit">feat. Felipe Forrozeiro</p>
+                        <p class="mt-2 text-sm text-(--campaign-muted)">Pronto para tocar</p>
+                      </div>
+                    </div>
+                    <div class="mt-5">
+                      <div class="progress"><span class="w-0"></span></div>
+                      <div
+                        class="mt-2 flex justify-between text-[11px] font-bold text-black/50 uppercase"
+                      >
+                        <span>Tempo —:—</span><span>Duração —:—</span>
+                      </div>
+                    </div>
+                    <a class="download mt-5">↓ Baixar MP3</a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-jingle-forro.mp3
+                    </p>
+                  </div>
+                </article>
+                <article class="card" data-state="playing">
+                  <div class="cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                      alt="Capa oficial do jingle Axé"
+                    />
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-start gap-4">
+                      <button
+                        class="play focus-ring"
+                        aria-label="Pausar jingle Jorge Solla 1313 (feat. Nagib Barroso)"
+                        aria-pressed="true"
+                      >
+                        <svg viewBox="0 0 24 24"><path d="M8 5h3v14H8zM14 5h3v14h-3z" /></svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="jingle-title">Jorge Solla 1313</h4>
+                        <p class="credit">feat. Nagib Barroso</p>
+                        <p class="mt-2 flex items-center gap-2 text-sm font-bold text-(--pt-red)">
+                          <span class="size-2 rounded-full bg-(--pt-red)"></span>Em reprodução
+                        </p>
+                      </div>
+                    </div>
+                    <div class="mt-5">
+                      <div class="progress"><span class="w-[38%]"></span></div>
+                      <div
+                        class="mt-2 flex justify-between text-[11px] font-bold text-black/50 uppercase"
+                      >
+                        <span>Tempo 0:38</span><span>Duração 1:40</span>
+                      </div>
+                    </div>
+                    <a class="download mt-5">↓ Baixar MP3</a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-jingle-axe.mp3
+                    </p>
+                  </div>
+                </article>
+                <article class="card" data-state="stopped">
+                  <div class="cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-pagodao.jpg"
+                      alt="Capa oficial do jingle Pagodão"
+                    />
+                  </div>
+                  <div class="p-5">
+                    <div class="flex items-start gap-4">
+                      <button
+                        class="play focus-ring"
+                        aria-label="Tocar jingle Jorge Solla 1313 (feat. É O MT)"
+                        aria-pressed="false"
+                      >
+                        <svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z" /></svg>
+                      </button>
+                      <div class="min-w-0 flex-1">
+                        <h4 class="jingle-title">Jorge Solla 1313</h4>
+                        <p class="credit">feat. É O MT</p>
+                        <p class="mt-2 text-sm text-(--campaign-muted)">Pronto para tocar</p>
+                      </div>
+                    </div>
+                    <div class="mt-5">
+                      <div class="progress"><span class="w-0"></span></div>
+                      <div
+                        class="mt-2 flex justify-between text-[11px] font-bold text-black/50 uppercase"
+                      >
+                        <span>Tempo —:—</span><span>Duração —:—</span>
+                      </div>
+                    </div>
+                    <a class="download mt-5">↓ Baixar MP3</a>
+                    <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                      jorge-solla-1313-jingle-pagodao.mp3
+                    </p>
+                  </div>
+                </article>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-16" aria-labelledby="mobile-proof">
+        <div class="mb-5">
+          <p class="font-display text-[11px] font-black tracking-[0.12em] text-amber-300 uppercase">
+            Cena 02 · mobile 390 · tocando
+          </p>
+          <h2 id="mobile-proof" class="font-display mt-1 text-xl font-black">
+            Crédito permanece entre título e estado
+          </h2>
+        </div>
+        <div
+          class="stage mx-auto w-[390px] max-w-full overflow-hidden bg-(--campaign-cream) p-5 text-black"
+          data-theme="campaign"
+        >
+          <p class="eyebrow font-black tracking-[.1em] text-(--pt-red) uppercase">
+            Jingles oficiais
+          </p>
+          <h3 class="font-display mt-1 text-2xl font-black">Dê o play</h3>
+          <p class="mt-2 text-sm text-(--campaign-muted)">Um jingle toca por vez.</p>
+          <article class="card mt-5" data-state="playing">
+            <div class="cover">
+              <img
+                src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                alt="Capa oficial do jingle Forró"
+              />
+            </div>
+            <div class="p-4">
+              <div class="flex items-start gap-4">
+                <button
+                  class="play focus-ring"
+                  aria-label="Pausar jingle Jorge Solla 1313 (feat. Felipe Forrozeiro)"
+                  aria-pressed="true"
+                >
+                  <svg viewBox="0 0 24 24"><path d="M8 5h3v14H8zM14 5h3v14h-3z" /></svg>
+                </button>
+                <div class="min-w-0 flex-1">
+                  <h4 class="jingle-title">Jorge Solla 1313</h4>
+                  <p class="credit">feat. Felipe Forrozeiro</p>
+                  <p class="mt-2 flex items-center gap-2 text-sm font-bold text-(--pt-red)">
+                    <span class="size-2 rounded-full bg-(--pt-red)"></span>Em reprodução
+                  </p>
+                </div>
+              </div>
+              <div class="mt-5">
+                <div class="progress"><span class="w-[38%]"></span></div>
+                <div
+                  class="mt-2 flex justify-between text-[10px] font-bold text-black/50 uppercase"
+                >
+                  <span>Tempo 0:38</span><span>Duração 1:40</span>
+                </div>
+              </div>
+              <a class="download mt-5">↓ Baixar MP3</a>
+              <p class="mt-3 truncate text-center text-[11px] text-black/45">
+                jorge-solla-1313-jingle-forro.mp3
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section class="mt-16" aria-labelledby="stress-proof">
+        <div class="mb-5">
+          <p class="font-display text-[11px] font-black tracking-[0.12em] text-sky-300 uppercase">
+            Cena 03 · mobile 390 · prova de estresse
+          </p>
+          <h2 id="stress-proof" class="font-display mt-1 text-xl font-black">
+            Título-base longo e fallback sem crédito
+          </h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-2">
+          <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <p class="mb-3 text-[11px] font-black tracking-[.1em] text-amber-300 uppercase">
+              Título-base no limite · parado
+            </p>
+            <div class="mx-auto w-[350px] max-w-full text-black">
+              <article class="proof-card card" data-state="stopped">
+                <div class="h-28 bg-(--campaign-band) p-4">
+                  <span
+                    class="inline-flex rounded-full border border-dashed border-black/25 bg-white px-3 py-2 text-[10px] font-black tracking-[.08em] text-(--campaign-muted) uppercase"
+                    >Capa existente · não alterada</span
+                  >
+                </div>
+                <div class="p-4">
+                  <div class="flex items-start gap-4">
+                    <button
+                      class="play"
+                      aria-label="Tocar jingle Nome muito longo do jingle oficial da campanha (feat. Nome do artista)"
+                    >
+                      <svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z" /></svg>
+                    </button>
+                    <div class="min-w-0 flex-1">
+                      <h3 class="jingle-title">Nome muito longo do jingle oficial da campanha</h3>
+                      <p class="credit">feat. Nome do artista</p>
+                      <p class="mt-2 text-sm text-(--campaign-muted)">Pronto para tocar</p>
+                    </div>
+                  </div>
+                  <div class="mt-5"><div class="progress"></div></div>
+                  <a class="download mt-5">↓ Baixar MP3</a>
+                </div>
+              </article>
+            </div>
+            <p class="mt-4 text-xs leading-5 text-zinc-400">
+              No conteúdo real, o título-base cabe em até duas linhas. Este placeholder extremo
+              passa de duas para provar o fail-safe: nada recebe <code>truncate</code> e o crédito
+              continua inteiro.
+            </p>
+          </div>
+
+          <div class="rounded-2xl border border-zinc-800 bg-zinc-900 p-5">
+            <p class="mb-3 text-[11px] font-black tracking-[.1em] text-emerald-300 uppercase">
+              Sem “(feat. …)” · fallback
+            </p>
+            <div class="mx-auto w-[350px] max-w-full text-black">
+              <article class="proof-card card" data-state="stopped">
+                <div class="h-28 overflow-hidden bg-(--campaign-band)">
+                  <img
+                    src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                    alt="Capa oficial do jingle Axé"
+                    class="h-full w-full object-cover object-[center_38%]"
+                  />
+                </div>
+                <div class="p-4">
+                  <div class="flex items-start gap-4">
+                    <button class="play" aria-label="Tocar jingle Axé">
+                      <svg viewBox="0 0 24 24"><path d="m8 5 11 7-11 7z" /></svg>
+                    </button>
+                    <div class="min-w-0 flex-1">
+                      <h3 class="jingle-title">Axé</h3>
+                      <p class="mt-2 text-sm text-(--campaign-muted)">Pronto para tocar</p>
+                    </div>
+                  </div>
+                  <div class="mt-5"><div class="progress"></div></div>
+                  <a class="download mt-5">↓ Baixar MP3</a>
+                </div>
+              </article>
+            </div>
+            <p class="mt-4 text-xs leading-5 text-zinc-400">
+              Sem crédito, nenhuma linha vazia é reservada: o card segue natural e apenas deixa de
+              truncar o título.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-16 rounded-2xl border border-zinc-800 bg-zinc-900/70 p-6">
+        <p class="font-display text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">
+          Especificação visual aprovada no gate
+        </p>
+        <div class="mt-4 grid gap-6 text-sm leading-6 text-zinc-300 md:grid-cols-3">
+          <div>
+            <h2 class="font-display font-black text-white">Título-base</h2>
+            <p class="mt-2">
+              Exo 2, 24px (22px no estresse), peso 900, entrelinha 1.02. Os títulos reais ocupam até
+              duas linhas; não há corte silencioso.
+            </p>
+          </div>
+          <div>
+            <h2 class="font-display font-black text-white">Crédito</h2>
+            <p class="mt-2">
+              <strong>feat. Nome do artista</strong>, sem parênteses, 13px, peso 700, cor
+              <code>--campaign-muted</code>. Nunca truncado.
+            </p>
+          </div>
+          <div>
+            <h2 class="font-display font-black text-white">Continuidade</h2>
+            <p class="mt-2">
+              Capas existentes, botão amarelo, estado, progresso, download, raios e sombras
+              permanecem como hoje.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
