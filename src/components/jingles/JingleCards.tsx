@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useRef, useState } from 'react'
 
-import type { JingleViewModel } from '@/lib/jingle'
+import { splitJingleTitle, type JingleViewModel } from '@/lib/jingle'
 import { formatSpeechClock } from '@/lib/speechClock'
 import { cn } from '@/lib/utils'
 
@@ -143,6 +143,7 @@ export const JingleCards = ({
     <div className="mx-auto grid max-w-6xl gap-5 sm:gap-6 md:grid-cols-3">
       {jingles.map((jingle) => {
         const playing = activeId === jingle.id
+        const { base, credit } = splitJingleTitle(jingle.title)
         const state = playback[jingle.id] ?? EMPTY_PLAYBACK
         const percent =
           state.durationSeconds && state.durationSeconds > 0
@@ -176,7 +177,7 @@ export const JingleCards = ({
             </div>
 
             <div className="p-4 md:p-5">
-              <div className="flex items-center gap-4">
+              <div className="flex items-start gap-4">
                 <button
                   type="button"
                   data-play
@@ -188,9 +189,14 @@ export const JingleCards = ({
                   {playing ? <PauseIcon /> : <PlayIcon />}
                 </button>
                 <div className="min-w-0 flex-1">
-                  <Heading className="m-0 truncate border-b-0 pb-0 text-left font-[family-name:var(--font-exo2)] text-2xl leading-none font-black tracking-[-0.02em] md:text-[26px]">
-                    {jingle.title}
+                  <Heading className="m-0 border-b-0 pb-0 text-left font-[family-name:var(--font-exo2)] text-2xl leading-[1.02] font-black tracking-[-0.02em] wrap-anywhere">
+                    {base}
                   </Heading>
+                  {credit ? (
+                    <p className="mt-1.5 text-[13px] leading-[1.25] font-bold text-(--campaign-muted)">
+                      {credit}
+                    </p>
+                  ) : null}
                   {playing ? (
                     <p className="mt-2 flex items-center gap-2 text-sm font-bold text-(--pt-red)">
                       <span className="h-2 w-2 rounded-full bg-(--pt-red)" />
