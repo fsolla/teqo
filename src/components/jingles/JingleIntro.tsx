@@ -3,25 +3,11 @@
  * band with the decorative blobs, the eyebrow and the "um por vez" reassurance.
  * Copy differs per breakpoint in the artefato, so each state keeps its literal.
  */
-const MusicNoteIcon = () => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 24 24"
-    className="h-4 w-4 flex-none text-(--pt-red) sm:h-5 sm:w-5"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path d="M9 18V5l12-2v13" />
-    <circle cx="6" cy="18" r="3" />
-    <circle cx="18" cy="16" r="3" />
-  </svg>
-)
 
 export const JingleIntro = () => (
   <section
     aria-labelledby="jingles-title"
-    className="relative overflow-hidden bg-(--campaign-cream) px-5 pt-9 pb-8 sm:px-8 sm:pt-16 sm:pb-12"
+    className="relative overflow-hidden bg-(--campaign-cream) px-5 pt-9 pb-6 sm:px-8 sm:pt-16 sm:pb-12"
   >
     <div
       aria-hidden="true"
@@ -47,23 +33,10 @@ export const JingleIntro = () => (
             <br className="sm:hidden" /> Jorge Solla
           </h1>
           <p className="mt-4 max-w-xl text-[15px] leading-6 text-black/70 sm:mt-5 sm:text-[17px] sm:leading-7">
-            <span className="sm:hidden">
-              Dê o play para ouvir aqui. Se quiser levar, baixe o MP3.
-            </span>
             <span className="hidden sm:inline">
               Escolha um jingle, dê o play e escute aqui mesmo. Para levar com você, baixe o MP3.
             </span>
           </p>
-        </div>
-
-        <div className="mt-5 flex items-center gap-2 text-xs font-bold text-black/60 sm:mt-0 sm:mb-1 sm:gap-3 sm:rounded-xl sm:border sm:border-black/10 sm:bg-white/75 sm:px-4 sm:py-3 sm:text-sm sm:font-normal sm:text-black/65 sm:backdrop-blur">
-          <MusicNoteIcon />
-          <span className="sm:hidden">Um jingle toca por vez.</span>
-          <span className="hidden sm:block">
-            <strong className="text-black">Um por vez.</strong>
-            <br />
-            Ao tocar outro, o anterior para.
-          </span>
         </div>
       </div>
     </div>

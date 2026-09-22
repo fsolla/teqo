@@ -163,7 +163,7 @@ export const JingleCards = ({
   }
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-5 sm:gap-6 md:grid-cols-3">
+    <div className="mx-auto flex max-w-6xl snap-x snap-mandatory gap-4 overflow-x-auto pb-4 scrollbar-hide md:grid md:grid-cols-3 md:snap-none md:gap-5 lg:gap-6">
       {jingles.map((jingle) => {
         const playing = activeId === jingle.id
         const { base, credit } = splitJingleTitle(jingle.title)
@@ -179,13 +179,13 @@ export const JingleCards = ({
             data-jingle
             data-state={playing ? 'playing' : 'stopped'}
             className={cn(
-              'overflow-hidden rounded-[14px] border bg-white shadow-[0_12px_34px_rgb(71_19_14/8%)]',
+              'w-[280px] flex-none snap-start overflow-hidden rounded-[14px] border bg-white shadow-[0_12px_34px_rgb(71_19_14/8%)] md:w-auto md:flex-none',
               playing
                 ? 'border-[rgb(162_28_28/36%)] shadow-[0_14px_38px_rgb(162_28_28/14%)]'
                 : 'border-(--campaign-line)',
             )}
           >
-            <div className="relative aspect-square overflow-hidden bg-(--campaign-band)">
+            <div className="relative h-40 overflow-hidden bg-(--campaign-band) md:h-48">
               <Image
                 src={jingle.coverUrl}
                 alt={jingle.coverAlt}

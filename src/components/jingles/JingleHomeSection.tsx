@@ -35,7 +35,7 @@ export const JingleHomeSection = ({ jingles, showAll }: JingleHomeSectionProps) 
         aria-hidden="true"
         className="pointer-events-none absolute -top-28 -right-20 h-64 w-64 rounded-full bg-(--pt-yellow)/45"
       />
-      <div className="relative mx-auto w-full max-w-[1160px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
+      <div className="relative mx-auto w-full max-w-[1160px] px-5 py-8 sm:px-8 lg:px-10 lg:py-16">
         <div className="mx-auto max-w-2xl text-center">
           <p className="campaign-section-eyebrow m-0 font-black tracking-[0.1em] text-(--pt-red) uppercase">
             A trilha da nossa caminhada
@@ -74,7 +74,6 @@ export const JingleHomeSection = ({ jingles, showAll }: JingleHomeSectionProps) 
                   <span className="hidden md:inline">Dê o play. O próximo ritmo é seu.</span>
                 </h3>
               </div>
-              <span className="text-sm text-(--campaign-muted)">Um jingle toca por vez.</span>
             </div>
 
             <div className="mt-6">
