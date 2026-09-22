@@ -1,0 +1,918 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Briefing de capacitação Solla</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-ink: #18232d;
+        --color-ink-soft: #52616d;
+        --color-accent: #4d6d7c;
+        --color-line: #bdc8ce;
+        --color-line-light: #dce3e6;
+        --color-paper: #ffffff;
+        --color-workspace: #e9edef;
+        --color-note: #f2f5f6;
+      }
+    </style>
+    <style>
+      :root {
+        --ink: #18232d;
+        --ink-soft: #52616d;
+        --accent: #4d6d7c;
+        --line: #bdc8ce;
+        --line-light: #dce3e6;
+        --paper: #ffffff;
+        --workspace: #e9edef;
+        --note: #f2f5f6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        background: var(--workspace);
+        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .gate-intro {
+        width: min(100% - 32px, 1000px);
+        margin: 34px auto 28px;
+        padding: 20px 22px;
+        border-top: 3px solid var(--ink);
+        border-bottom: 1px solid var(--line);
+        background: rgb(255 255 255 / 72%);
+      }
+
+      .scene {
+        width: min-content;
+        margin: 0 auto 46px;
+      }
+
+      .scene-label {
+        margin: 0 0 8px;
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .sheet {
+        display: flex;
+        width: 210mm;
+        height: 297mm;
+        padding: 14mm 16mm 12mm;
+        overflow: hidden;
+        flex-direction: column;
+        background: var(--paper);
+        box-shadow: 0 18px 44px rgb(24 35 45 / 15%);
+        font-size: 9.4pt;
+        line-height: 1.42;
+      }
+
+      .sheet p,
+      .sheet ul,
+      .sheet ol {
+        margin-top: 0;
+      }
+
+      .brief-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 9mm;
+        padding-bottom: 3mm;
+        border-bottom: 0.35mm solid var(--ink);
+      }
+
+      .kicker,
+      .eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 7.3pt;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .brief-title {
+        margin: 1mm 0 0;
+        font-size: 19pt;
+        font-weight: 650;
+        line-height: 1.05;
+        letter-spacing: -0.025em;
+      }
+
+      .brief-subtitle {
+        margin: 1.2mm 0 0;
+        color: var(--ink-soft);
+        font-size: 8.7pt;
+      }
+
+      .internal-label {
+        max-width: 47mm;
+        margin: 0;
+        color: var(--ink);
+        font-size: 7.2pt;
+        font-weight: 700;
+        line-height: 1.4;
+        text-align: right;
+        text-transform: uppercase;
+      }
+
+      .page-no {
+        display: block;
+        margin-top: 1mm;
+        color: var(--ink-soft);
+        font-weight: 500;
+        text-transform: none;
+      }
+
+      .section {
+        margin-top: 5mm;
+      }
+
+      .section + .section {
+        margin-top: 6mm;
+      }
+
+      .section-title {
+        margin: 1.2mm 0 0;
+        font-size: 13.5pt;
+        font-weight: 650;
+        line-height: 1.15;
+        letter-spacing: -0.015em;
+      }
+
+      .lede {
+        max-width: 158mm;
+        margin: 3mm 0 0;
+        font-size: 10.2pt;
+        line-height: 1.5;
+      }
+
+      .rule-note {
+        margin-top: 4mm;
+        padding: 2.5mm 0 2.5mm 4mm;
+        border-top: 0.25mm solid var(--line);
+        border-bottom: 0.25mm solid var(--line);
+        border-left: 1mm solid var(--accent);
+        color: var(--ink-soft);
+        font-size: 8.4pt;
+        line-height: 1.42;
+      }
+
+      .rule-note strong {
+        color: var(--ink);
+      }
+
+      .line-list,
+      .script-list,
+      .avoid-list,
+      .check-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        border-top: 0.35mm solid var(--ink);
+        list-style: none;
+      }
+
+      .line-list li,
+      .script-list li,
+      .avoid-list li,
+      .check-list li {
+        position: relative;
+        padding: 2.5mm 0 2.5mm 6mm;
+        border-bottom: 0.2mm solid var(--line-light);
+      }
+
+      .line-list li::before,
+      .script-list li::before,
+      .avoid-list li::before,
+      .check-list li::before {
+        position: absolute;
+        top: 3.7mm;
+        left: 0;
+        width: 2.2mm;
+        height: 0.45mm;
+        background: var(--accent);
+        content: '';
+      }
+
+      .line-title {
+        display: block;
+        font-weight: 700;
+      }
+
+      .line-meta {
+        display: block;
+        margin-top: 0.8mm;
+        color: var(--ink-soft);
+        font-size: 7.8pt;
+        line-height: 1.4;
+      }
+
+      .source {
+        color: var(--accent);
+        font-size: 7.4pt;
+        font-weight: 700;
+      }
+
+      .request-line {
+        margin: 3.5mm 0 0;
+        padding: 4mm 0;
+        border-top: 0.6mm solid var(--ink);
+        border-bottom: 0.6mm solid var(--ink);
+        font-size: 14pt;
+        font-weight: 650;
+        line-height: 1.3;
+        letter-spacing: -0.015em;
+      }
+
+      .request-line em {
+        color: var(--accent);
+        font-style: normal;
+      }
+
+      .script-list {
+        counter-reset: script-step;
+      }
+
+      .script-list li {
+        min-height: 14mm;
+        padding-left: 13mm;
+        counter-increment: script-step;
+      }
+
+      .script-list li::before {
+        top: 2.7mm;
+        width: 8mm;
+        height: auto;
+        color: var(--accent);
+        background: none;
+        content: counter(script-step, decimal-leading-zero);
+        font-size: 8pt;
+        font-weight: 700;
+      }
+
+      .qa-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        border-top: 0.35mm solid var(--ink);
+        list-style: none;
+      }
+
+      .qa-item {
+        display: grid;
+        padding: 3.2mm 0;
+        border-bottom: 0.2mm solid var(--line-light);
+        grid-template-columns: 46mm 1fr;
+        gap: 5mm;
+      }
+
+      .qa-question {
+        margin: 0;
+        font-size: 8.6pt;
+        font-weight: 700;
+        line-height: 1.38;
+      }
+
+      .qa-side {
+        display: block;
+        margin-bottom: 1mm;
+        color: var(--accent);
+        font-size: 6.8pt;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .qa-answer {
+        margin: 0;
+        font-size: 8.6pt;
+        line-height: 1.45;
+      }
+
+      .qa-answer b {
+        font-weight: 700;
+      }
+
+      .avoid-list strong,
+      .check-list strong {
+        font-weight: 700;
+      }
+
+      .two-column {
+        display: grid;
+        margin-top: 5mm;
+        grid-template-columns: 1fr 1fr;
+        gap: 8mm;
+      }
+
+      .limits {
+        margin-top: 5mm;
+        padding-top: 3mm;
+        border-top: 0.6mm solid var(--ink);
+      }
+
+      .limits p {
+        margin: 1.5mm 0 0;
+        color: var(--ink-soft);
+        font-size: 8pt;
+        line-height: 1.42;
+      }
+
+      .brief-footer {
+        display: flex;
+        margin-top: auto;
+        padding-top: 2.5mm;
+        border-top: 0.25mm solid var(--line);
+        justify-content: space-between;
+        gap: 8mm;
+        color: var(--ink-soft);
+        font-size: 7.2pt;
+        line-height: 1.3;
+      }
+
+      .brief-footer strong {
+        color: var(--ink);
+      }
+
+      .sheet-compact .section {
+        margin-top: 3.8mm;
+      }
+
+      .sheet-compact .avoid-list,
+      .sheet-compact .check-list {
+        margin-top: 2mm;
+      }
+
+      .sheet-compact .avoid-list li,
+      .sheet-compact .check-list li {
+        padding-top: 1.65mm;
+        padding-bottom: 1.65mm;
+        font-size: 8.7pt;
+        line-height: 1.32;
+      }
+
+      .sheet-compact .avoid-list li::before,
+      .sheet-compact .check-list li::before {
+        top: 2.8mm;
+      }
+
+      .sheet-compact .two-column {
+        margin-top: 3.8mm;
+        gap: 6mm;
+      }
+
+      .sheet-compact .section-title {
+        font-size: 12.5pt;
+      }
+
+      .sheet-compact .limits {
+        margin-top: 3.5mm;
+        padding-top: 2mm;
+      }
+
+      .sheet-compact .limits p {
+        margin-top: 1mm;
+        font-size: 7.5pt;
+        line-height: 1.32;
+      }
+
+      .sheet-compact .brief-footer {
+        padding-top: 1.8mm;
+      }
+
+      @media (max-width: 760px) {
+        .gate-intro {
+          width: calc(100% - 20px);
+          margin: 10px auto 18px;
+          padding: 16px;
+        }
+
+        .scene {
+          width: calc(100% - 20px);
+          margin-bottom: 24px;
+        }
+
+        .sheet {
+          width: 100%;
+          height: auto;
+          min-height: 0;
+          padding: 24px 20px 20px;
+          overflow: visible;
+          font-size: 14px;
+          line-height: 1.5;
+        }
+
+        .brief-head {
+          gap: 16px;
+          padding-bottom: 12px;
+        }
+
+        .brief-title {
+          font-size: 25px;
+        }
+
+        .brief-subtitle,
+        .lede {
+          font-size: 14px;
+        }
+
+        .kicker,
+        .eyebrow,
+        .internal-label,
+        .source,
+        .line-meta,
+        .brief-footer {
+          font-size: 11px;
+        }
+
+        .section {
+          margin-top: 24px;
+        }
+
+        .section + .section {
+          margin-top: 28px;
+        }
+
+        .section-title {
+          font-size: 20px;
+        }
+
+        .line-list li,
+        .script-list li,
+        .avoid-list li,
+        .check-list li {
+          padding-top: 12px;
+          padding-bottom: 12px;
+        }
+
+        .line-list li::before,
+        .avoid-list li::before,
+        .check-list li::before {
+          top: 20px;
+        }
+
+        .line-meta,
+        .qa-question,
+        .qa-answer,
+        .limits p {
+          font-size: 13px;
+        }
+
+        .qa-item,
+        .two-column {
+          grid-template-columns: 1fr;
+          gap: 10px;
+        }
+
+        .request-line {
+          font-size: 19px;
+        }
+
+        .brief-footer {
+          margin-top: 28px;
+        }
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+
+        .gate-intro,
+        .scene-label {
+          display: none;
+        }
+
+        .scene {
+          margin: 0;
+        }
+
+        .sheet {
+          box-shadow: none;
+          break-after: page;
+        }
+
+        .scene:last-child .sheet {
+          break-after: auto;
+        }
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="gate-intro">
+      <p class="m-0 text-xs font-bold uppercase tracking-[.14em] text-accent">
+        C210 · referência visual do gate
+      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-ink">
+        Briefing de capacitação · família sóbria
+      </h1>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
+        Quatro folhas A4, sem marca de campanha, cartões, selos ou gráficos. No celular, as mesmas
+        folhas refluem em uma coluna com corpo de 14 px para consulta em campo. O conteúdo é insumo
+        interno: fatos vêm do dossiê; lacunas permanecem lacunas.
+      </p>
+    </header>
+
+    <main>
+      <section class="scene">
+        <p class="scene-label">Folha 1/4 · O essencial do recorte</p>
+        <article class="sheet" aria-label="O essencial do briefing de Miguel Calmon">
+          <header class="brief-head">
+            <div>
+              <p class="kicker">Briefing de capacitação · cidade</p>
+              <h2 class="brief-title">Miguel Calmon</h2>
+              <p class="brief-subtitle">
+                Piemonte da Diamantina · consulta antes e durante o contato
+              </p>
+            </div>
+            <p class="internal-label">
+              Insumo interno de capacitação — não publicar
+              <span class="page-no">folha 1/4</span>
+            </p>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Comece por aqui</p>
+            <h3 class="section-title">O essencial do recorte</h3>
+            <p class="lede">
+              Use um fato local de cada vez. Separe o que ocorreu no município do que atende a
+              região. Não transforme articulação, indicação ou valor autorizado em entrega
+              concluída.
+            </p>
+            <ul class="line-list">
+              <li>
+                <span class="line-title"
+                  >A evidência municipal mais concentrada está na gestão estadual da saúde.</span
+                >
+                <span class="line-meta"
+                  >Ambulância, Saúde em Movimento, Olhar Brasil, atenção domiciliar e gestão da
+                  Santa Casa aparecem com menção direta a Miguel Calmon.
+                  <span class="source">[B-01–B-07]</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >A Santa Casa aparece com 80 leitos e emergência 24 horas no registro de
+                  2012.</span
+                >
+                <span class="line-meta"
+                  >Fase do valor anual não informada: cite o serviço, não some valores.
+                  <span class="source">Jornal Grande Bahia · 25/01/2012</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >No mandato federal, os registros localizados têm alcance regional.</span
+                >
+                <span class="line-meta"
+                  >Campus da UFBA, Policlínica, seminário e articulações em Jacobina não são
+                  entregas exclusivas ao município. <span class="source">[C-01–C-08]</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Não há fala própria localizada com menção nominal à cidade.</span
+                >
+                <span class="line-meta"
+                  >Resultado de busca não prova ausência histórica. Se perguntarem além do que está
+                  documentado, anote e confira no dossiê. <span class="source">[L-07]</span></span
+                >
+              </li>
+            </ul>
+          </section>
+
+          <div class="rule-note">
+            <strong>Como usar.</strong> Antes: escolha dois fatos e ensaie o pedido. Durante:
+            escute, responda com um fato verificável e peça o voto. Depois: registre a dúvida que
+            ficou sem resposta para o próximo ciclo do dossiê.
+          </div>
+
+          <footer class="brief-footer">
+            <span
+              ><strong>Regra:</strong> município ≠ região · fase acompanha valor · sem fonte, não
+              afirmar</span
+            >
+            <span>Briefing de capacitação · 1/4</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Folha 2/4 · Defesas + roteiro do pedido</p>
+        <article class="sheet" aria-label="O que Solla defende e roteiro do pedido de voto">
+          <header class="brief-head">
+            <div>
+              <p class="kicker">Briefing de capacitação · Miguel Calmon</p>
+              <h2 class="brief-title">Defesas e pedido de voto</h2>
+              <p class="brief-subtitle">Do fato local ao compromisso nomeado</p>
+            </div>
+            <p class="internal-label">
+              Insumo interno de capacitação — não publicar
+              <span class="page-no">folha 2/4</span>
+            </p>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Leitura dos registros · não é opinião</p>
+            <h3 class="section-title">O que Solla defende</h3>
+            <ul class="line-list">
+              <li>
+                <span class="line-title">Ensino superior público no Piemonte da Diamantina.</span>
+                <span class="line-meta"
+                  >Defesa registrada de campus da UFBA em Jacobina, junto com Jequié e Seabra.
+                  Alcance regional.
+                  <span class="source">INC 1497/2023 · Jornal da Chapada, 22/09/2023</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title">Fortalecimento da estrutura regional de diagnóstico.</span>
+                <span class="line-meta"
+                  >Registro de articulação pela ressonância da Policlínica de Jacobina; autoria da
+                  emenda atribuída a Amauri Teixeira.
+                  <span class="source">Marcelino Galo · 14/04/2018</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Promessa nominal para Miguel Calmon: sem registro localizado.</span
+                >
+                <span class="line-meta"
+                  >Não completar com proposta genérica nem apresentar ação regional como promessa
+                  municipal.</span
+                >
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Roteiro curto · fale como pessoa, não como disparo</p>
+            <h3 class="section-title">Faça o pedido com clareza</h3>
+            <p class="request-line">
+              “Posso contar com você? Para deputado federal, <em>vote 1313, Jorge Solla</em>.”
+            </p>
+            <ol class="script-list">
+              <li>
+                <span class="line-title">Comece pela relação.</span>
+                <span class="line-meta"
+                  >“Quero conversar com você porque sua opinião importa para mim.” Escute antes de
+                  argumentar.</span
+                >
+              </li>
+              <li>
+                <span class="line-title">Use um fato do recorte.</span>
+                <span class="line-meta"
+                  >Escolha um item da folha 1. Diga se é municipal ou regional e preserve o
+                  estágio.</span
+                >
+              </li>
+              <li>
+                <span class="line-title">Peça explicitamente: vote 1313.</span>
+                <span class="line-meta"
+                  >Não pare em “pense com carinho”. Nome e número tornam o compromisso claro.</span
+                >
+              </li>
+              <li>
+                <span class="line-title">Combine o plano de voto: onde, quando e como.</span>
+                <span class="line-meta"
+                  >“Você já sabe onde vota? Em que horário pretende ir? Como vai chegar?” Oriente
+                  sem pressionar.</span
+                >
+              </li>
+              <li>
+                <span class="line-title">Feche com compromisso nomeado.</span>
+                <span class="line-meta"
+                  >“Então ficou combinado: para deputado federal, Jorge Solla, 1313?” Se houver
+                  dúvida, não force; combine retorno.</span
+                >
+              </li>
+            </ol>
+          </section>
+
+          <div class="rule-note">
+            <strong>Por que assim:</strong> contato pessoal e relacional mobiliza melhor do que
+            broadcast; escuta e narrativa vêm antes do argumento. Evidência internacional orienta o
+            método, mas EUA ≠ Brasil — aqui o plano ajuda também a lembrar o número na urna.
+          </div>
+
+          <footer class="brief-footer">
+            <span
+              >Base de capacitação: Nickerson &amp; Rogers 2010 · Schein et al. 2021 · Kalla &amp;
+              Broockman 2020</span
+            >
+            <span>Briefing de capacitação · 2/4</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Folha 3/4 · Perguntas prováveis × melhores respostas</p>
+        <article class="sheet" aria-label="Perguntas prováveis e melhores respostas">
+          <header class="brief-head">
+            <div>
+              <p class="kicker">Briefing de capacitação · Miguel Calmon</p>
+              <h2 class="brief-title">Perguntas prováveis × melhores respostas</h2>
+              <p class="brief-subtitle">Reconhecer → fato local verificável → pedido</p>
+            </div>
+            <p class="internal-label">
+              Insumo interno de capacitação — não publicar
+              <span class="page-no">folha 3/4</span>
+            </p>
+          </header>
+
+          <div class="rule-note">
+            <strong>Régua visível:</strong> reconheça a preocupação em uma frase, sem repetir o
+            ataque; responda com um fato local verificável; feche perguntando se pode contar com o
+            voto 1313. Se o dossiê não sustenta a resposta, diga que vai conferir.
+          </div>
+
+          <ol class="qa-list">
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Objeção à direita</span>“Não voto no PT / não gosto do Lula.”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “Entendo que a escolha partidária pesa.” <b>Fato:</b> em Miguel
+                Calmon, há registros nominais de ações na saúde durante a gestão estadual, como
+                Saúde em Movimento, ambulância e atenção domiciliar. <b>Fechar:</b> “Olhando esse
+                trabalho no município, posso contar com seu voto 1313 para deputado federal?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Objeção à direita</span>“E o governo de Jerônimo? O que fez
+                aqui?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “É justo cobrar o que chegou ao município.” <b>Fato:</b> este
+                briefing não traz entrega do governo atual comprovada para responder isso; ele
+                registra ações de outros períodos e iniciativas regionais. <b>Fechar:</b> “Posso
+                conferir essa pergunta no dossiê e voltar? Sobre o trabalho documentado de Solla,
+                posso pedir seu voto 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Objeção à esquerda</span>“Se o PT governa a Bahia, por que
+                ainda falta tanto?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “A cobrança é legítima; ação feita não apaga o que falta.”
+                <b>Fato:</b> o levantamento registra serviços no município, mas também lacunas: não
+                localizou emenda individual de Solla para Miguel Calmon nem obra estadual nominal na
+                janela consultada. <b>Fechar:</b> “A proposta é cobrar sem esconder lacunas. Posso
+                contar com seu voto 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Objeção à esquerda</span>“Por que falar de Jacobina se eu moro
+                em Miguel Calmon?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “Você tem razão em separar cidade e região.” <b>Fato:</b> campus
+                da UFBA e Policlínica aparecem como iniciativas regionais em Jacobina; o material
+                não as chama de entrega exclusiva a Miguel Calmon. <b>Fechar:</b> “Defender
+                estrutura regional sem apagar o município faz sentido para você? Posso contar com o
+                1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Dúvida sobre entrega</span>“Ele prometeu o quê para Miguel
+                Calmon?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “Promessa precisa estar registrada.” <b>Fato:</b> não foi
+                localizada promessa nominal para o município; há defesa regional de campus da UFBA
+                em Jacobina e registros de atuação em saúde. <b>Fechar:</b> “Não vou inventar
+                promessa. Pelo trabalho comprovado, você considera votar 1313?”
+              </p>
+            </li>
+          </ol>
+
+          <footer class="brief-footer">
+            <span
+              ><strong>Não debata para vencer.</strong> Preserve a relação, responda o verificável e
+              anote a lacuna.</span
+            >
+            <span>Briefing de capacitação · 3/4</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Folha 4/4 · O que evitar + conferência + limites</p>
+        <article class="sheet sheet-compact" aria-label="O que evitar e o que conferir no dossiê">
+          <header class="brief-head">
+            <div>
+              <p class="kicker">Briefing de capacitação · Miguel Calmon</p>
+              <h2 class="brief-title">O que evitar</h2>
+              <p class="brief-subtitle">
+                Proteja a relação, a verdade do recorte e os limites do material
+              </p>
+            </div>
+            <p class="internal-label">
+              Insumo interno de capacitação — não publicar
+              <span class="page-no">folha 4/4</span>
+            </p>
+          </header>
+
+          <section class="section">
+            <ul class="avoid-list">
+              <li>
+                <strong>Confrontar para ganhar a discussão.</strong> Em território hostil, encerre
+                com respeito; não transforme contato em duelo.
+              </li>
+              <li>
+                <strong>Envergonhar ou expor o eleitor.</strong> Pressão pesada gera reação. Convide
+                ao compromisso sem constranger.
+              </li>
+              <li>
+                <strong>Repetir o ataque ou o mito.</strong> Não lidere pela acusação. Reconheça a
+                preocupação e ofereça uma explicação factual alternativa.
+              </li>
+              <li>
+                <strong>Trocar conversa por broadcast impessoal.</strong> WhatsApp 1-a-1 e pessoa de
+                confiança vêm antes de corrente ou disparo em massa.
+              </li>
+              <li>
+                <strong>Prometer sem lastro.</strong> Indicação não é obra; articulação não é
+                autoria; autorizado não é pago; região não é município.
+              </li>
+            </ul>
+          </section>
+
+          <div class="two-column">
+            <section>
+              <p class="eyebrow">Antes de responder</p>
+              <h3 class="section-title">O que conferir no dossiê</h3>
+              <ul class="check-list">
+                <li><strong>Fonte e data</strong> do fato que pretende usar.</li>
+                <li><strong>Alcance:</strong> município, região ou polo.</li>
+                <li><strong>Fase do valor:</strong> autorizado, empenhado, liquidado ou pago.</li>
+                <li><strong>Autoria:</strong> quem apresentou, destinou ou executou.</li>
+                <li>
+                  <strong>Lacuna:</strong> o que a busca não localizou e não pode ser inferido.
+                </li>
+              </ul>
+            </section>
+
+            <section>
+              <p class="eyebrow">Consulta em campo</p>
+              <h3 class="section-title">Se você não souber</h3>
+              <ul class="check-list">
+                <li><strong>Diga com clareza:</strong> “Não tenho esse dado confirmado aqui.”</li>
+                <li><strong>Anote a pergunta</strong> sem pedir dado pessoal desnecessário.</li>
+                <li><strong>Combine retorno</strong> por canal 1-a-1, se a pessoa quiser.</li>
+                <li><strong>Leve a lacuna</strong> à coordenação para conferência no dossiê.</li>
+                <li>
+                  <strong>Não improvise</strong> número, promessa, fonte ou resposta do governo.
+                </li>
+              </ul>
+            </section>
+          </div>
+
+          <section class="limits">
+            <p class="eyebrow">Limites e defeso</p>
+            <p>
+              Material interno de capacitação. Não publicar, encaminhar como peça, impulsionar nem
+              adaptar sem revisão editorial e jurídica. Sem CTA público, marca de campanha, cenário
+              eleitoral, estimativa de votos ou dado staff-only. Os fatos foram selecionados do
+              dossiê de Miguel Calmon e devem ser conferidos na fonte antes de uso público.
+            </p>
+            <p>
+              A evidência de mobilização citada no treinamento é majoritariamente internacional e
+              não mede automaticamente o Brasil. Use os princípios para orientar contato pessoal,
+              plano de voto e lembrança do número — nunca para prometer efeito ou misturar
+              resultados de estudos diferentes.
+            </p>
+          </section>
+
+          <footer class="brief-footer">
+            <span>Anti-padrões: Lau et al. 2007 · Ecker et al. 2022 · Debunking Handbook 2020</span>
+            <span>Briefing de capacitação · 4/4</span>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>

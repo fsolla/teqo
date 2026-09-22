@@ -1,0 +1,2054 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Dossiês Solla sóbrios e analíticos</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --color-ink: #18232d;
+        --color-ink-soft: #52616d;
+        --color-accent: #4d6d7c;
+        --color-line: #bdc8ce;
+        --color-line-light: #dce3e6;
+        --color-paper: #ffffff;
+        --color-workspace: #e9edef;
+        --color-note: #f2f5f6;
+      }
+    </style>
+    <style>
+      :root {
+        --ink: #18232d;
+        --ink-soft: #52616d;
+        --accent: #4d6d7c;
+        --line: #bdc8ce;
+        --line-light: #dce3e6;
+        --paper: #ffffff;
+        --workspace: #e9edef;
+        --note: #f2f5f6;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+
+      body {
+        color: var(--ink);
+        background: var(--workspace);
+        font-family: 'Fira Sans', 'DejaVu Sans', Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .gate-intro {
+        width: min(100% - 32px, 1000px);
+        margin: 34px auto 28px;
+        padding: 20px 22px;
+        border-top: 3px solid var(--ink);
+        border-bottom: 1px solid var(--line);
+        background: rgb(255 255 255 / 72%);
+      }
+
+      .scene {
+        width: min-content;
+        margin: 0 auto 46px;
+      }
+
+      .scene-label {
+        margin: 0 0 8px;
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .sheet {
+        position: relative;
+        display: flex;
+        width: 210mm;
+        height: 297mm;
+        padding: 15mm 17mm 13mm;
+        overflow: hidden;
+        flex-direction: column;
+        background: var(--paper);
+        box-shadow: 0 18px 44px rgb(24 35 45 / 15%);
+        font-size: 9.4pt;
+        line-height: 1.42;
+      }
+
+      .sheet p,
+      .sheet ul,
+      .sheet ol,
+      .sheet dl {
+        margin-top: 0;
+      }
+
+      .sheet a {
+        color: #315d70;
+        text-decoration: underline;
+        text-underline-offset: 1.5px;
+      }
+
+      .running-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10mm;
+        padding-bottom: 3mm;
+        border-bottom: 0.35mm solid var(--ink);
+      }
+
+      .running-kicker {
+        margin: 0;
+        color: var(--accent);
+        font-size: 7.5pt;
+        font-weight: 700;
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+
+      .running-title {
+        margin: 0.8mm 0 0;
+        font-size: 17pt;
+        font-weight: 650;
+        line-height: 1.08;
+        letter-spacing: -0.025em;
+      }
+
+      .running-subtitle {
+        margin: 1mm 0 0;
+        color: var(--ink-soft);
+        font-size: 8.7pt;
+      }
+
+      .running-meta {
+        min-width: 41mm;
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 7.3pt;
+        line-height: 1.45;
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .running-meta p {
+        margin: 0;
+      }
+
+      .running-footer {
+        display: flex;
+        margin-top: auto;
+        padding-top: 2.6mm;
+        border-top: 0.25mm solid var(--line);
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8mm;
+        color: var(--ink-soft);
+        font-size: 7.2pt;
+        line-height: 1.3;
+      }
+
+      .folio {
+        color: var(--ink);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .section {
+        margin-top: 5mm;
+      }
+
+      .section + .section {
+        margin-top: 6mm;
+      }
+
+      .eyebrow {
+        margin: 0 0 1.3mm;
+        color: var(--accent);
+        font-size: 7.2pt;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      .section-title {
+        margin: 0;
+        font-size: 13pt;
+        font-weight: 650;
+        line-height: 1.18;
+        letter-spacing: -0.012em;
+      }
+
+      .lede {
+        max-width: 155mm;
+        margin: 3mm 0 0;
+        font-size: 10.6pt;
+        line-height: 1.52;
+      }
+
+      .body-copy {
+        margin: 2.6mm 0 0;
+        font-size: 9.6pt;
+        line-height: 1.5;
+      }
+
+      .muted {
+        color: var(--ink-soft);
+      }
+
+      .small {
+        font-size: 8.2pt;
+      }
+
+      .source-mark {
+        color: var(--accent);
+        font-size: 7.4pt;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .plain-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .plain-list li {
+        position: relative;
+        padding: 2.2mm 0 2.2mm 6mm;
+        border-top: 0.2mm solid var(--line-light);
+      }
+
+      .plain-list li:last-child {
+        border-bottom: 0.2mm solid var(--line-light);
+      }
+
+      .plain-list li::before {
+        position: absolute;
+        top: 3.3mm;
+        left: 0;
+        width: 2.2mm;
+        height: 0.45mm;
+        background: var(--accent);
+        content: '';
+      }
+
+      .fact-list strong,
+      .analysis-list strong {
+        font-weight: 700;
+      }
+
+      .analysis-list li {
+        padding-top: 2.8mm;
+        padding-bottom: 2.8mm;
+      }
+
+      .index-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .index-list li {
+        display: flex;
+        padding: 1.25mm 0;
+        border-bottom: 0.2mm dotted var(--line);
+        align-items: baseline;
+        gap: 2mm;
+      }
+
+      .index-list .index-number {
+        width: 8mm;
+        color: var(--accent);
+        font-size: 7.5pt;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .index-list .index-label {
+        font-weight: 600;
+      }
+
+      .index-list .index-page {
+        margin-left: auto;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .document-table {
+        width: 100%;
+        margin-top: 3mm;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 8.2pt;
+        line-height: 1.34;
+      }
+
+      .document-table th {
+        padding: 1.5mm 1.3mm 1.4mm;
+        border-top: 0.35mm solid var(--ink);
+        border-bottom: 0.25mm solid var(--ink);
+        color: var(--ink-soft);
+        font-size: 6.8pt;
+        font-weight: 700;
+        letter-spacing: 0.045em;
+        text-align: left;
+        text-transform: uppercase;
+        vertical-align: bottom;
+      }
+
+      .document-table td {
+        padding: 1.8mm 1.3mm;
+        border-bottom: 0.2mm solid var(--line-light);
+        vertical-align: top;
+        overflow-wrap: anywhere;
+      }
+
+      .document-table .tabular {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .document-table .strong-row td:first-child {
+        font-weight: 700;
+      }
+
+      .table-note {
+        margin: 1.7mm 0 0;
+        color: var(--ink-soft);
+        font-size: 7.6pt;
+      }
+
+      .callout-line {
+        margin-top: 4mm;
+        padding: 2.4mm 0 2.4mm 4mm;
+        border-top: 0.25mm solid var(--line);
+        border-bottom: 0.25mm solid var(--line);
+        border-left: 1mm solid var(--accent);
+        color: var(--ink-soft);
+        font-size: 8.4pt;
+        line-height: 1.42;
+      }
+
+      .note-line {
+        margin-top: 3mm;
+        padding: 2mm 0;
+        border-top: 0.25mm solid var(--line);
+        border-bottom: 0.25mm solid var(--line);
+        color: var(--ink-soft);
+        font-size: 8.2pt;
+      }
+
+      .note-line strong {
+        color: var(--ink);
+      }
+
+      .split-rule {
+        height: 0.35mm;
+        margin: 6mm 0;
+        border: 0;
+        background: var(--ink);
+      }
+
+      .cover-series {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12mm;
+        padding-bottom: 5mm;
+        border-bottom: 0.3mm solid var(--ink);
+      }
+
+      .cover-series p {
+        margin: 0;
+      }
+
+      .cover-series-name {
+        font-size: 8pt;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .cover-internal {
+        color: var(--ink-soft);
+        font-size: 7.5pt;
+        line-height: 1.45;
+        text-align: right;
+      }
+
+      .cover-main {
+        margin-top: 38mm;
+      }
+
+      .cover-overline {
+        margin: 0 0 4mm;
+        color: var(--accent);
+        font-size: 8pt;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .cover-title {
+        max-width: 160mm;
+        margin: 0;
+        font-size: 35pt;
+        font-weight: 650;
+        line-height: 0.98;
+        letter-spacing: -0.04em;
+      }
+
+      .cover-title span {
+        color: var(--accent);
+      }
+
+      .cover-subtitle {
+        max-width: 136mm;
+        margin: 6mm 0 0;
+        color: var(--ink-soft);
+        font-size: 13pt;
+        line-height: 1.4;
+      }
+
+      .cover-data {
+        display: grid;
+        margin: 24mm 0 0;
+        border-top: 0.3mm solid var(--ink);
+        grid-template-columns: 45mm 1fr;
+      }
+
+      .cover-data dt,
+      .cover-data dd {
+        margin: 0;
+        padding: 2.7mm 0;
+        border-bottom: 0.2mm solid var(--line);
+      }
+
+      .cover-data dt {
+        color: var(--ink-soft);
+        font-size: 7.5pt;
+        font-weight: 700;
+        letter-spacing: 0.035em;
+        text-transform: uppercase;
+      }
+
+      .cover-data dd {
+        font-size: 9pt;
+        font-weight: 600;
+      }
+
+      .cover-how {
+        max-width: 145mm;
+        margin-top: 9mm;
+        padding-top: 3mm;
+        border-top: 0.6mm solid var(--accent);
+      }
+
+      .cover-how p {
+        margin: 0;
+      }
+
+      .cover-how strong {
+        display: block;
+        margin-bottom: 1.5mm;
+        font-size: 8pt;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+      }
+
+      .cover-footer {
+        display: flex;
+        margin-top: auto;
+        padding-top: 4mm;
+        border-top: 0.3mm solid var(--ink);
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 8mm;
+        color: var(--ink-soft);
+        font-size: 7.6pt;
+      }
+
+      .trajectory-table td:first-child {
+        color: var(--accent);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .trajectory-table td:nth-child(2) {
+        font-weight: 650;
+      }
+
+      .era-reading {
+        margin-top: 4mm;
+        padding-left: 4mm;
+        border-left: 0.9mm solid var(--accent);
+      }
+
+      .era-reading p:last-child {
+        margin-bottom: 0;
+      }
+
+      .action-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .action-list li {
+        padding: 2.2mm 0;
+        border-top: 0.2mm solid var(--line-light);
+      }
+
+      .action-list li:last-child {
+        border-bottom: 0.2mm solid var(--line-light);
+      }
+
+      .action-list .action-title {
+        display: block;
+        font-weight: 700;
+      }
+
+      .action-list .action-meta {
+        display: block;
+        margin-top: 0.8mm;
+        color: var(--ink-soft);
+        font-size: 7.8pt;
+      }
+
+      .continuation {
+        color: var(--accent);
+        font-size: 7.3pt;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .placeholder-bar {
+        display: inline-block;
+        width: 28mm;
+        height: 2.3mm;
+        border-radius: 0.6mm;
+        background: #d7dee2;
+        vertical-align: middle;
+      }
+
+      .position-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .position-list li {
+        display: grid;
+        padding: 3mm 0;
+        border-top: 0.2mm solid var(--line-light);
+        grid-template-columns: 39mm 1fr 42mm;
+        gap: 4mm;
+        align-items: start;
+      }
+
+      .position-list li:last-child {
+        border-bottom: 0.2mm solid var(--line-light);
+      }
+
+      .position-label {
+        color: var(--accent);
+        font-size: 7.2pt;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .position-reading {
+        margin: 0;
+        font-size: 9pt;
+        line-height: 1.44;
+      }
+
+      .position-source {
+        margin: 0;
+        color: var(--ink-soft);
+        font-size: 7.4pt;
+        line-height: 1.38;
+      }
+
+      .bulletin-title {
+        max-width: 162mm;
+        margin: 12mm 0 0;
+        font-size: 28pt;
+        font-weight: 650;
+        line-height: 1.02;
+        letter-spacing: -0.035em;
+      }
+
+      .bulletin-lede {
+        max-width: 155mm;
+        margin: 4mm 0 0;
+        color: var(--ink-soft);
+        font-size: 10.2pt;
+        line-height: 1.45;
+      }
+
+      .bulletin-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        border-top: 0.35mm solid var(--ink);
+        list-style: none;
+      }
+
+      .bulletin-list li {
+        display: grid;
+        padding: 2.6mm 0;
+        border-bottom: 0.2mm solid var(--line-light);
+        grid-template-columns: 38mm 1fr;
+        gap: 4mm;
+      }
+
+      .bulletin-list strong {
+        font-size: 8.6pt;
+      }
+
+      .bulletin-list span {
+        color: var(--ink-soft);
+        font-size: 8.6pt;
+      }
+
+      .bulletin-defense-list {
+        margin: 3mm 0 0;
+        padding: 0;
+        border-top: 0.35mm solid var(--ink);
+        list-style: none;
+      }
+
+      .bulletin-defense-list li {
+        display: grid;
+        padding: 2.4mm 0;
+        border-bottom: 0.2mm solid var(--line-light);
+        grid-template-columns: 52mm 1fr;
+        gap: 4mm;
+      }
+
+      .bulletin-defense-list strong {
+        font-size: 8.7pt;
+      }
+
+      .bulletin-defense-list span {
+        color: var(--ink-soft);
+        font-size: 8.5pt;
+        line-height: 1.35;
+      }
+
+      .period-list {
+        display: grid;
+        margin: 3mm 0 0;
+        padding: 0;
+        border-top: 0.35mm solid var(--ink);
+        grid-template-columns: 1fr 1fr;
+        list-style: none;
+      }
+
+      .period-list li {
+        min-height: 18mm;
+        padding: 2.6mm 4mm 2.6mm 0;
+        border-bottom: 0.2mm solid var(--line-light);
+      }
+
+      .period-list li:nth-child(odd) {
+        border-right: 0.2mm solid var(--line-light);
+      }
+
+      .period-list li:nth-child(even) {
+        padding-left: 4mm;
+      }
+
+      .period-list strong {
+        display: block;
+        color: var(--accent);
+        font-size: 7.6pt;
+      }
+
+      .period-list span {
+        display: block;
+        margin-top: 1mm;
+        font-size: 8.4pt;
+        line-height: 1.33;
+      }
+
+      @media (max-width: 850px) {
+        .scene {
+          transform: scale(0.72);
+          transform-origin: top center;
+          margin-bottom: calc(-297mm * 0.28 + 34px);
+        }
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+
+        .gate-intro,
+        .scene-label {
+          display: none;
+        }
+
+        .scene {
+          margin: 0;
+        }
+
+        .sheet {
+          box-shadow: none;
+          break-after: page;
+        }
+
+        .scene:last-child .sheet {
+          break-after: auto;
+        }
+
+        body:has(#boletim-modelo:target) .scene:not(#boletim-modelo) {
+          display: none;
+        }
+      }
+
+      @page {
+        size: A4;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="gate-intro">
+      <p class="m-0 text-xs font-bold uppercase tracking-[.14em] text-accent">
+        C209 · referência visual do gate
+      </p>
+      <h1 class="mt-2 text-2xl font-semibold tracking-tight text-ink">
+        Dossiês Solla — família sóbria e analítica
+      </h1>
+      <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
+        Folhas A4 em proporção real. O desenho privilegia análise, listas, tabelas, filetes e espaço
+        em branco. Cidade é a cena completa; instituição e tema aparecem como deltas do mesmo
+        sistema. Não há cartões, selos de esfera/fase, imagens ou gráficos consolidados.
+      </p>
+    </header>
+
+    <main>
+      <section class="scene">
+        <p class="scene-label">Cena 01 · Capa · cidade</p>
+        <article class="sheet" aria-label="Capa do dossiê de Miguel Calmon">
+          <header class="cover-series">
+            <div>
+              <p class="cover-series-name">Dossiê de atuação pública</p>
+              <p class="mt-1 text-[7.5pt] text-ink-soft">Série cidade · Bahia</p>
+            </div>
+            <p class="cover-internal">
+              <strong class="text-ink">INSUMO INTERNO</strong><br />Não circular · não publicar
+            </p>
+          </header>
+
+          <div class="cover-main">
+            <p class="cover-overline">Jorge Solla · recorte municipal e regional</p>
+            <h2 class="cover-title">Miguel <span>Calmon</span></h2>
+            <p class="cover-subtitle">
+              O que os registros mostram sobre a atuação de Jorge Solla no município e no Piemonte
+              da Diamantina
+            </p>
+          </div>
+
+          <dl class="cover-data">
+            <dt>Território</dt>
+            <dd>Piemonte da Diamantina</dd>
+            <dt>Região / polo</dt>
+            <dd>Território de Identidade Piemonte da Diamantina · polo Jacobina</dd>
+            <dt>Data</dt>
+            <dd>21 de setembro de 2026 · base lida às 13:02</dd>
+            <dt>Versão</dt>
+            <dd>01 · recorte cidade, região e polo separados</dd>
+          </dl>
+
+          <div class="cover-how">
+            <strong>Como ler</strong>
+            <p class="text-[9pt] leading-[1.45] text-ink-soft">
+              Comece por “O essencial”. Depois consulte a era e a linha de evidência. Valor sempre
+              mantém a fase; município, região e polo nunca são somados. Ausência aparece como
+              lacuna, não como conclusão histórica.
+            </p>
+          </div>
+
+          <footer class="cover-footer">
+            <p class="m-0 max-w-[126mm]">
+              Escopo: carreira técnica e gestão pública até 2006 · SESAB 2007–2014 · Câmara
+              2015–2027.
+            </p>
+            <p class="m-0 text-right font-bold uppercase tracking-[.08em] text-accent">
+              Documento de trabalho<br />A4 · versão 01
+            </p>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 02 · Índice + O essencial</p>
+        <article class="sheet" aria-label="Índice e análise essencial do dossiê">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">O essencial</h2>
+              <p class="running-subtitle">Leitura do recorte antes do inventário</p>
+            </div>
+            <div class="running-meta">
+              <p><strong class="text-ink">INSUMO INTERNO</strong></p>
+              <p>21/09/2026 · versão 01</p>
+              <p>folha 2/—</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Leitura do recorte</p>
+            <p class="lede">
+              Os registros localizados mostram duas concentrações diferentes. Entre 2009 e 2014,
+              Miguel Calmon aparece nominalmente em ações da gestão estadual da saúde: ambulância,
+              Saúde em Movimento, credenciamento oftalmológico, atenção domiciliar e gestão da Santa
+              Casa. No mandato federal, a evidência localizada é regional — campus da UFBA,
+              policlínica, seminário e articulações em Jacobina — e não deve ser apresentada como
+              entrega exclusiva ao município.
+              <span class="source-mark">[B-01–B-07 · C-01–C-08]</span>
+            </p>
+            <p class="body-copy">
+              O ponto mais forte para consulta é a sequência de ações de saúde com menção direta ao
+              município. O limite mais importante é igualmente claro: não foi localizada evidência
+              nominal anterior a 2006, emenda individual destinada a Miguel Calmon, pronunciamento
+              do deputado com menção à cidade ou honraria local. Resultado de busca não prova
+              ausência histórica. <span class="source-mark">[L-01–L-09]</span>
+            </p>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Fatos-chave</p>
+            <ul class="plain-list fact-list">
+              <li>
+                <strong>15 pontos com fonte no recorte:</strong> 7 na Era B e 8 na Era C; a Era A
+                não tem evidência nominal suficiente e é omitida como seção.
+                <span class="source-mark">[S-01]</span>
+              </li>
+              <li>
+                <strong>5 registros municipais e 10 regionais:</strong> as contagens permanecem
+                separadas; polo não teve registro localizado.
+                <span class="source-mark">[S-02]</span>
+              </li>
+              <li>
+                <strong>Dois valores, duas leituras:</strong> R$ 274.765,21 autorizados para a
+                central do SAMU regional e R$ 3,5 milhões anuais com fase não informada no contrato
+                da Santa Casa. Não consolidar. <span class="source-mark">[B-01 · B-02]</span>
+              </li>
+              <li>
+                <strong>Nove lacunas declaradas:</strong> a prioridade é recuperar fonte primária
+                para formação e residência e aprofundar atos estaduais não consultados diretamente.
+                <span class="source-mark">[L-01 · L-06]</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Índice</p>
+            <ol class="index-list">
+              <li>
+                <span class="index-number">01</span><span class="index-label">O essencial</span
+                ><span class="index-page">2</span>
+              </li>
+              <li>
+                <span class="index-number">02</span
+                ><span class="index-label">Leitura entre eras</span
+                ><span class="index-page">3</span>
+              </li>
+              <li>
+                <span class="index-number">03</span
+                ><span class="index-label">Trajetória completa</span
+                ><span class="index-page">4</span>
+              </li>
+              <li>
+                <span class="index-number">04</span><span class="index-label">Era B · SESAB</span
+                ><span class="index-page">5</span>
+              </li>
+              <li>
+                <span class="index-number">05</span
+                ><span class="index-label">Era C · Deputado federal</span
+                ><span class="index-page">—</span>
+              </li>
+              <li>
+                <span class="index-number">06</span><span class="index-label">Região e polo</span
+                ><span class="index-page">—</span>
+              </li>
+              <li>
+                <span class="index-number">07</span
+                ><span class="index-label">O que Solla defende</span
+                ><span class="index-page">—</span>
+              </li>
+              <li>
+                <span class="index-number">08</span
+                ><span class="index-label">Lacunas, notícias, acervo e fontes</span
+                ><span class="index-page">—</span>
+              </li>
+            </ol>
+          </section>
+
+          <footer class="running-footer">
+            <span
+              >Miguel Calmon · O essencial · âncora no companion:
+              <strong>#o-essencial</strong></span
+            >
+            <span class="folio">folha 2/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 03 · Leitura entre eras</p>
+        <article class="sheet" aria-label="Análise transversal entre eras">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">Leitura entre eras</h2>
+              <p class="running-subtitle">
+                Concentração, instrumentos, continuidade, ruptura e lacunas
+              </p>
+            </div>
+            <div class="running-meta">
+              <p>Seção 02</p>
+              <p>folha 3/—</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">O que muda quando os registros são lidos em conjunto</p>
+            <ul class="plain-list analysis-list">
+              <li>
+                <strong>Concentração.</strong> A evidência municipal se concentra na Era B, durante
+                a gestão da SESAB. A Era C concentra mais pontos, mas todos os oito localizados são
+                de alcance regional. A contagem maior, portanto, não significa presença municipal
+                mais forte. <span class="source-mark">[S-01 · S-02]</span>
+              </li>
+              <li>
+                <strong>Instrumentos.</strong> Na Era B predominam programa, equipamento,
+                credenciamento e gestão hospitalar. Na Era C aparecem indicação legislativa,
+                requerimento, audiência e articulação política. São registros de natureza distinta;
+                a leitura preserva essa diferença.
+                <span class="source-mark">[B-01–B-07 · C-01–C-08]</span>
+              </li>
+              <li>
+                <strong>Continuidade documentada.</strong> Saúde permanece presente nas duas eras:
+                diretamente no município pela SESAB e regionalmente no SAMU e na Policlínica de
+                Jacobina. Educação surge no mandato federal pelo debate e pela indicação de campus
+                da UFBA em Jacobina.
+                <span class="source-mark">[B-01–B-07 · C-01 · C-03 · C-05]</span>
+              </li>
+              <li>
+                <strong>Ruptura de escala.</strong> Depois de 2015, o que foi localizado muda do
+                município nominal para o território. Isso delimita o alcance das afirmações: a fonte
+                sustenta benefício ou articulação regional, não entrega exclusiva a Miguel Calmon.
+                <span class="source-mark">[C-01–C-08]</span>
+              </li>
+              <li>
+                <strong>Lacunas que pesam.</strong> A ausência de registros nominais até 2006 impede
+                atribuir ao município a carreira técnica e federal anterior. Na Era C, a falta de
+                emenda individual, pronunciamento nominal e honraria local limita a leitura do
+                vínculo direto. <span class="source-mark">[L-01–L-05 · L-07–L-09]</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Síntese operacional</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 20%" />
+                <col style="width: 27%" />
+                <col style="width: 35%" />
+                <col style="width: 18%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Era</th>
+                  <th>Onde está a evidência</th>
+                  <th>Como citar com segurança</th>
+                  <th>Limite</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>A · até 2006</strong></td>
+                  <td>Sem registro nominal localizado</td>
+                  <td>Não atribuir ação a Miguel Calmon</td>
+                  <td>Lacuna explícita</td>
+                </tr>
+                <tr>
+                  <td><strong>B · 2007–2014</strong></td>
+                  <td>Município + região</td>
+                  <td>Nomear programa, equipamento, ato ou contrato e sua fonte</td>
+                  <td>Obra estadual não localizada</td>
+                </tr>
+                <tr>
+                  <td><strong>C · 2015–2027</strong></td>
+                  <td>Região / polo</td>
+                  <td>Dizer “para a região” ou “em Jacobina”, conforme a fonte</td>
+                  <td>Sem entrega exclusiva localizada</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <div class="callout-line">
+            <strong class="text-ink">Regra de leitura:</strong> análise é orientação para encontrar
+            a evidência — não substitui a linha, a fonte ou a data que sustentam cada afirmação.
+          </div>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · Leitura entre eras · <strong>#leitura-entre-eras</strong></span>
+            <span class="folio">folha 3/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 04 · Trajetória completa linear</p>
+        <article class="sheet" aria-label="Trajetória completa em tabela linear">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">Trajetória completa</h2>
+              <p class="running-subtitle">Período, papel e como cada etapa foi recuperada</p>
+            </div>
+            <div class="running-meta">
+              <p>Seção 03</p>
+              <p>folha 4/—</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <table class="document-table trajectory-table">
+              <colgroup>
+                <col style="width: 24%" />
+                <col style="width: 40%" />
+                <col style="width: 36%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Período</th>
+                  <th>Papel</th>
+                  <th>Como recuperar / lastro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1985–1987</td>
+                  <td>Residência em Medicina Social (UFBA / INAMPS)</td>
+                  <td>Biografia da Câmara dos Deputados</td>
+                </tr>
+                <tr>
+                  <td>1989/90–1998</td>
+                  <td>SESAB — epidemiologista e sanitarista</td>
+                  <td>
+                    Pronunciamento de 03/01/2007 + biografia Câmara
+                    <span class="muted">· início incerto: 1989 vs 1990</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>1995–1999</td>
+                  <td>Consultor do Ministério da Saúde</td>
+                  <td>Biografia da Câmara dos Deputados</td>
+                </tr>
+                <tr>
+                  <td>1998</td>
+                  <td>Professor na Escola Bahiana de Medicina e pesquisador ISC/UFBA</td>
+                  <td>Biografia Câmara + PT-BA</td>
+                </tr>
+                <tr>
+                  <td>1999–2002</td>
+                  <td>Secretário Municipal de Saúde de Vitória da Conquista</td>
+                  <td>Biografia Câmara + PT-BA</td>
+                </tr>
+                <tr>
+                  <td>2003–2005</td>
+                  <td>Secretário de Atenção à Saúde do Ministério da Saúde</td>
+                  <td>
+                    Biografia Câmara + discurso de 2007
+                    <span class="muted">· término incerto: 2005 vs 2006</span>
+                  </td>
+                </tr>
+                <tr>
+                  <td>2006–2009</td>
+                  <td>Doutorado em Clínica Médica (UFRJ)</td>
+                  <td>Biografia da Câmara dos Deputados</td>
+                </tr>
+                <tr>
+                  <td>01/2007–01/2014</td>
+                  <td>Secretário Estadual de Saúde da Bahia (SESAB)</td>
+                  <td>Notícias SESAB + referências biográficas</td>
+                </tr>
+                <tr>
+                  <td>2015–2019</td>
+                  <td>Deputado federal · 55ª legislatura</td>
+                  <td>API Câmara /deputados/178857</td>
+                </tr>
+                <tr>
+                  <td>2019–2023</td>
+                  <td>Deputado federal · 56ª legislatura</td>
+                  <td>API Câmara /deputados/178857</td>
+                </tr>
+                <tr>
+                  <td>2023–2027</td>
+                  <td>Deputado federal · 57ª legislatura</td>
+                  <td>API Câmara /deputados/178857</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="table-note">
+              A trajetória contextualiza o período. Ela não prova vínculo com Miguel Calmon; esse
+              vínculo só aparece quando a seção da era traz evidência do recorte.
+            </p>
+          </section>
+
+          <div class="note-line">
+            <strong>Estado crítico · era omitida:</strong> a Era A não ganha uma sequência de folhas
+            sem conteúdo. No índice e na leitura entre eras, aparece a nota “sem evidência nominal
+            suficiente; consulte as lacunas L-01–L-05”.
+          </div>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · Trajetória · <strong>#trajetoria-completa</strong></span>
+            <span class="folio">folha 4/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 05 · Folha de era · Era C</p>
+        <article class="sheet" aria-label="Era C, deputado federal">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Era C · Deputado federal</p>
+              <h2 class="running-title">Mandato federal · 2015–2027</h2>
+              <p class="running-subtitle">O que os registros mostram no recorte de Miguel Calmon</p>
+            </div>
+            <div class="running-meta">
+              <p>Seção 05</p>
+              <p>folha —/—</p>
+            </div>
+          </header>
+
+          <section class="era-reading">
+            <p class="eyebrow">Leitura da era</p>
+            <p class="body-copy">
+              Os oito pontos localizados são regionais. Em 2023, Solla participou da audiência sobre
+              campus da UFBA em Jacobina e apresentou indicação de campi em Jacobina, Jequié e
+              Seabra. Em 2019, requereu seminário em Jacobina sobre a reforma da Previdência. Em
+              2018, participou de plenária regional e articulou a liberação da emenda da ressonância
+              da Policlínica; a autoria da emenda é de Amauri Teixeira. Nenhum desses itens
+              constitui entrega exclusiva a Miguel Calmon.
+              <span class="source-mark">[C-01–C-05]</span>
+            </p>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Objetos, valores e estágio</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 27%" />
+                <col style="width: 12%" />
+                <col style="width: 9%" />
+                <col style="width: 20%" />
+                <col style="width: 12%" />
+                <col style="width: 20%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Objeto</th>
+                  <th>Valor</th>
+                  <th>Ano</th>
+                  <th>Fase</th>
+                  <th>Esfera</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Campi da UFBA em Jacobina, Jequié e Seabra</td>
+                  <td>Não se aplica</td>
+                  <td class="tabular">2023</td>
+                  <td>Indicação remetida ao Executivo</td>
+                  <td>Região</td>
+                  <td>Câmara · INC 1497/2023</td>
+                </tr>
+                <tr>
+                  <td>Seminário sobre a PEC 06/2019 em Jacobina</td>
+                  <td>Não se aplica</td>
+                  <td class="tabular">2019</td>
+                  <td>Requerimento arquivado em 2022</td>
+                  <td>Região</td>
+                  <td>Câmara · REQ 79/2019</td>
+                </tr>
+                <tr>
+                  <td>Ressonância da Policlínica Regional de Jacobina</td>
+                  <td>Não localizado</td>
+                  <td class="tabular">2018</td>
+                  <td>Liberação articulada; autoria de Amauri Teixeira</td>
+                  <td>Região</td>
+                  <td>Marcelino Galo · 14/04/2018</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="table-note">
+              “Não se aplica” diferencia atos sem valor financeiro. “Não localizado” não equivale a
+              zero. Fase permanece texto, sem selo ou cor semântica.
+            </p>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">O que fez · item — alcance — lastro</p>
+            <ol class="action-list">
+              <li>
+                <span class="action-title">Indicou campi da UFBA em Jacobina, Jequié e Seabra.</span
+                ><span class="action-meta"
+                  >Alcance: região · Lastro: INC 1497/2023, Câmara dos Deputados.</span
+                >
+              </li>
+              <li>
+                <span class="action-title"
+                  >Requereu seminário em Jacobina sobre a reforma da Previdência.</span
+                ><span class="action-meta"
+                  >Alcance: região · Lastro: REQ 79/2019 e tramitação até o arquivamento.</span
+                >
+              </li>
+              <li>
+                <span class="action-title"
+                  >Participou da articulação para liberar a emenda da ressonância da Policlínica
+                  Regional.</span
+                ><span class="action-meta"
+                  >Alcance: região · Lastro: notícia de 14/04/2018; autoria da emenda atribuída a
+                  Amauri Teixeira.</span
+                >
+              </li>
+              <li>
+                <span class="action-title"
+                  >Participou da audiência pública sobre campus da UFBA em Jacobina.</span
+                ><span class="action-meta"
+                  >Alcance: região · Lastro: Jornal da Chapada, 22/09/2023.</span
+                >
+              </li>
+            </ol>
+          </section>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · Era C · <strong>#era-c</strong></span>
+            <span class="folio">folha —/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 06 · Região / polo · leitura não somável</p>
+        <article class="sheet" aria-label="Município, região e polo em listas separadas">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">Município, região e polo</h2>
+              <p class="running-subtitle">Alcances apresentados em sequências separadas</p>
+            </div>
+            <div class="running-meta">
+              <p>Seção 06</p>
+              <p>folha —/—</p>
+            </div>
+          </header>
+
+          <div class="callout-line">
+            <strong class="text-ink">Não somar.</strong> Um equipamento de referência ou uma
+            política regional pode atender moradores de Miguel Calmon sem constituir entrega
+            exclusiva para o município. Atribuição só entra com alcance documentado.
+          </div>
+
+          <section class="section">
+            <p class="eyebrow">Município · menção direta</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 42%" />
+                <col style="width: 40%" />
+                <col style="width: 18%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Evidência de alcance</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Gestão da Santa Casa pelo Hospital Português</td>
+                  <td>Miguel Calmon nominal; 80 leitos e emergência 24h</td>
+                  <td>Jornal Grande Bahia · 2012</td>
+                </tr>
+                <tr>
+                  <td>Ambulância de suporte básico</td>
+                  <td>Miguel Calmon na lista de 59 municípios</td>
+                  <td>Governo da Bahia · 2009</td>
+                </tr>
+                <tr>
+                  <td>Saúde em Movimento</td>
+                  <td>Etapa realizada no Centro Municipal de Saúde</td>
+                  <td>Jornal Grande Bahia · 2010</td>
+                </tr>
+                <tr>
+                  <td>Projeto Olhar Brasil</td>
+                  <td>Centro de Saúde local credenciado</td>
+                  <td>Ata CIB 181 · 2010</td>
+                </tr>
+                <tr>
+                  <td>Atenção Domiciliar</td>
+                  <td>Componente municipal aprovado na CIB</td>
+                  <td>Ata CIB 220 · 2014</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Região / polo · alcance compartilhado</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 42%" />
+                <col style="width: 40%" />
+                <col style="width: 18%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Evidência de alcance</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>SAMU regional da 16ª Dires</td>
+                  <td>Rede regional da qual Miguel Calmon faz parte</td>
+                  <td>Agecom / Jornal do Meio Dia · 2010</td>
+                </tr>
+                <tr>
+                  <td>Policlínica Regional de Jacobina</td>
+                  <td>Equipamento atende 18 municípios, entre eles Miguel Calmon</td>
+                  <td>Marcelino Galo · 2018</td>
+                </tr>
+                <tr>
+                  <td>Campus da UFBA em Jacobina</td>
+                  <td>Proposta no polo do Piemonte da Diamantina</td>
+                  <td>Câmara · INC 1497/2023</td>
+                </tr>
+                <tr>
+                  <td>Seminário sobre a PEC 06/2019</td>
+                  <td>Requerimento para realização em Jacobina</td>
+                  <td>Câmara · REQ 79/2019</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="table-note">
+              Polo: nenhum item exclusivo localizado. Não preencher com a lista regional.
+            </p>
+          </section>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · Região / polo · <strong>#regiao-e-polo</strong></span>
+            <span class="folio">folha —/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 07 · Lacunas · continuação</p>
+        <article class="sheet" aria-label="Lacunas explícitas em folha de continuação">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">Lacunas explícitas</h2>
+              <p class="running-subtitle">O que não foi encontrado e qual é o próximo passo</p>
+            </div>
+            <div class="running-meta">
+              <p class="continuation">continuação 2</p>
+              <p>folha —/—</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 24%" />
+                <col style="width: 39%" />
+                <col style="width: 20%" />
+                <col style="width: 17%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Lacuna</th>
+                  <th>Situação da busca</th>
+                  <th>Limite editorial</th>
+                  <th>Próximo passo</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="strong-row">
+                  <td>Formação e residência</td>
+                  <td>
+                    Sem registro nominal a Miguel Calmon. Formação e residência constam apenas em
+                    biografias gerais, sem vínculo com o município. Acervo interno cobre 2011+.
+                  </td>
+                  <td>Não completar por inferência.</td>
+                  <td>Apurar em fonte primária.</td>
+                </tr>
+                <tr class="strong-row">
+                  <td>Obras e investimentos da SESAB</td>
+                  <td>
+                    Atas da CIB, atos de 2009–2014 e imprensa regional registram custeio,
+                    credenciamentos, equipamentos e gestão hospitalar, mas nenhuma obra estadual
+                    executada no município. DOE-BA/DOOL não consultado diretamente.
+                  </td>
+                  <td>Não afirmar “não houve obra”.</td>
+                  <td>Consultar DOE-BA/DOOL.</td>
+                </tr>
+                <tr class="strong-row">
+                  <td>Emendas e recursos</td>
+                  <td>
+                    Nenhuma emenda individual do autor com localidade “Miguel Calmon” na API
+                    consultada; recursos de bancada e comissão não têm autoria checada do deputado.
+                  </td>
+                  <td>Não atribuir autoria.</td>
+                  <td>Conferir ato e autor.</td>
+                </tr>
+                <tr class="strong-row">
+                  <td>Títulos, honrarias e vínculos locais</td>
+                  <td>
+                    Nenhum título, comenda ou homenagem da Câmara Municipal localizado na janela
+                    2015–2026.
+                  </td>
+                  <td>Resultado de busca não prova ausência histórica.</td>
+                  <td>Apurar em fonte primária.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <div class="note-line">
+            <strong>Continuação visível:</strong> o título da seção não muda; “continuação 2”
+            aparece no cabeçalho corrente e a tabela repete as colunas. Nenhuma linha é dividida
+            entre folhas.
+          </div>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · Lacunas · <strong>#lacunas-explicitas</strong></span>
+            <span class="folio">folha —/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 08 · Notícias · acervo · fontes</p>
+        <article class="sheet" aria-label="Notícias, acervo interno, fontes e limites">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">Notícias, acervo e fontes</h2>
+              <p class="running-subtitle">Rastro de consulta e limites de cobertura</p>
+            </div>
+            <div class="running-meta">
+              <p>Seção 07</p>
+              <p>folha —/—</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Notícias e documentos consultados · amostra</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 14%" />
+                <col style="width: 20%" />
+                <col style="width: 48%" />
+                <col style="width: 18%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Origem</th>
+                  <th>Documento</th>
+                  <th>Uso no dossiê</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>22/09/2023</td>
+                  <td>Jornal da Chapada</td>
+                  <td>Audiência pública sobre campus da UFBA em Jacobina</td>
+                  <td>Era C · região</td>
+                </tr>
+                <tr>
+                  <td>14/04/2018</td>
+                  <td>Marcelino Galo</td>
+                  <td>Policlínica Regional e ressonância magnética</td>
+                  <td>Era C · região</td>
+                </tr>
+                <tr>
+                  <td>25/01/2012</td>
+                  <td>Jornal Grande Bahia</td>
+                  <td>Gestão da Santa Casa pelo Hospital Português</td>
+                  <td>Era B · município</td>
+                </tr>
+                <tr>
+                  <td>16/03/2010</td>
+                  <td>Jornal Grande Bahia</td>
+                  <td>Saúde em Movimento chega a Miguel Calmon</td>
+                  <td>Era B · município</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Acervo interno de falas</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 25%" />
+                <col style="width: 50%" />
+                <col style="width: 25%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Recorte</th>
+                  <th>Resultado</th>
+                  <th>Como usar</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Miguel Calmon · 2011+</td>
+                  <td>
+                    Nenhum pronunciamento do deputado com menção nominal à cidade foi localizado;
+                    menções aparecem em falas de outros parlamentares.
+                  </td>
+                  <td>Lacuna L-07; não concluir ausência histórica.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Fontes e limites</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 25%" />
+                <col style="width: 39%" />
+                <col style="width: 36%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Camada</th>
+                  <th>Uso</th>
+                  <th>Limite</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Atos e bases oficiais</td>
+                  <td>Fase, autoria, tramitação, credenciamento</td>
+                  <td>Cobertura depende da janela e da disponibilidade consultada.</td>
+                </tr>
+                <tr>
+                  <td>Imprensa e sites institucionais</td>
+                  <td>Contexto, agenda, alcance declarado</td>
+                  <td>Confirmar autoria e estágio; notícia não converte proposta em execução.</td>
+                </tr>
+                <tr>
+                  <td>Acervo Teqo</td>
+                  <td>Falas e menções no recorte 2011+</td>
+                  <td>Períodos anteriores dependem de fontes externas.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Regras para uso editorial</p>
+            <ul class="plain-list">
+              <li>Sem fonte, não publica. URL e data acompanham toda afirmação não trivial.</li>
+              <li>Município, região e polo permanecem separados. Valor sempre informa a fase.</li>
+              <li>
+                Insumo interno não é autorização para publicar; adaptar exige revisão responsável.
+              </li>
+            </ul>
+          </section>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · Fontes e limites · <strong>#fontes-e-limites</strong></span>
+            <span class="folio">folha —/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 09 · Delta da variante instituição</p>
+        <article class="sheet" aria-label="Variação do dossiê por instituição">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê institucional · variação da família</p>
+              <h2 class="running-title">Instituição Exemplo</h2>
+              <p class="running-subtitle">
+                Identificação, abrangência e honrarias sem mudar a anatomia
+              </p>
+            </div>
+            <div class="running-meta">
+              <p>DELTA DE VARIANTE</p>
+              <p>folha A4</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Identificação da instituição</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 24%" />
+                <col style="width: 76%" />
+              </colgroup>
+              <tbody>
+                <tr>
+                  <th>Nome</th>
+                  <td>Instituição Exemplo</td>
+                </tr>
+                <tr>
+                  <th>Tipo</th>
+                  <td>Universidade</td>
+                </tr>
+                <tr>
+                  <th>Esfera</th>
+                  <td>Federal</td>
+                </tr>
+                <tr>
+                  <th>Alcance</th>
+                  <td>Bahia</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Abrangência · nunca somar</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 18%" />
+                <col style="width: 38%" />
+                <col style="width: 29%" />
+                <col style="width: 15%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Abrangência</th>
+                  <th>O que entra</th>
+                  <th>Leitura permitida</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Instituição</strong></td>
+                  <td><span class="placeholder-bar"></span></td>
+                  <td>Vínculo ou ação nominalmente atribuída à instituição.</td>
+                  <td>(fonte)</td>
+                </tr>
+                <tr>
+                  <td><strong>Setor</strong></td>
+                  <td><span class="placeholder-bar"></span></td>
+                  <td>Alcance compartilhado; não somar à instituição.</td>
+                  <td>(fonte)</td>
+                </tr>
+                <tr>
+                  <td><strong>Rede</strong></td>
+                  <td><span class="placeholder-bar"></span></td>
+                  <td>Política ampla; preservar o alcance declarado.</td>
+                  <td>(fonte)</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Títulos, honrarias e vínculos</p>
+            <ol class="action-list">
+              <li>
+                <span class="action-title"><span class="placeholder-bar"></span></span
+                ><span class="action-meta"
+                  >Tipo do vínculo · ano · instituição · fonte e data.</span
+                >
+              </li>
+              <li>
+                <span class="action-title">Nenhuma honraria localizada na janela consultada.</span
+                ><span class="action-meta"
+                  >Lacuna explícita · resultado de busca não prova ausência histórica · próximo
+                  passo: consultar fonte primária.</span
+                >
+              </li>
+            </ol>
+          </section>
+
+          <hr class="split-rule" />
+          <p class="body-copy">
+            <strong>O que não muda:</strong> “O essencial” abre o documento; cada era conserva
+            leitura, tabela Objeto / Valor / Ano / Fase / Abrangência / Fonte e lista “O que fez”; a
+            leitura entre eras distingue concentração, instrumentos e lacunas. Fase e abrangência
+            são texto, nunca selo.
+          </p>
+
+          <footer class="running-footer">
+            <span>Família de dossiês · Delta instituição</span><span class="folio">A4</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 10 · Delta da variante tema / área</p>
+        <article class="sheet" aria-label="Variação do dossiê por tema ou área">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê temático · variação da família</p>
+              <h2 class="running-title">Educação</h2>
+              <p class="running-subtitle">Área, segmento e rede com evidência direta do acervo</p>
+            </div>
+            <div class="running-meta">
+              <p>DELTA DE VARIANTE</p>
+              <p>folha A4</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Identificação da área</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 24%" />
+                <col style="width: 76%" />
+              </colgroup>
+              <tbody>
+                <tr>
+                  <th>Área</th>
+                  <td>Educação</td>
+                </tr>
+                <tr>
+                  <th>Origem</th>
+                  <td>Taxonomia do acervo</td>
+                </tr>
+                <tr>
+                  <th>Recorte</th>
+                  <td>Evidência direta em fontes externas + tema canônico no acervo interno</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Abrangência · nunca somar</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 18%" />
+                <col style="width: 39%" />
+                <col style="width: 28%" />
+                <col style="width: 15%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Abrangência</th>
+                  <th>O que entra</th>
+                  <th>Leitura permitida</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Área</strong></td>
+                  <td>Indicação de campi da UFBA em Jacobina, Jequié e Seabra</td>
+                  <td>Ação legislativa ligada diretamente à Educação.</td>
+                  <td>INC 1497/2023</td>
+                </tr>
+                <tr>
+                  <td><strong>Segmento</strong></td>
+                  <td><span class="placeholder-bar"></span></td>
+                  <td>Público específico; não somar à área.</td>
+                  <td>(fonte)</td>
+                </tr>
+                <tr>
+                  <td><strong>Rede</strong></td>
+                  <td><span class="placeholder-bar"></span></td>
+                  <td>Política sistêmica; manter alcance da fonte.</td>
+                  <td>(fonte)</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Evidência direta do acervo por tema</p>
+            <table class="document-table">
+              <colgroup>
+                <col style="width: 16%" />
+                <col style="width: 42%" />
+                <col style="width: 26%" />
+                <col style="width: 16%" />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Trecho / assunto</th>
+                  <th>Correspondência</th>
+                  <th>Fonte</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>—</td>
+                  <td><span class="placeholder-bar"></span></td>
+                  <td>Tema canônico “Educação” atribuído diretamente no acervo.</td>
+                  <td>Link direto</td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="table-note">
+              O placeholder indica conteúdo dependente do recorte gerado; nenhuma fala ou dado foi
+              inventado para o gate. O documento final informa universo e amostra, e declara que o
+              acervo cobre 2011+.
+            </p>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Leitura temática</p>
+            <ul class="plain-list analysis-list">
+              <li><strong>Concentração:</strong> em quais eras a evidência direta aparece.</li>
+              <li>
+                <strong>Instrumentos:</strong> gestão, programa, proposição, audiência ou
+                articulação — sem misturar naturezas.
+              </li>
+              <li>
+                <strong>Lacuna:</strong> associação plausível sem atribuição temática explícita não
+                entra como evidência.
+              </li>
+            </ul>
+          </section>
+
+          <footer class="running-footer">
+            <span>Família de dossiês · Delta tema / área</span><span class="folio">A4</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene">
+        <p class="scene-label">Cena 11 · O que Solla defende · seção indexável</p>
+        <article class="sheet" aria-label="O que Solla defende no recorte de Miguel Calmon">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Dossiê cidade · Miguel Calmon</p>
+              <h2 class="running-title">O que Solla defende</h2>
+              <p class="running-subtitle">Posições e prioridades com lastro identificado</p>
+            </div>
+            <div class="running-meta">
+              <p>Seção 07</p>
+              <p>folha —/—</p>
+            </div>
+          </header>
+
+          <section class="section">
+            <p class="eyebrow">Leitura dos registros · não é opinião</p>
+            <p class="lede">
+              No material localizado para Miguel Calmon, a posição mais nítida é ampliar o acesso ao
+              ensino superior público no Piemonte da Diamantina, com campus da UFBA em Jacobina. Há
+              também registro de atuação pelo fortalecimento da estrutura regional de saúde. Não foi
+              localizada promessa dirigida nominalmente ao município nem fala própria com menção à
+              cidade; por isso, a leitura abaixo preserva o alcance regional e não completa lacunas
+              por inferência. <span class="source-mark">[D-01–D-03]</span>
+            </p>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Posições e defesas localizadas</p>
+            <ol class="position-list">
+              <li>
+                <span class="position-label">Ensino superior</span>
+                <p class="position-reading">
+                  <strong>Defende a implantação de campus da UFBA em Jacobina</strong>, polo do
+                  território, junto com campi em Jequié e Seabra. O registro é regional; não
+                  equivale a uma entrega exclusiva para Miguel Calmon.
+                </p>
+                <p class="position-source">
+                  INC 1497/2023 · Câmara dos Deputados<br />Notícia: Jornal da Chapada · 22/09/2023
+                </p>
+              </li>
+              <li>
+                <span class="position-label">Saúde regional</span>
+                <p class="position-reading">
+                  <strong
+                    >Atua pelo reforço da capacidade de diagnóstico da Policlínica Regional de
+                    Jacobina.</strong
+                  >
+                  O registro localizado descreve articulação para liberar a emenda da ressonância; a
+                  autoria da emenda é atribuída a Amauri Teixeira.
+                </p>
+                <p class="position-source">Notícia: Marcelino Galo · 14/04/2018 · [C-03]</p>
+              </li>
+              <li>
+                <span class="position-label">Promessa local</span>
+                <p class="position-reading">
+                  <strong>Sem registro localizado.</strong> Nenhuma promessa dirigida nominalmente a
+                  Miguel Calmon foi encontrada na janela consultada.
+                </p>
+                <p class="position-source">Lacuna D-02 · busca nominal em notícias e documentos</p>
+              </li>
+              <li>
+                <span class="position-label">Fala própria</span>
+                <p class="position-reading">
+                  <strong>Sem registro localizado.</strong> Não foi encontrado trecho de fala de
+                  Jorge Solla com menção nominal ao município no acervo interno 2011+.
+                </p>
+                <p class="position-source">Acervo Teqo · recorte Miguel Calmon · 2011+ · [L-07]</p>
+              </li>
+            </ol>
+          </section>
+
+          <div class="callout-line">
+            <strong class="text-ink">Como usar:</strong> “Defende” só entra quando há ato, notícia
+            datada ou fala identificada como lastro. Apoio ou articulação não vira promessa. Sem
+            registro, a linha não existe ou aparece como lacuna explícita.
+          </div>
+
+          <footer class="running-footer">
+            <span>Miguel Calmon · O que Solla defende · <strong>#o-que-solla-defende</strong></span>
+            <span class="folio">folha —/—</span>
+          </footer>
+        </article>
+      </section>
+
+      <section class="scene" id="boletim-modelo">
+        <p class="scene-label">Cena 12 · Boletim modelo sóbrio · 1 folha A4</p>
+        <article class="sheet" aria-label="Modelo de boletim informativo de Miguel Calmon">
+          <header class="running-head">
+            <div>
+              <p class="running-kicker">Boletim informativo · Miguel Calmon</p>
+              <p class="running-subtitle">Piemonte da Diamantina · Bahia</p>
+            </div>
+            <div class="running-meta">
+              <p><strong class="text-ink">Modelo — insumo interno</strong></p>
+              <p>folha 1/1</p>
+            </div>
+          </header>
+
+          <section>
+            <h2 class="bulletin-title">O que Jorge Solla fez por Miguel Calmon</h2>
+            <p class="bulletin-lede">
+              Da gestão da saúde ao mandato federal: ações no município e iniciativas para a região,
+              apresentadas com o alcance de cada uma.
+            </p>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Destaques</p>
+            <ul class="bulletin-list">
+              <li>
+                <strong>Santa Casa</strong>
+                <span
+                  >Participou da gestão estadual no período do contrato que manteve 80 leitos e
+                  emergência 24 horas.</span
+                >
+              </li>
+              <li>
+                <strong>Saúde em Movimento</strong>
+                <span
+                  >O programa realizou etapa no Centro Municipal de Saúde de Miguel Calmon.</span
+                >
+              </li>
+              <li>
+                <strong>Ambulância</strong>
+                <span
+                  >O município entrou na entrega estadual de ambulâncias de suporte básico em
+                  2009.</span
+                >
+              </li>
+              <li>
+                <strong>Atenção domiciliar</strong>
+                <span
+                  >O componente municipal foi aprovado na Comissão Intergestores Bipartite em
+                  2014.</span
+                >
+              </li>
+              <li>
+                <strong>Região</strong>
+                <span
+                  >Atuou em iniciativas ligadas ao SAMU, à Policlínica e ao campus da UFBA em
+                  Jacobina.</span
+                >
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">O que Solla defende</p>
+            <ul class="bulletin-defense-list">
+              <li>
+                <strong>Mais ensino superior público na região</strong>
+                <span
+                  >Defende um campus da UFBA em Jacobina para ampliar o acesso no Piemonte da
+                  Diamantina.</span
+                >
+              </li>
+              <li>
+                <strong>Diagnóstico especializado mais perto</strong>
+                <span
+                  >Defende o fortalecimento da Policlínica Regional de Jacobina e de sua capacidade
+                  de atendimento.</span
+                >
+              </li>
+            </ul>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">Trajetória em quatro períodos</p>
+            <ol class="period-list">
+              <li>
+                <strong>1999–2002</strong
+                ><span>Secretário Municipal de Saúde de Vitória da Conquista.</span>
+              </li>
+              <li>
+                <strong>2003–2005</strong
+                ><span>Secretário de Atenção à Saúde do Ministério da Saúde.</span>
+              </li>
+              <li><strong>2007–2014</strong><span>Secretário Estadual da Saúde da Bahia.</span></li>
+              <li><strong>2015–2027</strong><span>Deputado federal pela Bahia.</span></li>
+            </ol>
+          </section>
+
+          <section class="section">
+            <p class="eyebrow">E mais</p>
+            <ul class="plain-list">
+              <li>Credenciamento local no Projeto Olhar Brasil.</li>
+              <li>Participação em audiência sobre campus da UFBA em Jacobina.</li>
+              <li>Requerimento de seminário regional sobre a reforma da Previdência.</li>
+              <li>Articulação ligada à ressonância da Policlínica Regional de Jacobina.</li>
+            </ul>
+          </section>
+
+          <footer class="running-footer">
+            <span>
+              <strong>Defeso eleitoral:</strong> material informativo em preparação. Não publicar
+              sem revisão editorial e jurídica.
+            </span>
+            <span class="folio">MODELO · INSUMO INTERNO · 1/1</span>
+          </footer>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
