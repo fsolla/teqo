@@ -1,6 +1,6 @@
 ---
 name: dossie-solla-cidade
-description: 'Gera o dossiê Solla por cidade (PDF A4 + .md, tudo o que Solla fez pela cidade/região por era) e o Boletim Informativo modelo de 1 página, a partir da base Teqo read-only + pesquisa web datada + fontes oficiais; aceita um município ou um lote separado por vírgula.'
+description: 'Gera o dossiê Solla por cidade (PDF A4 + .md, tudo o que Solla fez pela cidade/região por era) e o Boletim Informativo modelo de 1 página, a partir da base Teqo read-only + pesquisa web datada + fontes oficiais; aceita um município ou um lote separado por vírgula, e o Briefing de capacitação de até 4 páginas.'
 ---
 
 # Dossiê Solla por cidade + boletim modelo (C186)
@@ -11,13 +11,17 @@ Entrega, por município, um **par PDF A4 datado + companion `.md`** com tudo o q
 Secretaria de Atenção à Saúde do MS, SESAB 2007–2014 e Câmara 2015–2027) — toda
 afirmação não trivial com **URL + data**, tudo sem fonte vira **lacuna
 explícita** — **e** o **Boletim Informativo modelo** (1 página A4, linguagem de
-eleitor, sem declaração de fontes). Os dois layouts vêm dos artefatos hi-fi
-aprovados pelo `designer`.
+eleitor, sem declaração de fontes) **e** o **Briefing de capacitação** (3º
+entregável: até 4 páginas para quem vai pedir o voto 1313, insumo interno). Os
+layouts vêm dos artefatos hi-fi aprovados pelo `designer`.
 
 ## Quando usar
 
-- A comunicação pede "o dossiê de <cidade>" e/ou o "boletim modelo de <cidade>"
-  — ou várias numa invocação (`/dossie-solla-cidade Ilheus, Itacare, Una`).
+- A comunicação pede "o dossiê de <cidade>", o "boletim modelo de <cidade>"
+  e/ou o **briefing de capacitação** de quem vai pedir voto — ou várias numa
+  invocação (`/dossie-solla-cidade Ilheus, Itacare, Una`).
+- O briefing também roda sozinho: `/briefing-capacitacao-solla cidade:<slug>`
+  (skill `briefing-capacitacao-solla`, mesmo build).
 - Quem executa são o **orquestrador** (agente principal) + um sub-agente
   **researcher por era, por cidade**, em paralelo + um sub-agente **redator**
   (redação de abertura e parágrafos por era) + os scripts (`extract` no
@@ -44,8 +48,8 @@ Parsing (orquestrador, **antes** de qualquer pesquisa):
 - token inválido/ambíguo vira **falha isolada** com o motivo no summary final —
   **nunca** aborta o lote nem inventa slug.
 
-Uma cidade = um dossiê (PDF+MD) + **um** boletim PDF; **sem** índice/PDF
-agregado. Falha de uma cidade/era **não** cancela as demais (**sucesso
+Uma cidade = um dossiê (PDF+MD) + **um** boletim PDF + **um** briefing
+(PDF+MD); **sem** índice/PDF agregado. Falha de uma cidade/era **não** cancela as demais (**sucesso
 parcial** explícito).
 
 ## Pipeline (etapas)
@@ -97,8 +101,11 @@ parcial** explícito).
    `--emendas=<json>` (replay sem rede), `--author=<nome>` (default
    `JORGE SOLLA`), `--generated-at=<ISO>`, `DOSSIER_STRICT=1` (falha o run se
    houver lacuna — conferência, não entrega).
+   O **briefing de capacitação** (3º entregável) sai do mesmo fluxo — seção
+   própria abaixo; o build é `scripts/build-dossie-solla-briefing.mjs`
+   (`--unit=municipality`) e o autor é `.opencode/agent/briefing-capacitacao-solla.md`.
 7. **Summary final.** Uma linha por entrada, na ordem da lista: `entrada · status
-   (ok|failed) · dossiê/boletim (quando ok) · motivo (quando falha)`.
+   (ok|failed) · dossiê/boletim/briefing (quando ok) · motivo (quando falha)`.
 
 ## Briefing por era (A/B/C)
 
@@ -317,6 +324,31 @@ continuação com o texto inteiro.
 - **Sem declaração de fontes** (as fontes vivem exclusivamente no dossiê), sem
   CTA de campanha; herda **apenas** fatos com fonte do dossiê.
 
+## Briefing de capacitação (3º entregável, C210)
+
+- A mesma invocação entrega o **Briefing de capacitação** do recorte — PDF A4 de
+  **até 4 páginas** + companion `.md`, para quem vai pedir o voto 1313 — além do
+  dossiê e do boletim. A fonte canônica do fluxo é a skill
+  `.agents/skills/briefing-capacitacao-solla/SKILL.md` (não a transcreva).
+- Depois de o dossiê estar pesquisado, o orquestrador dispara o **autor**
+  (`.opencode/agent/briefing-capacitacao-solla.md`) — que escreve
+  `data/dossie-solla-cidade/<slug>.briefing.json` só a partir dos itens com fonte; **audita** as
+  citações e **roda** o mesmo build da família:
+  ```bash
+  NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-dossie-solla-briefing.mjs \
+    --unit=municipality \
+    --snapshot=data/dossie-solla-cidade/<slug>.snapshot.json \
+    --research-dir=data/dossie-solla-cidade \
+    --out-dir=docs/research/dossie-solla-cidade
+  ```
+  Saídas: `docs/research/dossie-solla-cidade/<slug>-<YYYY-MM-DD>-briefing.pdf` + `-briefing.md`
+  (gitignored, insumo interno com rótulo literal; nunca publicar).
+- Rótulo literal `Insumo interno de capacitação — não publicar` em todas as
+  folhas; sem CTA público; sem cenário/estimativa/staff-only; só fatos com fonte
+  do dossiê (**sem segunda pesquisa factual**). Teto rígido de **4 páginas** com
+  corte por prioridade declarado (o resto fica contado na folha e completo no
+  `.md`); essencial, roteiro e identificação nunca são cortados.
+
 ## Guardrails de produto (não negociáveis)
 
 - **Sem fonte, não publica**: afirmação não trivial sem URL+data vira lacuna.
@@ -340,6 +372,7 @@ continuação com o texto inteiro.
 - **Artefato gitignored** (repo público): PDF/MD/JSON nunca são commitados.
 - **Defeso**: dossiê e boletim saem como insumo interno/modelo, sem CTA; a peça
   final publicável é da comunicação/campanha.
+- **Briefing de capacitação (3º entregável)**: até **4 páginas**, rótulo literal `Insumo interno de capacitação — não publicar`, sem CTA público, sem cenário/estimativa/staff-only; deriva do dossiê (mesmo build), corte por prioridade declarado e o restante no `.md`.
 
 ## Troubleshooting
 
@@ -367,6 +400,9 @@ continuação com o texto inteiro.
   `pnpm exec playwright install chromium`.
 
 ## Referências
+
+- Briefing de capacitação (3º entregável): `.agents/skills/briefing-capacitacao-solla/SKILL.md`, `scripts/build-dossie-solla-briefing.mjs` e o design `docs/plans/briefing-capacitacao-solla-ui-design.html` (intenção/impl: `docs/plans/briefing-capacitacao-solla.md`).
+
 
 - Intenção: `docs/plans/dossie-solla-cidade.md`; impl:
   `docs/plans/dossie-solla-cidade-impl.md`.

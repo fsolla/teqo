@@ -50,6 +50,8 @@ export const MUNICIPALITY_UNIT = {
   id: 'municipality',
   /** Key that carries the resolved unit slug in research/snapshot files. */
   slugField: 'municipalitySlug',
+  /** Key that holds the recorte identity in the snapshot file. */
+  snapshotField: 'municipality',
   spheres: ['municipio', 'regiao', 'polo'],
   defaultSphere: 'municipio',
   sphereLabels: { municipio: 'município', regiao: 'região', polo: 'polo' },
@@ -57,6 +59,9 @@ export const MUNICIPALITY_UNIT = {
   /** Bulletin ranking: a direct item outranks a shared-scope one. */
   breadthRank: { municipio: 0, regiao: 1, polo: 2 },
   researchDir: 'data/dossie-solla-cidade',
+  outDir: 'docs/research/dossie-solla-cidade',
+  /** How the C210 briefing names this recorte in copy ("Briefing de capacitação · cidade"). */
+  briefingNoun: 'cidade',
   series: 'Série municipal · BA',
   title: 'Dossiê Solla por cidade',
   bulletinTitle: 'Boletim informativo modelo',
@@ -86,6 +91,8 @@ export const INSTITUTION_UNIT = {
   sphereBadgeClass: { instituicao: '', setor: 'scope-sector', rede: 'scope-network' },
   breadthRank: { instituicao: 0, setor: 1, rede: 2 },
   researchDir: 'data/dossie-solla-instituicao',
+  outDir: 'docs/research/dossie-solla-instituicao',
+  briefingNoun: 'instituição',
   series: 'Série institucional · agenda com lastro',
   title: 'Dossiê Solla por instituição',
   bulletinTitle: 'Boletim informativo modelo',
@@ -230,6 +237,8 @@ export const THEME_UNIT = {
   sphereBadgeClass: { area: '', segmento: 'scope-sector', rede: 'scope-network' },
   breadthRank: { area: 0, segmento: 1, rede: 2 },
   researchDir: 'data/dossie-solla-tema',
+  outDir: 'docs/research/dossie-solla-tema',
+  briefingNoun: 'tema',
   series: 'Série temática · por área',
   title: 'Dossiê Solla por tema/área',
   bulletinTitle: 'Boletim informativo modelo',

@@ -136,3 +136,19 @@ describe('subagent .opencode/agent/dossie-solla-cidade-redacao.md is writer-only
     expect(writer, 'writer must not edit the research files').toMatch(/não\*\* edite os/)
   })
 })
+
+describe('briefing de capacitação como 3º entregável (C210)', () => {
+  it('points at the briefing skill, its build and the third output', () => {
+    expect(skill).toContain('## Briefing de capacitação (3º entregável, C210)')
+    expect(skill).toContain('.agents/skills/briefing-capacitacao-solla/SKILL.md')
+    expect(skill).toContain('scripts/build-dossie-solla-briefing.mjs')
+    expect(skill).toContain('-briefing.pdf')
+    expect(skill).toContain('-briefing.md')
+  })
+
+  it('pins the handout guardrails inherited from the briefing skill', () => {
+    expect(skill).toContain('Insumo interno de capacitação — não publicar')
+    expect(skill).toMatch(/até 4 páginas/i)
+    expect(skill).toMatch(/sem segunda pesquisa factual/i)
+  })
+})

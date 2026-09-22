@@ -1,6 +1,6 @@
 ---
 name: dossie-solla-tema
-description: 'Gera o dossiê Solla por tema/área (PDF A4 + .md, tudo o que Solla fez pela área por era) e o Boletim Informativo modelo de 1 página, a partir da base Teqo read-only + pesquisa web datada + fontes oficiais; aceita uma área da taxonomia do acervo ou um lote separado por vírgula.'
+description: 'Gera o dossiê Solla por tema/área (PDF A4 + .md, tudo o que Solla fez pela área por era) e o Boletim Informativo modelo de 1 página, a partir da base Teqo read-only + pesquisa web datada + fontes oficiais; aceita uma área da taxonomia do acervo ou um lote separado por vírgula, e o Briefing de capacitação de até 4 páginas.'
 ---
 
 # Dossiê Solla por tema/área + boletim modelo (C190)
@@ -10,9 +10,11 @@ Educação, Cultura, Esporte, …), um **par PDF A4 datado + companion `.md`** c
 tudo o que **Jorge Solla fez pela área ao longo da carreira** — toda afirmação
 não trivial com **URL + data**, tudo sem fonte vira **lacuna explícita** — **e**
 o **Boletim Informativo modelo** (1 página A4, linguagem de eleitor, sem
-declaração de fontes). Skill irmã da `dossie-solla-cidade` (C186) e da
-`dossie-solla-instituicao` (C187): mesmo pipeline, recorte por área. O layout
-vem dos artefatos hi-fi aprovados pelo `designer`.
+declaração de fontes) **e** o **Briefing de capacitação** (3º entregável: até 4
+páginas para quem vai pedir o voto 1313, insumo interno). Skill irmã da
+`dossie-solla-cidade` (C186) e da `dossie-solla-instituicao` (C187): mesmo
+pipeline, recorte por área. O layout vem dos artefatos hi-fi aprovados pelo
+`designer`.
 
 O recorte da área é **nativo do acervo**: cada fala já é classificada por tema
 (`Speech.topics`, taxonomia `SPEECH_TOPICS`, C153/C154), então aqui o acervo é
@@ -28,8 +30,11 @@ entrega.
 
 ## Quando usar
 
-- A comunicação pede "o dossiê da <área>" e/ou o "boletim modelo da <área>" — ou
-  várias numa invocação (`/dossie-solla-tema Educação, Saúde`).
+- A comunicação pede "o dossiê da <área>", o "boletim modelo da <área>" e/ou o
+  **briefing de capacitação** de quem vai pedir voto — ou várias numa invocação
+  (`/dossie-solla-tema Educação, Saúde`).
+- O briefing também roda sozinho: `/briefing-capacitacao-solla tema:<área>`
+  (skill `briefing-capacitacao-solla`, mesmo build).
 - Quem executa são o **orquestrador** (agente principal) + um sub-agente
   **researcher por era, por área**, em paralelo + um sub-agente **redator** +
   os scripts (`extract` no homeserver, `build` local). O detalhe está em
@@ -57,7 +62,8 @@ Parsing (orquestrador, **antes** de qualquer pesquisa):
 - token inválido vira **falha isolada** com o motivo no summary final —
   **nunca** aborta o lote.
 
-Uma área = um dossiê (PDF+MD) + **um** boletim PDF; **sem** índice/PDF agregado.
+Uma área = um dossiê (PDF+MD) + **um** boletim PDF + **um** briefing
+(PDF+MD); **sem** índice/PDF agregado.
 Falha de uma área/era **não** cancela as demais (**sucesso parcial** explícito).
 
 ## Pipeline (etapas)
@@ -108,8 +114,11 @@ Falha de uma área/era **não** cancela as demais (**sucesso parcial** explícit
    `data/dossie-solla-tema/` (HTML, JSONs, logs). Flags úteis:
    `--generated-at=<ISO>`, `DOSSIER_STRICT=1` (falha o run se houver lacuna —
    conferência, não entrega).
+   O **briefing de capacitação** (3º entregável) sai do mesmo fluxo — seção
+   própria abaixo; o build é `scripts/build-dossie-solla-briefing.mjs`
+   (`--unit=theme`) e o autor é `.opencode/agent/briefing-capacitacao-solla.md`.
 7. **Summary final.** Uma linha por entrada, na ordem da lista: `entrada · status
-   (ok|failed) · dossiê/boletim (quando ok) · motivo (quando falha)`.
+   (ok|failed) · dossiê/boletim/briefing (quando ok) · motivo (quando falha)`.
 
 ## Briefing por era (A/B/C)
 
@@ -322,6 +331,31 @@ nenhum número, data, nome ou órgão novo.
 - **Sem declaração de fontes** (as fontes vivem exclusivamente no dossiê), sem
   CTA de campanha; herda **apenas** fatos com fonte do dossiê.
 
+## Briefing de capacitação (3º entregável, C210)
+
+- A mesma invocação entrega o **Briefing de capacitação** do recorte — PDF A4 de
+  **até 4 páginas** + companion `.md`, para quem vai pedir o voto 1313 — além do
+  dossiê e do boletim. A fonte canônica do fluxo é a skill
+  `.agents/skills/briefing-capacitacao-solla/SKILL.md` (não a transcreva).
+- Depois de o dossiê estar pesquisado, o orquestrador dispara o **autor**
+  (`.opencode/agent/briefing-capacitacao-solla.md`) — que escreve
+  `data/dossie-solla-tema/<slug>.briefing.json` só a partir dos itens com fonte; **audita** as
+  citações e **roda** o mesmo build da família:
+  ```bash
+  NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-dossie-solla-briefing.mjs \
+    --unit=theme \
+    --snapshot=data/dossie-solla-tema/<slug>.theme.snapshot.json \
+    --research-dir=data/dossie-solla-tema \
+    --out-dir=docs/research/dossie-solla-tema
+  ```
+  Saídas: `docs/research/dossie-solla-tema/<slug>-<YYYY-MM-DD>-briefing.pdf` + `-briefing.md`
+  (gitignored, insumo interno com rótulo literal; nunca publicar).
+- Rótulo literal `Insumo interno de capacitação — não publicar` em todas as
+  folhas; sem CTA público; sem cenário/estimativa/staff-only; só fatos com fonte
+  do dossiê (**sem segunda pesquisa factual**). Teto rígido de **4 páginas** com
+  corte por prioridade declarado (o resto fica contado na folha e completo no
+  `.md`); essencial, roteiro e identificação nunca são cortados.
+
 ## Guardrails de produto (não negociáveis)
 
 - **Sem fonte, não publica**: afirmação não trivial sem URL+data vira lacuna.
@@ -345,6 +379,7 @@ nenhum número, data, nome ou órgão novo.
 - **Artefato gitignored** (repo público): PDF/MD/JSON nunca são commitados.
 - **Defeso**: dossiê e boletim saem como insumo interno/modelo, sem CTA; a peça
   final publicável é da comunicação/campanha. **Sem schema/migration/DB write.**
+- **Briefing de capacitação (3º entregável)**: até **4 páginas**, rótulo literal `Insumo interno de capacitação — não publicar`, sem CTA público, sem cenário/estimativa/staff-only; deriva do dossiê (mesmo build), corte por prioridade declarado e o restante no `.md`.
 
 ## Troubleshooting
 
@@ -369,6 +404,9 @@ nenhum número, data, nome ou órgão novo.
   `pnpm exec playwright install chromium`.
 
 ## Referências
+
+- Briefing de capacitação (3º entregável): `.agents/skills/briefing-capacitacao-solla/SKILL.md`, `scripts/build-dossie-solla-briefing.mjs` e o design `docs/plans/briefing-capacitacao-solla-ui-design.html` (intenção/impl: `docs/plans/briefing-capacitacao-solla.md`).
+
 
 - Intenção: `docs/plans/dossie-solla-tema.md`; impl:
   `docs/plans/dossie-solla-tema-impl.md`.
