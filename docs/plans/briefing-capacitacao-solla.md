@@ -94,10 +94,10 @@ Os dossiês dizem o que Solla **fez** e — a partir do C209 — o que ele **def
 
 ## Questões em aberto (produto)
 
-- *(decidido no gate, 2026-09-22: **A** — uma skill `/briefing-capacitacao-solla <recorte>`, **integrada ao fluxo das skills de dossiê** — elas linkam a skill e entregam o briefing junto do dossiê e do boletim.)*
-- *(decidido no gate: **A** — companion `.md` sim.)*
-- *(decidido no gate: **A** — sem cenário eleitoral no briefing.)*
-- *(decidido no gate: **A** — P1, prazo de campanha 2026.)*
+- _(decidido no gate, 2026-09-22: **A** — uma skill `/briefing-capacitacao-solla <recorte>`, **integrada ao fluxo das skills de dossiê** — elas linkam a skill e entregam o briefing junto do dossiê e do boletim.)_
+- _(decidido no gate: **A** — companion `.md` sim.)_
+- _(decidido no gate: **A** — sem cenário eleitoral no briefing.)_
+- _(decidido no gate: **A** — P1, prazo de campanha 2026.)_
 - **Reaproveitar a voz do `solla-comunicacao`?** **Opções:** A) sim, para respostas a ataque | B) redação própria. **Recomendação:** A — dono existente evita gemar tom.
 - **Teto de 4 páginas rígido?** **Opções:** A) rígido, corte por prioridade declarada | B) teto mole. **Recomendação:** A — o valor é ser curto para estudar e consultar.
 

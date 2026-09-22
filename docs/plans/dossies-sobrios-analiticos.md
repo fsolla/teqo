@@ -88,9 +88,9 @@ O humano achou o layout dos dossiês exagerado: quadrados um do lado do outro, c
 ## Questões em aberto (produto)
 
 - **Onde mora "o que defende" no dossiê?** **Opções:** A) seção própria (leitura + lista de posições/trechos com fonte), destacada também no essencial | B) diluído dentro de cada era. **Recomendação:** A — é a nova leitura que o humano pediu e precisa de lugar próprio e indexável. _(assumido — validar no design)_
-- *(decidido no gate, 2026-09-22: o boletim **ganha** "O que Solla defende" — 1–2 defesas curtas com lastro, sem linha de fonte.)*
+- _(decidido no gate, 2026-09-22: o boletim **ganha** "O que Solla defende" — 1–2 defesas curtas com lastro, sem linha de fonte.)_
 - **Nome da seção?** **Opções:** A) "O que Solla defende" | B) "O que ele diz" | C) "Posições e defesas". **Recomendação:** A — direto e fiel ao pedido.
-- *(decididos no gate 2026-09-22: um item design+análise; boletim incluído; gráficos fora; documento neutro sem marca; um hi-fi da família; índice + âncoras.)*
+- _(decididos no gate 2026-09-22: um item design+análise; boletim incluído; gráficos fora; documento neutro sem marca; um hi-fi da família; índice + âncoras.)_
 
 ## Referências
 
