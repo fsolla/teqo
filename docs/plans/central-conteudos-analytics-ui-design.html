@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C213 · Analytics da Central</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-sidebar: var(--sidebar);
+      }
+      [data-theme='campaign'] {
+        --foreground: #1c1917;
+        --primary: #c51414;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --border: rgb(28 25 23/12%);
+        --sidebar: #fafaf9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .board {
+        background: #efeeec;
+        background-image: radial-gradient(rgb(28 25 23/8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame {
+        box-shadow: 0 18px 52px rgb(28 25 23/10%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .primary {
+        background: #c51414;
+        color: #fff;
+      }
+      .outline {
+        border: 1px solid #d6d3d1;
+        background: #fff;
+      }
+      .field {
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 6px;
+        padding: 9px 12px;
+        font-size: 14px;
+      }
+      .badge {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .live {
+        background: #fff1f2;
+        color: #9f1239;
+      }
+      .draft {
+        background: #f4f4f5;
+        color: #57534e;
+      }
+      .asset {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #e7e5e4, #f5f5f4);
+        color: #78716c;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .scene:after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #d6d3d1;
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="badge bg-primary text-white">C213 · revisão do gate</span>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Quatro sinais. Nenhum dashboard.</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          Os contadores vivem junto da peça e respondem só ao que a assessoria precisa decidir.
+        </p>
+      </header>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 01</span>
+          <h2>Desktop 1280 · uma coluna “Circulação” na lista</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="flex min-h-[680px]">
+            <aside class="w-56 shrink-0 border-r bg-sidebar p-3">
+              <div class="flex h-12 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <div class="mt-4 rounded-md bg-muted px-3 py-2 text-sm font-semibold">
+                Comunicação
+              </div>
+              <div class="ml-4 border-l pl-3">
+                <div
+                  class="mt-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border"
+                >
+                  Conteúdos
+                </div>
+              </div>
+            </aside>
+            <div class="min-w-0 flex-1 p-8">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-2xl font-semibold">Conteúdos</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Publicação e circulação no mesmo lugar.
+                  </p>
+                </div>
+                <button class="btn primary">Enviar peças</button>
+              </div>
+              <div class="mt-7 flex gap-2">
+                <input class="field" placeholder="Buscar conteúdos…" /><button class="btn outline">
+                  Filtros
+                </button>
+              </div>
+              <div class="mt-5 overflow-hidden rounded-xl border">
+                <table class="w-full text-left text-sm">
+                  <thead class="bg-stone-50 text-xs text-muted-foreground">
+                    <tr>
+                      <th class="p-4">Peça</th>
+                      <th>Publicação</th>
+                      <th>Circulação</th>
+                      <th class="pr-4 text-right">Ação</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y">
+                    <tr>
+                      <td class="p-4">
+                        <div class="flex gap-3">
+                          <div class="asset h-14 w-20 rounded-md">NEEDS ASSET</div>
+                          <div>
+                            <b>Fim da escala 6×1 é saúde</b>
+                            <p class="mt-1 text-xs text-muted-foreground">Vídeo</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span class="badge live">Publicado</span></td>
+                      <td>
+                        <div class="grid grid-cols-4 gap-5">
+                          <div>
+                            <span class="block text-[10px] text-muted-foreground">Aberturas</span
+                            ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                          </div>
+                          <div>
+                            <span class="block text-[10px] text-muted-foreground">Downloads</span
+                            ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                          </div>
+                          <div>
+                            <span class="block text-[10px] text-muted-foreground">WhatsApp</span
+                            ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                          </div>
+                          <div>
+                            <span class="block text-[10px] text-muted-foreground">Link</span
+                            ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="pr-4 text-right"><button class="btn outline">Abrir</button></td>
+                    </tr>
+                    <tr>
+                      <td class="p-4">
+                        <b>Solla em defesa do SUS</b>
+                        <p class="mt-1 text-xs text-muted-foreground">Foto</p>
+                      </td>
+                      <td><span class="badge live">Publicado</span></td>
+                      <td class="font-semibold tabular-nums">
+                        0 abertura · 0 download · 0 WhatsApp · 0 link
+                      </td>
+                      <td class="pr-4 text-right"><button class="btn outline">Abrir</button></td>
+                    </tr>
+                    <tr>
+                      <td class="p-4">
+                        <b>Por que defender o SUS</b>
+                        <p class="mt-1 text-xs text-muted-foreground">Texto</p>
+                      </td>
+                      <td><span class="badge draft">Rascunho</span></td>
+                      <td class="text-xs text-muted-foreground">Sem dados — ainda não publicada</td>
+                      <td class="pr-4 text-right"><button class="btn outline">Abrir</button></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="mt-3 text-xs text-muted-foreground">
+                Barras cinza = valores reais omitidos no gate · 0 = nenhum evento · — = contagem
+                indisponível.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 02</span>
+          <h2>Desktop 1280 · detalhe por canal, sem gráfico</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="border-b px-8 py-5">
+            <a class="text-xs font-semibold text-primary">← Conteúdos</a>
+            <h3 class="mt-2 text-xl font-semibold">Fim da escala 6×1 é saúde</h3>
+          </div>
+          <div class="grid grid-cols-[300px_1fr] gap-8 p-8">
+            <div>
+              <div class="asset aspect-video rounded-xl">NEEDS ASSET · PREVIEW REAL</div>
+              <button class="btn outline mt-4 w-full">Editar peça</button>
+            </div>
+            <div>
+              <h4 class="text-base font-semibold">Circulação</h4>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Contagem anônima e acumulada desde a publicação.
+              </p>
+              <div class="mt-5 grid grid-cols-4 overflow-hidden rounded-xl border">
+                <div class="p-4">
+                  <span class="text-xs text-muted-foreground">Aberturas</span
+                  ><span class="mt-3 block h-5 w-14 rounded bg-stone-300"></span>
+                </div>
+                <div class="border-l p-4">
+                  <span class="text-xs text-muted-foreground">Downloads</span
+                  ><span class="mt-3 block h-5 w-14 rounded bg-stone-300"></span>
+                </div>
+                <div class="border-l p-4">
+                  <span class="text-xs text-muted-foreground">WhatsApp</span
+                  ><span class="mt-3 block h-5 w-14 rounded bg-stone-300"></span>
+                </div>
+                <div class="border-l p-4">
+                  <span class="text-xs text-muted-foreground">Link copiado</span
+                  ><span class="mt-3 block h-5 w-14 rounded bg-stone-300"></span>
+                </div>
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground">
+                Valores reais omitidos neste gate; o produto mostra contagens absolutas.
+              </p>
+              <div class="mt-5 rounded-lg bg-muted p-4 text-sm leading-6 text-muted-foreground">
+                <b class="text-foreground">Leitura:</b> compare os sinais sem somá-los. WhatsApp e
+                link ficam separados porque mostram escolhas diferentes.
+              </div>
+              <p class="mt-4 text-xs text-muted-foreground">
+                Sem IP persistido, cookie de identidade ou rastreio entre peças.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENAS 03–04</span>
+          <h2>Mobile 390 · cards e falha da contagem</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[760px] overflow-hidden border bg-white">
+            <div class="flex h-14 items-center justify-between bg-primary px-4 text-white">
+              <b>Conteúdos</b
+              ><button class="rounded-md border border-white/40 px-3 py-2 text-xs font-semibold">
+                Enviar
+              </button>
+            </div>
+            <div class="p-4">
+              <input class="field" placeholder="Buscar conteúdos…" />
+              <article class="mt-4 rounded-xl border p-4">
+                <div class="flex justify-between gap-3">
+                  <b class="text-sm">Fim da escala 6×1 é saúde</b
+                  ><span class="badge live h-fit">Publicado</span>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-border">
+                  <div class="bg-white p-3">
+                    <span class="text-[10px] text-muted-foreground">Aberturas</span
+                    ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                  </div>
+                  <div class="bg-white p-3">
+                    <span class="text-[10px] text-muted-foreground">Downloads</span
+                    ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                  </div>
+                  <div class="bg-white p-3">
+                    <span class="text-[10px] text-muted-foreground">WhatsApp</span
+                    ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                  </div>
+                  <div class="bg-white p-3">
+                    <span class="text-[10px] text-muted-foreground">Link</span
+                    ><span class="mt-1 block h-3 w-8 rounded bg-stone-300"></span>
+                  </div>
+                </div>
+                <button class="btn outline mt-3 w-full">Abrir</button>
+              </article>
+              <article class="mt-3 rounded-xl border p-4">
+                <div class="flex justify-between">
+                  <b class="text-sm">Solla em defesa do SUS</b
+                  ><span class="badge live">Publicado</span>
+                </div>
+                <p class="mt-3 text-xs text-muted-foreground">
+                  0 abertura · 0 download · 0 WhatsApp · 0 link
+                </p>
+              </article>
+              <article class="mt-3 rounded-xl border p-4">
+                <div class="flex justify-between">
+                  <b class="text-sm">Por que defender o SUS</b
+                  ><span class="badge draft">Rascunho</span>
+                </div>
+                <p class="mt-3 text-xs text-muted-foreground">Sem dados — ainda não publicada.</p>
+              </article>
+            </div>
+          </div>
+          <div class="phone frame min-h-[760px] overflow-hidden border bg-white">
+            <div class="flex h-14 items-center gap-3 border-b px-4">
+              <span>←</span><b>Detalhe da peça</b>
+            </div>
+            <div class="p-4">
+              <div class="asset aspect-video rounded-xl">NEEDS ASSET · PREVIEW REAL</div>
+              <h3 class="mt-4 text-base font-semibold">Fim da escala 6×1 é saúde</h3>
+              <h4 class="mt-6 text-sm font-semibold">Circulação</h4>
+              <div class="mt-3 divide-y overflow-hidden rounded-xl border">
+                <div class="flex justify-between p-4 text-sm"><span>Aberturas</span><b>—</b></div>
+                <div class="flex justify-between p-4 text-sm"><span>Downloads</span><b>—</b></div>
+                <div class="flex justify-between p-4 text-sm"><span>WhatsApp</span><b>—</b></div>
+                <div class="flex justify-between p-4 text-sm">
+                  <span>Link copiado</span><b>—</b>
+                </div>
+              </div>
+              <div class="mt-4 rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground">
+                Contagem indisponível agora. A página pública, o download e o compartilhamento
+                continuam funcionando.
+              </div>
+              <button class="btn outline mt-5 w-full">Editar peça</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

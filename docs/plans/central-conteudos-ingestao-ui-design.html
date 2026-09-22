@@ -1,0 +1,536 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C211 · Central interna</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-sidebar: var(--sidebar);
+      }
+      [data-theme='campaign'] {
+        --background: #fff;
+        --foreground: #1c1917;
+        --primary: #c51414;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --border: rgb(28 25 23/12%);
+        --sidebar: #fafaf9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .board {
+        background: #efeeec;
+        background-image: radial-gradient(rgb(28 25 23/8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame {
+        box-shadow: 0 18px 52px rgb(28 25 23/10%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .primary {
+        background: #c51414;
+        color: #fff;
+      }
+      .outline {
+        border: 1px solid #d6d3d1;
+        background: #fff;
+      }
+      .field {
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 6px;
+        background: #fff;
+        padding: 9px 12px;
+        font-size: 14px;
+      }
+      .label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .badge {
+        display: inline-flex;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .work {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .fail {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .draft {
+        background: #f4f4f5;
+        color: #57534e;
+      }
+      .live {
+        background: #fff1f2;
+        color: #9f1239;
+      }
+      .asset {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #e7e5e4, #f5f5f4);
+        color: #78716c;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .scene:after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #d6d3d1;
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="badge bg-primary text-white">C211 · revisão do gate</span>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Receber, revisar, publicar</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          A mesa foi reduzida ao essencial: estado da peça, estado editorial e a próxima ação.
+          Arquivo e link entram no mesmo fluxo de catalogação.
+        </p>
+      </header>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 01</span>
+          <h2>Desktop 1280 · lista compacta e respirada</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="flex min-h-[720px]">
+            <aside class="w-56 shrink-0 border-r bg-sidebar p-3">
+              <div class="flex h-12 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <div class="mt-4 rounded-md bg-muted px-3 py-2 text-sm font-semibold">
+                Comunicação
+              </div>
+              <div class="ml-4 border-l pl-3">
+                <div
+                  class="mt-1 rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border"
+                >
+                  Conteúdos
+                </div>
+              </div>
+            </aside>
+            <div class="min-w-0 flex-1 p-8">
+              <div class="flex items-start justify-between">
+                <div>
+                  <h3 class="text-2xl font-semibold">Conteúdos</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Peças que alimentam a Central pública.
+                  </p>
+                </div>
+                <div class="flex gap-2">
+                  <button class="btn outline">Adicionar por link</button
+                  ><button class="btn primary">Enviar peças</button>
+                </div>
+              </div>
+              <div class="mt-7 flex gap-2">
+                <input class="field" placeholder="Buscar por título, tema ou cidade…" /><button
+                  class="btn outline"
+                >
+                  Filtros
+                </button>
+              </div>
+              <div class="mt-5 overflow-hidden rounded-xl border">
+                <table class="w-full text-left text-sm">
+                  <thead class="bg-stone-50 text-xs text-muted-foreground">
+                    <tr>
+                      <th class="p-4">Peça</th>
+                      <th>Processamento</th>
+                      <th>Publicação</th>
+                      <th class="pr-4 text-right">Próxima ação</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y">
+                    <tr>
+                      <td class="p-4">
+                        <div class="flex gap-3">
+                          <div class="asset h-14 w-20 rounded-md">NEEDS ASSET</div>
+                          <div>
+                            <b>Fim da escala 6×1 é saúde</b>
+                            <p class="mt-1 text-xs text-muted-foreground">
+                              Vídeo · Salvador · 02:14
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td><span class="badge ready">Pronto</span></td>
+                      <td><span class="badge live">Publicado</span></td>
+                      <td class="pr-4 text-right"><button class="btn outline">Abrir</button></td>
+                    </tr>
+                    <tr>
+                      <td class="p-4">
+                        <b>Visita ao posto de saúde</b>
+                        <p class="mt-1 text-xs text-muted-foreground">Vídeo enviado</p>
+                      </td>
+                      <td>
+                        <span class="badge work">Processando</span>
+                        <p class="mt-1 text-xs text-muted-foreground">Transcrevendo…</p>
+                      </td>
+                      <td><span class="badge draft">Rascunho</span></td>
+                      <td class="pr-4 text-right"><button class="btn outline">Abrir</button></td>
+                    </tr>
+                    <tr>
+                      <td class="p-4">
+                        <b>Mensagem para lideranças</b>
+                        <p class="mt-1 text-xs text-muted-foreground">Áudio preservado</p>
+                      </td>
+                      <td><span class="badge fail">Falhou</span></td>
+                      <td><span class="badge draft">Rascunho</span></td>
+                      <td class="pr-4 text-right">
+                        <button class="btn outline">Reprocessar</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <p class="mt-3 text-xs text-muted-foreground">
+                Rascunhos não aparecem no site. Uma falha não interrompe as outras peças.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 02</span>
+          <h2>Desktop 1280 · lote com progresso por arquivo</h2>
+        </div>
+        <div
+          class="desktop frame relative mx-auto min-h-[680px] overflow-hidden rounded-xl border bg-stone-200"
+        >
+          <div class="absolute inset-0 bg-black/30"></div>
+          <div class="relative mx-auto mt-14 w-[590px] rounded-xl bg-white p-6 shadow-2xl">
+            <h3 class="text-lg font-semibold">Enviar peças</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              Cada arquivo vira um rascunho independente.
+            </p>
+            <div
+              class="mt-5 grid min-h-24 place-items-center rounded-lg border border-dashed bg-stone-50 text-center"
+            >
+              <div>
+                <b class="text-sm">Selecionar arquivos</b>
+                <p class="mt-1 text-xs text-muted-foreground">Vídeo, foto, áudio, texto ou card</p>
+              </div>
+            </div>
+            <div class="mt-5 space-y-3">
+              <div class="rounded-lg border p-3">
+                <div class="flex justify-between text-sm"><b>fala-sus.mp4</b><b>68%</b></div>
+                <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                  <div class="h-full w-[68%] bg-primary"></div>
+                </div>
+              </div>
+              <div class="flex items-center justify-between rounded-lg border p-3">
+                <b class="text-sm">card-feira.png</b><span class="badge ready">Enviado</span>
+              </div>
+              <div
+                class="flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-3"
+              >
+                <div>
+                  <b class="text-sm">audio-grupo.wav</b>
+                  <p class="mt-1 text-xs text-red-800">Falhou; os outros continuam.</p>
+                </div>
+                <button class="btn outline">Tentar de novo</button>
+              </div>
+            </div>
+            <div class="mt-5 flex justify-end">
+              <button class="btn primary">Concluir lote</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 03</span>
+          <h2>Desktop 1280 · link com mídia extraída pelo caminho oficial</h2>
+        </div>
+        <div
+          class="desktop frame mx-auto grid min-h-[650px] grid-cols-[410px_1fr] overflow-hidden rounded-xl border bg-white"
+        >
+          <div class="border-r bg-stone-50 p-8">
+            <h3 class="text-xl font-semibold">Adicionar por link</h3>
+            <p class="mt-2 text-sm leading-6 text-muted-foreground">
+              Instagram ou YouTube. Conteúdo próprio é extraído somente quando a plataforma oferece
+              caminho oficial.
+            </p>
+            <label class="label mt-6">Link da publicação</label
+            ><input class="field" value="https://www.instagram.com/p/…" /><button
+              class="btn primary mt-4 w-full"
+            >
+              Adicionar e catalogar
+            </button>
+            <div
+              class="mt-5 rounded-lg border bg-white p-4 text-xs leading-5 text-muted-foreground"
+            >
+              <b class="text-foreground">Sem scraping.</b><br />Se não houver acesso oficial à
+              mídia, a peça continua pelo link e o arquivo original pode ser anexado.
+            </div>
+          </div>
+          <div class="p-8">
+            <h3 class="text-lg font-semibold">O que acontece depois</h3>
+            <div class="mt-6 space-y-4">
+              <div class="flex gap-4 rounded-xl border p-4">
+                <span
+                  class="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-white"
+                  >1</span
+                >
+                <div>
+                  <b class="text-sm">Mídia encontrada na conta oficial</b>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    O arquivo entra na peça. Origem e link permanecem visíveis.
+                  </p>
+                </div>
+                <span class="badge ready ml-auto h-fit">Extraída</span>
+              </div>
+              <div class="flex gap-4 rounded-xl border p-4">
+                <span
+                  class="grid size-9 shrink-0 place-items-center rounded-full bg-primary text-sm font-bold text-white"
+                  >2</span
+                >
+                <div>
+                  <b class="text-sm">Mesmo processamento do upload</b>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Transcrição, título, descrição, temas e territórios são preparados para revisão.
+                  </p>
+                </div>
+                <span class="badge work ml-auto h-fit">Processando</span>
+              </div>
+              <div class="flex gap-4 rounded-xl border p-4">
+                <span
+                  class="grid size-9 shrink-0 place-items-center rounded-full bg-muted text-sm font-bold"
+                  >↳</span
+                >
+                <div>
+                  <b class="text-sm">Quando não há caminho oficial</b>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Peça-link criada. A assessoria pode anexar o arquivo original; mídia de terceiro
+                    não é baixada.
+                  </p>
+                  <button class="btn outline mt-3">Anexar arquivo original</button>
+                </div>
+                <span class="badge draft ml-auto h-fit">Peça-link</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 04</span>
+          <h2>Desktop 1280 · ficha editável e um próximo passo</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="flex items-center justify-between border-b px-8 py-5">
+            <div>
+              <a class="text-xs font-semibold text-primary">← Conteúdos</a>
+              <h3 class="mt-2 text-xl font-semibold">Fim da escala 6×1 é saúde</h3>
+              <div class="mt-2 flex gap-2">
+                <span class="badge ready">Pronto</span><span class="badge draft">Rascunho</span>
+              </div>
+            </div>
+            <button class="btn primary">Publicar</button>
+          </div>
+          <div class="grid grid-cols-[300px_1fr] gap-8 p-8">
+            <div>
+              <div class="asset aspect-video rounded-xl">NEEDS ASSET · PREVIEW REAL</div>
+              <dl class="mt-4 space-y-2 text-xs">
+                <div class="flex justify-between">
+                  <dt class="text-muted-foreground">Origem</dt>
+                  <dd>Instagram · mídia extraída</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-muted-foreground">Duração</dt>
+                  <dd>02:14</dd>
+                </div>
+              </dl>
+              <div class="mt-5 rounded-lg bg-muted p-3">
+                <p class="text-[11px] font-semibold text-muted-foreground">QUANDO PUBLICADO</p>
+                <button class="btn outline mt-2 w-full">Despublicar</button>
+              </div>
+            </div>
+            <form class="grid grid-cols-2 gap-4">
+              <div class="col-span-2">
+                <label class="label">Título</label
+                ><input class="field" value="Fim da escala 6×1 é saúde" />
+              </div>
+              <div class="col-span-2">
+                <label class="label">Descrição</label
+                ><textarea class="field min-h-20">
+Jorge Solla explica por que reduzir a jornada protege a saúde de quem trabalha.</textarea
+                >
+              </div>
+              <div>
+                <label class="label">Tipo</label
+                ><select class="field">
+                  <option>Vídeo</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">Data</label><input class="field" placeholder="Data da peça" />
+              </div>
+              <div>
+                <label class="label">Temas</label><input class="field" value="Trabalho; Saúde" />
+              </div>
+              <div>
+                <label class="label">Cidade · região</label
+                ><input class="field" value="Salvador · Metropolitana" />
+              </div>
+              <div class="col-span-2">
+                <label class="label">Instituição</label
+                ><input class="field" value="Câmara dos Deputados" />
+              </div>
+              <div class="col-span-2">
+                <label class="label">Transcrição</label
+                ><textarea class="field min-h-24">
+A redução da jornada sem redução de salário é também uma pauta de saúde pública…</textarea
+                >
+              </div>
+              <div class="col-span-2 flex justify-end">
+                <button class="btn outline">Salvar alterações</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENAS 05–06</span>
+          <h2>Mobile 390 · lista e link em processamento</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[800px] overflow-hidden border bg-white">
+            <div class="flex h-14 items-center justify-between bg-primary px-4 text-white">
+              <b>Conteúdos</b
+              ><button class="rounded-md border border-white/40 px-3 py-2 text-xs font-semibold">
+                + Link
+              </button>
+            </div>
+            <div class="p-4">
+              <button class="btn primary w-full">Enviar peças</button
+              ><input class="field mt-3" placeholder="Buscar conteúdos…" />
+              <div class="mt-4 space-y-3">
+                <article class="rounded-xl border p-4">
+                  <div class="flex justify-between gap-3">
+                    <b class="text-sm">Fim da escala 6×1 é saúde</b
+                    ><span class="badge ready h-fit">Pronto</span>
+                  </div>
+                  <p class="mt-1 text-xs text-muted-foreground">Vídeo · Publicado</p>
+                  <button class="btn outline mt-3 w-full">Abrir</button>
+                </article>
+                <article class="rounded-xl border p-4">
+                  <div class="flex justify-between gap-3">
+                    <b class="text-sm">Visita ao posto</b
+                    ><span class="badge work h-fit">Processando</span>
+                  </div>
+                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full w-1/2 bg-primary"></div>
+                  </div>
+                  <p class="mt-2 text-xs text-muted-foreground">Transcrevendo e catalogando…</p>
+                </article>
+                <article class="rounded-xl border p-4">
+                  <div class="flex justify-between gap-3">
+                    <b class="text-sm">Mensagem para lideranças</b
+                    ><span class="badge fail h-fit">Falhou</span>
+                  </div>
+                  <button class="btn outline mt-3 w-full">Reprocessar</button>
+                </article>
+              </div>
+            </div>
+          </div>
+          <div class="phone frame min-h-[800px] overflow-hidden border bg-white">
+            <div class="flex h-14 items-center gap-3 border-b px-4">
+              <span>←</span><b>Peça adicionada por link</b>
+            </div>
+            <div class="p-4">
+              <div class="asset aspect-video rounded-xl">NEEDS ASSET · POSTER EXTRAÍDO</div>
+              <div class="mt-4 flex items-center gap-2">
+                <span class="badge work">Processando</span
+                ><span class="text-xs text-muted-foreground">Instagram · conta oficial</span>
+              </div>
+              <h3 class="mt-3 text-lg font-semibold">Preparando a peça</h3>
+              <div class="mt-4 space-y-4">
+                <div>
+                  <div class="flex justify-between text-xs">
+                    <span>Arquivo extraído</span><b>Concluído</b>
+                  </div>
+                  <div class="mt-2 h-2 rounded-full bg-green-600"></div>
+                </div>
+                <div>
+                  <div class="flex justify-between text-xs">
+                    <span>Transcrição e catalogação</span><b>Em andamento</b>
+                  </div>
+                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full w-1/2 bg-primary"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-5 rounded-lg bg-muted p-3 text-xs leading-5 text-muted-foreground">
+                A peça nasce como rascunho. Revise título, descrição e transcrição antes de
+                publicar.
+              </div>
+              <button class="btn outline mt-5 w-full">Voltar para a lista</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

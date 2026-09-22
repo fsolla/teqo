@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — S27 · Peça voto pra Solla 1313</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: Arimo, Arial, sans-serif;
+        --color-kit-red: #e4102f;
+        --color-kit-blue: #184e92;
+        --color-kit-yellow: #ffeb00;
+      }
+      :root {
+        --red: #a21c1c;
+        --dark: #47130e;
+        --yellow: #ffe607;
+        --cream: #fff8f2;
+        --muted: #6c615e;
+        --line: rgb(0 0 0/12%);
+        --display: 'Exo 2', 'Arial Black', sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Arimo, Arial, sans-serif;
+      }
+      .display {
+        font-family: var(--display);
+      }
+      .board {
+        background: #e7e3e0;
+        background-image: radial-gradient(rgb(24 78 146/9%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .frame {
+        box-shadow: 0 22px 60px rgb(39 25 22/13%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 10px;
+        padding: 9px 13px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .primary {
+        background: var(--yellow);
+        color: #171000;
+        box-shadow: 0 4px 0 #cfb900;
+      }
+      .outline {
+        border: 1.5px solid rgb(162 28 28/28%);
+        background: white;
+        color: var(--red);
+      }
+      .field {
+        min-height: 46px;
+        width: 100%;
+        border: 1px solid rgb(0 0 0/18%);
+        border-radius: 10px;
+        background: white;
+        padding: 10px 13px;
+        font-size: 15px;
+      }
+      .chip {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: white;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 8px 24px rgb(71 19 14/7%);
+      }
+      .asset {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #e5e2df, #f7f5f3);
+        color: var(--muted);
+        text-align: center;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .tag {
+        display: inline-flex;
+        border-radius: 999px;
+        background: #eef4fb;
+        padding: 4px 8px;
+        color: #184e92;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .scene:after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #cfc9c5;
+      }
+      .skeleton {
+        background: linear-gradient(100deg, #eee 20%, #ddd 38%, #eee 56%);
+        background-size: 220% 100%;
+        animation: shine 1.6s infinite;
+      }
+      @keyframes shine {
+        to {
+          background-position: -220% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-black antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="rounded-full bg-kit-red px-3 py-1 text-xs font-bold text-white"
+          >S27 · revisão do gate</span
+        >
+        <h1 class="display mt-4 text-4xl font-black">Peça voto. Faça o 1313 chegar mais longe.</h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-[#6c615e]">
+          Mobile-first, direto no catálogo: ver, ouvir, baixar e compartilhar uma peça oficial sem
+          abrir outra página.
+        </p>
+      </header>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2>Desktop 1280 · catálogo mais limpo, com ação no card</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <img
+              src="../../public/campaign-kit/jorge-solla-negativo.png"
+              class="h-9"
+              alt="Jorge Solla"
+            /><span class="text-sm font-bold text-white">Central de Conteúdos</span>
+          </header>
+          <div class="bg-[linear-gradient(120deg,#e4102f,#b60825_60%,#184e92)] text-white">
+            <div class="mx-auto flex max-w-6xl items-center justify-between px-10 py-12">
+              <div>
+                <p class="text-sm font-bold text-[#ffeb00]">PEÇA VOTO PRA SOLLA 1313</p>
+                <h3 class="display mt-2 max-w-2xl text-4xl font-black leading-tight">
+                  Uma mensagem sua pode conquistar mais um voto.
+                </h3>
+                <p class="mt-3 max-w-xl text-base text-white/85">
+                  Escolha uma peça, mande para alguém que você conhece e peça o voto no 1313.
+                </p>
+              </div>
+              <img
+                src="../../public/campaign-kit/numero-negativo.png"
+                class="h-24"
+                alt="1313 Deputado Federal"
+              />
+            </div>
+          </div>
+          <div class="mx-auto max-w-6xl px-10 py-10">
+            <div class="grid grid-cols-[1fr_auto] gap-3">
+              <input
+                class="field"
+                placeholder="Encontre uma peça por assunto, cidade ou tema…"
+              /><button class="btn primary px-6">Escolher uma peça e pedir voto</button>
+            </div>
+            <div class="mt-3 flex gap-2">
+              <span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span
+              ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+              ><span class="chip">Instituição⌄</span>
+            </div>
+            <div class="mt-9 flex items-end justify-between">
+              <div>
+                <h3 class="display text-2xl font-black">Escolha, compartilhe e peça voto</h3>
+                <p class="mt-1 text-sm text-[#6c615e]">
+                  O play só carrega a mídia quando você pedir.
+                </p>
+              </div>
+              <span class="text-sm text-[#6c615e]">Abra o título para ver detalhes</span>
+            </div>
+            <div class="mt-5 grid grid-cols-3 gap-6">
+              <article class="card">
+                <div class="asset relative aspect-video">
+                  <span>NEEDS ASSET · POSTER REAL</span
+                  ><button
+                    class="absolute grid size-14 place-items-center rounded-full bg-[#ffe607] text-xl shadow-lg"
+                    aria-label="Reproduzir vídeo"
+                  >
+                    ▶</button
+                  ><span
+                    class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs text-white"
+                    >02:14</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Vídeo</span>
+                  <h4 class="mt-2 text-base font-extrabold">Fim da escala 6×1 é saúde</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Trabalho · Salvador</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="btn outline">Baixar</button
+                    ><button class="btn outline">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="asset relative aspect-video">
+                  <span>NEEDS ASSET · CAPA REAL DO ÁUDIO</span
+                  ><button
+                    class="absolute grid size-14 place-items-center rounded-full bg-[#ffe607] text-xl shadow-lg"
+                    aria-label="Reproduzir áudio"
+                  >
+                    ▶</button
+                  ><span
+                    class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs text-white"
+                    >00:46</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Áudio</span>
+                  <h4 class="mt-2 text-base font-extrabold">Mensagem para mandar no grupo</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Campanha</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="btn outline">Baixar</button
+                    ><button class="btn outline">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+              <article class="card border-[#184e92]/25 bg-[#fff8f2]">
+                <div
+                  class="asset aspect-video bg-[linear-gradient(135deg,#e4102f,#184e92)] text-white"
+                >
+                  <div>
+                    <img
+                      src="../../public/campaign-kit/numero-negativo.png"
+                      class="mx-auto h-16"
+                      alt="1313 Deputado Federal"
+                    />
+                    <p class="mt-2">SEU NOME + SUA FOTO</p>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card personalizado</span>
+                  <h4 class="mt-2 text-base font-extrabold">Faça seu card com Solla 1313</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Criado no seu aparelho.</p>
+                  <a class="btn outline mt-4 w-full" href="#">Fazer meu card</a>
+                </div>
+              </article>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-6">
+              <article class="card flex items-center gap-4 p-3">
+                <div class="asset h-24 w-32 shrink-0 rounded-lg">NEEDS ASSET · FOTO REAL</div>
+                <div class="min-w-0 flex-1">
+                  <span class="tag">Foto</span>
+                  <h4 class="mt-2 text-sm font-extrabold">Solla em defesa do SUS</h4>
+                  <div class="mt-3 flex gap-2">
+                    <button class="btn outline min-h-9">Baixar</button
+                    ><button class="btn outline min-h-9">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+              <article class="card flex items-center gap-4 p-3">
+                <div class="asset h-24 w-32 shrink-0 rounded-lg bg-[#fff8f2] px-3">
+                  “Saúde é direito.”
+                </div>
+                <div class="min-w-0 flex-1">
+                  <span class="tag">Texto</span>
+                  <h4 class="mt-2 text-sm font-extrabold">Por que defender o SUS</h4>
+                  <div class="mt-3 flex gap-2">
+                    <button class="btn outline min-h-9">Baixar</button
+                    ><button class="btn outline min-h-9">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <footer class="bg-[#180a09] px-10 py-5 text-xs leading-5 text-white/65">
+            Jorge José Santos Pereira Solla · Candidato a Deputado Federal · Nº 1313 · Federação
+            Brasil da Esperança (PT/PCdoB/PV) · CNPJ: 68.430.467/0001-05 · Propaganda eleitoral
+            gratuita · Eleições 2026 · 1º turno: 04/10/2026.
+          </footer>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENAS 02–03</span>
+          <h2>Mobile 390 · antes e depois do play sob demanda</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[860px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4">
+              <img
+                src="../../public/campaign-kit/jorge-solla-negativo.png"
+                class="h-7"
+                alt="Jorge Solla"
+              /><span class="text-white">☰</span>
+            </header>
+            <div class="bg-[linear-gradient(145deg,#e4102f,#184e92)] px-5 py-7 text-white">
+              <p class="text-xs font-bold text-[#ffeb00]">PEÇA VOTO PRA SOLLA 1313</p>
+              <h3 class="display mt-1 text-3xl font-black leading-tight">
+                Mande uma peça.<br />Peça mais um voto.
+              </h3>
+              <p class="mt-3 text-sm leading-5 text-white/85">
+                Escolha alguém, compartilhe e peça o voto no 1313.
+              </p>
+            </div>
+            <div class="p-4">
+              <input class="field" placeholder="Busque um assunto…" />
+              <div class="mt-3 flex gap-2 overflow-hidden">
+                <span class="chip shrink-0">Tipo⌄</span><span class="chip shrink-0">Cidade⌄</span
+                ><span class="chip shrink-0">Tema⌄</span>
+              </div>
+              <article class="card mt-5">
+                <div class="asset relative aspect-video">
+                  <span>NEEDS ASSET · POSTER REAL</span
+                  ><button
+                    class="absolute grid size-16 place-items-center rounded-full bg-[#ffe607] text-2xl shadow-lg"
+                  >
+                    ▶</button
+                  ><span
+                    class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs text-white"
+                    >02:14</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Vídeo · ainda não carregado</span>
+                  <h4 class="mt-2 text-lg font-extrabold">Fim da escala 6×1 é saúde</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">
+                    Toque no play para carregar só este vídeo.
+                  </p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="btn outline">Baixar</button
+                    ><button class="btn primary">Compartilhar</button>
+                  </div>
+                  <a class="mt-3 block text-center text-xs font-bold text-[#a21c1c]"
+                    >Ver detalhes da peça →</a
+                  >
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="phone frame min-h-[860px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center gap-3 bg-[#ae1603] px-4 text-white">
+              <span>←</span><b>Central de Conteúdos</b>
+            </header>
+            <div class="p-4">
+              <p class="text-xs font-bold text-[#6c615e]">DEPOIS DO PLAY</p>
+              <article class="card mt-3">
+                <div class="relative aspect-video bg-black">
+                  <div class="asset absolute inset-0 bg-stone-800 text-white">
+                    NEEDS ASSET · VÍDEO EM REPRODUÇÃO
+                  </div>
+                  <button
+                    class="absolute inset-0 m-auto grid size-14 place-items-center rounded-full bg-white/90 text-xl"
+                  >
+                    Ⅱ
+                  </button>
+                  <div class="absolute inset-x-3 bottom-3">
+                    <div class="h-1.5 overflow-hidden rounded-full bg-white/35">
+                      <div class="h-full w-[38%] bg-[#ffeb00]"></div>
+                    </div>
+                    <div class="mt-1 flex justify-between text-[10px] text-white">
+                      <span>00:49</span><span>02:14</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="p-4">
+                  <h4 class="text-lg font-extrabold">Fim da escala 6×1 é saúde</h4>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="btn outline">Baixar</button
+                    ><button class="btn outline">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+              <div class="mt-5 rounded-t-2xl border p-4 shadow-[0_-12px_35px_rgb(0_0_0/12%)]">
+                <div class="mx-auto h-1 w-10 rounded-full bg-stone-300"></div>
+                <h4 class="display mt-4 text-lg font-black">Peça esse voto no WhatsApp</h4>
+                <p class="mt-1 text-xs text-[#6c615e]">A mensagem é sua: revise antes de abrir.</p>
+                <textarea class="field mt-3 min-h-32 leading-5">
+Estamos na reta final e o Jorge Solla 1313 precisa do seu voto. Olha esse vídeo: Fim da escala 6×1 é saúde — &lt;link&gt;. Peça voto pra Solla 1313 pra quem você conhece.</textarea
+                ><button class="btn primary mt-3 w-full">Abrir no WhatsApp</button>
+                <div class="mt-3 grid grid-cols-2 gap-2">
+                  <button class="btn outline">A mídia</button
+                  ><button class="btn outline">Copiar link</button>
+                </div>
+                <p class="mt-3 text-center text-[11px] leading-4 text-[#6c615e]">
+                  Sem destinatário e sem envio automático. Se o aparelho não compartilhar o arquivo,
+                  ele será baixado.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 04</span>
+          <h2>Página individual · detalhes e link bonito, sem repetir o catálogo inteiro</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <img
+              src="../../public/campaign-kit/jorge-solla-negativo.png"
+              class="h-9"
+              alt="Jorge Solla"
+            /><a class="text-sm font-bold text-white">Voltar à Central</a>
+          </header>
+          <div class="mx-auto grid max-w-5xl grid-cols-[1.2fr_.8fr] gap-10 px-10 py-12">
+            <div class="asset aspect-video rounded-2xl">NEEDS ASSET · PREVIEW REAL DA PEÇA</div>
+            <div>
+              <span class="tag">Vídeo</span>
+              <h3 class="display mt-3 text-3xl font-black">Fim da escala 6×1 é saúde</h3>
+              <p class="mt-3 text-sm leading-6 text-[#6c615e]">
+                Jorge Solla explica por que reduzir a jornada protege a saúde de quem trabalha.
+              </p>
+              <dl class="mt-5 space-y-2 border-y py-4 text-sm">
+                <div class="flex justify-between">
+                  <dt class="text-[#6c615e]">Tema</dt>
+                  <dd>Trabalho e saúde</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-[#6c615e]">Local</dt>
+                  <dd>Salvador</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="text-[#6c615e]">Duração</dt>
+                  <dd>02:14</dd>
+                </div>
+              </dl>
+              <div class="mt-5 grid grid-cols-2 gap-2">
+                <button class="btn outline">Baixar</button
+                ><button class="btn primary">Compartilhar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 05</span>
+          <h2>Estados críticos preservados · vazio, indisponível e carregando</h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-3">
+          <article class="frame rounded-xl bg-white p-8 text-center">
+            <h3 class="display text-xl font-black">As primeiras peças estão a caminho</h3>
+            <p class="mt-2 text-sm leading-6 text-[#6c615e]">
+              Enquanto isso, faça seu card e peça voto pra Solla 1313.
+            </p>
+            <a class="btn primary mt-5" href="#">Fazer meu card</a>
+            <p class="mt-5 text-xs text-[#6c615e]">Vazio · 1280/390</p>
+          </article>
+          <article class="frame rounded-xl bg-white p-8 text-center">
+            <h3 class="display text-xl font-black">Esta peça não está disponível</h3>
+            <p class="mt-2 text-sm leading-6 text-[#6c615e]">
+              Ela pode ter sido retirada. Encontre outro material oficial e continue pedindo voto.
+            </p>
+            <a class="btn primary mt-5" href="#">Ver outras peças</a>
+            <p class="mt-5 text-xs text-[#6c615e]">Link despublicado · 1280/390</p>
+          </article>
+          <article class="frame rounded-xl bg-white p-5">
+            <div class="skeleton h-44 rounded-xl"></div>
+            <div class="skeleton mt-4 h-5 w-3/4 rounded"></div>
+            <div class="skeleton mt-3 h-4 w-full rounded"></div>
+            <div class="mt-4 grid grid-cols-2 gap-2">
+              <div class="skeleton h-11 rounded"></div>
+              <div class="skeleton h-11 rounded"></div>
+            </div>
+            <p class="mt-4 text-center text-xs text-[#6c615e]">Carregando · 1280/390</p>
+          </article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
