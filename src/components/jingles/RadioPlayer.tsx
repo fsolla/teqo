@@ -299,7 +299,7 @@ export const RadioPlayer = ({ compact = false }: { compact?: boolean }) => {
               compact ? undefined : 'md:grid md:grid-cols-[112px_1fr_auto] md:gap-5',
             )}
           >
-            <div className="relative grid size-[76px] flex-none place-items-center overflow-hidden rounded-[10px] bg-(--campaign-band) md:size-28">
+            <div className="relative grid size-[76px] flex-none place-items-center overflow-hidden rounded-[10px] md:size-28">
               <span
                 aria-hidden="true"
                 className="absolute inset-[13%] rounded-full border border-[rgb(0_0_0/8%)] bg-white shadow-[0_7px_18px_rgb(71_19_14/10%)]"
