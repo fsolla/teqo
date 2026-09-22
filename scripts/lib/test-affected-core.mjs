@@ -44,6 +44,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/agent-session.mjs',
   'scripts/lib/ansi.mjs',
   'scripts/lib/auto-unblock.mjs',
+  'scripts/lib/briefingContent.mjs',
+  'scripts/lib/briefingRender.mjs',
   'scripts/lib/buildPdf.mjs',
   'scripts/lib/camaraFetch.mjs',
   'scripts/lib/camaraSpeeches.mjs',

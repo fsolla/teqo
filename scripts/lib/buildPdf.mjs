@@ -21,12 +21,12 @@ export const PAGE_FIT_TOLERANCE_PX = 10
 export const A4_PAGE_BUDGET_PX = A4_HEIGHT_PX + PAGE_FIT_TOLERANCE_PX
 
 /**
- * Bounded re-renders of the one-page boletim while an `onBulletinOverflow`
- * callback keeps handing back a shorter document (C190). Each pass drops at
- * least one printed fact, so the cap only exists to fail closed on a callback
- * that stops shrinking.
+ * Bounded re-renders of a shrinking document: the one-page boletim (C190) and
+ * the four-sheet briefing (C210) while their `on*Overflow` callback keeps
+ * handing back a shorter document. Each pass drops at least one item, so the
+ * cap only exists to fail closed on a callback that stops shrinking.
  */
-const MAX_BULLETIN_FIT_ATTEMPTS = 24
+const MAX_FIT_ATTEMPTS = 24
 
 export const launchPdfBrowser = () => chromium.launch()
 
@@ -197,6 +197,83 @@ export const assertPageFits = (overflows, label, hint) => {
   )
 }
 
+/**
+ * Page-count guard of the single-document emit (C210): the briefing is a fixed
+ * four-sheet document, so a fifth sheet is a hard failure, never a flowing
+ * continuation. `.sheet{overflow:hidden}` hides a cut, which is why the count
+ * and the per-sheet fit are the guards that make the four-page cap honest.
+ */
+export const assertPageCount = (count, maxPages, label, hint) => {
+  if (count <= maxPages) return
+  throw new Error(`${label} tem ${count} folhas (> ${maxPages}). ${hint}`)
+}
+
+/**
+ * One browser run, one document, one PDF (C210 briefing): asserts every
+ * required `[data-page]` anchor exists, fails closed when the sheet count
+ * exceeds `maxPages`, measures the per-sheet fit and, when `onOverflow` hands
+ * back a shorter document, re-renders until it fits. Additive to — and
+ * independent of — the two-document `emitHtmlPairPdf` contract.
+ *
+ * @param {any} browser Chromium from `launchPdfBrowser`
+ * @param {{
+ *   html: string,
+ *   pdf: string,
+ *   maxPages?: number,
+ *   requiredAnchors?: string[],
+ *   onOverflow?: (() => string | null | Promise<string | null>) | null,
+ *   label?: string,
+ * }} options
+ */
+export const emitHtmlSinglePdf = async (
+  browser,
+  { html, pdf, maxPages = 4, requiredAnchors = [], onOverflow = null, label = 'O documento' },
+) => {
+  const page = await openPrintPage(browser, html)
+  let currentHtml = html
+  try {
+    for (let attempt = 0; ; attempt += 1) {
+      // The first pass already rendered through `openPrintPage`; only a rebuild
+      // needs a new content load.
+      if (attempt > 0) {
+        await page.setContent(currentHtml, { waitUntil: 'load' })
+        await page.emulateMedia({ media: 'print' })
+      }
+      const anchors = await page.evaluate(() =>
+        [...document.querySelectorAll('[data-page]')].map((element) =>
+          element.getAttribute('data-page'),
+        ),
+      )
+      for (const anchor of requiredAnchors) {
+        if (!anchors.includes(anchor)) {
+          throw new Error(`${label}: folha "${anchor}" ausente no HTML — renderer quebrado.`)
+        }
+      }
+      assertPageCount(
+        anchors.length,
+        maxPages,
+        label,
+        'O teto de páginas é rígido: encurte as listas — nenhuma folha extra é emitida.',
+      )
+      const overflows = await measurePageOverflows(page, A4_PAGE_BUDGET_PX)
+      if (overflows.length === 0) break
+      const failClosed = () =>
+        assertPageFits(
+          overflows,
+          label,
+          'Encurte as listas/caps — nenhuma folha pode ser cortada pelo overflow.',
+        )
+      if (!onOverflow || attempt >= MAX_FIT_ATTEMPTS) failClosed()
+      const rebuilt = await onOverflow()
+      if (!rebuilt) failClosed()
+      currentHtml = rebuilt
+    }
+    await printA4Pdf(page, pdf)
+  } finally {
+    await page.close()
+  }
+}
+
 const printA4Pdf = (page, outPath) =>
   page.pdf({
     path: outPath,
@@ -284,7 +361,7 @@ export const emitHtmlPairPdf = async (
     if (!hasBulletin) throw new Error('Bloco do boletim ausente no HTML — renderer quebrado.')
     const overflows = await measurePageOverflows(page, A4_PAGE_BUDGET_PX)
     if (overflows.length === 0) break
-    if (!onBulletinOverflow || attempt >= MAX_BULLETIN_FIT_ATTEMPTS) {
+    if (!onBulletinOverflow || attempt >= MAX_FIT_ATTEMPTS) {
       assertPageFits(
         overflows,
         'O boletim',
