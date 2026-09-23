@@ -2,7 +2,14 @@ import { randomUUID } from 'node:crypto'
 
 import type { APIRequestContext } from '@playwright/test'
 import { request as playwrightRequest } from '@playwright/test'
+import { Client } from 'pg'
 
+import {
+  formatBahiaCivilDate,
+  formatBahiaEventDateLabel,
+  parseBahiaDateTimeInput,
+} from '../../src/lib/campaignTime.js'
+import { formatICalDate } from '../../src/lib/ical.js'
 import { adminHeaders } from '../helpers/adminApi'
 import { seedTestUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
@@ -14,12 +21,28 @@ import { expect, test } from './fixtures/e2eTest'
  * refresh when JS is off). Unpublished and unknown slugs answer the same 404,
  * and the kill switch flips without a deploy (404 → 200 after republishing).
  *
+ * S29 — the announcement mode: while no destination is on air the link serves
+ * the event page (disabled "Entrar", Bahia date, `.ics`); flagging a destination
+ * live turns the link back into the S19 redirect, and the already-open page
+ * activates/swaps the button through the fresh poll without a reload.
+ *
  * Links and media are seeded through the deployed REST API (admin session) so
  * the server process runs the real cache hooks; a Local API call from the runner
  * would throw on `revalidateTag` (same reason as the speech-cut spec).
  */
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
+const isProdMode = Boolean(process.env.CI) || process.env.E2E_PROD === '1'
+
+/**
+ * The announcement fixture starts today at 19:00 in Bahia civil time (B196: an
+ * e2e fixture date never hardcodes a literal — a fixed instant expires).
+ */
+const ANNOUNCEMENT_STARTS_AT = (() => {
+  const startsAt = parseBahiaDateTimeInput(`${formatBahiaCivilDate(new Date())}T19:00`)
+  if (!startsAt) throw new Error('Falha ao montar a data da fixture de anúncio.')
+  return startsAt
+})()
 
 // 1×1 opaque PNG — enough for the upload (no dimensions are enforced on purpose).
 const TEST_PNG = Buffer.from(
@@ -29,6 +52,20 @@ const TEST_PNG = Buffer.from(
 
 const createdShareLinkIds: number[] = []
 const createdMediaIds: number[] = []
+
+type DestinationInput = { label: string; url: string; live?: boolean }
+
+type ShareLinkInput = {
+  title: string
+  slug: string
+  destinations: DestinationInput[]
+  description: string
+  published: boolean
+  mode?: 'direct' | 'announcement'
+  startsAt?: string
+  location?: string
+  image?: number
+}
 
 /** Reads a meta tag by one attribute and returns its `content` (attribute-order tolerant). */
 const metaContent = (html: string, attribute: string, value: string): string | null => {
@@ -65,14 +102,7 @@ const createMedia = async (
 const createShareLink = async (
   request: APIRequestContext,
   headers: Record<string, string>,
-  data: {
-    title: string
-    slug: string
-    destination: string
-    description: string
-    published: boolean
-    image?: number
-  },
+  data: ShareLinkInput,
 ): Promise<number> => {
   const response = await request.post(`${BASE_URL}/api/shareLink`, { headers, data })
   expect(response.ok(), await response.text()).toBeTruthy()
@@ -92,6 +122,43 @@ const setShareLinkPublished = async (
     data: { published },
   })
   expect(response.ok(), await response.text()).toBeTruthy()
+}
+
+/** Replaces the destination pool — the "swap the live destination" admin action. */
+const setShareLinkDestinations = async (
+  request: APIRequestContext,
+  headers: Record<string, string>,
+  id: number,
+  destinations: DestinationInput[],
+): Promise<void> => {
+  const response = await request.patch(`${BASE_URL}/api/shareLink/${id}`, {
+    headers,
+    data: { destinations },
+  })
+  expect(response.ok(), await response.text()).toBeTruthy()
+}
+
+/**
+ * Flags one pre-registered destination as on air through the test database.
+ * This is deliberately NOT the REST PATCH: the collection hook revalidates the
+ * `shareLinks` tag, and the dev server answers a revalidation with a route
+ * refresh (HMR router-cache invalidation) that races the very assertion this
+ * test makes — the open page would be re-rendered into the live redirect. The
+ * direct write isolates the poll contract, which is what this test owns; the
+ * REST write path is covered by the redirect assertion at the end. The URL is
+ * the isolated test database (`assertTestDatabase` in playwright.config).
+ */
+const flagLiveDestination = async (linkId: number, label: string): Promise<void> => {
+  const client = new Client({ connectionString: process.env.DATABASE_URL })
+  await client.connect()
+  try {
+    await client.query(
+      'update share_link_destinations set live = (label = $2) where _parent_id = $1',
+      [linkId, label],
+    )
+  } finally {
+    await client.end()
+  }
 }
 
 test.afterAll(async ({ request }) => {
@@ -124,7 +191,7 @@ test.describe('Frontend share links (S19)', () => {
     await createShareLink(request, headers, {
       title,
       slug,
-      destination,
+      destinations: [{ label: 'Google Meet', url: destination, live: true }],
       description,
       published: true,
       image: mediaId,
@@ -173,7 +240,9 @@ test.describe('Frontend share links (S19)', () => {
     await createShareLink(request, headers, {
       title: 'Rascunho que não deve aparecer',
       slug,
-      destination: 'https://meet.google.com/abc-defg-hij',
+      destinations: [
+        { label: 'Google Meet', url: 'https://meet.google.com/abc-defg-hij', live: true },
+      ],
       description: 'Ainda não publicado.',
       published: false,
     })
@@ -204,7 +273,7 @@ test.describe('Frontend share links (S19)', () => {
     const id = await createShareLink(request, headers, {
       title: 'Plenária com kill switch',
       slug,
-      destination: `${BASE_URL}/artigos`,
+      destinations: [{ label: 'Google Meet', url: `${BASE_URL}/artigos`, live: true }],
       description: 'Publicado, despublicado e republicado.',
       published: true,
     })
@@ -218,6 +287,176 @@ test.describe('Frontend share links (S19)', () => {
 
       await setShareLinkPublished(request, headers, id, true)
       expect((await anonymous.get(`/${slug}`)).status()).toBe(200)
+    } finally {
+      await anonymous.dispose()
+    }
+  })
+})
+
+test.describe('Frontend share-link announcement (S29)', () => {
+  test.beforeAll(async () => {
+    await seedTestUser()
+  })
+
+  const createAnnouncementLink = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+    overrides: Partial<ShareLinkInput> = {},
+  ): Promise<{ id: number; slug: string }> => {
+    const slug = overrides.slug ?? `anuncio-${randomUUID().slice(0, 8)}`
+    const id = await createShareLink(request, headers, {
+      title: 'Plenária da saúde',
+      destinations: [
+        { label: 'Google Meet', url: `${BASE_URL}/artigos` },
+        { label: 'YouTube', url: `${BASE_URL}/jingles` },
+      ],
+      description: 'Encontro online da campanha.',
+      published: true,
+      mode: 'announcement',
+      startsAt: ANNOUNCEMENT_STARTS_AT,
+      location: 'Online',
+      ...overrides,
+      slug,
+    })
+    return { id, slug }
+  }
+
+  test('serves the announcement page (disabled Entrar, Bahia date, .ics) pre-broadcast', async ({
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const { slug } = await createAnnouncementLink(request, headers)
+
+    const anonymous = await playwrightRequest.newContext({ baseURL: BASE_URL })
+    try {
+      const response = await anonymous.get(`/${slug}`)
+      expect(response.status()).toBe(200)
+      const html = await response.text()
+
+      // The OG card is the same as S19, always noindex, and no interstice.
+      expect(metaContent(html, 'property', 'og:title')).toBe('Plenária da saúde')
+      expect(metaContent(html, 'name', 'robots')).toBe('noindex, nofollow')
+      expect(metaContent(html, 'http-equiv', 'refresh')).toBeNull()
+      expect(html).not.toContain('window.location.replace')
+
+      // Honest pre-broadcast state: visible but disabled, with the warning.
+      expect(html).toContain('A transmissão ainda não começou.')
+      expect(html).toMatch(/<button[^>]*disabled[^>]*>[\s\S]*?Entrar/)
+      expect(html).toContain(formatBahiaEventDateLabel(ANNOUNCEMENT_STARTS_AT))
+      expect(html).toContain('Horário da Bahia')
+      expect(html).toContain('Online')
+
+      const ics = await anonymous.get(`/${slug}/evento.ics`)
+      expect(ics.status()).toBe(200)
+      expect(ics.headers()['content-type']).toContain('text/calendar')
+      expect(ics.headers()['content-disposition']).toContain(`filename="${slug}.ics"`)
+      const body = await ics.text()
+      expect(body).toContain('BEGIN:VEVENT')
+      expect(body).toContain(`DTSTART:${formatICalDate(ANNOUNCEMENT_STARTS_AT)}`)
+      expect(body).toContain(`UID:${slug}@teqo.jorgesolla.com.br`)
+    } finally {
+      await anonymous.dispose()
+    }
+  })
+
+  test('fails closed: no .ics without a start date, no page for a direct link without a live target', async ({
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const { slug: noDateSlug } = await createAnnouncementLink(request, headers, {
+      slug: `sem-data-${randomUUID().slice(0, 8)}`,
+      startsAt: undefined,
+    })
+
+    // A `direct` link without a live destination cannot even be created.
+    const invalid = await request.post(`${BASE_URL}/api/shareLink`, {
+      headers,
+      data: {
+        title: 'Direto inválido',
+        slug: `direto-invalido-${randomUUID().slice(0, 8)}`,
+        destinations: [{ label: 'Meet', url: 'https://meet.google.com/abc' }],
+        description: 'x',
+        published: true,
+        mode: 'direct',
+      },
+    })
+    expect(invalid.ok()).toBe(false)
+
+    const anonymous = await playwrightRequest.newContext({ baseURL: BASE_URL })
+    try {
+      const ics = await anonymous.get(`/${noDateSlug}/evento.ics`)
+      expect(ics.status()).toBe(404)
+
+      const unknownIcs = await anonymous.get(`/nao-existe-${randomUUID().slice(0, 8)}/evento.ics`)
+      expect(unknownIcs.status()).toBe(404)
+
+      // The announcement page itself still answers 200 without a date.
+      expect((await anonymous.get(`/${noDateSlug}`)).status()).toBe(200)
+    } finally {
+      await anonymous.dispose()
+    }
+  })
+
+  test('activates the Entrar button and swaps the destination without a reload', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const first = `${BASE_URL}/artigos`
+    const second = `${BASE_URL}/jingles`
+    const { id, slug } = await createAnnouncementLink(request, headers, {
+      slug: `troca-${randomUUID().slice(0, 8)}`,
+      destinations: [
+        { label: 'Google Meet', url: first },
+        { label: 'YouTube', url: second },
+      ],
+    })
+
+    // Warm the poll route before the browser mounts it: in dev the first
+    // compile of a route triggers a Fast Refresh that reloads the open page —
+    // mid-assertion, and after the flag is flipped that reload would serve the
+    // live redirect. In CI's prod build this GET is a cheap warm-up.
+    await request.get(`${BASE_URL}/api/share-link/${slug}/live`)
+
+    await page.goto(`/${slug}`)
+    await expect(page.getByRole('button', { name: 'Entrar' })).toBeDisabled()
+    await expect(page.getByText('A transmissão ainda não começou.')).toBeVisible()
+
+    // Dev-only settle: the first browser mount compiles the route chunks and
+    // Next pushes a Fast Refresh (a same-URL reload) right after — if the flag
+    // flips before that reload lands, the reload serves the live redirect and
+    // preempts the activation assertion. The prod build (CI, E2E_PROD) has no
+    // compile and needs no wait.
+    if (!isProdMode) await page.waitForTimeout(6_000)
+
+    // The team flags the Meet as live; the open page refetches on wake.
+    await flagLiveDestination(id, 'Google Meet')
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+
+    // Dev-mode cold compile of the poll route can blow the 10s default; in
+    // CI's prod build the response is immediate.
+    await expect(page.getByText('Destino no ar')).toBeVisible({ timeout: 20_000 })
+    await expect(page.getByRole('link', { name: 'Entrar' })).toHaveAttribute('href', first)
+    await expect(page.getByRole('article').getByText('Google Meet')).toBeVisible()
+    await expect(page.getByText('A transmissão começou.')).toBeVisible()
+
+    // The Meet fills up: swapping the live destination updates the open page.
+    await flagLiveDestination(id, 'YouTube')
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+    await expect(page.getByRole('link', { name: 'Entrar' })).toHaveAttribute('href', second)
+    await expect(page.getByRole('article').getByText('YouTube')).toBeVisible()
+
+    // Whoever arrives later goes straight to the destination on air — the same
+    // state written through the admin REST API (the collection hook path).
+    await setShareLinkDestinations(request, headers, id, [
+      { label: 'Google Meet', url: first },
+      { label: 'YouTube', url: second, live: true },
+    ])
+    const anonymous = await playwrightRequest.newContext({ baseURL: BASE_URL })
+    try {
+      const response = await anonymous.get(`/${slug}`)
+      expect(response.status()).toBe(200)
+      expect(metaContent(await response.text(), 'http-equiv', 'refresh')).toBe(`0;url=${second}`)
     } finally {
       await anonymous.dispose()
     }

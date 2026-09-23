@@ -82,19 +82,41 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontend'],
   },
   {
-    // S19 — the share-link surface: the `[type]` branch serves the OG card and
-    // the instant handoff, and the pure module/collection/cached read own the
-    // slug, destination and publish contract.
+    // S19/S29 — the share-link surface: the `[type]` branch serves the OG card,
+    // the instant handoff and the announcement page (`.ics` included), and the
+    // pure module/collection/cached read own the slug, mode, destination pool,
+    // event window and publish contract.
     prefixes: [
       'src/app/(frontend)/[type]',
       'src/lib/shareLink',
+      'src/lib/calendarEvent.ts',
       'src/utilities/shareLinkReads.ts',
       // The tag/revalidation vocabulary owner for the shareLinks listing.
       'src/utilities/documents.ts',
       'src/collections/ShareLink.ts',
       'src/components/ShareLinkRedirect.tsx',
+      'src/components/shareLink',
+      'src/app/(frontend)/api/share-link',
     ],
     specs: ['frontendShareLink'],
+  },
+  {
+    // S29 — the campaign-site header extracted from `/jingles` is shared by the
+    // announcement page; a diff there must wake both public specs.
+    prefixes: ['src/components/CampaignPageHeader.tsx'],
+    specs: ['frontendShareLink', 'frontendJingles'],
+  },
+  {
+    // S29 — the iCal primitives extracted from the agenda feed also render the
+    // announcement `.ics`; both surfaces must run.
+    prefixes: ['src/lib/ical.ts'],
+    specs: ['campaignAgendaFeed', 'frontendShareLink'],
+  },
+  {
+    // S4/S29 — the share-message contract behind the home cards and the
+    // announcement share menu.
+    prefixes: ['src/lib/contentShare.ts'],
+    specs: ['frontend', 'frontendShareLink'],
   },
   {
     // S21 — the public jingles page: ordered published cards, the lazy

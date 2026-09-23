@@ -27,11 +27,18 @@ describe('buildContentShareMessage', () => {
     ).toBe('Olha esse post do Solla: Legenda do post — https://www.instagram.com/p/xyz/')
   })
 
+  it('invites with the event opener on the announcement link', () => {
+    expect(
+      buildContentShareMessage('event', 'Plenária da saúde', 'https://site.com/plenaria'),
+    ).toBe('Participe: Plenária da saúde — https://site.com/plenaria')
+  })
+
   it('keeps one opener per kind, matching the locked product decision', () => {
     expect(CONTENT_SHARE_PREFIXES).toEqual({
       article: 'Olha isso do Solla: ',
       video: 'Olha esse vídeo do Solla: ',
       instagram: 'Olha esse post do Solla: ',
+      event: 'Participe: ',
     })
   })
 })
@@ -88,7 +95,7 @@ describe('buildContentShareWhatsAppUrl', () => {
   })
 
   it('keeps every kind producing the same wa.me shape', () => {
-    const kinds: ContentShareKind[] = ['article', 'video', 'instagram']
+    const kinds: ContentShareKind[] = ['article', 'video', 'instagram', 'event']
     for (const kind of kinds) {
       expect(buildContentShareWhatsAppUrl(kind, 'T', 'https://site.com/x')).toMatch(
         /^https:\/\/wa\.me\/\?text=/,

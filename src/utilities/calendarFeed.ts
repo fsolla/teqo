@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto'
 
 import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
 import { buildActivityDescriptionParts } from '@/lib/activityDescription'
+import { escapeICalText, formatICalDate } from '@/lib/ical'
 import type { Activity, CalendarFeed } from '@/payload-types'
 import { advisorMunicipalityScopeWhere } from '@/utilities/access/shared'
 import type { Payload, Where } from 'payload'
@@ -18,12 +19,6 @@ const FEED_LOOKAHEAD_DAYS = 365
 // (RFC 7986; emitted in the VCALENDAR body — Google publishes it as PT1H).
 const FEED_CACHE_CONTROL = 'public, no-cache'
 const FEED_PUBLISHED_TTL = 'PT1H'
-
-const escapeICalText = (value: string): string =>
-  value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;')
-
-const formatICalDate = (isoString: string): string =>
-  isoString.replace(/[-:]/g, '').replace(/\.\d{3}/, '')
 
 const buildActivityDescription = (activity: Activity, municipalityName?: string): string =>
   // iCal escapes newlines as literal `\n` (backslash + n).

@@ -7,8 +7,13 @@ import {
   isValidShareLinkDestination,
   isValidShareLinkSlug,
   normalizeShareLinkDescription,
+  resolveLiveShareLinkDestination,
+  resolveShareLinkMode,
+  SHARE_LINK_MODES,
   SHARE_LINK_RESERVED_SLUGS,
   SHARE_LINK_SLUG_PATTERN,
+  shareLinkIcsPath,
+  shareLinkIcsUid,
   shareLinkPath,
 } from '@/lib/shareLink'
 
@@ -81,6 +86,53 @@ describe('shareLink destination', () => {
     '',
   ])('rejects %s', (value) => {
     expect(isValidShareLinkDestination(value)).toBe(false)
+  })
+})
+
+describe('shareLink mode (S29)', () => {
+  it('treats a legacy/null value as direct and lists both modes', () => {
+    expect(SHARE_LINK_MODES).toEqual(['direct', 'announcement'])
+    expect(resolveShareLinkMode(null)).toBe('direct')
+    expect(resolveShareLinkMode(undefined)).toBe('direct')
+    expect(resolveShareLinkMode('direct')).toBe('direct')
+    expect(resolveShareLinkMode('announcement')).toBe('announcement')
+    expect(resolveShareLinkMode('outro')).toBe('direct')
+  })
+})
+
+describe('resolveLiveShareLinkDestination (S29)', () => {
+  it('returns the first live row with a valid http/https URL', () => {
+    expect(
+      resolveLiveShareLinkDestination([
+        { label: 'Meet', url: 'https://meet.google.com/abc', live: false },
+        { label: 'YouTube', url: 'https://youtube.com/live/x', live: true },
+        { label: 'Outro', url: 'https://example.com/outro', live: true },
+      ]),
+    ).toEqual({ href: 'https://youtube.com/live/x', label: 'YouTube' })
+  })
+
+  it('fails closed on empty, unflagged or invalid rows', () => {
+    expect(resolveLiveShareLinkDestination(null)).toBeNull()
+    expect(resolveLiveShareLinkDestination([])).toBeNull()
+    expect(resolveLiveShareLinkDestination([{ label: 'Meet', url: 'https://x.com' }])).toBeNull()
+    expect(
+      resolveLiveShareLinkDestination([{ label: 'X', url: 'javascript:alert(1)', live: true }]),
+    ).toBeNull()
+    expect(resolveLiveShareLinkDestination([{ live: true, url: null }])).toBeNull()
+  })
+
+  it('trims the URL and tolerates a missing label', () => {
+    expect(resolveLiveShareLinkDestination([{ url: '  https://x.com/a  ', live: true }])).toEqual({
+      href: 'https://x.com/a',
+      label: '',
+    })
+  })
+})
+
+describe('shareLink ics contract (S29)', () => {
+  it('hangs the download off the slug namespace', () => {
+    expect(shareLinkIcsPath('plenaria-saude')).toBe('/plenaria-saude/evento.ics')
+    expect(shareLinkIcsUid('plenaria-saude')).toBe('plenaria-saude@teqo.jorgesolla.com.br')
   })
 })
 
