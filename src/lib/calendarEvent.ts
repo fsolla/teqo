@@ -16,7 +16,7 @@ export type CalendarEventInput = {
   endsAt?: string | null
 }
 
-const formatICSInstant = (date: Date): string => formatICalDate(date.toISOString())
+const formatInstant = (date: Date): string => formatICalDate(date.toISOString())
 
 /**
  * The event window: no `startsAt` (or an invalid one) means "no event" — the
@@ -49,7 +49,7 @@ export const buildGoogleCalendarEventUrl = (event: CalendarEventInput): string |
   const params = new URLSearchParams({
     action: 'TEMPLATE',
     text: event.title,
-    dates: `${formatICSInstant(window.start)}/${formatICSInstant(window.end)}`,
+    dates: `${formatInstant(window.start)}/${formatInstant(window.end)}`,
   })
   if (event.description) params.set('details', event.description)
   if (event.location) params.set('location', event.location)
@@ -80,9 +80,9 @@ export const buildCalendarEventIcs = ({
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
     `UID:${escapeICalText(uid)}`,
-    `DTSTAMP:${formatICSInstant(dtstamp)}`,
-    `DTSTART:${formatICSInstant(window.start)}`,
-    `DTEND:${formatICSInstant(window.end)}`,
+    `DTSTAMP:${formatInstant(dtstamp)}`,
+    `DTSTART:${formatInstant(window.start)}`,
+    `DTEND:${formatInstant(window.end)}`,
     `SUMMARY:${escapeICalText(event.title)}`,
   ]
 

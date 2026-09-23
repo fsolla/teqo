@@ -119,6 +119,12 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontend', 'frontendShareLink'],
   },
   {
+    // S29 — the announcement page and its spec derive the Bahia event label
+    // here (the spec imports the formatter), so a diff must wake it.
+    prefixes: ['src/lib/campaignTime.ts'],
+    specs: ['frontendShareLink'],
+  },
+  {
     // S21 — the public jingles page: ordered published cards, the lazy
     // in-page player (one at a time), the slug-based download name and the
     // fail-closed publish contract of the collection.
@@ -134,7 +140,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/collections/Jingle.ts',
       'src/components/jingles',
     ],
-    specs: ['frontendJingles'],
+    // S29 — `hasPublishedJingles` also decides the footer of the announcement
+    // page, so the share-link spec wakes on the same owners.
+    specs: ['frontendJingles', 'frontendShareLink'],
   },
   {
     // S27 — the public Central de Conteúdos: the facet/term catalogue, the
@@ -157,10 +165,11 @@ export const E2E_AFFECTED_MANIFEST = [
   },
   {
     // S21 — the campaign footer owns the conditional "Jingles" discovery link
-    // (it renders on the home, the cards page and `/jingles`).
+    // (it renders on the home, the cards page, `/jingles` and the S29
+    // announcement page).
     // S27 — and the conditional "Conteúdos" link.
     prefixes: ['src/components/CampaignFooter.tsx'],
-    specs: ['frontend', 'frontendJingles', 'frontendConteudos'],
+    specs: ['frontend', 'frontendJingles', 'frontendConteudos', 'frontendShareLink'],
   },
   {
     // S13/S30 — the personalized-cards studio lives in shared cards components

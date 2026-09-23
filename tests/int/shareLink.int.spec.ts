@@ -251,6 +251,18 @@ describe('shareLink', () => {
     },
   )
 
+  it('lets the URL field speak when a live row has a malformed URL', async () => {
+    const messages = await createErrorMessages({
+      title: 'URL malformada no ar',
+      slug: 'url-malformada-no-ar-s29',
+      description: 'x',
+      mode: 'direct',
+      destinations: [{ label: 'Meet', url: 'meet.google.com/abc', live: true }],
+    })
+
+    expect(messages).toContain(SHARE_LINK_DESTINATION_INVALID_MESSAGE)
+  })
+
   it('rejects more than one destination on air', async () => {
     await expect(
       createShareLink({
