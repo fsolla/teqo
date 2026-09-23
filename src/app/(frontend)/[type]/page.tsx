@@ -1,15 +1,20 @@
 import { PostCard } from '@/components/PostCard'
+import { ShareLinkAnnouncement } from '@/components/shareLink/ShareLinkAnnouncement'
 import { ShareLinkRedirect } from '@/components/ShareLinkRedirect'
 import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/Badge'
 import { Separator } from '@/components/ui/separator'
 import {
-  isValidShareLinkDestination,
   normalizeShareLinkDescription,
+  resolveLiveShareLinkDestination,
+  resolveShareLinkMode,
   shareLinkPath,
+  type ShareLinkLiveTarget,
 } from '@/lib/shareLink'
+import { buildShareLinkAnnouncementView } from '@/lib/shareLinkAnnouncement'
 import type { ShareLink } from '@/payload-types'
 import { getCachedGlobal } from '@/utilities/globalReads'
+import { hasPublishedJingles } from '@/utilities/jingleReads'
 import { POST_TYPE_LABELS, getVisiblePosts, isPostType } from '@/utilities/posts'
 import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import {
@@ -29,17 +34,28 @@ export async function generateStaticParams(): Promise<RouteParams[]> {
   return [...types].map((type) => ({ type }))
 }
 
+type ResolvedShareLink = { link: ShareLink; live: ShareLinkLiveTarget | null }
+
 /**
- * S19 — the share-link page lives inside the existing `[type]` dynamic segment
- * (Next refuses a second dynamic folder name at the same level, E337). A
- * non-post-type segment is looked up as a published share link; an unknown,
- * unpublished or invalid one resolves to the same 404 (never reveals whether it
+ * S19/S29 — the share-link page lives inside the existing `[type]` dynamic
+ * segment (Next refuses a second dynamic folder name at the same level, E337).
+ * A non-post-type segment is looked up as a published share link; an unknown
+ * or unpublished one resolves to the same 404 (never reveals whether it
  * existed), the same uniform not-found contract as `/corte/[id]`.
+ *
+ * S29 — a `direct` link without a destination on air is an invalid state and
+ * fails closed to the same 404; an `announcement` link without a live target is
+ * the pre-broadcast state and serves the announcement page. When a destination
+ * is on air the S19 redirect is served to everyone, untouched.
  */
-const loadPublishedShareLink = async (slug: string): Promise<ShareLink | null> => {
+const loadPublishedShareLink = async (slug: string): Promise<ResolvedShareLink | null> => {
   const link = await getCachedPublishedShareLinkBySlug(slug)()
-  if (!link || !isValidShareLinkDestination(link.destination)) return null
-  return link
+  if (!link) return null
+
+  const live = resolveLiveShareLinkDestination(link.destinations)
+  if (resolveShareLinkMode(link.mode) === 'direct' && !live) return null
+
+  return { link, live }
 }
 
 const resolveShareLinkMetadata = async (link: ShareLink): Promise<Metadata> => {
@@ -104,20 +120,29 @@ export async function generateMetadata({
     }
   }
 
-  const link = await loadPublishedShareLink(type)
-  if (!link) return {}
+  const resolved = await loadPublishedShareLink(type)
+  if (!resolved) return {}
 
-  return resolveShareLinkMetadata(link)
+  return resolveShareLinkMetadata(resolved.link)
 }
 
 export default async function Page({ params }: { params: Promise<RouteParams> }) {
   const { type } = await params
 
   if (!isPostType(type)) {
-    const link = await loadPublishedShareLink(type)
-    if (!link) notFound()
+    const resolved = await loadPublishedShareLink(type)
+    if (!resolved) notFound()
 
-    return <ShareLinkRedirect destination={link.destination} />
+    const { link, live } = resolved
+    if (live) return <ShareLinkRedirect destination={live.href} />
+
+    // The rendered page uses the media proxy path (same origin); the absolute
+    // deployment-origin URL is only for the OG card in `resolveShareLinkMetadata`.
+    const image = typeof link.image === 'object' ? link.image : null
+    const showJingles = await hasPublishedJingles()
+    const view = buildShareLinkAnnouncementView({ link, imageUrl: image?.url ?? null })
+
+    return <ShareLinkAnnouncement view={view} showJingles={showJingles} />
   }
 
   const posts = (await getVisiblePosts()).filter((post) => post.type === type)

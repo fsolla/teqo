@@ -115,6 +115,38 @@ const bahiaDateTimeDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
 export const formatBahiaDateTimeLabel = (iso: string): string =>
   bahiaDateTimeDisplayFormatter.format(new Date(iso)).replace(', ', ' às ')
 
+const bahiaEventDayFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: BAHIA_TIME_ZONE,
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+})
+
+const bahiaEventTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
+  timeZone: BAHIA_TIME_ZONE,
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
+/**
+ * S29 — the announcement headline date, e.g. `Sábado, 3 de outubro · 19h`.
+ * Minutes only when they are not `00`; the timezone is always Bahia, never
+ * the visitor's. Empty string for an unparsable instant (callers fall back to
+ * hiding the date).
+ */
+export const formatBahiaEventDateLabel = (iso: string): string => {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+
+  const day = bahiaEventDayFormatter.format(date)
+  const [hour, minute] = bahiaEventTimeFormatter.format(date).split(':')
+  const time = minute === '00' ? `${hour}h` : `${hour}h${minute}`
+  const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1)
+
+  return `${capitalizedDay} · ${time}`
+}
+
 const bahiaDateDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {
   timeZone: BAHIA_TIME_ZONE,
   day: '2-digit',

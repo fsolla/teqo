@@ -1,13 +1,15 @@
 import Image from 'next/image'
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 
 /**
- * S21 — the campaign-site bar of the jingles page (artefato: cena 01/03): the
- * full positive logo linking home and the "Jingles oficiais" badge. The badge
- * only shows when there is something published (empty state drops it), so this
- * is page-local — not a generalized header yet.
+ * S21/S29 — the campaign-site bar of the public pages that live outside the
+ * home chrome (`/jingles`, the share-link announcement): the full positive logo
+ * linking home plus an optional status badge. Extracted from the jingles header
+ * so both pages share one chrome; the badge is desktop-only by design (mobile
+ * keeps the logo alone).
  */
-export const JinglePageHeader = ({ withBadge }: { withBadge: boolean }) => (
+export const CampaignPageHeader = ({ badge }: { badge?: ReactNode }) => (
   <header className="border-b border-black/10 bg-(--campaign-cream)">
     <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-3 sm:h-[92px] sm:px-8 sm:py-0">
       <Link
@@ -24,9 +26,9 @@ export const JinglePageHeader = ({ withBadge }: { withBadge: boolean }) => (
           className="h-[66px] w-auto object-contain sm:h-[74px]"
         />
       </Link>
-      {withBadge ? (
+      {badge ? (
         <span className="hidden rounded-full bg-(--pt-red) px-4 py-2 font-[family-name:var(--font-exo2)] text-xs font-black tracking-[0.08em] text-white uppercase sm:inline-block">
-          Jingles oficiais
+          {badge}
         </span>
       ) : null}
     </div>

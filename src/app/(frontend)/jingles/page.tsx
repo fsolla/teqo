@@ -1,7 +1,7 @@
 import { CampaignFooter } from '@/components/CampaignFooter'
+import { CampaignPageHeader } from '@/components/CampaignPageHeader'
 import { JingleEmptyState } from '@/components/jingles/JingleEmptyState'
 import { JingleIntro } from '@/components/jingles/JingleIntro'
-import { JinglePageHeader } from '@/components/jingles/JinglePageHeader'
 import { JinglePlayer } from '@/components/jingles/JinglePlayer'
 import type { Media } from '@/payload-types'
 import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
@@ -90,7 +90,7 @@ export default async function JinglesPage() {
 
   return (
     <>
-      <JinglePageHeader withBadge={hasItems} />
+      <CampaignPageHeader badge={hasItems ? 'Jingles oficiais' : undefined} />
       <main className="w-full bg-white">
         {hasItems ? (
           <>

@@ -6,6 +6,7 @@ import {
   floorToMinuteStep,
   formatBahiaCivilDate,
   formatBahiaCivilDateTimeLabel,
+  formatBahiaEventDateLabel,
   hourOptions,
   minuteOptionsForStep,
   subtractBahiaCivilDays,
@@ -72,5 +73,18 @@ describe('Bahia civil datetime picker helpers (C97)', () => {
   it('passes malformed input through untouched', () => {
     expect(formatBahiaCivilDateTimeLabel('lixo')).toBe('lixo')
     expect(floorToMinuteStep('lixo')).toBe('lixo')
+  })
+})
+
+describe('Bahia event date label (S29)', () => {
+  it('labels the announcement headline in Bahia time, minutes only when needed', () => {
+    expect(formatBahiaEventDateLabel('2026-10-03T22:00:00.000Z')).toBe('Sábado, 3 de outubro · 19h')
+    expect(formatBahiaEventDateLabel('2026-10-03T22:30:00.000Z')).toBe(
+      'Sábado, 3 de outubro · 19h30',
+    )
+  })
+
+  it('returns an empty string for an unparsable instant', () => {
+    expect(formatBahiaEventDateLabel('lixo')).toBe('')
   })
 })

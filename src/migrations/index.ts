@@ -79,6 +79,7 @@ import * as migration_20260919_032729_add_recording_speakers from './20260919_03
 import * as migration_20260919_155232_add_share_link from './20260919_155232_add_share_link';
 import * as migration_20260920_031320_add_jingle from './20260920_031320_add_jingle';
 import * as migration_20260923_032714_add_content_piece from './20260923_032714_add_content_piece';
+import * as migration_20260923_054145_add_share_link_announcement from './20260923_054145_add_share_link_announcement';
 
 export const migrations = [
   {
@@ -485,5 +486,10 @@ export const migrations = [
     up: migration_20260923_032714_add_content_piece.up,
     down: migration_20260923_032714_add_content_piece.down,
     name: '20260923_032714_add_content_piece'
+  },
+  {
+    up: migration_20260923_054145_add_share_link_announcement.up,
+    down: migration_20260923_054145_add_share_link_announcement.down,
+    name: '20260923_054145_add_share_link_announcement'
   },
 ];

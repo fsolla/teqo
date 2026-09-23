@@ -1,17 +1,21 @@
 import { buildWhatsAppTextShareUrl } from '@/lib/phone'
 
-/** Content source of a home content card — drives the share message template. */
-export type ContentShareKind = 'article' | 'video' | 'instagram'
+/**
+ * Content source of a home content card — drives the share message template.
+ * S29 adds `event`: the public announcement page shares its own short link.
+ */
+export type ContentShareKind = 'article' | 'video' | 'instagram' | 'event'
 
 /**
  * Message opener per source (S4 acceptance, decision B): article shares "isso",
- * YouTube "esse vídeo", Instagram "esse post". The rest of the message is
- * always "{title} — {link}".
+ * YouTube "esse vídeo", Instagram "esse post"; S29 event invites ("Participe").
+ * The rest of the message is always "{title} — {link}".
  */
 export const CONTENT_SHARE_PREFIXES: Record<ContentShareKind, string> = {
   article: 'Olha isso do Solla: ',
   video: 'Olha esse vídeo do Solla: ',
   instagram: 'Olha esse post do Solla: ',
+  event: 'Participe: ',
 }
 
 /** Pre-configured share message: opener + title + absolute link. */

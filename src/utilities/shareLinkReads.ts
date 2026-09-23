@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { resolveLiveShareLinkDestination, type ShareLinkLiveTarget } from '@/lib/shareLink'
 import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCollectionListingTag } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globalReads'
@@ -43,6 +44,32 @@ export const getCachedPublishedShareLinkBySlug = (slug: string, depth = 1) =>
       tags: [getCollectionListingTag('shareLink')],
     },
   )
+
+/**
+ * S29 — the fresh read behind the announcement page's activation poll. It must
+ * NOT be cached: the whole point is seeing the "no ar" flag flip without a
+ * reload. The anonymous contract is the same as the cached loader — the
+ * `published: true` filter is the barrier, so a draft never resolves here.
+ */
+export const loadPublishedShareLinkLiveTarget = async (
+  slug: string,
+): Promise<ShareLinkLiveTarget | null> => {
+  const payload = await getPayload({ config: configPromise })
+  const result = await payload.find({
+    collection: 'shareLink',
+    where: { slug: { equals: slug }, published: { equals: true } },
+    depth: 0,
+    limit: 1,
+    // Deliberate access bypass: this is an unauthenticated public read, and the
+    // `published: true` where clause above is the fail-closed gate.
+    overrideAccess: true,
+  })
+
+  const link = result.docs[0]
+  if (!link) return null
+
+  return resolveLiveShareLinkDestination(link.destinations)
+}
 
 const mediaOf = (value: Media | number | null | undefined): Media | null =>
   typeof value === 'object' && value !== null ? value : null

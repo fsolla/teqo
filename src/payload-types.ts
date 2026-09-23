@@ -1654,7 +1654,7 @@ export interface Tag {
   createdAt: string;
 }
 /**
- * Links curtos com miniatura personalizada para compartilhar no WhatsApp. O endereço é jorgesolla1313.com.br/<slug> e o clique leva direto ao destino.
+ * Links curtos com miniatura personalizada para compartilhar no WhatsApp. O endereço é jorgesolla1313.com.br/<slug>: no modo "Levar direto ao destino" o clique leva direto ao destino no ar; no modo "Página de anúncio" o visitante vê a página do evento até alguém marcar um destino no ar.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "shareLink".
@@ -1662,7 +1662,7 @@ export interface Tag {
 export interface ShareLink {
   id: number;
   /**
-   * Título do cartão no WhatsApp — o WhatsApp mostra no máximo 2 linhas (~60–90 caracteres).
+   * Título do cartão no WhatsApp e da página de anúncio — o WhatsApp mostra no máximo 2 linhas (~60–90 caracteres).
    */
   title: string;
   /**
@@ -1670,17 +1670,49 @@ export interface ShareLink {
    */
   slug: string;
   /**
-   * URL completa do destino (ex.: o link do Google Meet da plenária), começando com http:// ou https://.
+   * "Levar direto ao destino" exige um destino no ar. "Página de anúncio" mostra a página do evento enquanto nenhum destino estiver no ar.
    */
-  destination: string;
+  mode: 'direct' | 'announcement';
   /**
-   * Texto do cartão no WhatsApp: ~80 caracteres já bastam; evitar passar de ~160.
+   * Pré-cadastre os lugares para trocar sem digitar URL no dia. Marque "Destino no ar" em um único destino; nenhum marcado = pré-transmissão (só no modo "Página de anúncio").
+   */
+  destinations?:
+    | {
+        /**
+         * Como o destino aparece para a equipe e na página (ex.: Google Meet).
+         */
+        label: string;
+        /**
+         * URL completa do destino (ex.: o link do Google Meet da plenária), começando com http:// ou https://.
+         */
+        url: string;
+        /**
+         * Marque um único destino quando a transmissão começar. Desmarque para voltar à pré-transmissão.
+         */
+        live?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Texto do cartão no WhatsApp e da página de anúncio: ~80 caracteres já bastam; evitar passar de ~160.
    */
   description: string;
   /**
    * Imagem do cartão: 1200×630 px (proporção 1,91:1), arquivo até 600 KB, JPG ou PNG, largura mínima 300 px; evitar imagens muito largas (proporção máx. 4:1). A página do link monta a URL pública absoluta na hora de exibir o cartão. Vazio = imagem padrão do site.
    */
   image?: (number | null) | Media;
+  /**
+   * Horário da Bahia.
+   */
+  startsAt?: string | null;
+  /**
+   * Opcional. Sem fim, a agenda usa duração padrão de 2 horas.
+   */
+  endsAt?: string | null;
+  /**
+   * Onde acontece (ex.: Online). Usado na página de anúncio e nas opções de agenda.
+   */
+  location?: string | null;
   /**
    * Desmarcado, o link responde 404 (kill switch).
    */
@@ -3007,9 +3039,20 @@ export interface TagSelect<T extends boolean = true> {
 export interface ShareLinkSelect<T extends boolean = true> {
   title?: T;
   slug?: T;
-  destination?: T;
+  mode?: T;
+  destinations?:
+    | T
+    | {
+        label?: T;
+        url?: T;
+        live?: T;
+        id?: T;
+      };
   description?: T;
   image?: T;
+  startsAt?: T;
+  endsAt?: T;
+  location?: T;
   published?: T;
   updatedAt?: T;
   createdAt?: T;
