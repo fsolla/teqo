@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — S31 · Minha colinha</title>
+    <style type="text/tailwindcss">
+      :root {
+        --pt-red: #a21c1c;
+        --cream: #fff8f2;
+        --ink: #000;
+        --muted: #6c615e;
+        --line: rgb(0 0 0/12%);
+        --field: rgb(0 0 0/18%);
+        --brand-red: #e4102f;
+        --brand-blue: #184e92;
+        --brand-yellow: #ffeb00;
+        --confirm: #009647;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+      .slip {
+        position: relative;
+        aspect-ratio: 9/16;
+        overflow: hidden;
+        background: #fff;
+        color: #141414;
+        container-type: inline-size;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      .slip-top {
+        position: absolute;
+        inset: 0 0 auto;
+        height: 37%;
+        overflow: hidden;
+        background: #148fc2;
+      }
+      .slip-photo {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center 46%;
+      }
+      .slip-lockup {
+        position: absolute;
+        top: 3%;
+        left: 3%;
+        width: 49%;
+        height: 19%;
+        padding: 2.5%;
+        background: linear-gradient(125deg, var(--brand-red) 0 52%, var(--brand-blue) 52%);
+      }
+      .slip-lockup img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      .slip-band {
+        position: absolute;
+        inset: auto 0 0;
+        height: 29%;
+        overflow: hidden;
+        background: var(--brand-red);
+      }
+      .slip-band img {
+        width: 100%;
+        height: 360%;
+        object-fit: cover;
+        object-position: center bottom;
+        transform: translateY(-72%);
+      }
+      .slip-body {
+        position: absolute;
+        top: 37%;
+        right: 0;
+        bottom: 0;
+        left: 4.8%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3.2cqw;
+        padding: 3.2cqw 3.3cqw 3cqw;
+      }
+      .legal {
+        position: absolute;
+        left: 0.7%;
+        top: 39%;
+        bottom: 2%;
+        writing-mode: vertical-rl;
+        transform: rotate(180deg);
+        font-size: 1.45cqw;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #333;
+      }
+      .vote-row {
+        display: grid;
+        grid-template-columns: 30% 1fr auto;
+        align-items: center;
+        gap: 2cqw;
+        min-height: 10cqw;
+      }
+      .office {
+        font-size: 2.5cqw;
+        line-height: 1.02;
+        font-weight: 900;
+        color: #171717;
+        text-transform: uppercase;
+      }
+      .candidate {
+        display: block;
+        margin-top: 0.5cqh;
+        font-size: 2.45cqw;
+        line-height: 1;
+        color: var(--brand-red);
+      }
+      .digits {
+        display: flex;
+        gap: 0.75cqw;
+      }
+      .digit {
+        display: grid;
+        width: 5.5cqw;
+        height: 6.8cqw;
+        place-items: center;
+        border: 0.55cqw solid #111;
+        border-radius: 0.6cqw;
+        background: #fff;
+        font-size: 4.3cqw;
+        line-height: 1;
+        font-weight: 900;
+      }
+      .digit.empty {
+        color: transparent;
+        border-color: #9a9a9a;
+        background: #fafafa;
+      }
+      .confirm {
+        border-radius: 999px;
+        background: var(--confirm);
+        padding: 1.6cqw 2cqw;
+        font-size: 2cqw;
+        line-height: 1;
+        font-weight: 900;
+        color: #fff;
+      }
+      .placeholder-top:after {
+        content: 'MODELO APROVADO · ARQUIVO DO GATE';
+        position: absolute;
+        right: 2%;
+        bottom: 31%;
+        border-radius: 999px;
+        background: #fcd34d;
+        padding: 1% 2%;
+        color: #111;
+        font-size: 1.6cqw;
+        font-weight: 900;
+      }
+      .scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .scrollbar::-webkit-scrollbar-thumb {
+        border-radius: 99px;
+        background: #c7c2be;
+      }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="text-xs font-black tracking-[.12em] text-red-400 uppercase">Gate visual · S31</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight">Minha colinha</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          O militante escolhe o estadual e leva uma colinha 9:16 completa para mandar ou imprimir.
+          Cinco escolhas são fixas; a linha de deputado estadual recebe nome e cinco dígitos da
+          dobradinha.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >PNG 1080 × 1920</span
+          ><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px + 390px</span
+          ><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >sem nome, foto ou upload</span
+          ><span
+            class="rounded-full border border-amber-600/60 bg-amber-500/10 px-3 py-2 text-amber-300"
+            >modelo aprovado · arquivo do gate</span
+          >
+        </div>
+      </header>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 1 · Tile “Minha colinha” na galeria
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          O sexto modelo mantém o mesmo tile clicável. No desktop, a seção usa seis colunas; no
+          celular, permanece no carrossel horizontal com uma pista do próximo/anterior.
+        </p>
+        <div
+          class="mt-4 max-w-[1280px] rounded-xl border border-zinc-700 bg-[var(--cream)] px-8 py-10 text-black shadow-2xl"
+        >
+          <div class="grid grid-cols-6 gap-4">
+            <div class="rounded-xl bg-stone-200 p-3 text-center text-xs font-bold text-stone-500">
+              Card com<br />seu nome
+            </div>
+            <div class="rounded-xl bg-stone-200 p-3 text-center text-xs font-bold text-stone-500">
+              Moldura<br />quadrada
+            </div>
+            <div class="rounded-xl bg-stone-200 p-3 text-center text-xs font-bold text-stone-500">
+              Moldura<br />vertical
+            </div>
+            <div class="rounded-xl bg-stone-200 p-3 text-center text-xs font-bold text-stone-500">
+              Time de<br />você
+            </div>
+            <div class="rounded-xl bg-stone-200 p-3 text-center text-xs font-bold text-stone-500">
+              Time do<br />estadual
+            </div>
+            <button class="min-w-0">
+              <span
+                class="relative mx-auto block aspect-[9/16] max-h-[285px] overflow-hidden rounded-xl border-2 border-[var(--pt-red)] shadow-lg"
+                ><img
+                  src="cards-colinha-ui-design-assets/modelo-colinha.jpeg"
+                  alt="Modelo aprovado da colinha com a linha de deputado estadual em branco"
+                  class="size-full object-cover"
+                />
+                <span
+                  class="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[var(--brand-blue)]"
+                  >NOVO</span
+                ></span
+              ><span class="mt-3 block text-sm font-bold text-[var(--pt-red)]">Minha colinha</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 2 · Estado inicial + seletor aberto · dialog desktop
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs text-zinc-500">
+          Sem estadual, a linha correspondente fica vazia e o download não compete com a escolha. O
+          mesmo seletor de S30 oferece busca, teclado e lista rolável dos 53 nomes.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[850px] max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            class="relative z-10 w-[512px] overflow-hidden rounded-xl bg-white shadow-2xl"
+            role="dialog"
+          >
+            <header class="flex items-start px-5 pt-5">
+              <div>
+                <p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                  Minha colinha
+                </p>
+                <h3 class="mt-1 text-xl font-black">Escolha seu estadual</h3>
+                <p class="mt-1 text-sm text-[var(--muted)]">
+                  A linha de deputado estadual será preenchida na hora.
+                </p>
+              </div>
+              <button class="ml-auto size-11 text-2xl text-[var(--muted)]">×</button>
+            </header>
+            <div class="px-5 pt-4 pb-5">
+              <div class="mx-auto w-[145px] overflow-hidden rounded-lg border shadow">
+                <div class="slip placeholder-top">
+                  <div class="slip-top">
+                    <img
+                      class="slip-photo"
+                      src="cards-colinha-ui-design-assets/team-card-base.png"
+                      alt=""
+                    />
+                    <div class="slip-lockup">
+                      <img
+                        src="cards-colinha-ui-design-assets/marca-negativa-completa.png"
+                        alt=""
+                      />
+                    </div>
+                    <div class="slip-band">
+                      <img src="cards-colinha-ui-design-assets/team-card-front.png" alt="" />
+                    </div>
+                  </div>
+                  <div class="legal">
+                    FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL (PT-PC DO B - PV)
+                  </div>
+                  <div class="slip-body">
+                    <div class="vote-row">
+                      <div class="office">
+                        DEPUTADO<br />FEDERAL<span class="candidate">Jorge Solla</span>
+                      </div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span
+                        ><span class="digit">1</span><span class="digit">3</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                    <div class="vote-row">
+                      <div class="office">
+                        DEPUTADO<br />ESTADUAL<span class="candidate">Escolha abaixo</span>
+                      </div>
+                      <div class="digits">
+                        <span class="digit empty">0</span><span class="digit empty">0</span
+                        ><span class="digit empty">0</span><span class="digit empty">0</span
+                        ><span class="digit empty">0</span>
+                      </div>
+                      <span class="confirm opacity-30">CONFIRMA</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <label class="mt-4 block text-sm font-bold">Seu estadual</label
+              ><button
+                class="mt-2 flex h-11 w-full items-center justify-between rounded-lg border border-[var(--field)] px-3 text-left text-sm"
+              >
+                <span class="text-stone-500">Escolha um nome</span><span>⌄</span>
+              </button>
+              <div
+                class="mt-2 overflow-hidden rounded-xl border border-[var(--line)] bg-white shadow-xl"
+              >
+                <div class="border-b border-[var(--line)] p-3">
+                  <div
+                    class="flex h-11 items-center gap-2 rounded-lg border border-[var(--field)] px-3"
+                  >
+                    <span>⌕</span
+                    ><input
+                      class="min-w-0 flex-1 outline-none"
+                      placeholder="Buscar por nome"
+                      value="J"
+                    />
+                  </div>
+                  <p class="mt-2 text-[11px] text-[var(--muted)]">
+                    53 estaduais · busque pelo nome de urna
+                  </p>
+                </div>
+                <div class="scrollbar max-h-44 overflow-y-auto p-1.5 text-sm">
+                  <button class="flex min-h-11 w-full items-center rounded-md px-3">Jaco</button
+                  ><button class="flex min-h-11 w-full items-center rounded-md px-3">Jamille</button
+                  ><button class="flex min-h-11 w-full items-center rounded-md px-3">Josafá</button
+                  ><button
+                    class="flex min-h-11 w-full items-center rounded-md bg-red-50 px-3 font-bold text-[var(--pt-red)]"
+                  >
+                    <span>Julio Pinheiro</span
+                    ><span class="ml-auto text-xs">13999&nbsp; ✓</span></button
+                  ><button class="flex min-h-11 w-full items-center rounded-md px-3">Juliete</button
+                  ><button class="flex min-h-11 w-full items-center rounded-md px-3">Junior</button>
+                </div>
+              </div>
+              <p
+                class="mt-4 rounded-lg bg-[var(--cream)] p-3 text-xs leading-5 text-[var(--muted)]"
+              >
+                <b class="text-black">Escolha um estadual para baixar.</b><br />A linha vazia será
+                preenchida com o nome e os cinco dígitos.
+              </p>
+            </div>
+            <footer class="flex gap-3 border-t border-[var(--line)] px-5 py-4">
+              <button
+                class="min-h-11 flex-1 rounded-lg border-2 border-[var(--line)] font-bold text-[var(--pt-red)]"
+              >
+                Cancelar</button
+              ><button
+                disabled
+                class="min-h-11 flex-1 rounded-lg bg-[var(--pt-red)] font-bold text-white opacity-50"
+              >
+                Baixar minha colinha
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 3 · Resultado completo 9:16 · desktop 1280
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs text-zinc-500">
+          A prévia fica grande o bastante para conferir todas as linhas. O topo abaixo compõe ativos
+          oficiais para o gate; a arte-mestre final ainda precisa ser produzida e aprovada.
+        </p>
+        <div
+          class="mt-4 grid max-w-[1280px] gap-8 rounded-xl border border-zinc-700 bg-[var(--cream)] p-8 text-black shadow-2xl lg:grid-cols-[440px_1fr]"
+        >
+          <div
+            class="mx-auto w-[405px] max-w-full overflow-hidden rounded-xl border border-black/10 shadow-2xl"
+          >
+            <div class="slip placeholder-top">
+              <div class="slip-top">
+                <img
+                  class="slip-photo"
+                  src="cards-colinha-ui-design-assets/team-card-base.png"
+                  alt="Foto do grupo da campanha"
+                />
+                <div class="slip-lockup">
+                  <img
+                    src="cards-colinha-ui-design-assets/marca-negativa-completa.png"
+                    alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                  />
+                </div>
+                <div class="slip-band">
+                  <img
+                    src="cards-colinha-ui-design-assets/team-card-front.png"
+                    alt="JORGE SOLLA 1313 com as marcas Lula 13, Jero 13, Wagner 130 e Rui 133"
+                  />
+                </div>
+              </div>
+              <div class="legal">
+                FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL (PT-PC DO B - PV) | CNPJ CANDIDATO:
+                68.430.467/0001-05
+              </div>
+              <div class="slip-body">
+                <div class="vote-row">
+                  <div class="office">
+                    DEPUTADO<br />FEDERAL<span class="candidate">Jorge Solla</span>
+                  </div>
+                  <div class="digits">
+                    <span class="digit">1</span><span class="digit">3</span
+                    ><span class="digit">1</span><span class="digit">3</span>
+                  </div>
+                  <span class="confirm">CONFIRMA</span>
+                </div>
+                <div class="vote-row">
+                  <div class="office">
+                    DEPUTADO<br />ESTADUAL<span class="candidate">JULIO PINHEIRO</span>
+                  </div>
+                  <div class="digits">
+                    <span class="digit">1</span><span class="digit">3</span
+                    ><span class="digit">9</span><span class="digit">9</span
+                    ><span class="digit">9</span>
+                  </div>
+                  <span class="confirm">CONFIRMA</span>
+                </div>
+                <div class="vote-row">
+                  <div class="office">SENADOR<span class="candidate">Jaques Wagner</span></div>
+                  <div class="digits">
+                    <span class="digit">1</span><span class="digit">3</span
+                    ><span class="digit">0</span>
+                  </div>
+                  <span class="confirm">CONFIRMA</span>
+                </div>
+                <div class="vote-row">
+                  <div class="office">SENADOR<span class="candidate">Rui Costa</span></div>
+                  <div class="digits">
+                    <span class="digit">1</span><span class="digit">3</span
+                    ><span class="digit">3</span>
+                  </div>
+                  <span class="confirm">CONFIRMA</span>
+                </div>
+                <div class="vote-row">
+                  <div class="office">GOVERNADOR<span class="candidate">Jerônimo</span></div>
+                  <div class="digits"><span class="digit">1</span><span class="digit">3</span></div>
+                  <span class="confirm">CONFIRMA</span>
+                </div>
+                <div class="vote-row">
+                  <div class="office">PRESIDENTE<span class="candidate">Lula</span></div>
+                  <div class="digits"><span class="digit">1</span><span class="digit">3</span></div>
+                  <span class="confirm">CONFIRMA</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="flex flex-col justify-center">
+            <p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+              Minha colinha
+            </p>
+            <h3 class="mt-1 text-2xl font-black">Pronta para levar com você</h3>
+            <p class="mt-2 max-w-lg text-sm leading-6 text-[var(--muted)]">
+              Confira o estadual escolhido. As demais escolhas já vêm preenchidas no modelo oficial.
+            </p>
+            <button
+              class="mt-5 flex h-11 max-w-md items-center rounded-lg border border-[var(--field)] bg-white px-3 text-left text-sm font-bold"
+            >
+              <span>Julio Pinheiro</span
+              ><span class="ml-auto text-xs text-[var(--muted)]">13999 · Trocar</span>
+            </button>
+            <div class="mt-5 max-w-md rounded-lg bg-white p-4 ring-1 ring-[var(--line)]">
+              <p class="text-sm font-bold">Linha conferida</p>
+              <p class="mt-1 text-sm text-[var(--muted)]">
+                DEPUTADO ESTADUAL · JULIO PINHEIRO · 13999
+              </p>
+            </div>
+            <button
+              class="mt-5 min-h-11 max-w-md rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white shadow"
+            >
+              Baixar minha colinha
+            </button>
+            <p class="mt-3 max-w-md text-xs leading-5 text-[var(--muted)]">
+              A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é solicitado.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 4 · Zoom do detalhe aprovado · deputado estadual
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          Um dígito por caixa, cinco caixas, nome vermelho e CONFIRMA verde. Este recorte fixa a
+          hierarquia e o contraste em escala legível.
+        </p>
+        <div
+          class="mt-4 max-w-[1000px] rounded-xl border border-zinc-700 bg-white p-6 text-black shadow-xl"
+        >
+          <div class="grid items-center gap-4 sm:grid-cols-[220px_1fr_auto]">
+            <div>
+              <p class="text-xl leading-none font-black uppercase">DEPUTADO ESTADUAL</p>
+              <p class="mt-2 text-2xl leading-none font-black text-[var(--brand-red)]">
+                JULIO PINHEIRO
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <span
+                class="grid size-14 place-items-center rounded-md border-[3px] border-black text-3xl font-black"
+                >1</span
+              ><span
+                class="grid size-14 place-items-center rounded-md border-[3px] border-black text-3xl font-black"
+                >3</span
+              ><span
+                class="grid size-14 place-items-center rounded-md border-[3px] border-black text-3xl font-black"
+                >9</span
+              ><span
+                class="grid size-14 place-items-center rounded-md border-[3px] border-black text-3xl font-black"
+                >9</span
+              ><span
+                class="grid size-14 place-items-center rounded-md border-[3px] border-black text-3xl font-black"
+                >9</span
+              >
+            </div>
+            <span class="rounded-full bg-[var(--confirm)] px-5 py-3 text-sm font-black text-white"
+              >CONFIRMA</span
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 5 · Drawer mobile 390 · escolhido e pronto
+        </h2>
+        <p class="mt-1 text-xs text-zinc-500">
+          A colinha usa quase toda a largura útil e segue legível; a prévia rola, enquanto o CTA
+          fica isolado no rodapé.
+        </p>
+        <div
+          class="relative mt-4 h-[850px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--cream)] text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/50"></div>
+          <article
+            class="absolute inset-x-0 bottom-0 max-h-[98%] overflow-hidden rounded-t-2xl bg-white"
+          >
+            <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+            <header class="flex px-5 pt-4">
+              <div>
+                <p class="text-[10px] font-black text-[var(--pt-red)] uppercase">Minha colinha</p>
+                <h3 class="mt-1 text-lg font-black">Pronta para baixar</h3>
+              </div>
+              <button class="ml-auto size-11 text-2xl text-[var(--muted)]">×</button>
+            </header>
+            <div class="max-h-[690px] overflow-y-auto px-5 pt-3 pb-4">
+              <div class="mx-auto w-[300px] overflow-hidden rounded-lg border shadow">
+                <div class="slip placeholder-top">
+                  <div class="slip-top">
+                    <img
+                      class="slip-photo"
+                      src="cards-colinha-ui-design-assets/team-card-base.png"
+                      alt=""
+                    />
+                    <div class="slip-lockup">
+                      <img
+                        src="cards-colinha-ui-design-assets/marca-negativa-completa.png"
+                        alt=""
+                      />
+                    </div>
+                    <div class="slip-band">
+                      <img src="cards-colinha-ui-design-assets/team-card-front.png" alt="" />
+                    </div>
+                  </div>
+                  <div class="legal">
+                    FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL (PT-PC DO B - PV) | CNPJ CANDIDATO:
+                    68.430.467/0001-05
+                  </div>
+                  <div class="slip-body">
+                    <div class="vote-row">
+                      <div class="office">
+                        DEPUTADO<br />FEDERAL<span class="candidate">Jorge Solla</span>
+                      </div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span
+                        ><span class="digit">1</span><span class="digit">3</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                    <div class="vote-row">
+                      <div class="office">
+                        DEPUTADO<br />ESTADUAL<span class="candidate">JULIO PINHEIRO</span>
+                      </div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span
+                        ><span class="digit">9</span><span class="digit">9</span
+                        ><span class="digit">9</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                    <div class="vote-row">
+                      <div class="office">SENADOR<span class="candidate">Jaques Wagner</span></div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span
+                        ><span class="digit">0</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                    <div class="vote-row">
+                      <div class="office">SENADOR<span class="candidate">Rui Costa</span></div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span
+                        ><span class="digit">3</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                    <div class="vote-row">
+                      <div class="office">GOVERNADOR<span class="candidate">Jerônimo</span></div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                    <div class="vote-row">
+                      <div class="office">PRESIDENTE<span class="candidate">Lula</span></div>
+                      <div class="digits">
+                        <span class="digit">1</span><span class="digit">3</span>
+                      </div>
+                      <span class="confirm">CONFIRMA</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button
+                class="mt-4 flex h-11 w-full items-center rounded-lg border border-[var(--field)] px-3 text-sm font-bold"
+              >
+                <span>Julio Pinheiro</span
+                ><span class="ml-auto text-xs text-[var(--muted)]">13999 · Trocar</span>
+              </button>
+            </div>
+            <footer class="border-t border-[var(--line)] px-5 py-4">
+              <button
+                class="min-h-11 w-full rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white"
+              >
+                Baixar minha colinha
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p class="font-bold text-zinc-300">Design tier 1 · openai/gpt-5.6-sol.</p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Modelo aprovado — arquivo do gate:</strong>
+          <code>cards-colinha-ui-design-assets/modelo-colinha.jpeg</code> é o arquivo exato entregue
+          pelo humano, com a linha de deputado estadual em branco; o tile usa essa arte sem
+          recomposição.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Conteúdo fixado:</strong> seis cargos; linha legal completa
+          na borda esquerda; estadual de exemplo JULIO PINHEIRO 13999; um único CTA “Baixar minha
+          colinha”.
+        </p>
+      </aside>
+    </main>
+  </body>
+</html>
