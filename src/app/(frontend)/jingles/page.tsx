@@ -3,17 +3,11 @@ import { CampaignPageHeader } from '@/components/CampaignPageHeader'
 import { JingleEmptyState } from '@/components/jingles/JingleEmptyState'
 import { JingleIntro } from '@/components/jingles/JingleIntro'
 import { JinglePlayer } from '@/components/jingles/JinglePlayer'
-import type { Media } from '@/payload-types'
 import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
-import {
-  absoluteSitePath,
-  resolveDeploymentOrigin,
-  resolveSiteMetadata,
-  toAbsoluteUrl,
-} from '@/utilities/seo'
+import { resolveOgImage } from '@/utilities/ogImageReads'
+import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import type { Metadata } from 'next'
 
 const JINGLES_PATH = '/jingles'
@@ -34,26 +28,9 @@ export async function generateMetadata(): Promise<Metadata> {
   ])
   const { siteUrl, siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
   const canonicalUrl = absoluteSitePath(siteUrl, JINGLES_PATH)
-  const deploymentOrigin = resolveDeploymentOrigin(siteUrl)
 
-  // The media proxy only exists on the deployment origin (the global URL may be
-  // a canonical domain served elsewhere), same rule as the share-link OG image.
-  const coverUrl =
-    items[0] && deploymentOrigin ? toAbsoluteUrl(items[0].coverUrl, deploymentOrigin) : undefined
+  const { url: imageUrl } = await resolveOgImage(items[0]?.coverUrl)
 
-  let fallbackImage: Media | null = null
-  if (!coverUrl && globalMetadata.image) {
-    fallbackImage =
-      typeof globalMetadata.image === 'number'
-        ? await getCachedDocumentById('media', String(globalMetadata.image))()
-        : globalMetadata.image
-  }
-
-  const imageUrl =
-    coverUrl ??
-    (fallbackImage?.url && deploymentOrigin
-      ? toAbsoluteUrl(fallbackImage.url, deploymentOrigin)
-      : undefined)
   const title = `${JINGLES_TITLE} | ${siteName}`
   const images = imageUrl ? [{ url: imageUrl, alt: items[0]?.coverAlt ?? JINGLES_TITLE }] : []
 

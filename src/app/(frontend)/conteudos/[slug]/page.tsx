@@ -2,18 +2,11 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { ContentPieceDetail } from '@/components/conteudos/ContentPieceDetail'
 import { ContentPiecePageHeader } from '@/components/conteudos/ContentPiecePageHeader'
 import { CONTENT_PIECE_CATALOG_PATH } from '@/lib/contentPieceCatalog'
-import type { Media } from '@/payload-types'
 import { getPublishedContentPieceBySlug } from '@/utilities/content/contentPieceReads'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { hasPublishedJingles } from '@/utilities/jingleReads'
-import {
-  absoluteSitePath,
-  resolveDeploymentOrigin,
-  resolveSiteMetadata,
-  toAbsoluteUrl,
-  truncate,
-} from '@/utilities/seo'
+import { resolveOgImage } from '@/utilities/ogImageReads'
+import { absoluteSitePath, resolveSiteMetadata, truncate } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
@@ -42,26 +35,10 @@ export async function generateMetadata({
   const globalMetadata = await getCachedGlobal('metadata')()
   const { siteUrl, siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
   const canonicalUrl = absoluteSitePath(siteUrl, item.publicPath)
-  const deploymentOrigin = resolveDeploymentOrigin(siteUrl)
 
-  const ownImageUrl =
-    item.file?.mimeType?.startsWith('image/') && deploymentOrigin
-      ? toAbsoluteUrl(item.file.path, deploymentOrigin)
-      : undefined
+  const ownImage = item.file?.mimeType?.startsWith('image/') ? item.file.path : null
+  const { url: imageUrl } = await resolveOgImage(ownImage)
 
-  let fallbackImage: Media | null = null
-  if (!ownImageUrl && globalMetadata.image) {
-    fallbackImage =
-      typeof globalMetadata.image === 'number'
-        ? await getCachedDocumentById('media', String(globalMetadata.image))()
-        : globalMetadata.image
-  }
-
-  const imageUrl =
-    ownImageUrl ??
-    (fallbackImage?.url && deploymentOrigin
-      ? toAbsoluteUrl(fallbackImage.url, deploymentOrigin)
-      : undefined)
   const title = `${item.title} | ${siteName}`
   const description = truncate(
     item.description ?? fallbackDescription(item.title),

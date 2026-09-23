@@ -158,6 +158,13 @@ test.describe('Frontend jingles (S21)', () => {
     await expect(page.getByText('Jingles oficiais')).toBeVisible()
     await expect(page.locator('article[data-jingle]')).toHaveCount(2)
 
+    // S27-FOLLOWUP-DRY — the OG preview uses the first cover through the
+    // single owner: absolute on the deployment origin, never a relative path.
+    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+      'content',
+      /^https?:\/\/.+\/api\/media\/file\//,
+    )
+
     // The card never fetches the audio before the play (gate note).
     await expect(page.locator('audio[preload="none"]')).toHaveCount(2)
     expect(audioRequests).toHaveLength(0)

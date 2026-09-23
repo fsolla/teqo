@@ -3,11 +3,11 @@ import { MetaPixel } from '@/components/MetaPixel'
 import { PetitionForm } from '@/components/PetitionForm'
 import { SignatureCounter } from '@/components/SignatureCounter'
 import { normalizeFacebookPixelId } from '@/lib/facebookPixel'
-import type { Media } from '@/payload-types'
 import { getCachedDocumentById, getPetitionIds } from '@/utilities/documentReads'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
 import { getCachedGlobal } from '@/utilities/globalReads'
-import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
+import { resolveOgImage } from '@/utilities/ogImageReads'
+import { absoluteSitePath, resolveSiteMetadata, truncate } from '@/utilities/seo'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { Metadata } from 'next'
 import Link from 'next/link'
@@ -45,31 +45,22 @@ export async function generateMetadata({
   const canonicalUrl = absoluteSitePath(siteUrl, `/abaixo-assinado/${petition.id}`)
 
   const bodyImage = extractFirstImageFromLexical(petition.body)
-  let fallbackImage: Media | null = null
-  if (!bodyImage && globalMetadata.image) {
-    fallbackImage =
-      typeof globalMetadata.image === 'number'
-        ? await getCachedDocumentById('media', String(globalMetadata.image))()
-        : globalMetadata.image
-  }
-  const image = bodyImage ?? fallbackImage
+  const { url: imageUrl, media } = await resolveOgImage(bodyImage)
 
   const description = truncate(petition.subtitle, MAX_DESCRIPTION_LENGTH)
   const title = `${petition.title} | ${siteName}`
 
   const keywords = [...baseKeywords, 'abaixo-assinado', 'petição', petition.title]
 
-  const imageUrl = image?.url && siteUrl ? toAbsoluteUrl(image.url, siteUrl) : undefined
-
   const ogImages = imageUrl
     ? [
         {
           url: imageUrl,
           secureUrl: imageUrl,
-          width: image?.width ?? undefined,
-          height: image?.height ?? undefined,
-          alt: image?.alt,
-          type: image?.mimeType ?? undefined,
+          width: media?.width ?? undefined,
+          height: media?.height ?? undefined,
+          alt: media?.alt,
+          type: media?.mimeType ?? undefined,
         },
       ]
     : []
@@ -113,15 +104,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   const canonicalUrl = absoluteSitePath(siteUrl, `/abaixo-assinado/${petition.id}`)
 
   const bodyImage = extractFirstImageFromLexical(petition.body)
-  let fallbackImage: Media | null = null
-  if (!bodyImage && globalMetadata.image) {
-    fallbackImage =
-      typeof globalMetadata.image === 'number'
-        ? await getCachedDocumentById('media', String(globalMetadata.image))()
-        : globalMetadata.image
-  }
-  const ogImage = bodyImage ?? fallbackImage
-  const ogImageUrl = ogImage?.url && siteUrl ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
+  const { url: ogImageUrl } = await resolveOgImage(bodyImage)
 
   const jsonLd: WithContext<Article> = {
     '@context': 'https://schema.org',
