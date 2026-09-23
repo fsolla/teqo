@@ -17,7 +17,10 @@ import { getCampaignUser } from '@/utilities/campaignAuth'
 import { CAMPAIGN_AUTH_REQUIRED_MESSAGE } from '@/utilities/campaignFormActionError'
 import { campaignJsonMutationErrorResponse } from '@/utilities/campaignJsonMutationRoute'
 import { attachContentPieceMedia } from '@/utilities/content/contentPieceUpload'
-import { buildPrivateMediaResponse } from '@/utilities/privateMedia/privateMediaResponse'
+import {
+  buildPrivateMediaResponse,
+  resolvePrivateMediaStaticDir,
+} from '@/utilities/privateMedia/privateMediaResponse'
 import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
 import type { ContentPieceAttachResponse } from '../../types'
@@ -71,13 +74,9 @@ export const GET = async (
     .catch(() => null)
   if (!piece?.media || typeof piece.media !== 'object') return notFound()
 
-  const upload = payload.collections[CONTENT_MEDIA_SLUG].config.upload
-  const staticDir =
-    upload && typeof upload === 'object' && upload.staticDir ? upload.staticDir : CONTENT_MEDIA_SLUG
-
   return buildPrivateMediaResponse({
     media: piece.media,
-    staticDir,
+    staticDir: resolvePrivateMediaStaticDir(payload, CONTENT_MEDIA_SLUG),
     rangeHeader: request.headers.get('range'),
     download: new URL(request.url).searchParams.get('download') === '1',
   })

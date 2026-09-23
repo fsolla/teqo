@@ -20,17 +20,21 @@ const REDES = [
  * S21 — the "Jingles" discovery link only appears while something is published;
  * the caller resolves the cached flag (`hasPublishedJingles`, or the page's own
  * list) and passes it, so this stays a synchronous presentational leaf.
+ * S27 — the same contract for the "Conteúdos" link (`hasPublishedContentPieces`).
  * `current` marks the page as the current one for assistive tech and the
  * artefato's highlight.
  */
 export const CampaignFooter = ({
   showJingles = false,
+  showConteudos = false,
   current,
 }: {
   showJingles?: boolean
-  current?: 'jingles'
+  showConteudos?: boolean
+  current?: 'jingles' | 'conteudos'
 } = {}) => {
   const jinglesLinkClass = cn(FOOTER_LINK, current === 'jingles' && 'font-bold text-white')
+  const conteudosLinkClass = cn(FOOTER_LINK, current === 'conteudos' && 'font-bold text-white')
 
   return (
     <footer className="bg-[#180a09] text-[rgb(255_248_242/75%)]">
@@ -55,6 +59,17 @@ export const CampaignFooter = ({
                 Bandeiras
               </a>
             </li>
+            {showConteudos ? (
+              <li>
+                <Link
+                  href="/conteudos"
+                  aria-current={current === 'conteudos' ? 'page' : undefined}
+                  className={conteudosLinkClass}
+                >
+                  Conteúdos
+                </Link>
+              </li>
+            ) : null}
             {showJingles ? (
               <li>
                 <Link

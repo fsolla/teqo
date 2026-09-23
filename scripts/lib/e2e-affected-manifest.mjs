@@ -43,6 +43,10 @@ export const E2E_CURATED_SPECS = [
   // S21 — deliberate: the jingles page/player/download contract is new and the
   // migration makes every PR of this delivery high-risk (curated only).
   'frontendJingles',
+  // S27 — deliberate: the Central catalogue/piece page, the public media route
+  // and the vote share sheet are new contracts over the C211 collection
+  // (curated only).
+  'frontendConteudos',
 ]
 
 /**
@@ -111,10 +115,30 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontendJingles'],
   },
   {
+    // S27 — the public Central de Conteúdos: the facet/term catalogue, the
+    // on-demand play, the private-media public route, the vote share sheet and
+    // the kill-switch contract over the C211 listing tag.
+    prefixes: [
+      'src/app/(frontend)/conteudos',
+      'src/components/conteudos',
+      'src/lib/contentPieceCatalog',
+      'src/lib/contentPieceShare',
+      'src/utilities/content/contentPieceReads.ts',
+      // The tag/revalidation vocabulary owner for the content pieces listing.
+      'src/utilities/documents.ts',
+      'src/collections/ContentPiece.ts',
+      'src/collections/ContentMedia.ts',
+      // The private-media response rules the public route reuses.
+      'src/lib/privateMedia',
+    ],
+    specs: ['frontendConteudos'],
+  },
+  {
     // S21 — the campaign footer owns the conditional "Jingles" discovery link
     // (it renders on the home, the cards page and `/jingles`).
+    // S27 — and the conditional "Conteúdos" link.
     prefixes: ['src/components/CampaignFooter.tsx'],
-    specs: ['frontend', 'frontendJingles'],
+    specs: ['frontend', 'frontendJingles', 'frontendConteudos'],
   },
   {
     // S13/S30 — the personalized-cards studio lives in shared cards components

@@ -43,6 +43,7 @@ describe('shareLink slug', () => {
         'artigos',
         'campanha',
         'cards',
+        'conteudos',
         'corte',
         'evento',
         'jingles',

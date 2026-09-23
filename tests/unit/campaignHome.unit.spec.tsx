@@ -43,6 +43,13 @@ vi.mock('@/utilities/jingleReads', () => ({
   getPublishedJingleItems: async () => [],
 }))
 
+// S27 — the same for the Central de Conteúdos discovery flag (cached read of
+// the content pieces listing); the real listing/kill-switch behavior is
+// e2e-covered (frontendConteudos.e2e.spec.ts).
+vi.mock('@/utilities/content/contentPieceReads', () => ({
+  hasPublishedContentPieces: async () => false,
+}))
+
 // S14 — the card section renders the client studio island (next/font local
 // face + matchMedia + canvas); its behavior is e2e-covered, so the unit
 // skeleton mocks both the face module and the island.

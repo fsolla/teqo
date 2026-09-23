@@ -199,6 +199,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
+      // S27 — the Central de Conteúdos public page (catalogue, lazy media,
+      // vote share, kill switch). Owns its content piece rows only, so it
+      // serializes behind frontend in dev (shared dev-server boot) and runs
+      // parallel to it in prod.
+      name: 'frontendConteudos',
+      testMatch: /frontendConteudos\.e2e\.spec\.ts/,
+      dependencies: isProdMode ? [] : ['frontend'],
+      use: { ...devices['Desktop Chrome'], channel: 'chromium' },
+    },
+    {
       name: 'admin',
       testMatch: /admin\.e2e\.spec\.ts/,
       // Serialize behind `frontend` (and the S19 share-link spec) in BOTH modes:

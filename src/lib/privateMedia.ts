@@ -11,7 +11,11 @@
 /**
  * Only these may render inline; anything else is forced to download. C199 adds
  * the video containers the recordings actually arrive in (MOV/MKV/WebM) — all
- * inert media types, never markup executed in the campaign origin.
+ * inert media types, never markup executed in the campaign origin. S27 adds the
+ * image and audio families the content pieces accept (a published photo must
+ * render and an audio piece must play; both were degrading to octet-stream and
+ * turning into a download). HEIC/HEIF stay out on purpose (browsers do not
+ * render them) and `image/svg+xml` never enters (markup).
  */
 const PRIVATE_MEDIA_INLINE_MIME_TYPES = [
   'video/mp4',
@@ -19,8 +23,18 @@ const PRIVATE_MEDIA_INLINE_MIME_TYPES = [
   'video/x-matroska',
   'video/webm',
   'audio/mpeg',
+  'audio/mp4',
+  'audio/aac',
+  'audio/ogg',
+  'audio/opus',
+  'audio/wav',
+  'audio/webm',
+  'audio/flac',
   'image/png',
   'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/avif',
 ] as const
 
 export const PRIVATE_MEDIA_FALLBACK_MIME_TYPE = 'application/octet-stream'

@@ -1,0 +1,125 @@
+import Link from 'next/link'
+
+import {
+  CONTENT_PIECE_CATALOG_FACETS,
+  CONTENT_PIECE_CATALOG_PATH,
+  buildContentPieceCatalogHref,
+  contentPieceCatalogFacetLabels,
+  type ContentPieceCatalogActiveFilter,
+  type ContentPieceCatalogFacet,
+  type ContentPieceCatalogFacets,
+  type ContentPieceCatalogParams,
+} from '@/lib/contentPieceCatalog'
+
+import {
+  CONTENT_PIECE_ACTIVE_CHIP,
+  CONTENT_PIECE_CHIP,
+  CONTENT_PIECE_FOCUS,
+  CONTENT_PIECE_PRIMARY_BUTTON,
+} from './contentPieceClasses'
+
+const FIELD_CLASS =
+  'min-h-11 w-full rounded-[10px] border border-black/18 bg-white py-2.5 pr-10 pl-3 text-[15px] text-black placeholder:text-(--campaign-muted) focus-visible:border-(--pt-red) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red) [&::-webkit-search-cancel-button]:hidden'
+
+const DROPDOWN_LINK =
+  'flex min-h-9 items-center rounded-lg px-2.5 text-sm font-medium text-black hover:bg-(--campaign-band) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red)'
+
+/**
+ * S27 — the catalogue filters (artefato: cenas 01/06): a GET form (works
+ * without JS, the URL is the state) with the search term plus one chip per
+ * facet — a `<details>` menu when empty, an active chip with its removal link
+ * when set. Facets that no published piece carries never render.
+ */
+export const ContentPieceFilters = ({
+  params,
+  facets,
+  activeFilters,
+}: {
+  params: ContentPieceCatalogParams
+  facets: ContentPieceCatalogFacets
+  activeFilters: readonly ContentPieceCatalogActiveFilter[]
+}) => {
+  const hasActiveFilters = activeFilters.length > 0
+  const termFilter = activeFilters.find((filter) => filter.facet === 'q')
+  const facetFilters = activeFilters.filter(
+    (filter): filter is typeof filter & { facet: ContentPieceCatalogFacet } => filter.facet !== 'q',
+  )
+
+  return (
+    <form action={CONTENT_PIECE_CATALOG_PATH} method="get">
+      {CONTENT_PIECE_CATALOG_FACETS.map((facet) =>
+        params[facet] ? (
+          <input key={facet} type="hidden" name={facet} value={params[facet] ?? ''} />
+        ) : null,
+      )}
+
+      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+        <div className="relative">
+          <input
+            type="search"
+            name="q"
+            defaultValue={params.q}
+            placeholder="Encontre uma peça por assunto, cidade ou tema…"
+            aria-label="Buscar peças"
+            className={FIELD_CLASS}
+          />
+          {termFilter ? (
+            <Link
+              href={termFilter.removeHref}
+              aria-label="Limpar busca"
+              className={`absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-lg leading-none text-(--campaign-muted) hover:text-black ${CONTENT_PIECE_FOCUS}`}
+            >
+              ×
+            </Link>
+          ) : null}
+        </div>
+        <button type="submit" className={`${CONTENT_PIECE_PRIMARY_BUTTON} px-6`}>
+          {hasActiveFilters ? 'Buscar peças' : 'Escolher uma peça e pedir voto'}
+        </button>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        {facetFilters.map((filter) => (
+          <Link
+            key={filter.facet}
+            href={filter.removeHref}
+            aria-label={`Remover filtro ${filter.label}: ${filter.value}`}
+            className={CONTENT_PIECE_ACTIVE_CHIP}
+          >
+            {filter.label} · {filter.value}
+            <span aria-hidden="true" className="text-base leading-none">
+              ×
+            </span>
+          </Link>
+        ))}
+
+        {CONTENT_PIECE_CATALOG_FACETS.map((facet) =>
+          params[facet] || facets[facet].length === 0 ? null : (
+            <details key={facet} className="relative">
+              <summary
+                className={`${CONTENT_PIECE_CHIP} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+              >
+                {contentPieceCatalogFacetLabels[facet]}
+                <span aria-hidden="true" className="text-base leading-none">
+                  ⌄
+                </span>
+              </summary>
+              <ul className="absolute z-20 mt-1 max-h-72 min-w-44 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1 shadow-[0_12px_30px_rgb(0_0_0/15%)]">
+                {facets[facet].map((option) => (
+                  <li key={option.value}>
+                    <Link
+                      href={buildContentPieceCatalogHref({ ...params, [facet]: option.value })}
+                      className={DROPDOWN_LINK}
+                    >
+                      {option.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ),
+        )}
+      </div>
+    </form>
+  )
+}

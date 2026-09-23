@@ -14,6 +14,7 @@ export const SHARE_LINK_RESERVED_SLUGS = [
   'mandato-no-whatsapp',
   'abaixo-assinado',
   'jingles',
+  'conteudos',
   'api',
   'admin',
   'noticia',

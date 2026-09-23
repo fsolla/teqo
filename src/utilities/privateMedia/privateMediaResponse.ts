@@ -1,9 +1,12 @@
 import 'server-only'
 
+import type { Config } from '@/payload-types'
+
 import { GetObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { createReadStream, createWriteStream } from 'fs'
 import { stat } from 'fs/promises'
 import path from 'path'
+import type { Payload } from 'payload'
 import { getRangeRequestInfo } from 'payload/internal'
 import { pipeline } from 'stream/promises'
 
@@ -30,6 +33,21 @@ export type PrivateMediaFile = {
   filename?: string | null
   filesize?: number | null
   mimeType?: string | null
+}
+
+/**
+ * The local disk directory of a private upload collection (dev/test fallback
+ * when no S3_* is set), mirroring Payload's own file handler. Single owner for
+ * the authenticated and the public serving routes.
+ */
+export const resolvePrivateMediaStaticDir = (
+  payload: Payload,
+  collectionSlug: keyof Config['collections'],
+): string => {
+  const upload = payload.collections[collectionSlug]?.config.upload
+  return upload && typeof upload === 'object' && upload.staticDir
+    ? upload.staticDir
+    : collectionSlug
 }
 
 type PrivateMediaStorage = { bucket: string; client: S3Client }
@@ -147,17 +165,25 @@ const notFound = (): Response =>
 /**
  * Streams one artifact. A missing object answers `404`; an unsatisfiable range
  * answers `416` (both with the private headers) — never a leaked S3 error.
+ *
+ * `dispositionFilename` overrides only the DOWNLOAD name (the storage key is
+ * always `media.filename`): the public Central serves the legible
+ * `jorge-solla-1313-<slug>.<ext>` name, since the browser honors the server
+ * `Content-Disposition` over the anchor's `download` attribute. The
+ * authenticated campaign route keeps the stored name (no override).
  */
 export const buildPrivateMediaResponse = async ({
   media,
   staticDir,
   rangeHeader,
   download,
+  dispositionFilename,
 }: {
   media: PrivateMediaFile
   staticDir: string
   rangeHeader: string | null
   download: boolean
+  dispositionFilename?: string | null
 }): Promise<Response> => {
   const filename = media.filename
   if (!filename) return notFound()
@@ -173,7 +199,7 @@ export const buildPrivateMediaResponse = async ({
       headers: privateMediaHeaders({
         range: opened.range,
         mimeType: media.mimeType,
-        filename,
+        filename: dispositionFilename?.trim() || filename,
         download,
       }),
     })

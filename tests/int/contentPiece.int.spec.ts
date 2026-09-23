@@ -33,6 +33,7 @@ import {
   setContentPiecePublishedForActor,
   updateContentPieceForActor,
 } from '@/app/(campaign)/campanha/actions/contentPieces'
+import { GET as getPublicPieceMedia } from '@/app/(frontend)/conteudos/[slug]/midia/route'
 import type { ContentPieceCuratedField } from '@/lib/contentPiece'
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
@@ -49,6 +50,11 @@ import {
   runContentPieceJob,
 } from '@/utilities/content/contentPieceJob'
 import { loadContentPieceListPageData } from '@/utilities/content/contentPiecePageData'
+import {
+  getPublishedContentPieceBySlug,
+  getPublishedContentPieceItems,
+  hasPublishedContentPieces,
+} from '@/utilities/content/contentPieceReads'
 import {
   attachContentPieceMedia,
   receiveContentPieceUpload,
@@ -161,6 +167,22 @@ const callFileRoute = async ({
   )
   return GET(request, { params: Promise.resolve({ id: String(pieceId) }) })
 }
+
+const callPublicPieceMedia = async ({
+  slug,
+  range,
+  download,
+}: {
+  slug: string
+  range?: string
+  download?: boolean
+}): Promise<Response> =>
+  getPublicPieceMedia(
+    new Request(`http://localhost/conteudos/${slug}/midia${download ? '?download=1' : ''}`, {
+      headers: range ? { range } : undefined,
+    }),
+    { params: Promise.resolve({ slug }) },
+  )
 
 const transcribeOk = async () => ({
   ok: true as const,
@@ -783,5 +805,132 @@ describe('content pieces (C211)', () => {
 
     // The loader answers for the communication roles only.
     await expect(loadContentPieceListPageData(payload, leader, {})).rejects.toThrow()
+  })
+
+  it('shows only published pieces with file or link in the public read', async () => {
+    const marker = `pub-${Date.now()}`
+    const draft = await createPiece({ title: `Rascunho ${marker}` })
+    const published = await createPiece({ title: `Publicada ${marker}` })
+    const empty = await createPiece({ title: `Vazia ${marker}`, withMedia: false })
+    const link = await createPiece({
+      title: `Link ${marker}`,
+      withMedia: false,
+      origin: 'youtube',
+      sourceUrl: `https://www.youtube.com/watch?v=PUB${Date.now()}`,
+    })
+
+    await payload.update({
+      collection: 'contentPiece',
+      id: published.piece.id,
+      data: { status: 'publicado' },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'contentPiece',
+      id: empty.piece.id,
+      data: { status: 'publicado' },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'contentPiece',
+      id: link.piece.id,
+      data: { status: 'publicado' },
+      overrideAccess: true,
+    })
+
+    const items = await getPublishedContentPieceItems()
+    const ids = items.map((item) => item.id)
+    const publishedItem = items.find((item) => item.id === published.piece.id)
+
+    expect(ids).toContain(published.piece.id)
+    expect(ids).toContain(link.piece.id)
+    expect(ids).not.toContain(draft.piece.id)
+    // Published but with nothing to show (no file, no link) fails closed.
+    expect(ids).not.toContain(empty.piece.id)
+    expect(publishedItem?.slug).toMatch(new RegExp(`^publicada-${marker}`))
+    expect(await getPublishedContentPieceBySlug(publishedItem!.slug)).toMatchObject({
+      id: published.piece.id,
+      file: { path: `/conteudos/${publishedItem!.slug}/midia` },
+    })
+    expect(await getPublishedContentPieceBySlug(`nao-existe-${marker}`)).toBeNull()
+    expect(await hasPublishedContentPieces()).toBe(true)
+  })
+
+  it('serves a published piece file publicly and 404s draft, link and unknown slugs', async () => {
+    const marker = `media-${Date.now()}`
+    const draft = await createPiece({ title: `Mídia rascunho ${marker}` })
+    const published = await createPiece({ title: `Mídia pública ${marker}` })
+    const link = await createPiece({
+      title: `Mídia link ${marker}`,
+      withMedia: false,
+      origin: 'instagram',
+      sourceUrl: `https://www.instagram.com/reel/MEDIA${Date.now()}/`,
+    })
+
+    await payload.update({
+      collection: 'contentPiece',
+      id: published.piece.id,
+      data: { status: 'publicado' },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: 'contentPiece',
+      id: link.piece.id,
+      data: { status: 'publicado' },
+      overrideAccess: true,
+    })
+
+    const publishedSlug = (
+      await payload.findByID({
+        collection: 'contentPiece',
+        id: published.piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+    ).slug!
+    const draftSlug = (
+      await payload.findByID({
+        collection: 'contentPiece',
+        id: draft.piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+    ).slug
+    const linkSlug = (
+      await payload.findByID({
+        collection: 'contentPiece',
+        id: link.piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+    ).slug!
+
+    const full = await callPublicPieceMedia({ slug: publishedSlug })
+    expect(full.status).toBe(200)
+    expect(Buffer.from(await full.arrayBuffer())).toEqual(VIDEO_BYTES)
+
+    const partial = await callPublicPieceMedia({ slug: publishedSlug, range: 'bytes=0-3' })
+    expect(partial.status).toBe(206)
+
+    const download = await callPublicPieceMedia({ slug: publishedSlug, download: true })
+    expect(download.headers.get('Content-Disposition')).toContain('attachment')
+    // The public download carries the legible name, never the stored upload one.
+    expect(download.headers.get('Content-Disposition')).toContain(
+      `jorge-solla-1313-${publishedSlug}.mp4`,
+    )
+
+    // A draft has no public slug at all; a link piece has no archived file.
+    expect(draftSlug).toBeNull()
+    expect((await callPublicPieceMedia({ slug: linkSlug })).status).toBe(404)
+    expect((await callPublicPieceMedia({ slug: `nao-existe-${marker}` })).status).toBe(404)
+
+    // Unpublishing removes the file from the public door immediately.
+    await payload.update({
+      collection: 'contentPiece',
+      id: published.piece.id,
+      data: { status: 'rascunho' },
+      overrideAccess: true,
+    })
+    expect((await callPublicPieceMedia({ slug: publishedSlug })).status).toBe(404)
   })
 })
