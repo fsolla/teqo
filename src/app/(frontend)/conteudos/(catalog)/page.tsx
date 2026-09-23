@@ -23,7 +23,6 @@ import { hasPublishedJingles } from '@/utilities/jingleReads'
 import { resolveOgImage } from '@/utilities/ogImageReads'
 import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 
 const CATALOG_TITLE = 'Central de Conteúdos — Peça voto pra Solla 1313'
 const CATALOG_DESCRIPTION =
@@ -82,11 +81,7 @@ export default async function ConteudosPage({
 }: {
   searchParams: Promise<ContentPieceCatalogSearchParams>
 }) {
-  const [rawSearchParams, requestHeaders, showJingles] = await Promise.all([
-    searchParams,
-    headers(),
-    hasPublishedJingles(),
-  ])
+  const [rawSearchParams, showJingles] = await Promise.all([searchParams, hasPublishedJingles()])
   const {
     publishedCount,
     params,
@@ -96,7 +91,7 @@ export default async function ConteudosPage({
     themeMode,
     themeUnavailable,
     themeApplied,
-  } = await loadContentPieceCatalogSearch({ rawSearchParams, requestHeaders })
+  } = await loadContentPieceCatalogSearch({ rawSearchParams })
 
   if (publishedCount === 0) {
     return (
