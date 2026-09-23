@@ -16,6 +16,7 @@ const CARD_MODEL_IDS = [
   'perfil-quadrado',
   'perfil-retangular',
   'time-de-voce',
+  'time-do-estadual',
 ] as const
 
 export type CardModelId = (typeof CARD_MODEL_IDS)[number]
@@ -41,6 +42,12 @@ export type CardModel = {
   overlaySrc?: string
   /** Team model: the filled example shown before a cutout is ready. */
   previewSrc?: string
+  /**
+   * S30 — team model whose art is picked per state deputy: the composer swaps
+   * `assetSrc`/`overlaySrc` for the selected catalog entry (the defaults are the
+   * illustrative JULIO pair) and gates the flow on the selection.
+   */
+  stateDeputyPicker?: boolean
   /** Optional gallery badge (e.g. `NOVO`). */
   badge?: string
 }
@@ -79,6 +86,22 @@ export const CARD_MODELS: readonly CardModel[] = [
     assetSrc: '/cards/team-card-base.png',
     overlaySrc: '/cards/team-card-front.png',
     previewSrc: '/cards/team-card-example.jpg',
+    width: 1080,
+    height: 1440,
+    photoWindow: { x: 286, y: 439, width: 592, height: 577 },
+  },
+  {
+    id: 'time-do-estadual',
+    kind: 'team',
+    label: 'Time do estadual',
+    // S30 — the defaults are the illustrative pair (JULIO, the deputy of the
+    // approved example art); the composer swaps them for the selected entry of
+    // `stateDeputyCatalog`. `previewSrc` is the exact file approved by the
+    // human for the gallery tile and the pre-selection placeholder.
+    assetSrc: '/cards/estaduais/julio-fotos.webp',
+    overlaySrc: '/cards/estaduais/julio-base.webp',
+    previewSrc: '/cards/modelo-time-de-voce-com-estadual.jpeg',
+    stateDeputyPicker: true,
     badge: 'NOVO',
     width: 1080,
     height: 1440,

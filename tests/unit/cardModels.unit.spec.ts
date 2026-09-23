@@ -11,12 +11,13 @@ import {
 } from '@/lib/cardModels'
 
 describe('card model catalog (S13/S15)', () => {
-  it('exposes the four shipped models with unique ids', () => {
+  it('exposes the five shipped models with unique ids', () => {
     expect(CARD_MODELS.map((model) => model.id)).toEqual([
       'eu-sou-solla',
       'perfil-quadrado',
       'perfil-retangular',
       'time-de-voce',
+      'time-do-estadual',
     ])
     expect(new Set(CARD_MODELS.map((model) => model.id)).size).toBe(CARD_MODELS.length)
   })
@@ -74,12 +75,30 @@ describe('card model catalog (S13/S15)', () => {
       assetSrc: '/cards/team-card-base.png',
       overlaySrc: '/cards/team-card-front.png',
       previewSrc: '/cards/team-card-example.jpg',
-      badge: 'NOVO',
       width: 1080,
       height: 1440,
       photoWindow: { x: 286, y: 439, width: 592, height: 577 },
     })
     expect(getCardModel('eu-sou-solla')?.overlaySrc).toBeUndefined()
+  })
+
+  it('pins the S30 state-deputy model: same team geometry, picker flag and the approved example', () => {
+    expect(getCardModel('time-do-estadual')).toMatchObject({
+      kind: 'team',
+      label: 'Time do estadual',
+      assetSrc: '/cards/estaduais/julio-fotos.webp',
+      overlaySrc: '/cards/estaduais/julio-base.webp',
+      previewSrc: '/cards/modelo-time-de-voce-com-estadual.jpeg',
+      stateDeputyPicker: true,
+      badge: 'NOVO',
+      width: 1080,
+      height: 1440,
+      photoWindow: { x: 286, y: 439, width: 592, height: 577 },
+    })
+    // The `NOVO` badge marks the newest model only (design gate scene 1).
+    expect(getCardModel('time-de-voce')?.badge).toBeUndefined()
+    expect(getCardModel('time-do-estadual')?.stateDeputyPicker).toBe(true)
+    expect(getCardModel('time-de-voce')?.stateDeputyPicker).toBeUndefined()
   })
 
   it('guards the team banners and name slot measured from the example card', () => {
@@ -137,6 +156,7 @@ describe('card model catalog (S13/S15)', () => {
     expect(isCardModelId('perfil-quadrado')).toBe(true)
     expect(isCardModelId('perfil-retangular')).toBe(true)
     expect(isCardModelId('time-de-voce')).toBe(true)
+    expect(isCardModelId('time-do-estadual')).toBe(true)
     expect(isCardModelId('modelo-inventado')).toBe(false)
     expect(isCardModelId(['perfil-quadrado'])).toBe(false)
     expect(isCardModelId(undefined)).toBe(false)

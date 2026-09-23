@@ -15,8 +15,10 @@ import {
   type CardPhotoSize,
 } from '@/lib/cardPhotoTransform'
 import {
+  CARD_VISITOR_SILHOUETTE_FILL,
   createCardMeasure,
   drawCardName,
+  drawCardVisitorSilhouette,
   renderNameCard,
   renderPhotoCard,
   renderTeamCard,
@@ -73,6 +75,21 @@ const createFakeContext = () => {
     },
     rotate: (angle) => {
       ops.push({ op: 'rotate', args: [angle] })
+    },
+    beginPath: () => {
+      ops.push({ op: 'beginPath', args: [] })
+    },
+    arc: (x, y, radius, startAngle, endAngle) => {
+      ops.push({ op: 'arc', args: [x, y, radius, startAngle, endAngle] })
+    },
+    ellipse: (x, y, radiusX, radiusY, rotation, startAngle, endAngle) => {
+      ops.push({ op: 'ellipse', args: [x, y, radiusX, radiusY, rotation, startAngle, endAngle] })
+    },
+    rect: (x, y, width, height) => {
+      ops.push({ op: 'rect', args: [x, y, width, height] })
+    },
+    fill: () => {
+      ops.push({ op: 'fill', args: [] })
     },
   }
 
@@ -184,9 +201,7 @@ describe('renderTeamCard', () => {
     const result = renderTeamCard(fake.ctx, teamModel, {
       base,
       overlay,
-      photo,
-      photoSize,
-      transform,
+      subject: { kind: 'photo', photo, photoSize, transform },
       window,
       name,
       fontFamily: 'Brexter',
@@ -243,6 +258,82 @@ describe('renderTeamCard', () => {
     expect(result.fit).toEqual({ ok: false, reason: 'too-long' })
     expect(rectCalls).toHaveLength(1)
     expect(textCalls.map((call) => call.text)).toEqual(['TIME DE'])
+  })
+
+  it('returns the clamped photo transform for the photo subject', () => {
+    const { result, photo } = render('Maria')
+
+    expect(result.transform).toEqual(transform)
+
+    // A transform outside the cover floor comes back clamped, never as sent.
+    const fake = createFakeContext()
+    const outOfBounds = { zoom: 0.5, offsetX: 10_000, offsetY: -10_000 }
+    const clamped = renderTeamCard(fake.ctx, teamModel, {
+      base: { id: 'base' } as unknown as CanvasImageSource,
+      overlay: { id: 'overlay' } as unknown as CanvasImageSource,
+      subject: { kind: 'photo', photo, photoSize, transform: outOfBounds },
+      window,
+      name: 'Maria',
+      fontFamily: 'Brexter',
+      measure: createCardMeasure(fake.ctx, 'Brexter'),
+    })
+
+    expect(clamped.transform).not.toEqual(outOfBounds)
+    expect(clamped.transform?.zoom).toBe(1)
+  })
+
+  it('draws the visitor silhouette instead of the photo when no cutout is ready (S30)', () => {
+    const fake = createFakeContext()
+    const base = { id: 'base' } as unknown as CanvasImageSource
+    const overlay = { id: 'overlay' } as unknown as CanvasImageSource
+    const result = renderTeamCard(fake.ctx, teamModel, {
+      base,
+      overlay,
+      subject: { kind: 'silhouette' },
+      window,
+      name: 'Maria',
+      fontFamily: 'Brexter',
+      measure: createCardMeasure(fake.ctx, 'Brexter'),
+    })
+
+    expect(result.transform).toBeNull()
+    expect(result.fit).toMatchObject({ ok: true, lines: ['MARIA'] })
+    expect(fake.drawCalls.map((call) => call.image)).toEqual([base, overlay])
+    // Head circle + shoulder dome (rect + upper-half ellipse), both filled.
+    expect(fake.ops.filter((op) => op.op === 'fill')).toHaveLength(2)
+  })
+})
+
+describe('drawCardVisitorSilhouette (S30)', () => {
+  const window = teamModel.photoWindow!
+
+  it('normalizes the head and shoulders on the photo window', () => {
+    const { ctx, ops } = createFakeContext()
+
+    drawCardVisitorSilhouette(ctx, window)
+
+    const shoulderHeight = window.height * 0.72
+    const shoulderBottom = window.y + window.height * 1.03
+    const bodyTop = shoulderBottom - shoulderHeight + shoulderHeight * 0.48
+    const rect = ops.find((op) => op.op === 'rect')!
+    const ellipse = ops.find((op) => op.op === 'ellipse')!
+
+    expect(rect.args).toEqual([window.x, bodyTop, window.width, shoulderBottom - bodyTop])
+    expect(ellipse.args).toEqual([
+      window.x + window.width / 2,
+      bodyTop,
+      window.width * 0.48,
+      shoulderHeight * 0.48,
+      0,
+      Math.PI,
+      0,
+    ])
+    // The shoulders never grow wider than the window they sit in.
+    expect(window.x + window.width / 2 - ellipse.args[2]!).toBeGreaterThanOrEqual(window.x)
+    expect(window.x + window.width / 2 + ellipse.args[2]!).toBeLessThanOrEqual(
+      window.x + window.width,
+    )
+    expect(ctx.fillStyle).toBe(CARD_VISITOR_SILHOUETTE_FILL)
   })
 })
 

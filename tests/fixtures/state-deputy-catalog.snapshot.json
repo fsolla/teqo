@@ -1,0 +1,379 @@
+{
+  "description": "Frozen snapshot of the derived state-deputy card catalog (S30) — slug, display name, ballot number and asset paths are the public contract of the time-do-estadual model.",
+  "generatedFrom": "src/lib/stateDeputyCatalog.ts",
+  "stateDeputyCount": 53,
+  "identitySha256": "dd94a308d507fbad5b2e31fa83080aa829fb918a48c2ce8f13fe08df985c5694",
+  "entries": [
+    {
+      "slug": "adriana",
+      "name": "Coletivo de Enfermagem",
+      "ballotNumber": "13763",
+      "photosSrc": "/cards/estaduais/adriana-fotos.webp",
+      "baseSrc": "/cards/estaduais/adriana-base.webp"
+    },
+    {
+      "slug": "andre",
+      "name": "André Fidalgo",
+      "ballotNumber": "13131",
+      "photosSrc": "/cards/estaduais/andre-fotos.webp",
+      "baseSrc": "/cards/estaduais/andre-base.webp"
+    },
+    {
+      "slug": "andrea",
+      "name": "Andréa Castro",
+      "ballotNumber": "55670",
+      "photosSrc": "/cards/estaduais/andrea-fotos.webp",
+      "baseSrc": "/cards/estaduais/andrea-base.webp"
+    },
+    {
+      "slug": "angelo",
+      "name": "Angelo Almeida",
+      "ballotNumber": "13100",
+      "photosSrc": "/cards/estaduais/angelo-fotos.webp",
+      "baseSrc": "/cards/estaduais/angelo-base.webp"
+    },
+    {
+      "slug": "arthur",
+      "name": "Artur Barachisio Lisbôa",
+      "ballotNumber": "55255",
+      "photosSrc": "/cards/estaduais/arthur-fotos.webp",
+      "baseSrc": "/cards/estaduais/arthur-base.webp"
+    },
+    {
+      "slug": "bobo",
+      "name": "Bobô",
+      "ballotNumber": "65888",
+      "photosSrc": "/cards/estaduais/bobo-fotos.webp",
+      "baseSrc": "/cards/estaduais/bobo-base.webp"
+    },
+    {
+      "slug": "carol",
+      "name": "Carol da Pitanguinha",
+      "ballotNumber": "13110",
+      "photosSrc": "/cards/estaduais/carol-fotos.webp",
+      "baseSrc": "/cards/estaduais/carol-base.webp"
+    },
+    {
+      "slug": "cicero",
+      "name": "Cícero Monteiro",
+      "ballotNumber": "70133",
+      "photosSrc": "/cards/estaduais/cicero-fotos.webp",
+      "baseSrc": "/cards/estaduais/cicero-base.webp"
+    },
+    {
+      "slug": "denise",
+      "name": "Denise Menezes",
+      "ballotNumber": "55111",
+      "photosSrc": "/cards/estaduais/denise-fotos.webp",
+      "baseSrc": "/cards/estaduais/denise-base.webp"
+    },
+    {
+      "slug": "elane",
+      "name": "Dra. Elaine",
+      "ballotNumber": "55100",
+      "photosSrc": "/cards/estaduais/elane-fotos.webp",
+      "baseSrc": "/cards/estaduais/elane-base.webp"
+    },
+    {
+      "slug": "euclides",
+      "name": "Euclides Fernandes",
+      "ballotNumber": "13123",
+      "photosSrc": "/cards/estaduais/euclides-fotos.webp",
+      "baseSrc": "/cards/estaduais/euclides-base.webp"
+    },
+    {
+      "slug": "fabiola",
+      "name": "Dra. Fabíola Mansur",
+      "ballotNumber": "43123",
+      "photosSrc": "/cards/estaduais/fabiola-fotos.webp",
+      "baseSrc": "/cards/estaduais/fabiola-base.webp"
+    },
+    {
+      "slug": "fatima",
+      "name": "Fátima Nunes",
+      "ballotNumber": "13567",
+      "photosSrc": "/cards/estaduais/fatima-fotos.webp",
+      "baseSrc": "/cards/estaduais/fatima-base.webp"
+    },
+    {
+      "slug": "felipe",
+      "name": "Felipe Duarte",
+      "ballotNumber": "70111",
+      "photosSrc": "/cards/estaduais/felipe-fotos.webp",
+      "baseSrc": "/cards/estaduais/felipe-base.webp"
+    },
+    {
+      "slug": "geane",
+      "name": "Geane Vasconcelos",
+      "ballotNumber": "12120",
+      "photosSrc": "/cards/estaduais/geane-fotos.webp",
+      "baseSrc": "/cards/estaduais/geane-base.webp"
+    },
+    {
+      "slug": "hilton",
+      "name": "Hilton",
+      "ballotNumber": "50150",
+      "photosSrc": "/cards/estaduais/hilton-fotos.webp",
+      "baseSrc": "/cards/estaduais/hilton-base.webp"
+    },
+    {
+      "slug": "ivana",
+      "name": "Ivana Bastos",
+      "ballotNumber": "55555",
+      "photosSrc": "/cards/estaduais/ivana-fotos.webp",
+      "baseSrc": "/cards/estaduais/ivana-base.webp"
+    },
+    {
+      "slug": "jaco",
+      "name": "Jacó",
+      "ballotNumber": "13130",
+      "photosSrc": "/cards/estaduais/jaco-fotos.webp",
+      "baseSrc": "/cards/estaduais/jaco-base.webp"
+    },
+    {
+      "slug": "jamille",
+      "name": "Jamile da Saúde",
+      "ballotNumber": "45456",
+      "photosSrc": "/cards/estaduais/jamille-fotos.webp",
+      "baseSrc": "/cards/estaduais/jamille-base.webp"
+    },
+    {
+      "slug": "josafa",
+      "name": "Josafá Marinho",
+      "ballotNumber": "12222",
+      "photosSrc": "/cards/estaduais/josafa-fotos.webp",
+      "baseSrc": "/cards/estaduais/josafa-base.webp"
+    },
+    {
+      "slug": "juliete",
+      "name": "Juliete Barreto",
+      "ballotNumber": "65100",
+      "photosSrc": "/cards/estaduais/juliete-fotos.webp",
+      "baseSrc": "/cards/estaduais/juliete-base.webp"
+    },
+    {
+      "slug": "julio",
+      "name": "Julio Pinheiro",
+      "ballotNumber": "13999",
+      "photosSrc": "/cards/estaduais/julio-fotos.webp",
+      "baseSrc": "/cards/estaduais/julio-base.webp"
+    },
+    {
+      "slug": "junior",
+      "name": "Júnior Muniz",
+      "ballotNumber": "13000",
+      "photosSrc": "/cards/estaduais/junior-fotos.webp",
+      "baseSrc": "/cards/estaduais/junior-base.webp"
+    },
+    {
+      "slug": "kleber",
+      "name": "Kleber Rosa",
+      "ballotNumber": "50500",
+      "photosSrc": "/cards/estaduais/kleber-fotos.webp",
+      "baseSrc": "/cards/estaduais/kleber-base.webp"
+    },
+    {
+      "slug": "leninha",
+      "name": "Lenínha Valente",
+      "ballotNumber": "13111",
+      "photosSrc": "/cards/estaduais/leninha-fotos.webp",
+      "baseSrc": "/cards/estaduais/leninha-base.webp"
+    },
+    {
+      "slug": "leo",
+      "name": "Leo de Neco",
+      "ballotNumber": "70700",
+      "photosSrc": "/cards/estaduais/leo-fotos.webp",
+      "baseSrc": "/cards/estaduais/leo-base.webp"
+    },
+    {
+      "slug": "ludmilla",
+      "name": "Ludmilla",
+      "ballotNumber": "55444",
+      "photosSrc": "/cards/estaduais/ludmilla-fotos.webp",
+      "baseSrc": "/cards/estaduais/ludmilla-base.webp"
+    },
+    {
+      "slug": "magno",
+      "name": "Magno",
+      "ballotNumber": "18000",
+      "photosSrc": "/cards/estaduais/magno-fotos.webp",
+      "baseSrc": "/cards/estaduais/magno-base.webp"
+    },
+    {
+      "slug": "marcos",
+      "name": "Dr. Marcos Adriano",
+      "ballotNumber": "12999",
+      "photosSrc": "/cards/estaduais/marcos-fotos.webp",
+      "baseSrc": "/cards/estaduais/marcos-base.webp"
+    },
+    {
+      "slug": "marlene",
+      "name": "Marlene do Sindicato",
+      "ballotNumber": "18111",
+      "photosSrc": "/cards/estaduais/marlene-fotos.webp",
+      "baseSrc": "/cards/estaduais/marlene-base.webp"
+    },
+    {
+      "slug": "mestre",
+      "name": "Mestre Reginaldo",
+      "ballotNumber": "18273",
+      "photosSrc": "/cards/estaduais/mestre-fotos.webp",
+      "baseSrc": "/cards/estaduais/mestre-base.webp"
+    },
+    {
+      "slug": "neusa",
+      "name": "Neusa Cadore",
+      "ballotNumber": "13690",
+      "photosSrc": "/cards/estaduais/neusa-fotos.webp",
+      "baseSrc": "/cards/estaduais/neusa-base.webp"
+    },
+    {
+      "slug": "niltinho",
+      "name": "Niltinho",
+      "ballotNumber": "55999",
+      "photosSrc": "/cards/estaduais/niltinho-fotos.webp",
+      "baseSrc": "/cards/estaduais/niltinho-base.webp"
+    },
+    {
+      "slug": "osni",
+      "name": "Osni",
+      "ballotNumber": "13013",
+      "photosSrc": "/cards/estaduais/osni-fotos.webp",
+      "baseSrc": "/cards/estaduais/osni-base.webp"
+    },
+    {
+      "slug": "pablo",
+      "name": "Pablo Barrozo",
+      "ballotNumber": "70900",
+      "photosSrc": "/cards/estaduais/pablo-fotos.webp",
+      "baseSrc": "/cards/estaduais/pablo-base.webp"
+    },
+    {
+      "slug": "patrick",
+      "name": "Patrick Lopes",
+      "ballotNumber": "70123",
+      "photosSrc": "/cards/estaduais/patrick-fotos.webp",
+      "baseSrc": "/cards/estaduais/patrick-base.webp"
+    },
+    {
+      "slug": "pinheiro",
+      "name": "Pinheiro",
+      "ballotNumber": "13700",
+      "photosSrc": "/cards/estaduais/pinheiro-fotos.webp",
+      "baseSrc": "/cards/estaduais/pinheiro-base.webp"
+    },
+    {
+      "slug": "radiovaldo",
+      "name": "Radiovaldo",
+      "ballotNumber": "13050",
+      "photosSrc": "/cards/estaduais/radiovaldo-fotos.webp",
+      "baseSrc": "/cards/estaduais/radiovaldo-base.webp"
+    },
+    {
+      "slug": "roberto",
+      "name": "Roberto Carlos",
+      "ballotNumber": "43333",
+      "photosSrc": "/cards/estaduais/roberto-fotos.webp",
+      "baseSrc": "/cards/estaduais/roberto-base.webp"
+    },
+    {
+      "slug": "robinson",
+      "name": "Robinson",
+      "ballotNumber": "13500",
+      "photosSrc": "/cards/estaduais/robinson-fotos.webp",
+      "baseSrc": "/cards/estaduais/robinson-base.webp"
+    },
+    {
+      "slug": "rogerio",
+      "name": "Rogério Andrade",
+      "ballotNumber": "15444",
+      "photosSrc": "/cards/estaduais/rogerio-fotos.webp",
+      "baseSrc": "/cards/estaduais/rogerio-base.webp"
+    },
+    {
+      "slug": "rosemberg",
+      "name": "Rosemberg",
+      "ballotNumber": "13444",
+      "photosSrc": "/cards/estaduais/rosemberg-fotos.webp",
+      "baseSrc": "/cards/estaduais/rosemberg-base.webp"
+    },
+    {
+      "slug": "rosival",
+      "name": "Rosival Leite",
+      "ballotNumber": "13333",
+      "photosSrc": "/cards/estaduais/rosival-fotos.webp",
+      "baseSrc": "/cards/estaduais/rosival-base.webp"
+    },
+    {
+      "slug": "rowenna",
+      "name": "Rowenna",
+      "ballotNumber": "13456",
+      "photosSrc": "/cards/estaduais/rowenna-fotos.webp",
+      "baseSrc": "/cards/estaduais/rowenna-base.webp"
+    },
+    {
+      "slug": "silva",
+      "name": "Silva Neto",
+      "ballotNumber": "70444",
+      "photosSrc": "/cards/estaduais/silva-fotos.webp",
+      "baseSrc": "/cards/estaduais/silva-base.webp"
+    },
+    {
+      "slug": "silvio",
+      "name": "Silvio Dias",
+      "ballotNumber": "13113",
+      "photosSrc": "/cards/estaduais/silvio-fotos.webp",
+      "baseSrc": "/cards/estaduais/silvio-base.webp"
+    },
+    {
+      "slug": "thiago",
+      "name": "Thiago Gilleno",
+      "ballotNumber": "10000",
+      "photosSrc": "/cards/estaduais/thiago-fotos.webp",
+      "baseSrc": "/cards/estaduais/thiago-base.webp"
+    },
+    {
+      "slug": "vilma",
+      "name": "Vilma Reis",
+      "ballotNumber": "13033",
+      "photosSrc": "/cards/estaduais/vilma-fotos.webp",
+      "baseSrc": "/cards/estaduais/vilma-base.webp"
+    },
+    {
+      "slug": "vitor",
+      "name": "Vitor Azevedo",
+      "ballotNumber": "70333",
+      "photosSrc": "/cards/estaduais/vitor-fotos.webp",
+      "baseSrc": "/cards/estaduais/vitor-base.webp"
+    },
+    {
+      "slug": "welligton",
+      "name": "Wellington Oliveira",
+      "ballotNumber": "40888",
+      "photosSrc": "/cards/estaduais/welligton-fotos.webp",
+      "baseSrc": "/cards/estaduais/welligton-base.webp"
+    },
+    {
+      "slug": "wenceslau",
+      "name": "Wenceslau",
+      "ballotNumber": "65111",
+      "photosSrc": "/cards/estaduais/wenceslau-fotos.webp",
+      "baseSrc": "/cards/estaduais/wenceslau-base.webp"
+    },
+    {
+      "slug": "yulo",
+      "name": "Yulo",
+      "ballotNumber": "13234",
+      "photosSrc": "/cards/estaduais/yulo-fotos.webp",
+      "baseSrc": "/cards/estaduais/yulo-base.webp"
+    },
+    {
+      "slug": "ze-raimundo",
+      "name": "Zé Raimundo",
+      "ballotNumber": "13222",
+      "photosSrc": "/cards/estaduais/ze-raimundo-fotos.webp",
+      "baseSrc": "/cards/estaduais/ze-raimundo-base.webp"
+    }
+  ]
+}

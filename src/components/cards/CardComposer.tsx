@@ -26,6 +26,7 @@ import {
   CARD_PRIVACY_NOTE,
 } from '@/components/cards/cardCopy'
 import { CardPreviewCanvas } from '@/components/cards/CardPreviewCanvas'
+import { StateDeputySelect } from '@/components/cards/StateDeputySelect'
 import { useCardCutout } from '@/components/cards/useCardCutout'
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer'
@@ -47,6 +48,7 @@ import {
   renderPhotoCard,
   renderTeamCard,
 } from '@/lib/cardRender'
+import { getStateDeputyCard, type StateDeputyCatalogEntry } from '@/lib/stateDeputyCatalog'
 
 const primaryButtonClassName =
   'inline-flex min-h-11 flex-1 items-center justify-center rounded-lg bg-(--pt-red) px-5 text-sm font-extrabold text-white transition hover:brightness-95 focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50'
@@ -65,6 +67,22 @@ const TEAM_PREVIEW_WIDTH: Record<TeamPreviewStage, string> = {
   processing: 'max-w-[9rem]',
   ready: 'max-w-[11.25rem] sm:max-w-[15rem]',
   result: 'max-w-[11.875rem]',
+}
+
+/**
+ * S30 — the dobradinha preview gets the gate's larger stage (scene 4: 230px
+ * desktop; scene 5: 205px mobile) while the S15 tokens above stay untouched.
+ * `selected` is the chosen-but-photoless state, which the gate draws at the same
+ * prominence as the result; the pre-selection and the too-long error stay
+ * compact (scenes 3 and 4-right).
+ */
+type StateDeputyPreviewStage = TeamPreviewStage | 'selected'
+const STATE_DEPUTY_PREVIEW_WIDTH: Record<StateDeputyPreviewStage, string> = {
+  idle: 'max-w-[10.75rem]',
+  processing: 'max-w-[9rem]',
+  ready: 'max-w-[12.8125rem] sm:max-w-[15rem]',
+  result: 'max-w-[12.8125rem] sm:max-w-[14.375rem]',
+  selected: 'max-w-[12.8125rem] sm:max-w-[14.375rem]',
 }
 
 const TeamNameField = ({
@@ -167,6 +185,16 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const [isDownloading, setIsDownloading] = useState(false)
   /** S17 — LIGADO by default; resets only when the composer unmounts (no persistence). */
   const [harmonyEnabled, setHarmonyEnabled] = useState(true)
+  /** S30 — the state deputy of the dobradinha model (name/number/art pair). */
+  const [selectedDeputySlug, setSelectedDeputySlug] = useState<string | null>(null)
+  const [deputyImages, setDeputyImages] = useState<{
+    slug: string
+    photos: HTMLImageElement
+    base: HTMLImageElement
+  } | null>(null)
+  const [deputyAssetError, setDeputyAssetError] = useState(false)
+  /** Bumped when the same deputy is re-picked after a pair load failure. */
+  const [deputyReloadToken, setDeputyReloadToken] = useState(0)
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -177,7 +205,17 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const photoWindow = model.photoWindow
   const isNameModel = model.kind === 'name'
   const isTeamModel = model.kind === 'team'
-  const cutout = useCardCutout(photoWindow, isTeamModel ? model.assetSrc : undefined)
+  const isStateDeputyModel = isTeamModel && model.stateDeputyPicker === true
+  const selectedDeputy = selectedDeputySlug
+    ? (getStateDeputyCard(selectedDeputySlug) ?? null)
+    : null
+  const deputyPairReady = selectedDeputy !== null && deputyImages?.slug === selectedDeputy.slug
+  // S30 — the tone reference is the selected deputy's group art, frozen when the
+  // cutout starts (switching the deputy later keeps the processed photo).
+  const cutout = useCardCutout(
+    photoWindow,
+    isStateDeputyModel ? selectedDeputy?.photosSrc : isTeamModel ? model.assetSrc : undefined,
+  )
   const cutoutState = cutout.state
 
   const teamProcessing = cutoutState.status === 'processing' ? cutoutState : null
@@ -215,9 +253,14 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
       try {
         const fontReady = await ensureCardFont(fontFamily)
         if (!fontReady) throw new Error('card-font-unavailable')
+        // S30 — the dobradinha model loads its art pair per selection (below);
+        // the static defaults stay unused so no illustrative JULIO art flashes
+        // before the choice.
         const [image, overlay, preview] = await Promise.all([
-          loadCardImage(model.assetSrc),
-          model.overlaySrc ? loadCardImage(model.overlaySrc) : Promise.resolve(null),
+          isStateDeputyModel ? Promise.resolve(null) : loadCardImage(model.assetSrc),
+          !isStateDeputyModel && model.overlaySrc
+            ? loadCardImage(model.overlaySrc)
+            : Promise.resolve(null),
           model.previewSrc ? loadCardImage(model.previewSrc) : Promise.resolve(null),
         ])
         if (cancelled) return
@@ -234,53 +277,120 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     return () => {
       cancelled = true
     }
-  }, [model.assetSrc, model.overlaySrc, model.previewSrc, fontFamily])
+  }, [isStateDeputyModel, model.assetSrc, model.overlaySrc, model.previewSrc, fontFamily])
+
+  /**
+   * S30 — the selected deputy's pair swaps in place: the previous art stays
+   * painted until both files decode (no loading state, no flicker) and the name
+   * and cutout states are untouched by the swap.
+   */
+  useEffect(() => {
+    if (!isStateDeputyModel || !selectedDeputy) return
+
+    let cancelled = false
+    setDeputyAssetError(false)
+
+    const load = async () => {
+      try {
+        const [photos, base] = await Promise.all([
+          loadCardImage(selectedDeputy.photosSrc),
+          loadCardImage(selectedDeputy.baseSrc),
+        ])
+        if (cancelled) return
+        setDeputyImages({ slug: selectedDeputy.slug, photos, base })
+      } catch {
+        if (!cancelled) setDeputyAssetError(true)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [isStateDeputyModel, selectedDeputy, deputyReloadToken])
 
   useEffect(() => {
     const ctx = canvasRef.current?.getContext('2d')
-    if (!ctx || !baseImage || loadState !== 'ready') return
+    if (!ctx || loadState !== 'ready') return
 
-    ctx.clearRect(0, 0, model.width, model.height)
+    const measure = createCardMeasure(ctx, fontFamily)
 
     if (isNameModel) {
-      setNameFit(
-        renderNameCard(ctx, model, {
-          image: baseImage,
-          name,
-          fontFamily,
-          measure: createCardMeasure(ctx, fontFamily),
-        }),
-      )
+      if (!baseImage) return
+      ctx.clearRect(0, 0, model.width, model.height)
+      setNameFit(renderNameCard(ctx, model, { image: baseImage, name, fontFamily, measure }))
       return
     }
 
     if (isTeamModel) {
-      const measure = createCardMeasure(ctx, fontFamily)
+      // S30 — the dobradinha pair comes from the selected catalog entry: `photos`
+      // is the FOTOS background (drawn under the cutout) and `base` is the front
+      // BASE overlay (drawn above it) — the opposite of the S15 masters.
+      const artBase = isStateDeputyModel ? deputyImages?.photos : baseImage
+      const artOverlay = isStateDeputyModel ? deputyImages?.base : overlayImage
 
-      if (teamReady && overlayImage && effectiveTransform && photoWindow) {
+      if (isStateDeputyModel && !selectedDeputy) {
+        // Before the choice: the approved example art (no banners), exactly the
+        // gate's scene 3 placeholder.
+        ctx.clearRect(0, 0, model.width, model.height)
+        setNameFit(fitCardName(name, measure, TEAM_CARD_NAME_SLOT))
+        if (previewImage) ctx.drawImage(previewImage, 0, 0, model.width, model.height)
+        return
+      }
+
+      // Art not decoded yet (first selection or a swap in flight): keep the
+      // current frame painted instead of clearing to a bare canvas.
+      if (!artBase || !artOverlay) return
+
+      ctx.clearRect(0, 0, model.width, model.height)
+
+      if (teamReady && effectiveTransform && photoWindow) {
         const result = renderTeamCard(ctx, model, {
-          base: baseImage,
-          overlay: overlayImage,
-          photo: harmonyEnabled && teamReady.harmonized ? teamReady.harmonized : teamReady.canvas,
-          photoSize: { width: teamReady.width, height: teamReady.height },
-          transform: effectiveTransform,
+          base: artBase,
+          overlay: artOverlay,
+          subject: {
+            kind: 'photo',
+            photo: harmonyEnabled && teamReady.harmonized ? teamReady.harmonized : teamReady.canvas,
+            photoSize: { width: teamReady.width, height: teamReady.height },
+            transform: effectiveTransform,
+          },
           window: photoWindow,
           name,
           fontFamily,
           measure,
         })
         setNameFit(result.fit)
-        if (!cardPhotoTransformsEqual(result.transform, effectiveTransform)) {
+        if (result.transform && !cardPhotoTransformsEqual(result.transform, effectiveTransform)) {
           setPhotoTransform(result.transform)
         }
         return
       }
 
+      if (isStateDeputyModel) {
+        // Chosen but no photo yet: the visitor silhouette marks the photo slot.
+        if (!photoWindow) return
+        setNameFit(
+          renderTeamCard(ctx, model, {
+            base: artBase,
+            overlay: artOverlay,
+            subject: { kind: 'silhouette' },
+            window: photoWindow,
+            name,
+            fontFamily,
+            measure,
+          }).fit,
+        )
+        return
+      }
+
       setNameFit(fitCardName(name, measure, TEAM_CARD_NAME_SLOT))
-      const idleImage = cutoutState.status === 'idle' && previewImage ? previewImage : baseImage
+      const idleImage = cutoutState.status === 'idle' && previewImage ? previewImage : artBase
       ctx.drawImage(idleImage, 0, 0, model.width, model.height)
       return
     }
+
+    if (!baseImage) return
+    ctx.clearRect(0, 0, model.width, model.height)
 
     if (photo && effectiveTransform && photoWindow && photoSize) {
       const clamped = renderPhotoCard(ctx, {
@@ -309,6 +419,9 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     loadState,
     isNameModel,
     isTeamModel,
+    isStateDeputyModel,
+    selectedDeputy,
+    deputyImages,
     teamReady,
     harmonyEnabled,
     cutoutState.status,
@@ -349,6 +462,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     setPhotoTransform(null)
     void cutout.start(file)
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  /** S30 — the swap keeps name and processed photo (only the art pair changes). */
+  const handleSelectDeputy = (card: StateDeputyCatalogEntry) => {
+    // Re-picking the same entry after a pair failure must retry the load.
+    if (card.slug === selectedDeputySlug) setDeputyReloadToken((token) => token + 1)
+    setSelectedDeputySlug(card.slug)
   }
 
   /** Applies a pan/zoom update over the derived or user-owned transform. */
@@ -421,26 +541,39 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const nameCanAdvance = nameFit?.ok === true
   const canAdvance = isNameModel
     ? nameCanAdvance
-    : isTeamModel
-      ? teamReady !== null && nameCanAdvance
-      : photo !== null
+    : isStateDeputyModel
+      ? selectedDeputy !== null && deputyPairReady && teamReady !== null && nameCanAdvance
+      : isTeamModel
+        ? teamReady !== null && nameCanAdvance
+        : photo !== null
   const nameError =
     (isNameModel || isTeamModel) && name.trim().length > 0 && nameFit !== null && !nameFit.ok
-  const adjustable = isTeamModel ? teamReady !== null : photo !== null
+  const adjustable = isStateDeputyModel
+    ? deputyPairReady && teamReady !== null
+    : isTeamModel
+      ? teamReady !== null
+      : photo !== null
   const title = (() => {
     if (step === 'result') return 'Seu card está pronto para compartilhar.'
     if (isNameModel) return 'Personalize com seu nome'
+    if (isStateDeputyModel && !selectedDeputy) return 'Escolha sua dobradinha'
     if (!isTeamModel) return 'Enquadre sua foto'
     if (teamProcessing) return 'Preparando sua foto'
     if (teamError) return 'Vamos tentar outra vez'
     if (nameError) return 'Encurte o nome'
     if (teamReady) return 'Confira seu card'
+    if (isStateDeputyModel) return 'Agora coloque seu nome'
     return 'Entre para o time'
   })()
   const photoHeaderDescription =
     step === 'compose' && !isNameModel && !isTeamModel
       ? 'Arraste para posicionar e use os controles para aproximar ou ajustar.'
       : null
+  const stateDeputyHeaderDescription =
+    isStateDeputyModel && step === 'compose' && !selectedDeputy
+      ? 'Escolha seu estadual da dobradinha.'
+      : null
+  const headerDescription = photoHeaderDescription ?? stateDeputyHeaderDescription
   const teamBodyNotice =
     isTeamModel && step === 'compose' && teamReady && !nameError
       ? 'O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.'
@@ -453,7 +586,11 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         ? 'Falha no recorte'
         : nameError
           ? 'Nome muito longo'
-          : 'Time de você'
+          : isStateDeputyModel
+            ? selectedDeputy
+              ? 'Estadual escolhido'
+              : 'Time do estadual'
+            : 'Time de você'
     : null
   const eyebrowNode = eyebrow ? (
     <p className="text-[10px] font-black tracking-[0.1em] text-(--pt-red) uppercase sm:text-xs">
@@ -471,9 +608,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         <DialogTitle className="text-xl font-black tracking-[-0.01em] text-balance">
           {title}
         </DialogTitle>
-        {photoHeaderDescription ? (
-          <ShellDescription>{photoHeaderDescription}</ShellDescription>
-        ) : null}
+        {headerDescription ? <ShellDescription>{headerDescription}</ShellDescription> : null}
       </DialogHeader>
     ) : (
       <DrawerHeader className="min-w-0 flex-1 text-left!">
@@ -481,15 +616,19 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         <DrawerTitle className="text-lg font-black tracking-[-0.01em] text-balance">
           {title}
         </DrawerTitle>
-        {photoHeaderDescription ? (
-          <ShellDescription>{photoHeaderDescription}</ShellDescription>
-        ) : null}
+        {headerDescription ? <ShellDescription>{headerDescription}</ShellDescription> : null}
       </DrawerHeader>
     )
 
   const teamPreviewStage: TeamPreviewStage =
     step === 'result' ? 'result' : teamReady ? 'ready' : teamProcessing ? 'processing' : 'idle'
-  const previewWidthClassName = isTeamModel ? TEAM_PREVIEW_WIDTH[teamPreviewStage] : 'max-w-[22rem]'
+  const stateDeputyPreviewStage: StateDeputyPreviewStage =
+    teamPreviewStage === 'idle' && selectedDeputy && !nameError ? 'selected' : teamPreviewStage
+  const previewWidthClassName = isStateDeputyModel
+    ? STATE_DEPUTY_PREVIEW_WIDTH[stateDeputyPreviewStage]
+    : isTeamModel
+      ? TEAM_PREVIEW_WIDTH[teamPreviewStage]
+      : 'max-w-[22rem]'
 
   const nameInputClassName = `mt-2 h-11 w-full rounded-lg bg-white px-3 text-base text-(--campaign-ink) focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none ${
     nameError
@@ -648,6 +787,22 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
           </p>
         ) : null}
 
+        {step === 'compose' && isStateDeputyModel ? (
+          <div>
+            {!selectedDeputy ? (
+              <p className="mt-3 text-center text-[11px] leading-4 text-(--campaign-muted)">
+                A silhueta marca o lugar da sua foto. O card final usa a arte do estadual escolhido.
+              </p>
+            ) : null}
+            <StateDeputySelect selected={selectedDeputy} onSelect={handleSelectDeputy} />
+            {deputyAssetError ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-(--pt-red)">
+                Não foi possível carregar a arte deste estadual. Escolha outro e tente de novo.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         {step === 'compose' && isNameModel ? (
           <div className="mt-5">
             <label htmlFor={nameInputId} className="block text-sm font-bold text-(--campaign-ink)">
@@ -683,19 +838,28 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
               error={nameError}
               inputClassName={nameInputClassName}
             />
-            <div className="mt-5 rounded-lg border border-(--campaign-line) bg-(--campaign-surface) p-4">
-              <p className="text-sm font-bold text-(--campaign-ink)">Sua foto de busto</p>
-              <p className="mt-1 text-sm leading-5 text-(--campaign-muted)">
-                Para um recorte melhor, escolha uma foto nítida, de frente e com fundo simples.
+            {isStateDeputyModel && !selectedDeputy ? (
+              <p className="mt-4 rounded-lg bg-(--campaign-cream) p-3 text-xs leading-5 text-(--campaign-muted)">
+                <span className="block font-bold text-(--campaign-ink)">
+                  Escolha um estadual para continuar.
+                </span>
+                A prévia e o download usam a arte oficial da dobradinha escolhida.
               </p>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-(--campaign-line) bg-white px-5 text-sm font-extrabold text-(--pt-red) transition-colors hover:bg-(--campaign-band) focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none"
-              >
-                Escolher foto
-              </button>
-            </div>
+            ) : (
+              <div className="mt-5 rounded-lg border border-(--campaign-line) bg-(--campaign-surface) p-4">
+                <p className="text-sm font-bold text-(--campaign-ink)">Sua foto de busto</p>
+                <p className="mt-1 text-sm leading-5 text-(--campaign-muted)">
+                  Para um recorte melhor, escolha uma foto nítida, de frente e com fundo simples.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border-2 border-(--campaign-line) bg-white px-5 text-sm font-extrabold text-(--pt-red) transition-colors hover:bg-(--campaign-band) focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none"
+                >
+                  Escolher foto
+                </button>
+              </div>
+            )}
             <p className="mt-4 text-xs leading-5 text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
           </div>
         ) : null}
@@ -872,15 +1036,22 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         {step === 'result' ? (
           <div className="mt-5">
             {isTeamModel ? (
-              <div className="flex items-start gap-3 rounded-lg bg-(--campaign-cream) p-3">
-                <span
-                  aria-hidden="true"
-                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green-700 text-white"
-                >
-                  <CheckIcon className="size-3.5" aria-hidden="true" />
-                </span>
-                <p className="text-xs leading-5 text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
-              </div>
+              <>
+                {isStateDeputyModel && selectedDeputy ? (
+                  <p className="mb-3 text-center text-xs font-bold text-(--campaign-muted)">
+                    {selectedDeputy.name} · {selectedDeputy.ballotNumber}
+                  </p>
+                ) : null}
+                <div className="flex items-start gap-3 rounded-lg bg-(--campaign-cream) p-3">
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-green-700 text-white"
+                  >
+                    <CheckIcon className="size-3.5" aria-hidden="true" />
+                  </span>
+                  <p className="text-xs leading-5 text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
+                </div>
+              </>
             ) : (
               <p className="text-sm text-(--campaign-muted)">{CARD_PRIVACY_NOTE}</p>
             )}

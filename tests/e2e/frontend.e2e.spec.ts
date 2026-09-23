@@ -1783,14 +1783,21 @@ test.describe('Cards personalizados (S14)', () => {
     await expect(
       section.getByRole('heading', { name: 'Mostre que você está com Solla' }),
     ).toBeVisible()
-    // S14/S15 — the CTA is gone: the four models are the only trigger.
+    // S14/S15/S30 — the CTA is gone: the five models are the only trigger.
     await expect(section.getByRole('link', { name: 'Criar meu card' })).toHaveCount(0)
-    for (const model of ['eu-sou-solla', 'perfil-quadrado', 'perfil-retangular', 'time-de-voce']) {
+    for (const model of [
+      'eu-sou-solla',
+      'perfil-quadrado',
+      'perfil-retangular',
+      'time-de-voce',
+      'time-do-estadual',
+    ]) {
       await expect(section.locator(`[data-card-model-tile="${model}"]`).first()).toBeAttached()
     }
-    await expect(section.locator('[data-card-model-tile="time-de-voce"]').first()).toContainText(
-      'NOVO',
-    )
+    // S30 — the `NOVO` badge marks the newest model (design gate scene 1).
+    await expect(
+      section.locator('[data-card-model-tile="time-do-estadual"]').first(),
+    ).toContainText('NOVO')
 
     // S14 — the name tile reproduces the real result: `SEU NOME` drawn by the
     // composer pipeline, left-aligned with the `SOU` border (x≈213 at 1080).
@@ -2190,5 +2197,158 @@ test.describe('Cards personalizados (S15 — enquadramento automático)', () => 
         .subarray(0, 8)
         .equals(PNG_SIGNATURE),
     ).toBe(true)
+  })
+})
+
+/**
+ * S30 — the state-deputy model reuses the S15 cutout stub; the new surfaces are
+ * the picker (search + ↑↓/Enter), the visitor silhouette that marks the photo
+ * slot and the art swap that must keep the typed name and the processed photo.
+ */
+test.describe('Cards personalizados (S30 — Time do estadual)', () => {
+  /** `jul` matches Juliete and Julio; ↓ moves the active option to Julio. */
+  const pickJulioByKeyboard = async (dialog: Locator) => {
+    const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
+    await search.fill('jul')
+    await search.press('ArrowDown')
+    await search.press('Enter')
+  }
+
+  /**
+   * Window probes at 1080×1440: x=582 is the photo window center (286 + 592/2),
+   * y=540 the silhouette head center (439 + 0.17·592) and y=727 the window
+   * center where the stub cutout lands.
+   */
+  const windowCenterPixel = (canvas: Locator, x: number, y: number) =>
+    canvas.evaluate(
+      (element, point) => {
+        const node = element as HTMLCanvasElement
+        return [...node.getContext('2d')!.getImageData(point.x, point.y, 1, 1).data]
+      },
+      { x, y },
+    )
+
+  test('picks a deputy, draws the silhouette, cuts the photo and downloads the PNG', async ({
+    page,
+  }) => {
+    await setCutoutStub(page, 'ok')
+    await page.goto('/cards?model=time-do-estadual')
+
+    const dialog = page.getByRole('dialog')
+    await expect(dialog.getByRole('heading', { name: 'Escolha sua dobradinha' })).toBeVisible()
+    await expect(dialog.getByText('Escolha seu estadual da dobradinha.')).toBeVisible()
+    // Pre-selection: the approved example, the notice and no photo box yet.
+    await expect(dialog.getByText('A silhueta marca o lugar da sua foto.')).toBeVisible()
+    await expect(dialog.getByText('Escolha um estadual para continuar.')).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Escolher foto' })).toHaveCount(0)
+    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
+    await expect(primary).toBeDisabled()
+
+    await pickJulioByKeyboard(dialog)
+
+    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
+    await expect(trigger).toContainText('Julio Pinheiro')
+    await expect(trigger).toContainText('13999')
+    await expect(dialog.getByRole('button', { name: 'Escolher foto' })).toBeVisible()
+
+    // The visitor silhouette (#001a42) marks the photo window head.
+    const canvas = dialog.locator('canvas')
+    await expect.poll(() => windowCenterPixel(canvas, 582, 540)).toEqual([0, 26, 66, 255])
+
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await expect(primary).toBeDisabled()
+    await uploadBustPhoto(dialog)
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(primary).toBeEnabled()
+
+    await primary.click()
+    await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
+    await expect(dialog.getByText('Julio Pinheiro · 13999')).toBeVisible()
+
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
+    ])
+    expect(download.suggestedFilename()).toBe('card-jorge-solla-time-do-estadual.png')
+    expect(
+      readFileSync((await download.path())!)
+        .subarray(0, 8)
+        .equals(PNG_SIGNATURE),
+    ).toBe(true)
+  })
+
+  test('switching the deputy keeps the typed name and the processed photo', async ({ page }) => {
+    await setCutoutStub(page, 'ok')
+    await page.goto('/cards?model=time-do-estadual')
+
+    const dialog = page.getByRole('dialog')
+    await pickJulioByKeyboard(dialog)
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+
+    // The cutout landed: harmony OFF samples the stub fixture at the window center.
+    const canvas = dialog.locator('canvas')
+    await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
+    await expect.poll(() => windowCenterPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
+
+    // Swap the deputy through the trigger; the new one confirms on it.
+    await dialog.getByRole('button', { name: /Seu estadual/ }).click()
+    const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
+    await search.fill('adriana')
+    await search.press('Enter')
+    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
+    await expect(trigger).toContainText('Coletivo de Enfermagem')
+    await expect(trigger).toContainText('13763')
+
+    // Name and cutout survive the swap: still ready, CTA enabled, photo pixel intact.
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
+    await expect.poll(() => windowCenterPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
+  })
+
+  test('a name that cannot fit fails closed on the estadual model', async ({ page }) => {
+    await page.goto('/cards?model=time-do-estadual')
+
+    const dialog = page.getByRole('dialog')
+    await pickJulioByKeyboard(dialog)
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Anticonstitucionalissimamente')
+
+    await expect(dialog.getByRole('heading', { name: 'Encurte o nome' })).toBeVisible()
+    await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
+    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeDisabled()
+  })
+
+  test('the picker shows the empty state when nothing matches', async ({ page }) => {
+    await page.goto('/cards?model=time-do-estadual')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('combobox', { name: 'Buscar estadual' }).fill('sem-resultado')
+
+    await expect(dialog.getByText('Nenhum estadual encontrado.')).toBeVisible()
+  })
+
+  test('mobile gallery exposes the five dots and the five-model hint', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/cards')
+
+    const firstDot = page.getByRole('button', { name: 'Ir para o modelo 1 de 5' })
+    const fifthDot = page.getByRole('button', { name: 'Ir para o modelo 5 de 5' })
+    await expect(fifthDot).toBeVisible()
+    await expect(page.getByText('Deslize para ver os cinco modelos')).toBeVisible()
+    await expect(firstDot).toHaveAttribute('aria-current', 'true')
+
+    // Clicking the last dot scrolls the track and keeps the active dot on it
+    // (the programmatic scroll lock must not bounce the index back mid-animation).
+    await fifthDot.click()
+    await expect(fifthDot).toHaveAttribute('aria-current', 'true')
+    await expect(firstDot).not.toHaveAttribute('aria-current', 'true')
+    await expect
+      .poll(() =>
+        page
+          .locator('ul[aria-label="Modelos de card (mobile)"]')
+          .evaluate((element) => element.scrollLeft),
+      )
+      .toBeGreaterThan(0)
   })
 })

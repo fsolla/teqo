@@ -2,7 +2,7 @@ import { brexterBold } from '@/app/(frontend)/fonts'
 import { CardsStudio } from '@/components/cards/CardsStudio'
 
 /**
- * S14 — the home invitation to the card funnel: short copy + the three model
+ * S14/S30 — the home invitation to the card funnel: short copy + the five model
  * tiles, positioned right before the newsletter capture (which stays the last
  * conversion block). Tapping a tile opens the SAME composer island used by
  * `/cards` right here (dialog on desktop, drawer on mobile) — no navigation and
