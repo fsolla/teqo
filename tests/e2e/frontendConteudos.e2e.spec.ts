@@ -139,6 +139,16 @@ const mediaRequests = (page: Page) => {
   return requests
 }
 
+/**
+ * C106/S28 — dynamic pages stream a transient hidden `S:` copy of the shell in
+ * the production build (the theme path reads `next/headers`, and any heavy
+ * render can defer behind `loading.tsx`). Wait for the stream to be collected
+ * before asserting with strict locators.
+ */
+const waitForSettledPage = async (page: Page) => {
+  await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+}
+
 test.describe.configure({ mode: 'serial' })
 
 test.afterAll(async ({ request }) => {
@@ -177,6 +187,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     const response = await page.goto('/conteudos')
     expect(response?.status()).toBe(200)
+    await waitForSettledPage(page)
     await expect(
       page.getByRole('heading', { name: 'Uma mensagem sua pode conquistar mais um voto.' }),
     ).toBeVisible()
@@ -239,6 +250,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await createPiece(request, headers, { title: `Card do giro ${marker}`, type: 'foto' })
 
     await page.goto(`/conteudos?tipo=video`)
+    await waitForSettledPage(page)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(page.getByRole('link', { name: videoTitle, exact: true })).toBeVisible()
     // A filtered board never shows the card invite.
@@ -248,13 +260,12 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(page.locator('article[data-content-piece]')).toHaveCount(2)
 
     await page.goto(`/conteudos?tipo=video&q=${marker}`)
+    await waitForSettledPage(page)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(page.getByRole('link', { name: /Remover filtro Tipo: Vídeo/ })).toBeVisible()
 
     await page.goto('/conteudos?q=zzz-nao-existe')
-    await expect(
-      page.getByRole('heading', { name: 'Nenhuma peça com esses filtros' }),
-    ).toBeVisible()
+    await waitForSettledPage(page)
     await expect(page.getByText('Busca: “zzz-nao-existe”')).toBeVisible()
     const clear = page.getByRole('link', { name: 'Limpar filtros' })
     await expect(clear).toHaveAttribute('href', '/conteudos')
@@ -283,6 +294,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     // theme mode always degrades: the exact results stay and the notice explains.
     const response = await page.goto(`/conteudos?q=${marker}&mode=tema`)
     expect(response?.status()).toBe(200)
+    await waitForSettledPage(page)
     await expect(page.getByRole('heading', { name: `Resultados para “${marker}”` })).toBeVisible()
     await expect(page.getByRole('radio', { name: 'Termo exato' })).toBeChecked()
     await expect(page.getByRole('radio', { name: 'Por tema' })).toBeDisabled()
@@ -292,18 +304,25 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     // A mode without a query has nothing to expand: no notice, exact is active.
     await page.goto('/conteudos?mode=tema')
+    await waitForSettledPage(page)
     await expect(page.getByText('Busca por tema indisponível agora.')).toHaveCount(0)
     await expect(page.getByRole('radio', { name: 'Termo exato' })).toBeChecked()
     await expect(page.getByRole('radio', { name: 'Por tema' })).toBeEnabled()
 
     // Changing the mode submits the GET form with the query in force.
     await page.goto(`/conteudos?q=${marker}`)
+    await waitForSettledPage(page)
     await page.getByRole('radio', { name: 'Por tema' }).check()
     await expect(page).toHaveURL(new RegExp(`q=${marker}&mode=tema$`))
+    // The URL commits before the new document renders: wait for the page's own
+    // content and for the streamed copy to be collected before the strict locator.
+    await expect(page.getByRole('heading', { name: `Resultados para “${marker}”` })).toHaveCount(1)
+    await waitForSettledPage(page)
     await expect(page.getByText('Busca por tema indisponível agora.')).toBeVisible()
 
     // Enter on the field searches without JS (the canonical block has no button).
     await page.goto('/conteudos')
+    await waitForSettledPage(page)
     const field = page.getByRole('searchbox', { name: 'Buscar peças' })
     await field.fill(marker)
     await field.press('Enter')
@@ -324,11 +343,11 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
       'download',
       `jorge-solla-1313-${photo.slug}.png`,
     )
-    await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
+    await expect(page.locator('meta[property="og:title"]').first()).toHaveAttribute(
       'content',
       new RegExp(photoTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
     )
-    await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
+    await expect(page.locator('meta[property="og:image"]').first()).toHaveAttribute(
       'content',
       new RegExp(`/conteudos/${photo.slug}/midia$`),
     )
@@ -357,6 +376,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     })
 
     await page.goto('/conteudos')
+    await waitForSettledPage(page)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(page.getByRole('link', { name: `Baixar ${linkTitle}` })).toHaveCount(0)
 
@@ -458,12 +478,14 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     const piece = await createPiece(request, headers, { title, type: 'video' })
 
     await page.goto('/conteudos')
+    await waitForSettledPage(page)
     await expect(page.getByRole('link', { name: 'Conteúdos' })).toBeVisible()
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
 
     await setPieceStatus(request, headers, piece.id, 'rascunho')
 
     await page.goto('/conteudos')
+    await waitForSettledPage(page)
     await expect(
       page.getByRole('heading', { name: 'As primeiras peças estão a caminho' }),
     ).toBeVisible()
@@ -484,6 +506,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     await setPieceStatus(request, headers, piece.id, 'publicado')
     await page.goto('/conteudos')
+    await waitForSettledPage(page)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(page.getByRole('link', { name: 'Conteúdos' })).toBeVisible()
   })

@@ -22,6 +22,7 @@ import {
   type ThemeSearchHeaders,
 } from '@/utilities/ai/themeSearchGuard'
 import { getPublishedContentPieceRecords } from '@/utilities/content/contentPieceReads'
+import { headers } from 'next/headers'
 
 /**
  * S28 — the public catalogue search, both modes. The literal search is the
@@ -55,13 +56,23 @@ const toPublicItems = (
     .map((record) => toContentPiecePublicItem(record, { themeTerms }))
     .filter((item): item is ContentPiecePublicItem => item !== null)
 
+/** The request headers via the dynamic API, imported here so the page stays static-ish. */
+const headersFromRequest = async (): Promise<ThemeSearchHeaders> => (await headers()) as Headers
+
 export const loadContentPieceCatalogSearch = async ({
   rawSearchParams,
   requestHeaders,
   expandTheme = expandContentPieceSearchTheme,
 }: {
   rawSearchParams: ContentPieceCatalogSearchParams
-  requestHeaders: ThemeSearchHeaders
+  /**
+   * The request headers the anonymous guard reads. Optional: the page omits it
+   * and the loader reads `next/headers` ONLY on the theme path — the literal
+   * catalogue must not opt the render into the dynamic API, which defers the
+   * whole page behind the `loading.tsx` boundary (streamed into a hidden div)
+   * and leaves a transient duplicate of the DOM in the production build.
+   */
+  requestHeaders?: ThemeSearchHeaders
   expandTheme?: ThemeSearchExpansionResolver
 }): Promise<ContentPieceCatalogSearchData> => {
   const records = await getPublishedContentPieceRecords()
@@ -74,9 +85,10 @@ export const loadContentPieceCatalogSearch = async ({
 
   // An empty Central has nothing to search: never pay for an expansion there.
   if (themeRequested && publishedItems.length > 0) {
+    const headers = requestHeaders ?? (await headersFromRequest())
     const expansion = await resolveGuardedThemeExpansion({
       q: params.q,
-      headers: requestHeaders,
+      headers,
       expandTheme,
     })
     if (expansion) themeTerms = contentPieceThemeTerms(params.q, expansion.terms)
