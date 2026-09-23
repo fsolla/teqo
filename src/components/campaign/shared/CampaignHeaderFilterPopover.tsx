@@ -30,6 +30,14 @@ type CampaignHeaderFilterPopoverProps = {
   label: string
   optionRows: CampaignHeaderFilterRow[]
   /**
+   * C211 — grouped facets behind ONE trigger (the approved "Filtros" button):
+   * each section renders a heading followed by its rows. Additive: without it
+   * the popover renders `optionRows` byte-for-byte as before (including the
+   * selected-first ordering, which is skipped for sections so the facet
+   * headings never interleave).
+   */
+  sections?: readonly { label: string; rows: CampaignHeaderFilterRow[] }[]
+  /**
    * C154 — chip trigger for the speech acervo filter ruler ("Ano: 2026 ▾").
    * Default `'icon'` keeps every existing call site byte-identical.
    */
@@ -77,6 +85,7 @@ export const CampaignHeaderFilterPopover = ({
   id,
   label,
   optionRows,
+  sections,
   triggerVariant = 'icon',
   triggerLabel,
 }: CampaignHeaderFilterPopoverProps) => {
@@ -89,7 +98,8 @@ export const CampaignHeaderFilterPopover = ({
    * the B16 "click that undoes itself" bug taught).
    */
   const [selectionSnapshot, setSelectionSnapshot] = useState<readonly string[]>([])
-  const searchable = optionRows.length >= SEARCHABLE_OPTION_THRESHOLD
+  const allRows = sections ? sections.flatMap((section) => section.rows) : optionRows
+  const searchable = allRows.length >= SEARCHABLE_OPTION_THRESHOLD
   /**
    * Selected-first ordering is multi-select only. Today every multi-select
    * consumer marks every option row with `checkbox: true`, and every
@@ -97,14 +107,14 @@ export const CampaignHeaderFilterPopover = ({
    * without a new prop. Reordering a single-select would push "Todas" under
    * the marked value, which the product rejected.
    */
-  const isMultiSelect = optionRows.length > 0 && optionRows.every((row) => row.checkbox)
+  const isMultiSelect = !sections && allRows.length > 0 && allRows.every((row) => row.checkbox)
   const searchIndex = useMemo(
     () =>
-      optionRows.map((row) => ({
+      allRows.map((row) => ({
         row,
         haystack: normalizeSearchPhrase(row.label),
       })),
-    [optionRows],
+    [allRows],
   )
   const needle = normalizeSearchPhrase(query)
   const filteredRows = needle
@@ -132,13 +142,26 @@ export const CampaignHeaderFilterPopover = ({
   const renderRows = (rows: readonly CampaignHeaderFilterRow[]) =>
     rows.map((row) => <FilterRow key={row.value} row={row} onChoose={() => choose(row)} />)
 
+  /** C211 — the grouped rendering: heading per facet, rows in declaration order. */
+  const renderSections = () =>
+    sections?.map((section) => (
+      <div key={section.label} className="flex flex-col gap-0.5">
+        <p className="px-2 pt-2 pb-1 text-xs font-semibold text-foreground">{section.label}</p>
+        {renderRows(
+          needle
+            ? section.rows.filter((row) => normalizeSearchPhrase(row.label).includes(needle))
+            : section.rows,
+        )}
+      </div>
+    ))
+
   return (
     <Popover
       open={open}
       onOpenChange={(next) => {
         setOpen(next)
         if (next) {
-          setSelectionSnapshot(optionRows.filter((row) => row.selected).map((row) => row.value))
+          setSelectionSnapshot(allRows.filter((row) => row.selected).map((row) => row.value))
           return
         }
         setQuery('')
@@ -221,7 +244,9 @@ export const CampaignHeaderFilterPopover = ({
           aria-labelledby={`${id}-heading`}
           className="flex max-h-72 flex-col gap-0.5 overflow-y-auto"
         >
-          {showSelectedDivider ? (
+          {sections ? (
+            renderSections()
+          ) : showSelectedDivider ? (
             <>
               {renderRows(visibleRows.slice(0, selectedCount))}
               <div className="my-1 border-t border-border" role="presentation" />
@@ -230,7 +255,7 @@ export const CampaignHeaderFilterPopover = ({
           ) : (
             renderRows(visibleRows)
           )}
-          {visibleRows.length === 0 ? (
+          {!sections && visibleRows.length === 0 ? (
             <p className="px-2 py-3 text-sm text-muted-foreground">
               {needle ? 'Nenhum resultado encontrado.' : emptyLabel}
             </p>

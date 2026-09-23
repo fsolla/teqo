@@ -22,6 +22,7 @@ import {
 import {
   CAMPAIGN_AGENDA_HOME,
   CAMPAIGN_COMMUNICATION_ACERVO,
+  CAMPAIGN_COMMUNICATION_CONTEUDOS,
   CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_COMMUNICATION_HOME,
   CAMPAIGN_COMMUNICATION_REELS,
@@ -58,12 +59,13 @@ export type CampaignNavItem = {
  * C174 — the communication vertical's destinations, hung under its single
  * top-level item. Naming the array keeps both consumers (sidebar and drawer)
  * from spelling the list twice. C194 appended the reel library after the
- * acervo and the cut library.
+ * acervo and the cut library; C211 appended the internal content Central.
  */
 const communicationSubItems: readonly CampaignNavSubItem[] = [
   { title: 'Acervo de falas', href: CAMPAIGN_COMMUNICATION_ACERVO },
   { title: 'Biblioteca de cortes', href: CAMPAIGN_COMMUNICATION_CORTES },
   { title: 'Reels', href: CAMPAIGN_COMMUNICATION_REELS },
+  { title: 'Conteúdos', href: CAMPAIGN_COMMUNICATION_CONTEUDOS },
 ]
 
 /**

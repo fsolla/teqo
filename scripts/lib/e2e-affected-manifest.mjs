@@ -358,22 +358,29 @@ export const E2E_AFFECTED_MANIFEST = [
     // the `communicationCatalog` role gate. `src/lib/speech*` carries the pure
     // search/highlight modules the RSC list renders with. C167 adds the cut
     // routes/player/dialog and the public cut page below. C194 adds the reel
-    // library (list/detail/downloads/kill switch) to the same vertical.
+    // library (list/detail/downloads/kill switch) to the same vertical. C211
+    // adds the internal Central de Conteúdos (batch upload, link, cataloguing,
+    // publication kill switch).
     prefixes: [
       `${CAMPAIGN_APP}/comunicacao`,
       'src/components/campaign/speech',
       'src/components/campaign/reels',
       // C199 — the uploaded recordings source and its private media owner.
       'src/components/campaign/recording',
+      // C211 — the Central de Conteúdos surfaces.
+      'src/components/campaign/content',
       'src/utilities/speech',
       'src/utilities/reels',
       // C199 — the shared private-media owner and the ffmpeg runner.
       'src/utilities/recordings',
+      // C211 — the content piece pipeline.
+      'src/utilities/content',
       'src/utilities/privateMedia',
       'src/utilities/media',
       'src/lib/speech',
       'src/lib/reel',
       'src/lib/recording',
+      'src/lib/contentPiece',
       'src/lib/privateMedia',
       // The role predicates drive the vertical gate and the assistant surfaces.
       'src/lib/campaignRoles',

@@ -16,6 +16,8 @@ export type InstagramPost = {
   caption: string | null
   mediaType: InstagramMediaType
   permalink: string
+  /** The post's own file URL (image or mp4); null for carousels/thumbnails only. */
+  mediaUrl: string | null
   thumbnailUrl?: string
   timestamp: string
 }
@@ -160,6 +162,7 @@ export const parseInstagramMediaResponse = (json: unknown): InstagramPost[] => {
       id?: unknown
       caption?: unknown
       media_type?: unknown
+      media_url?: unknown
       permalink?: unknown
       timestamp?: unknown
     }
@@ -173,6 +176,8 @@ export const parseInstagramMediaResponse = (json: unknown): InstagramPost[] => {
       mediaType: (rawItem.media_type as InstagramMediaType) ?? 'IMAGE',
       permalink: rawItem.permalink,
       timestamp: rawItem.timestamp,
+      mediaUrl:
+        typeof rawItem.media_url === 'string' && rawItem.media_url ? rawItem.media_url : null,
       thumbnailUrl: pickInstagramThumbnail(rawItem),
     })
   }

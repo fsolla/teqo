@@ -78,6 +78,7 @@ import * as migration_20260919_003440_add_recording from './20260919_003440_add_
 import * as migration_20260919_032729_add_recording_speakers from './20260919_032729_add_recording_speakers';
 import * as migration_20260919_155232_add_share_link from './20260919_155232_add_share_link';
 import * as migration_20260920_031320_add_jingle from './20260920_031320_add_jingle';
+import * as migration_20260923_032714_add_content_piece from './20260923_032714_add_content_piece';
 
 export const migrations = [
   {
@@ -478,6 +479,11 @@ export const migrations = [
   {
     up: migration_20260920_031320_add_jingle.up,
     down: migration_20260920_031320_add_jingle.down,
-    name: '20260920_031320_add_jingle'
+    name: '20260920_031320_add_jingle',
+  },
+  {
+    up: migration_20260923_032714_add_content_piece.up,
+    down: migration_20260923_032714_add_content_piece.down,
+    name: '20260923_032714_add_content_piece'
   },
 ];

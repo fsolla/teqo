@@ -184,3 +184,9 @@ export {
   canReadRecording,
   canUploadRecording,
 } from '@/utilities/access/recordings'
+
+export {
+  canCreateContentPiece,
+  canReadContentPiece,
+  canUpdateContentPiece,
+} from '@/utilities/access/contentPieces'

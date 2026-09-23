@@ -91,6 +91,8 @@ export interface Config {
     speechCut: SpeechCut;
     reel: Reel;
     reelMedia: ReelMedia;
+    contentPiece: ContentPiece;
+    contentMedia: ContentMedia;
     recording: Recording;
     recordingMedia: RecordingMedia;
     recordingSegment: RecordingSegment;
@@ -142,6 +144,8 @@ export interface Config {
     speechCut: SpeechCutSelect<false> | SpeechCutSelect<true>;
     reel: ReelSelect<false> | ReelSelect<true>;
     reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
+    contentPiece: ContentPieceSelect<false> | ContentPieceSelect<true>;
+    contentMedia: ContentMediaSelect<false> | ContentMediaSelect<true>;
     recording: RecordingSelect<false> | RecordingSelect<true>;
     recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
     recordingSegment: RecordingSegmentSelect<false> | RecordingSegmentSelect<true>;
@@ -1150,6 +1154,129 @@ export interface ReelMedia {
   focalY?: number | null;
 }
 /**
+ * Peças de campanha da Central de Conteúdos. O arquivo é privado; "Rascunho" não aparece na Central pública.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contentPiece".
+ */
+export interface ContentPiece {
+  id: number;
+  title: string;
+  /**
+   * Gerado no primeiro "Publicar" a partir do título e imutável depois. Despublicar não apaga o endereço.
+   */
+  slug?: string | null;
+  /**
+   * Derivado do arquivo no envio; a assessoria pode ajustar (ex.: card).
+   */
+  type: 'video' | 'foto' | 'texto' | 'audio' | 'card';
+  description?: string | null;
+  topics?:
+    | (
+        | 'saude'
+        | 'educacao'
+        | 'cultura'
+        | 'esporte'
+        | 'seguranca-publica'
+        | 'meio-ambiente'
+        | 'economia-trabalho'
+        | 'direitos-humanos'
+        | 'infraestrutura'
+        | 'ciencia-tecnologia'
+        | 'politica-instituicoes'
+        | 'agricultura'
+        | 'habitacao-cidades'
+        | 'comunicacao-midia'
+        | 'igualdade-racial'
+        | 'mulheres-genero'
+        | 'juventude'
+        | 'pessoa-deficiencia'
+      )[]
+    | null;
+  /**
+   * Município da campanha relacionado à peça (opcional).
+   */
+  municipality?: (number | null) | Municipality;
+  /**
+   * Derivado do município relacionado.
+   */
+  cityLabel?: string | null;
+  /**
+   * Território de identidade derivado do município.
+   */
+  region?: string | null;
+  institution?: string | null;
+  pieceDate?: string | null;
+  /**
+   * Medida pelo provedor de transcrição; nunca estimada.
+   */
+  durationSeconds?: number | null;
+  /**
+   * Transcrição do áudio/vídeo ou texto extraído. Editável pela assessoria.
+   */
+  transcript?: string | null;
+  /**
+   * O arquivo privado; publicado, é o que a Central pública serve.
+   */
+  media?: (number | null) | ContentMedia;
+  /**
+   * Link canônico do Instagram/YouTube quando a peça entrou por link.
+   */
+  sourceUrl?: string | null;
+  origin: 'arquivo' | 'instagram' | 'youtube';
+  /**
+   * Despublicar tira a peça da Central pública na hora e preserva o arquivo.
+   */
+  status: 'rascunho' | 'publicado';
+  publishedAt?: string | null;
+  processingStatus: 'processando' | 'pronto' | 'falhou';
+  /**
+   * Progresso honesto do processamento em andamento.
+   */
+  step?: ('extraindo' | 'transcrevendo' | 'catalogando' | 'salvando') | null;
+  /**
+   * Motivo interno da falha; nunca vai à pessoa com o detalhe cru.
+   */
+  error?: string | null;
+  /**
+   * Título, descrição, transcrição, temas, cidade e instituição normalizados (sem acentos, minúsculas).
+   */
+  searchText?: string | null;
+  /**
+   * O que a assessoria já editou; a catalogação automática nunca sobrescreve estes campos.
+   */
+  curatedFields?:
+    | ('title' | 'description' | 'topics' | 'municipality' | 'institution' | 'pieceDate' | 'transcript' | 'type')[]
+    | null;
+  createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Arquivos das peças da Central de Conteúdos. Só abrem com login da campanha.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contentMedia".
+ */
+export interface ContentMedia {
+  id: number;
+  /**
+   * Descrição do arquivo para acessibilidade.
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1879,6 +2006,14 @@ export interface PayloadLockedDocument {
         value: number | ReelMedia;
       } | null)
     | ({
+        relationTo: 'contentPiece';
+        value: number | ContentPiece;
+      } | null)
+    | ({
+        relationTo: 'contentMedia';
+        value: number | ContentMedia;
+      } | null)
+    | ({
         relationTo: 'recording';
         value: number | Recording;
       } | null)
@@ -2504,6 +2639,55 @@ export interface ReelSelect<T extends boolean = true> {
  * via the `definition` "reelMedia_select".
  */
 export interface ReelMediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contentPiece_select".
+ */
+export interface ContentPieceSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  type?: T;
+  description?: T;
+  topics?: T;
+  municipality?: T;
+  cityLabel?: T;
+  region?: T;
+  institution?: T;
+  pieceDate?: T;
+  durationSeconds?: T;
+  transcript?: T;
+  media?: T;
+  sourceUrl?: T;
+  origin?: T;
+  status?: T;
+  publishedAt?: T;
+  processingStatus?: T;
+  step?: T;
+  error?: T;
+  searchText?: T;
+  curatedFields?: T;
+  createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contentMedia_select".
+ */
+export interface ContentMediaSelect<T extends boolean = true> {
   alt?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -3339,6 +3523,8 @@ export interface TaskCreateCollectionExport {
       | 'speechCut'
       | 'reel'
       | 'reelMedia'
+      | 'contentPiece'
+      | 'contentMedia'
       | 'recording'
       | 'recordingMedia'
       | 'recordingSegment'

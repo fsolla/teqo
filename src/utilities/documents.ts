@@ -17,19 +17,38 @@ export const getDocumentCacheTag = <Slug extends Collection>(
   id: string | number,
 ) => `document_${collection}:${id}`
 
+/**
+ * `revalidateTag` throws Next's "static generation store missing" invariant when
+ * a Local API write happens OUTSIDE a request scope — e2e fixtures, one-off
+ * scripts, seeds. There is no cache to bust in that case, so that one invariant
+ * is swallowed; every other failure still propagates (a silently broken
+ * revalidation inside a request would be a real bug).
+ */
+const revalidateTagSafely = (tag: string): void => {
+  try {
+    revalidateTag(tag)
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('static generation store missing')) return
+    throw error
+  }
+}
+
 export const revalidateDocumentById = <Slug extends Collection>(
   collection: Slug,
   id: string | number,
-) => revalidateTag(getDocumentCacheTag(collection, id))
+) => revalidateTagSafely(getDocumentCacheTag(collection, id))
 
 export const getCollectionListingTag = <Slug extends Collection>(collection: Slug) =>
   `${collection}s`
 
 const revalidateCollectionListing = <Slug extends Collection>(collection: Slug) =>
-  revalidateTag(getCollectionListingTag(collection))
+  revalidateTagSafely(getCollectionListingTag(collection))
 
 export const revalidatePostsListing = () => revalidateCollectionListing('post')
 
 export const revalidateShareLinksListing = () => revalidateCollectionListing('shareLink')
 
 export const revalidateJinglesListing = () => revalidateCollectionListing('jingle')
+
+/** C211 — the content pieces listing tag the public Central (S27) will read. */
+export const revalidateContentPiecesListing = () => revalidateCollectionListing('contentPiece')
