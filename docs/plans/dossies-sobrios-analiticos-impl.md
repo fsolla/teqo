@@ -174,7 +174,6 @@ Triagem de `capture-review-debts` (2026-09-22, modo autônomo do `--auto`):
 Certificado pelo `designer` (tier primário) em 2026-09-22 com ajustes residuais aplicados
 (célula "Tema canônico" sem token concatenado). `Design tier: designer` registrado no PR.
 
-
 ## Self-score (0–5, gate ≥4)
 
 | Critério                           | Nota | Justificativa                                                                                                                                                                       |
