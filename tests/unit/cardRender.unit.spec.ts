@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  COLINHA_CONFIRM_LABEL,
+  COLINHA_ESTADUAL_PLACEHOLDER,
+  COLINHA_LAYOUT,
+  COLINHA_LEGAL_TEXT,
+} from '@/lib/cardColinha'
+import {
   NAME_CARD_SLOT,
   TEAM_CARD_LABEL,
   TEAM_CARD_NAME_BANNER,
@@ -19,12 +25,14 @@ import {
   createCardMeasure,
   drawCardName,
   drawCardVisitorSilhouette,
+  renderColinhaCard,
   renderNameCard,
   renderPhotoCard,
   renderTeamCard,
   resolveCardBannerWidth,
   type CardDrawContext,
 } from '@/lib/cardRender'
+import { getStateDeputyCard, type StateDeputyCatalogEntry } from '@/lib/stateDeputyCatalog'
 
 type DrawCall = { image: unknown; dx: number; dy: number; dw: number; dh: number }
 type TextCall = { text: string; x: number; y: number }
@@ -44,6 +52,8 @@ const createFakeContext = () => {
 
   const ctx: CardDrawContext = {
     font: '',
+    letterSpacing: '',
+    globalAlpha: 1,
     fillStyle: '',
     textAlign: 'start',
     textBaseline: 'alphabetic',
@@ -87,6 +97,23 @@ const createFakeContext = () => {
     },
     rect: (x, y, width, height) => {
       ops.push({ op: 'rect', args: [x, y, width, height] })
+    },
+    roundRect: (x, y, width, height, radii) => {
+      ops.push({
+        op: 'roundRect',
+        args: [x, y, width, height, typeof radii === 'number' ? radii : -1],
+      })
+    },
+    clip: () => {
+      ops.push({ op: 'clip', args: [] })
+    },
+    createLinearGradient: (x0, y0, x1, y1) => {
+      ops.push({ op: 'createLinearGradient', args: [x0, y0, x1, y1] })
+      return {
+        addColorStop: (offset: number) => {
+          ops.push({ op: 'addColorStop', args: [offset] })
+        },
+      }
     },
     fill: () => {
       ops.push({ op: 'fill', args: [] })
@@ -424,5 +451,128 @@ describe('renderPhotoCard', () => {
     expect(drawCalls[0]!.dy).toBeLessThanOrEqual(window.y)
     expect(drawCalls[0]!.dx + drawCalls[0]!.dw).toBeGreaterThanOrEqual(window.x + window.width)
     expect(drawCalls[0]!.dy + drawCalls[0]!.dh).toBeGreaterThanOrEqual(window.y + window.height)
+  })
+})
+
+describe('renderColinhaCard (S31)', () => {
+  const colinhaModel = getCardModel('minha-colinha')!
+  const group = { id: 'group' } as unknown as CanvasImageSource
+  const lockup = { id: 'lockup' } as unknown as CanvasImageSource
+  const band = { id: 'band' } as unknown as CanvasImageSource
+  const deputy = getStateDeputyCard('julio')!
+
+  const render = (chosen: StateDeputyCatalogEntry | null) => {
+    const fake = createFakeContext()
+    renderColinhaCard(fake.ctx, colinhaModel, {
+      group,
+      lockup,
+      band,
+      deputy: chosen,
+      fontFamily: 'Brexter',
+      measure: createCardMeasure(fake.ctx, 'Brexter', 900),
+    })
+
+    return fake
+  }
+
+  it('draws the white slip, the composed top and the legal line before the rows', () => {
+    const { ctx, drawCalls, rectCalls, textCalls, ops } = render(deputy)
+
+    expect(rectCalls[0]).toEqual({ x: 0, y: 0, width: 1080, height: 1920 })
+    expect(drawCalls.map((call) => call.image)).toEqual([group, lockup, band])
+    expect(drawCalls[0]).toEqual({ image: group, dx: 0, dy: -335.62, dw: 1080, dh: 1440 })
+    expect(drawCalls[1]!.dx).toBeCloseTo(226.44, 1)
+    expect(drawCalls[1]!.dy).toBeCloseTo(48.29, 2)
+    expect(drawCalls[1]!.dw).toBeCloseTo(141.12, 1)
+    expect(drawCalls[1]!.dh).toBeCloseTo(80.97, 1)
+    expect(drawCalls[2]!.dy).toBeCloseTo(
+      COLINHA_LAYOUT.top.band.y - COLINHA_LAYOUT.top.band.sourceY,
+      5,
+    )
+
+    // Top clip + band clip; one save/restore pair per clipped composition and the legal line.
+    expect(ops.filter((op) => op.op === 'clip')).toHaveLength(2)
+    expect(ops.filter((op) => op.op === 'save')).toHaveLength(3)
+    expect(ops.filter((op) => op.op === 'restore')).toHaveLength(3)
+    // CSS 125° gradient with the 52% hard stop: red 0→52, blue 52→100.
+    expect(ops.filter((op) => op.op === 'addColorStop').map((op) => op.args[0])).toEqual([
+      0, 0.52, 0.52, 1,
+    ])
+    expect(textCalls[0]).toEqual({ text: COLINHA_LEGAL_TEXT, x: 0, y: 0 })
+    expect(ctx.globalAlpha).toBe(1)
+  })
+
+  it('draws the six rows with one glyph per box and the filled estadual from the catalog', () => {
+    const { ctx, textCalls, ops } = render(deputy)
+
+    const candidates = [
+      'Jorge Solla',
+      'JULIO PINHEIRO',
+      'Jaques Wagner',
+      'Rui Costa',
+      'Jerônimo',
+      'Lula',
+    ]
+    for (const candidate of candidates) {
+      expect(textCalls.some((call) => call.text === candidate)).toBe(true)
+    }
+
+    // One glyph per box, in row order: 4 + 5 + 3 + 3 + 2 + 2.
+    expect(textCalls.filter((call) => call.text.length === 1).map((call) => call.text)).toEqual([
+      '1',
+      '3',
+      '1',
+      '3',
+      '1',
+      '3',
+      '9',
+      '9',
+      '9',
+      '1',
+      '3',
+      '0',
+      '1',
+      '3',
+      '3',
+      '1',
+      '3',
+      '1',
+      '3',
+    ])
+    expect(textCalls.filter((call) => call.text === COLINHA_CONFIRM_LABEL)).toHaveLength(6)
+
+    // 19 digit boxes (border + fill pair) + 6 single-fill pills.
+    expect(ops.filter((op) => op.op === 'roundRect')).toHaveLength(19 * 2 + 6)
+
+    // First box: content x (51.83 + 35.64) + the 30% office column + the 21.6 gap.
+    const firstBox = ops.find((op) => op.op === 'roundRect')!
+    expect(firstBox.args[0]).toBeCloseTo(396.14, 1)
+    expect(firstBox.args[1]).toBeCloseTo(923.16, 1)
+    expect(ctx.globalAlpha).toBe(1)
+  })
+
+  it('draws the empty estadual row: placeholder, five empty boxes and no glyph there', () => {
+    const { textCalls, ops } = render(null)
+
+    expect(textCalls.some((call) => call.text === COLINHA_ESTADUAL_PLACEHOLDER)).toBe(true)
+    expect(textCalls.filter((call) => call.text.length === 1).map((call) => call.text)).toEqual([
+      '1',
+      '3',
+      '1',
+      '3',
+      '1',
+      '3',
+      '0',
+      '1',
+      '3',
+      '3',
+      '1',
+      '3',
+      '1',
+      '3',
+    ])
+    expect(textCalls.filter((call) => call.text === COLINHA_CONFIRM_LABEL)).toHaveLength(6)
+    // The five empty boxes are still drawn (19 boxes total) + the 6 pills.
+    expect(ops.filter((op) => op.op === 'roundRect')).toHaveLength(19 * 2 + 6)
   })
 })

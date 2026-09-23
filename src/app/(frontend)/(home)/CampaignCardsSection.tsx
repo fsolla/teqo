@@ -2,8 +2,8 @@ import { brexterBold } from '@/app/(frontend)/fonts'
 import { CardsStudio } from '@/components/cards/CardsStudio'
 
 /**
- * S14/S30 — the home invitation to the card funnel: short copy + the five model
- * tiles, positioned right before the newsletter capture (which stays the last
+ * S14/S30/S31 — the home invitation to the card funnel: short copy + the six
+ * model tiles, positioned right before the newsletter capture (which stays the last
  * conversion block). Tapping a tile opens the SAME composer island used by
  * `/cards` right here (dialog on desktop, drawer on mobile) — no navigation and
  * no separate CTA. `brexterBold.variable` includes the display face in the page

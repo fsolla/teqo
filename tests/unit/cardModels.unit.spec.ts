@@ -11,13 +11,14 @@ import {
 } from '@/lib/cardModels'
 
 describe('card model catalog (S13/S15)', () => {
-  it('exposes the five shipped models with unique ids', () => {
+  it('exposes the six shipped models with unique ids', () => {
     expect(CARD_MODELS.map((model) => model.id)).toEqual([
       'eu-sou-solla',
       'perfil-quadrado',
       'perfil-retangular',
       'time-de-voce',
       'time-do-estadual',
+      'minha-colinha',
     ])
     expect(new Set(CARD_MODELS.map((model) => model.id)).size).toBe(CARD_MODELS.length)
   })
@@ -90,15 +91,31 @@ describe('card model catalog (S13/S15)', () => {
       overlaySrc: '/cards/estaduais/julio-base.webp',
       previewSrc: '/cards/modelo-time-de-voce-com-estadual.jpeg',
       stateDeputyPicker: true,
-      badge: 'NOVO',
       width: 1080,
       height: 1440,
       photoWindow: { x: 286, y: 439, width: 592, height: 577 },
     })
-    // The `NOVO` badge marks the newest model only (design gate scene 1).
     expect(getCardModel('time-de-voce')?.badge).toBeUndefined()
     expect(getCardModel('time-do-estadual')?.stateDeputyPicker).toBe(true)
     expect(getCardModel('time-de-voce')?.stateDeputyPicker).toBeUndefined()
+  })
+
+  it('pins the S31 colinha model: new kind, official top assets, picker flag and the approved tile', () => {
+    expect(getCardModel('minha-colinha')).toMatchObject({
+      kind: 'colinha',
+      label: 'Minha colinha',
+      assetSrc: '/cards/team-card-base.png',
+      overlaySrc: '/cards/team-card-front.png',
+      lockupSrc: '/campaign-kit/marca-negativa-completa.png',
+      previewSrc: '/cards/modelo-colinha.jpeg',
+      stateDeputyPicker: true,
+      badge: 'NOVO',
+      width: 1080,
+      height: 1920,
+    })
+    expect(getCardModel('minha-colinha')?.photoWindow).toBeUndefined()
+    // The `NOVO` badge marks the newest model only (design gate scene 1).
+    expect(getCardModel('time-do-estadual')?.badge).toBeUndefined()
   })
 
   it('guards the team banners and name slot measured from the example card', () => {
@@ -157,6 +174,7 @@ describe('card model catalog (S13/S15)', () => {
     expect(isCardModelId('perfil-retangular')).toBe(true)
     expect(isCardModelId('time-de-voce')).toBe(true)
     expect(isCardModelId('time-do-estadual')).toBe(true)
+    expect(isCardModelId('minha-colinha')).toBe(true)
     expect(isCardModelId('modelo-inventado')).toBe(false)
     expect(isCardModelId(['perfil-quadrado'])).toBe(false)
     expect(isCardModelId(undefined)).toBe(false)

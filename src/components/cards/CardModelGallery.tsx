@@ -19,10 +19,10 @@ const tileClassName =
   'group flex h-full w-full flex-col rounded-xl text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:ring-offset-2 focus-visible:ring-offset-(--campaign-cream)'
 
 /**
- * S14/S15/S30 — the five models side by side on desktop (a single row) and a
+ * S14/S15/S30/S31 — the six models side by side on desktop (a single row) and a
  * one-item-with-peek snap track on mobile, as buttons for the studio island:
  * selecting a tile opens the single composer in place (home or `/cards`). Both
- * tracks come from the same catalog (S13); the mobile track carries the five
+ * tracks come from the same catalog (S13); the mobile track carries the six
  * page dots of the design gate (scene 2), following the scroll position.
  */
 export const CardModelGallery = ({
@@ -96,7 +96,7 @@ export const CardModelGallery = ({
     <div className="mt-8">
       <ul
         aria-label={`${ariaLabel} (desktop)`}
-        className="m-0 hidden list-none grid-cols-5 gap-5 p-0 sm:gap-6 lg:grid lg:gap-4"
+        className="m-0 hidden list-none grid-cols-6 gap-5 p-0 sm:gap-6 lg:grid lg:gap-4"
       >
         {CARD_MODELS.map((model) => (
           <li key={model.id} className="m-0">
@@ -119,7 +119,7 @@ export const CardModelGallery = ({
       </ul>
 
       <p className="mt-1 text-center text-xs font-semibold text-(--campaign-muted) lg:hidden">
-        Deslize para ver os cinco modelos
+        Deslize para ver os seis modelos
       </p>
 
       {/* The visual dot of the gate sits inside a 24px target (WCAG 2.5.8 AA). */}

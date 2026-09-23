@@ -20,6 +20,7 @@ import {
   loadCardPhoto,
 } from '@/components/cards/cardCanvas'
 import {
+  CARD_COLINHA_PRIVACY_NOTE,
   CARD_HARMONY_HELP,
   CARD_HARMONY_LABEL,
   CARD_PHOTO_PRIVACY_NOTE,
@@ -30,6 +31,7 @@ import { StateDeputySelect } from '@/components/cards/StateDeputySelect'
 import { useCardCutout } from '@/components/cards/useCardCutout'
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer'
+import { COLINHA_FONT_FAMILY, colinhaVoteRows } from '@/lib/cardColinha'
 import { TEAM_CARD_NAME_SLOT, type CardModel, type CardRect } from '@/lib/cardModels'
 import { fitCardName, type CardNameFit } from '@/lib/cardNameFit'
 import {
@@ -44,6 +46,7 @@ import {
 } from '@/lib/cardPhotoTransform'
 import {
   createCardMeasure,
+  renderColinhaCard,
   renderNameCard,
   renderPhotoCard,
   renderTeamCard,
@@ -83,6 +86,16 @@ const STATE_DEPUTY_PREVIEW_WIDTH: Record<StateDeputyPreviewStage, string> = {
   ready: 'max-w-[12.8125rem] sm:max-w-[15rem]',
   result: 'max-w-[12.8125rem] sm:max-w-[14.375rem]',
   selected: 'max-w-[12.8125rem] sm:max-w-[14.375rem]',
+}
+
+/**
+ * S31 — the colinha stages of the design gate: compact while the estadual is
+ * unchosen (scene 2, 145px) and the scene 3/5 stage after the pick (405px
+ * desktop, 300px mobile).
+ */
+const COLINHA_PREVIEW_WIDTH: Record<'idle' | 'selected', string> = {
+  idle: 'max-w-[9.0625rem]',
+  selected: 'max-w-[18.75rem] sm:max-w-[25.3125rem]',
 }
 
 const TeamNameField = ({
@@ -180,6 +193,8 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null)
   const [overlayImage, setOverlayImage] = useState<HTMLImageElement | null>(null)
+  /** S31 — the colinha brand lockup of the top box (`lockupSrc`). */
+  const [lockupImage, setLockupImage] = useState<HTMLImageElement | null>(null)
   const [previewImage, setPreviewImage] = useState<HTMLImageElement | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -205,10 +220,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const photoWindow = model.photoWindow
   const isNameModel = model.kind === 'name'
   const isTeamModel = model.kind === 'team'
+  const isColinhaModel = model.kind === 'colinha'
   const isStateDeputyModel = isTeamModel && model.stateDeputyPicker === true
   const selectedDeputy = selectedDeputySlug
     ? (getStateDeputyCard(selectedDeputySlug) ?? null)
     : null
+  /** S31 — the estadual row owns the label/case of the `Linha conferida` copy. */
+  const estadualRow = colinhaVoteRows(selectedDeputy)[1]
   const deputyPairReady = selectedDeputy !== null && deputyImages?.slug === selectedDeputy.slug
   // S30 — the tone reference is the selected deputy's group art, frozen when the
   // cutout starts (switching the deputy later keeps the processed photo).
@@ -247,6 +265,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     setLoadState('loading')
     setBaseImage(null)
     setOverlayImage(null)
+    setLockupImage(null)
     setPreviewImage(null)
 
     const load = async () => {
@@ -255,17 +274,22 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         if (!fontReady) throw new Error('card-font-unavailable')
         // S30 — the dobradinha model loads its art pair per selection (below);
         // the static defaults stay unused so no illustrative JULIO art flashes
-        // before the choice.
-        const [image, overlay, preview] = await Promise.all([
+        // before the choice. S31 — the colinha composes the top from its three
+        // official assets and never draws the tile art (`previewSrc`).
+        const [image, overlay, lockup, preview] = await Promise.all([
           isStateDeputyModel ? Promise.resolve(null) : loadCardImage(model.assetSrc),
           !isStateDeputyModel && model.overlaySrc
             ? loadCardImage(model.overlaySrc)
             : Promise.resolve(null),
-          model.previewSrc ? loadCardImage(model.previewSrc) : Promise.resolve(null),
+          model.lockupSrc ? loadCardImage(model.lockupSrc) : Promise.resolve(null),
+          model.previewSrc && !isColinhaModel
+            ? loadCardImage(model.previewSrc)
+            : Promise.resolve(null),
         ])
         if (cancelled) return
         setBaseImage(image)
         setOverlayImage(overlay)
+        setLockupImage(lockup)
         setPreviewImage(preview)
         setLoadState('ready')
       } catch {
@@ -277,7 +301,15 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     return () => {
       cancelled = true
     }
-  }, [isStateDeputyModel, model.assetSrc, model.overlaySrc, model.previewSrc, fontFamily])
+  }, [
+    isStateDeputyModel,
+    isColinhaModel,
+    model.assetSrc,
+    model.overlaySrc,
+    model.lockupSrc,
+    model.previewSrc,
+    fontFamily,
+  ])
 
   /**
    * S30 — the selected deputy's pair swaps in place: the previous art stays
@@ -319,6 +351,23 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
       if (!baseImage) return
       ctx.clearRect(0, 0, model.width, model.height)
       setNameFit(renderNameCard(ctx, model, { image: baseImage, name, fontFamily, measure }))
+      return
+    }
+
+    if (isColinhaModel) {
+      // S31 — the slip: official top composition + legal + the six rows; the
+      // estadual row follows the shared selection and the fixed rows never
+      // change. No name, photo or cutout enters this flow.
+      if (!baseImage || !overlayImage || !lockupImage) return
+      ctx.clearRect(0, 0, model.width, model.height)
+      renderColinhaCard(ctx, model, {
+        group: baseImage,
+        lockup: lockupImage,
+        band: overlayImage,
+        deputy: selectedDeputy,
+        fontFamily: COLINHA_FONT_FAMILY,
+        measure: createCardMeasure(ctx, COLINHA_FONT_FAMILY, 900),
+      })
       return
     }
 
@@ -415,10 +464,12 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   }, [
     baseImage,
     overlayImage,
+    lockupImage,
     previewImage,
     loadState,
     isNameModel,
     isTeamModel,
+    isColinhaModel,
     isStateDeputyModel,
     selectedDeputy,
     deputyImages,
@@ -539,13 +590,15 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   }
 
   const nameCanAdvance = nameFit?.ok === true
-  const canAdvance = isNameModel
-    ? nameCanAdvance
-    : isStateDeputyModel
-      ? selectedDeputy !== null && deputyPairReady && teamReady !== null && nameCanAdvance
-      : isTeamModel
-        ? teamReady !== null && nameCanAdvance
-        : photo !== null
+  const canAdvance = isColinhaModel
+    ? selectedDeputy !== null
+    : isNameModel
+      ? nameCanAdvance
+      : isStateDeputyModel
+        ? selectedDeputy !== null && deputyPairReady && teamReady !== null && nameCanAdvance
+        : isTeamModel
+          ? teamReady !== null && nameCanAdvance
+          : photo !== null
   const nameError =
     (isNameModel || isTeamModel) && name.trim().length > 0 && nameFit !== null && !nameFit.ok
   const adjustable = isStateDeputyModel
@@ -556,6 +609,10 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const title = (() => {
     if (step === 'result') return 'Seu card está pronto para compartilhar.'
     if (isNameModel) return 'Personalize com seu nome'
+    if (isColinhaModel) {
+      if (!selectedDeputy) return 'Escolha seu estadual'
+      return shell === 'dialog' ? 'Pronta para levar com você' : 'Pronta para baixar'
+    }
     if (isStateDeputyModel && !selectedDeputy) return 'Escolha sua dobradinha'
     if (!isTeamModel) return 'Enquadre sua foto'
     if (teamProcessing) return 'Preparando sua foto'
@@ -566,32 +623,46 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     return 'Entre para o time'
   })()
   const photoHeaderDescription =
-    step === 'compose' && !isNameModel && !isTeamModel
+    step === 'compose' && !isNameModel && !isTeamModel && !isColinhaModel
       ? 'Arraste para posicionar e use os controles para aproximar ou ajustar.'
       : null
   const stateDeputyHeaderDescription =
     isStateDeputyModel && step === 'compose' && !selectedDeputy
       ? 'Escolha seu estadual da dobradinha.'
       : null
-  const headerDescription = photoHeaderDescription ?? stateDeputyHeaderDescription
+  /**
+   * S31 — the colinha description lives only in the dialog: the gate's mobile
+   * drawer (scene 5) carries eyebrow + title only, so the compact preview keeps
+   * the selector in the first viewport.
+   */
+  const colinhaHeaderDescription =
+    isColinhaModel && step === 'compose' && shell === 'dialog'
+      ? selectedDeputy
+        ? 'Confira o estadual escolhido. As demais escolhas já vêm preenchidas no modelo oficial.'
+        : 'A linha de deputado estadual será preenchida na hora.'
+      : null
+  const headerDescription =
+    photoHeaderDescription ?? stateDeputyHeaderDescription ?? colinhaHeaderDescription
   const teamBodyNotice =
     isTeamModel && step === 'compose' && teamReady && !nameError
       ? 'O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.'
       : null
   const ShellDescription = shell === 'dialog' ? DialogDescription : DrawerDescription
-  const eyebrow = isTeamModel
-    ? step === 'result'
-      ? 'Tudo certo'
-      : teamError
-        ? 'Falha no recorte'
-        : nameError
-          ? 'Nome muito longo'
-          : isStateDeputyModel
-            ? selectedDeputy
-              ? 'Estadual escolhido'
-              : 'Time do estadual'
-            : 'Time de você'
-    : null
+  const eyebrow = isColinhaModel
+    ? 'Minha colinha'
+    : isTeamModel
+      ? step === 'result'
+        ? 'Tudo certo'
+        : teamError
+          ? 'Falha no recorte'
+          : nameError
+            ? 'Nome muito longo'
+            : isStateDeputyModel
+              ? selectedDeputy
+                ? 'Estadual escolhido'
+                : 'Time do estadual'
+              : 'Time de você'
+      : null
   const eyebrowNode = eyebrow ? (
     <p className="text-[10px] font-black tracking-[0.1em] text-(--pt-red) uppercase sm:text-xs">
       {eyebrow}
@@ -624,11 +695,15 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     step === 'result' ? 'result' : teamReady ? 'ready' : teamProcessing ? 'processing' : 'idle'
   const stateDeputyPreviewStage: StateDeputyPreviewStage =
     teamPreviewStage === 'idle' && selectedDeputy && !nameError ? 'selected' : teamPreviewStage
-  const previewWidthClassName = isStateDeputyModel
-    ? STATE_DEPUTY_PREVIEW_WIDTH[stateDeputyPreviewStage]
-    : isTeamModel
-      ? TEAM_PREVIEW_WIDTH[teamPreviewStage]
-      : 'max-w-[22rem]'
+  const previewWidthClassName = isColinhaModel
+    ? selectedDeputy
+      ? COLINHA_PREVIEW_WIDTH.selected
+      : COLINHA_PREVIEW_WIDTH.idle
+    : isStateDeputyModel
+      ? STATE_DEPUTY_PREVIEW_WIDTH[stateDeputyPreviewStage]
+      : isTeamModel
+        ? TEAM_PREVIEW_WIDTH[teamPreviewStage]
+        : 'max-w-[22rem]'
 
   const nameInputClassName = `mt-2 h-11 w-full rounded-lg bg-white px-3 text-base text-(--campaign-ink) focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none ${
     nameError
@@ -771,9 +846,9 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
           <CardPreviewCanvas
             model={model}
             canvasRef={canvasRef}
-            className={`mx-auto block h-auto max-h-[38dvh] w-auto max-w-full rounded-lg border border-(--campaign-line) shadow-sm transition-opacity ${
-              loadState === 'loading' ? 'opacity-60' : 'opacity-100'
-            }`}
+            className={`mx-auto block h-auto w-auto max-w-full rounded-lg border border-(--campaign-line) shadow-sm transition-opacity ${
+              isColinhaModel ? '' : 'max-h-[38dvh] '
+            }${loadState === 'loading' ? 'opacity-60' : 'opacity-100'}`}
             onPointerDown={adjustable ? handlePointerDown : undefined}
             onPointerMove={adjustable ? handlePointerMove : undefined}
             onPointerUp={adjustable ? handlePointerEnd : undefined}
@@ -798,6 +873,36 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
             {deputyAssetError ? (
               <p role="alert" className="mt-2 text-sm font-semibold text-(--pt-red)">
                 Não foi possível carregar a arte deste estadual. Escolha outro e tente de novo.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {step === 'compose' && isColinhaModel ? (
+          <div>
+            <StateDeputySelect selected={selectedDeputy} onSelect={handleSelectDeputy} />
+            {selectedDeputy ? (
+              <div className="mt-4 rounded-lg bg-white p-4 ring-1 ring-(--campaign-line)">
+                <p className="text-sm font-bold text-(--campaign-ink)">Linha conferida</p>
+                <p className="mt-1 text-sm text-(--campaign-muted)">
+                  {estadualRow.officeLines.join(' ')} · {estadualRow.candidate} ·{' '}
+                  {selectedDeputy.ballotNumber}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-4 rounded-lg bg-(--campaign-cream) p-3 text-xs leading-5 text-(--campaign-muted)">
+                <span className="block font-bold text-(--campaign-ink)">
+                  Escolha um estadual para baixar.
+                </span>
+                A linha vazia será preenchida com o nome e os cinco dígitos.
+              </p>
+            )}
+            <p className="mt-3 text-xs leading-5 text-(--campaign-muted)">
+              {CARD_COLINHA_PRIVACY_NOTE}
+            </p>
+            {downloadError ? (
+              <p role="alert" className="mt-2 text-sm font-semibold text-(--pt-red)">
+                {downloadError}
               </p>
             ) : null}
           </div>
@@ -1067,16 +1172,24 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
       <div className="flex shrink-0 gap-3 border-t border-(--campaign-line) px-5 py-4">
         {step === 'compose' ? (
           <>
-            <button type="button" onClick={onClose} className={secondaryButtonClassName}>
-              Cancelar
-            </button>
+            {isColinhaModel && shell === 'drawer' ? null : (
+              <button type="button" onClick={onClose} className={secondaryButtonClassName}>
+                Cancelar
+              </button>
+            )}
             <button
               type="button"
-              disabled={!canAdvance || loadState !== 'ready'}
-              onClick={() => setStep('result')}
+              disabled={!canAdvance || loadState !== 'ready' || (isColinhaModel && isDownloading)}
+              onClick={isColinhaModel ? () => void handleDownload() : () => setStep('result')}
               className={primaryButtonClassName}
             >
-              {teamProcessing ? 'Processando…' : 'Criar meu card'}
+              {isColinhaModel
+                ? isDownloading
+                  ? 'Gerando…'
+                  : 'Baixar minha colinha'
+                : teamProcessing
+                  ? 'Processando…'
+                  : 'Criar meu card'}
             </button>
           </>
         ) : (
