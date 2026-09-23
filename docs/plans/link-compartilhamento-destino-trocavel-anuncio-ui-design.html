@@ -1,0 +1,1263 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Link com página de anúncio</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: var(--font-arimo);
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+      }
+
+      :root {
+        --background: #ffffff;
+        --foreground: #000000;
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --pt-yellow-ink: #000000;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --kit-red: #e4102f;
+        --kit-blue: #184e92;
+        --kit-yellow: #ffeb00;
+        --muted: #efe9e7;
+        --muted-foreground: #6c615e;
+        --border: rgb(0 0 0 / 12%);
+        --font-exo2: 'Exo 2', 'Arial Black', Arial, sans-serif;
+        --font-arimo: Arimo, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        background: #e8e5e2;
+        color: #211b19;
+        font-family: var(--font-arimo);
+      }
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      button {
+        cursor: pointer;
+      }
+      svg {
+        flex: none;
+      }
+
+      .font-display {
+        font-family: var(--font-exo2);
+      }
+      .board {
+        background-color: #e8e5e2;
+        background-image: radial-gradient(rgb(33 27 25 / 9%) 0.7px, transparent 0.7px);
+        background-size: 17px 17px;
+      }
+      .stage {
+        box-shadow: 0 24px 72px rgb(71 19 14 / 14%);
+      }
+      .screen {
+        overflow: hidden;
+        background: var(--campaign-cream);
+        color: var(--campaign-ink);
+      }
+      .scene-line::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: rgb(33 27 25 / 16%);
+      }
+      .safe-focus:focus-visible {
+        outline: 3px solid var(--pt-yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 2px var(--pt-red-dark);
+      }
+
+      .event-shell {
+        position: relative;
+        overflow: hidden;
+        background:
+          radial-gradient(circle at 88% 15%, rgb(255 230 7 / 30%) 0 120px, transparent 121px),
+          radial-gradient(circle at 4% 84%, rgb(24 78 146 / 8%) 0 170px, transparent 171px),
+          var(--campaign-cream);
+      }
+      .event-shell::after {
+        content: '';
+        position: absolute;
+        right: -40px;
+        bottom: -76px;
+        width: 350px;
+        height: 260px;
+        background: url('../../public/campaign-kit/pattern-shapes.png') center 15% / 350px auto
+          no-repeat;
+        opacity: 0.055;
+        pointer-events: none;
+      }
+      .event-card {
+        position: relative;
+        z-index: 1;
+        border: 1px solid var(--campaign-line);
+        border-radius: 18px;
+        background: white;
+        box-shadow: 0 18px 50px rgb(71 19 14 / 10%);
+      }
+      .asset-placeholder {
+        position: relative;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: linear-gradient(145deg, rgb(24 78 146 / 92%), rgb(162 28 28 / 94%)), #184e92;
+        color: white;
+      }
+      .asset-placeholder::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: url('../../public/campaign-kit/pattern-shapes.png') top center / 100% auto
+          no-repeat;
+        opacity: 0.2;
+      }
+      .asset-placeholder > * {
+        position: relative;
+        z-index: 1;
+      }
+      .primary-action {
+        display: inline-flex;
+        min-height: 56px;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--pt-yellow);
+        color: var(--pt-yellow-ink);
+        font-family: var(--font-exo2);
+        font-size: 18px;
+        font-weight: 900;
+        text-decoration: none;
+        box-shadow:
+          0 5px 0 #cfb900,
+          0 10px 22px rgb(0 0 0 / 12%);
+      }
+      .primary-action[aria-disabled='true'] {
+        cursor: not-allowed;
+        background: #e7e2d5;
+        color: rgb(0 0 0 / 48%);
+        box-shadow: 0 3px 0 #cfc9bb;
+      }
+      .secondary-action {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1.5px solid rgb(162 28 28 / 28%);
+        border-radius: 10px;
+        background: white;
+        color: var(--pt-red);
+        font-family: var(--font-exo2);
+        font-size: 14px;
+        font-weight: 800;
+      }
+      .popover-card {
+        border: 1px solid rgb(0 0 0 / 12%);
+        border-radius: 10px;
+        background: #fff;
+        color: #211b19;
+        box-shadow: 0 14px 38px rgb(33 27 25 / 18%);
+      }
+      .menu-row {
+        display: flex;
+        min-height: 44px;
+        width: 100%;
+        align-items: center;
+        gap: 10px;
+        border-radius: 7px;
+        padding: 9px 10px;
+        color: #211b19;
+        font-size: 14px;
+        font-weight: 650;
+        text-decoration: none;
+      }
+      .menu-row:hover {
+        background: var(--campaign-band);
+      }
+      .footer-link {
+        color: rgb(255 248 242 / 75%);
+        text-decoration: none;
+      }
+
+      /* Payload 3.82 visual language: compact 13px baseline, square 3–4px radii,
+         monochrome controls and native collection edit framing. */
+      .payload {
+        --p-bg: #f3f3f3;
+        --p-white: #fff;
+        --p-text: #333;
+        --p-muted: #686868;
+        --p-line: #dadada;
+        --p-input-line: #cfcfcf;
+        --p-dark: #333;
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          'Segoe UI',
+          sans-serif;
+        font-size: 13px;
+        line-height: 20px;
+        color: var(--p-text);
+      }
+      .payload-input {
+        min-height: 40px;
+        width: 100%;
+        border: 1px solid var(--p-input-line);
+        border-radius: 3px;
+        background: #fff;
+        padding: 8px 12px;
+        box-shadow: 0 2px 2px -1px rgb(0 0 0 / 10%);
+        color: #333;
+        font-size: 13px;
+      }
+      .payload-label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+      }
+      .payload-help {
+        margin-top: 5px;
+        color: var(--p-muted);
+        font-size: 12px;
+        line-height: 17px;
+      }
+      .payload-btn {
+        display: inline-flex;
+        min-height: 40px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border: 1px solid #333;
+        border-radius: 3px;
+        padding: 8px 18px;
+        background: #333;
+        color: white;
+        font-size: 13px;
+      }
+      .payload-btn-ghost {
+        border-color: #cfcfcf;
+        background: white;
+        color: #333;
+      }
+      .payload-section {
+        border-top: 1px solid var(--p-line);
+        padding-top: 20px;
+      }
+      .payload-array-row {
+        border: 1px solid var(--p-line);
+        border-radius: 4px;
+        background: white;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen antialiased">
+    <main class="mx-auto max-w-[1480px] px-4 py-10 sm:px-8 sm:py-14">
+      <header
+        class="mb-12 flex flex-col gap-4 border-b border-black/10 pb-7 lg:flex-row lg:items-end lg:justify-between"
+      >
+        <div>
+          <p class="font-display m-0 text-xs font-black tracking-[0.14em] text-[#a21c1c] uppercase">
+            S29 · Design hi-fi · gate
+          </p>
+          <h1
+            class="font-display mt-2 max-w-3xl text-3xl leading-tight font-black tracking-[-0.035em] text-[#211b19] sm:text-4xl"
+          >
+            Link com destino trocável e página de anúncio
+          </h1>
+          <p class="mt-3 max-w-3xl text-sm leading-6 text-[#6c615e]">
+            O visitante confirma que está no lugar certo antes da transmissão; a equipe escolhe o
+            destino no ar em uma decisão + salvar.
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs font-bold text-[#6c615e]">
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >Público · campaign-site</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >Admin · Payload 3.82</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2">390 / 1280</span>
+        </div>
+      </header>
+
+      <!-- CENA 01: DESKTOP PRÉ-TRANSMISSÃO -->
+      <section aria-labelledby="scene-01" class="mb-16">
+        <div class="scene-line mb-4 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2 id="scene-01" class="m-0 text-xs font-bold">Desktop 1280 · pré-transmissão</h2>
+        </div>
+        <div
+          class="stage screen mx-auto w-full max-w-[1280px] rounded-[18px] border border-black/10"
+        >
+          <header class="border-b border-black/10 bg-[var(--campaign-cream)]">
+            <div class="mx-auto flex h-[92px] max-w-6xl items-center justify-between px-8">
+              <a href="#" aria-label="Início — Jorge Solla 1313" class="safe-focus rounded-md">
+                <img
+                  src="../../public/campaign-kit/marca-positiva-completa.png"
+                  alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+                  class="h-[74px] w-auto object-contain"
+                />
+              </a>
+              <span
+                class="font-display rounded-full bg-[#a21c1c] px-4 py-2 text-xs font-black tracking-[0.08em] text-white uppercase"
+                >Atividade online</span
+              >
+            </div>
+          </header>
+
+          <div class="event-shell px-8 py-12">
+            <article
+              class="event-card mx-auto grid max-w-6xl grid-cols-[0.95fr_1.05fr] overflow-hidden"
+            >
+              <div class="asset-placeholder min-h-[535px]">
+                <div class="max-w-xs text-center">
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="mx-auto size-10"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="m21 15-5-5L5 21" />
+                  </svg>
+                  <p class="font-display mt-4 text-sm font-black tracking-[0.1em] uppercase">
+                    NEEDS ASSET
+                  </p>
+                  <p class="mt-1 text-sm text-white/75">Imagem real do convite · 1200 × 630</p>
+                </div>
+              </div>
+              <div class="flex flex-col p-10">
+                <div
+                  class="flex items-center gap-2 text-xs font-bold tracking-[0.09em] text-[#a21c1c] uppercase"
+                >
+                  <span class="size-2 rounded-full bg-[#a21c1c]"></span> Transmissão
+                </div>
+                <h3
+                  class="font-display mt-4 text-[44px] leading-[0.98] font-black tracking-[-0.04em] text-black"
+                >
+                  Nome da atividade
+                </h3>
+                <p class="mt-5 max-w-xl text-[16px] leading-7 text-black/65">
+                  Descrição breve da atividade e do que a pessoa encontrará na transmissão.
+                </p>
+
+                <dl class="mt-7 grid gap-4 border-y border-black/10 py-5 text-sm">
+                  <div class="flex items-start gap-3">
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="mt-0.5 size-5 text-[#a21c1c]"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 2v4M16 2v4M3 10h18" />
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                    </svg>
+                    <div>
+                      <dt class="font-bold text-black">Sábado, 3 de outubro · 19h</dt>
+                      <dd class="mt-0.5 text-xs text-black/50">Horário da Bahia</dd>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="size-5 text-[#a21c1c]"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                      <circle cx="12" cy="10" r="2" />
+                    </svg>
+                    <div><dt class="font-bold text-black">Online</dt></div>
+                  </div>
+                </dl>
+
+                <div class="mt-auto pt-7">
+                  <button class="primary-action w-full" type="button" aria-disabled="true" disabled>
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="size-5"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M15 10l4.55-2.28A1 1 0 0 1 21 8.62v6.76a1 1 0 0 1-1.45.9L15 14" />
+                      <rect x="3" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                    Entrar
+                  </button>
+                  <p class="mt-3 text-center text-sm font-medium text-black/55">
+                    A transmissão ainda não começou.
+                  </p>
+                  <div class="mt-5 grid grid-cols-2 gap-3">
+                    <button class="secondary-action" type="button">
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="size-4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M8 2v4M16 2v4M3 10h18" />
+                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                      </svg>
+                      Adicionar à agenda
+                    </button>
+                    <button class="secondary-action" type="button">
+                      <svg
+                        viewBox="0 0 24 24"
+                        class="size-4"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <circle cx="18" cy="5" r="3" />
+                        <circle cx="6" cy="12" r="3" />
+                        <circle cx="18" cy="19" r="3" />
+                        <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
+                      </svg>
+                      Compartilhar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <footer class="bg-[#180a09] px-8 py-5 text-xs text-[rgb(255_248_242/65%)]">
+            <div class="mx-auto flex max-w-6xl items-center justify-between gap-4">
+              <span>Jorge Solla 1313 · Deputado Federal · PT · Bahia</span>
+              <span>Site de campanha · Eleições 2026</span>
+            </div>
+          </footer>
+        </div>
+        <div
+          class="mx-auto mt-4 grid max-w-[1280px] grid-cols-3 gap-3 text-xs leading-5 text-[#6c615e]"
+        >
+          <p class="m-0 rounded-lg border border-black/10 bg-white/75 p-3">
+            <b class="text-[#211b19]">Hierarquia:</b> “Entrar” permanece no lugar e em largura
+            total, mas desativado; agenda e compartilhar são outlines menores.
+          </p>
+          <p class="m-0 rounded-lg border border-black/10 bg-white/75 p-3">
+            <b class="text-[#211b19]">Honestidade:</b> sem embed, chat ou captura de dados. A
+            transmissão acontece fora desta página.
+          </p>
+          <p class="m-0 rounded-lg border border-black/10 bg-white/75 p-3">
+            <b class="text-[#211b19]">SEO:</b> página sempre <code>noindex</code>; o link curto
+            permanece o endereço compartilhado.
+          </p>
+        </div>
+      </section>
+
+      <!-- CENA 02: MOBILE PRÉ-TRANSMISSÃO -->
+      <section aria-labelledby="scene-02" class="mb-16">
+        <div class="scene-line mb-4 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 02</span>
+          <h2 id="scene-02" class="m-0 text-xs font-bold">Mobile 390 · pré-transmissão</h2>
+        </div>
+        <div
+          class="stage screen mx-auto w-[390px] max-w-full rounded-[28px] border-[6px] border-[#211b19]"
+        >
+          <header class="border-b border-black/10 bg-[var(--campaign-cream)] px-5 py-3">
+            <img
+              src="../../public/campaign-kit/marca-positiva-completa.png"
+              alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+              class="h-[66px] w-auto object-contain"
+            />
+          </header>
+          <div class="event-shell px-4 py-5">
+            <article class="event-card overflow-hidden">
+              <div class="asset-placeholder aspect-[1.91/1]">
+                <div class="text-center">
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="mx-auto size-7"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.7"
+                    aria-hidden="true"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="m21 15-5-5L5 21" />
+                  </svg>
+                  <p class="font-display mt-2 text-[10px] font-black tracking-[0.1em] uppercase">
+                    NEEDS ASSET
+                  </p>
+                </div>
+              </div>
+              <div class="p-5">
+                <p
+                  class="m-0 flex items-center gap-2 text-[10px] font-bold tracking-[0.1em] text-[#a21c1c] uppercase"
+                >
+                  <span class="size-1.5 rounded-full bg-[#a21c1c]"></span>Transmissão
+                </p>
+                <h3
+                  class="font-display mt-2 text-[31px] leading-[1] font-black tracking-[-0.035em]"
+                >
+                  Nome da atividade
+                </h3>
+                <p class="mt-3 text-sm leading-5 text-black/65">
+                  Descrição breve da atividade e do que a pessoa encontrará na transmissão.
+                </p>
+                <dl class="mt-4 grid gap-3 border-y border-black/10 py-4 text-sm">
+                  <div class="flex gap-3">
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="mt-0.5 size-5 text-[#a21c1c]"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 2v4M16 2v4M3 10h18" />
+                      <rect x="3" y="4" width="18" height="18" rx="2" />
+                    </svg>
+                    <div>
+                      <dt class="font-bold">Sábado, 3 de outubro · 19h</dt>
+                      <dd class="text-[11px] text-black/50">Horário da Bahia</dd>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="size-5 text-[#a21c1c]"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" />
+                      <circle cx="12" cy="10" r="2" />
+                    </svg>
+                    <dt class="font-bold">Online</dt>
+                  </div>
+                </dl>
+                <button
+                  class="primary-action mt-5 w-full"
+                  type="button"
+                  aria-disabled="true"
+                  disabled
+                >
+                  Entrar
+                </button>
+                <p class="mt-3 text-center text-xs font-medium text-black/55">
+                  A transmissão ainda não começou.
+                </p>
+                <div class="mt-4 grid gap-2">
+                  <button class="secondary-action w-full" type="button">
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="size-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="M8 2v4M16 2v4M3 10h18" />
+                      <rect x="3" y="4" width="18" height="18" rx="2" /></svg
+                    >Adicionar à agenda
+                  </button>
+                  <button class="secondary-action w-full" type="button">
+                    <svg
+                      viewBox="0 0 24 24"
+                      class="size-4"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="18" cy="5" r="3" />
+                      <circle cx="6" cy="12" r="3" />
+                      <circle cx="18" cy="19" r="3" />
+                      <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" /></svg
+                    >Compartilhar
+                  </button>
+                </div>
+              </div>
+            </article>
+          </div>
+          <footer class="bg-[#180a09] px-5 py-5 text-[10px] leading-4 text-[rgb(255_248_242/65%)]">
+            Jorge Solla 1313 · Deputado Federal · PT · Bahia<br />Site de campanha · Eleições 2026
+          </footer>
+        </div>
+      </section>
+
+      <!-- CENA 03: NO AR + TROCA -->
+      <section aria-labelledby="scene-03" class="mb-16">
+        <div class="scene-line mb-4 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 03</span>
+          <h2 id="scene-03" class="m-0 text-xs font-bold">
+            Mesma página já aberta · transmissão no ar e troca de destino
+          </h2>
+        </div>
+        <div
+          class="stage mx-auto max-w-[1280px] overflow-hidden rounded-[18px] border border-black/10 bg-[var(--campaign-cream)]"
+        >
+          <header class="flex h-[80px] items-center justify-between border-b border-black/10 px-8">
+            <img
+              src="../../public/campaign-kit/marca-positiva-completa.png"
+              alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+              class="h-[62px] w-auto"
+            />
+            <span
+              class="font-display rounded-full bg-[#a21c1c] px-4 py-2 text-xs font-black tracking-[0.08em] text-white uppercase"
+              >Ao vivo</span
+            >
+          </header>
+          <div class="event-shell px-8 py-10">
+            <div class="mx-auto grid max-w-6xl grid-cols-[1fr_0.82fr] gap-7">
+              <article class="event-card grid grid-cols-[0.78fr_1fr] overflow-hidden">
+                <div class="asset-placeholder min-h-[420px]">
+                  <p class="font-display text-xs font-black tracking-[0.1em] uppercase">
+                    NEEDS ASSET
+                  </p>
+                </div>
+                <div class="flex flex-col p-7">
+                  <p
+                    class="m-0 flex items-center gap-2 text-xs font-bold tracking-[0.08em] text-[#a21c1c] uppercase"
+                  >
+                    <span class="relative flex size-2"
+                      ><span
+                        class="absolute inline-flex size-full animate-ping rounded-full bg-[#a21c1c] opacity-60"
+                      ></span
+                      ><span
+                        class="relative inline-flex size-2 rounded-full bg-[#a21c1c]"
+                      ></span></span
+                    >Ao vivo agora
+                  </p>
+                  <h3
+                    class="font-display mt-3 text-[34px] leading-none font-black tracking-[-0.035em]"
+                  >
+                    Nome da atividade
+                  </h3>
+                  <p class="mt-3 text-sm leading-6 text-black/60">A transmissão começou.</p>
+                  <div class="mt-auto pt-6">
+                    <div
+                      class="mb-3 flex items-center justify-center gap-2 text-xs font-bold text-black/55"
+                    >
+                      <span>Destino no ar</span
+                      ><span class="rounded-full bg-[#ebe9e9] px-2.5 py-1 text-black"
+                        >Google Meet</span
+                      >
+                    </div>
+                    <a href="#" class="primary-action safe-focus w-full"
+                      >Entrar<svg
+                        viewBox="0 0 24 24"
+                        class="size-5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"
+                        /></svg
+                    ></a>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <button class="secondary-action text-xs">Adicionar à agenda</button
+                      ><button class="secondary-action text-xs">Compartilhar</button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+
+              <aside
+                class="rounded-[18px] border border-black/10 bg-white p-6 shadow-[0_18px_50px_rgb(71_19_14/8%)]"
+              >
+                <p
+                  class="font-display m-0 text-xs font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+                >
+                  Momento de troca
+                </p>
+                <h3 class="font-display mt-2 text-2xl font-black tracking-[-0.02em]">
+                  O lugar do CTA não muda
+                </h3>
+                <p class="mt-2 text-sm leading-6 text-black/60">
+                  Quem deixou a página aberta percebe a atualização sem procurar um novo botão.
+                </p>
+                <div class="mt-5 rounded-xl border border-black/10 bg-[#f9faff] p-4">
+                  <p class="m-0 text-[10px] font-bold tracking-wider text-black/45 uppercase">
+                    Antes da troca
+                  </p>
+                  <div class="mt-2 flex items-center justify-between">
+                    <b class="text-sm">Google Meet</b
+                    ><span class="rounded-full bg-[#ebe9e9] px-2 py-1 text-[11px] font-bold"
+                      >no ar</span
+                    >
+                  </div>
+                  <div
+                    class="mt-3 flex min-h-11 items-center justify-center rounded-[9px] bg-[#ffe607] font-display font-black shadow-[0_3px_0_#cfb900]"
+                  >
+                    Entrar
+                  </div>
+                </div>
+                <div
+                  class="my-3 flex items-center justify-center gap-2 text-xs font-bold text-[#a21c1c]"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-4"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m7 7 10 10M17 7v10H7" /></svg
+                  >Equipe salva outro destino
+                </div>
+                <div class="rounded-xl border-2 border-[#a21c1c]/30 bg-white p-4">
+                  <p class="m-0 text-[10px] font-bold tracking-wider text-[#a21c1c] uppercase">
+                    Depois da troca
+                  </p>
+                  <div class="mt-2 flex items-center justify-between">
+                    <b class="text-sm">YouTube</b
+                    ><span
+                      class="rounded-full bg-[#a21c1c] px-2 py-1 text-[11px] font-bold text-white"
+                      >no ar</span
+                    >
+                  </div>
+                  <div
+                    class="mt-3 flex min-h-11 items-center justify-center rounded-[9px] bg-[#ffe607] font-display font-black shadow-[0_3px_0_#cfb900]"
+                  >
+                    Entrar
+                  </div>
+                </div>
+                <p class="mt-4 text-xs leading-5 text-black/50">
+                  O rótulo do destino é informativo; o CTA primário continua sendo “Entrar”. Nenhuma
+                  URL longa aparece para o visitante.
+                </p>
+              </aside>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 04: MENUS -->
+      <section aria-labelledby="scene-04" class="mb-16">
+        <div class="scene-line mb-4 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 04</span>
+          <h2 id="scene-04" class="m-0 text-xs font-bold">
+            Popover de agenda + popover de compartilhar
+          </h2>
+        </div>
+        <div class="mx-auto grid max-w-[1000px] gap-8 lg:grid-cols-2">
+          <article class="stage rounded-[18px] border border-black/10 bg-white p-8">
+            <p
+              class="font-display m-0 text-[10px] font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Adicionar à agenda · aberto
+            </p>
+            <h3 class="font-display mt-2 text-2xl font-black">Duas opções, sem ambiguidade</h3>
+            <div class="relative mt-8 flex justify-center pb-28">
+              <button class="secondary-action" type="button">
+                <svg
+                  viewBox="0 0 24 24"
+                  class="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M8 2v4M16 2v4M3 10h18" />
+                  <rect x="3" y="4" width="18" height="18" rx="2" /></svg
+                >Adicionar à agenda<svg
+                  viewBox="0 0 24 24"
+                  class="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              <div
+                class="popover-card absolute top-14 z-10 w-[270px] p-1"
+                role="menu"
+                aria-label="Opções de agenda"
+              >
+                <a href="#" class="menu-row"
+                  ><span
+                    class="grid size-7 place-items-center rounded bg-[#4285f4] text-xs font-bold text-white"
+                    >G</span
+                  ><span
+                    >Google Agenda<small class="block font-normal text-black/45"
+                      >Abrir evento preenchido</small
+                    ></span
+                  ></a
+                >
+                <a href="#" class="menu-row"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    class="size-5 text-[#a21c1c]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M8 2v4M16 2v4M3 10h18" />
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <path d="M12 14v4m-2-2h4" /></svg
+                  ><span
+                    >Baixar arquivo .ics<small class="block font-normal text-black/45"
+                      >Apple, Outlook e desktop</small
+                    ></span
+                  ></a
+                >
+              </div>
+            </div>
+          </article>
+
+          <article class="stage rounded-[18px] border border-black/10 bg-white p-8">
+            <p
+              class="font-display m-0 text-[10px] font-black tracking-[0.12em] text-[#a21c1c] uppercase"
+            >
+              Compartilhar · aberto
+            </p>
+            <h3 class="font-display mt-2 text-2xl font-black">O link curto continua circulando</h3>
+            <div class="relative mt-8 flex justify-center pb-28">
+              <button class="secondary-action" type="button">
+                <svg
+                  viewBox="0 0 24 24"
+                  class="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="18" cy="5" r="3" />
+                  <circle cx="6" cy="12" r="3" />
+                  <circle cx="18" cy="19" r="3" />
+                  <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" /></svg
+                >Compartilhar<svg
+                  viewBox="0 0 24 24"
+                  class="size-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </button>
+              <div
+                class="popover-card absolute top-14 z-10 w-[270px] p-1"
+                role="menu"
+                aria-label="Opções de compartilhamento"
+              >
+                <a href="#" class="menu-row"
+                  ><svg
+                    viewBox="0 0 24 24"
+                    class="size-5 text-[#25D366]"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M21 11.5a8.38 8.38 0 0 1-9 8.5 9.5 9.5 0 0 1-4-.9L3 21l1.8-4.6A8.5 8.5 0 1 1 21 11.5Z"
+                    />
+                    <path d="M8.5 8.5c.5 3 2 4.5 5 5" /></svg
+                  >Compartilhar no WhatsApp</a
+                >
+                <button class="menu-row border-0 bg-transparent text-left" type="button">
+                  <svg
+                    viewBox="0 0 24 24"
+                    class="size-5"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="9" y="9" width="13" height="13" rx="2" />
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg
+                  >Copiar link
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+        <div
+          class="mx-auto mt-4 max-w-[1000px] rounded-xl border border-[#184e92]/20 bg-[#184e92]/[0.06] p-4 text-sm leading-6 text-[#423b38]"
+        >
+          <b>Estado sem data configurada:</b> “Adicionar à agenda” desaparece por completo. “Entrar”
+          e “Compartilhar” mantêm posição e peso; não aparece arquivo vazio, opção desativada nem
+          mensagem de erro.
+        </div>
+      </section>
+
+      <!-- CENA 05: ADMIN PAYLOAD -->
+      <section aria-labelledby="scene-05" class="mb-10">
+        <div class="scene-line mb-4 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 05</span>
+          <h2 id="scene-05" class="m-0 text-xs font-bold">
+            Admin Payload · editar link no dia da transmissão
+          </h2>
+        </div>
+        <div
+          class="payload stage mx-auto max-w-[1280px] overflow-hidden rounded-[12px] border border-[#cfcfcf] bg-white"
+        >
+          <div
+            class="flex h-14 items-center justify-between border-b border-[#dadada] bg-white px-5"
+          >
+            <div class="flex items-center gap-3">
+              <button
+                class="grid size-8 place-items-center border-0 bg-transparent"
+                aria-label="Abrir navegação"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  class="size-5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                >
+                  <path d="M4 6h16M4 12h16M4 18h16" />
+                </svg></button
+              ><b class="text-[15px] tracking-tight">Payload</b>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span>admin@exemplo.com</span
+              ><span
+                class="grid size-8 place-items-center rounded-full bg-[#333] font-semibold text-white"
+                >A</span
+              >
+            </div>
+          </div>
+          <div class="grid min-h-[850px] grid-cols-[220px_1fr]">
+            <aside class="border-r border-[#dadada] bg-[#f8f8f8] px-4 py-5">
+              <label class="payload-label text-[11px] tracking-wide text-[#777] uppercase"
+                >Coleções</label
+              >
+              <nav class="mt-2 grid gap-1">
+                <div class="rounded px-3 py-2 text-[#666]">Contatos</div>
+                <div
+                  class="mt-2 px-3 pt-2 text-[11px] font-semibold tracking-wide text-[#777] uppercase"
+                >
+                  Publicações
+                </div>
+                <div class="rounded bg-[#333] px-3 py-2 font-medium text-white">
+                  Links de compartilhamento
+                </div>
+                <div class="rounded px-3 py-2 text-[#666]">Posts</div>
+                <div class="rounded px-3 py-2 text-[#666]">Mídia</div>
+                <div
+                  class="mt-2 px-3 pt-2 text-[11px] font-semibold tracking-wide text-[#777] uppercase"
+                >
+                  Configurações
+                </div>
+              </nav>
+            </aside>
+
+            <div class="min-w-0 bg-[#f3f3f3]">
+              <div
+                class="flex items-center justify-between border-b border-[#dadada] bg-white px-8 py-5"
+              >
+                <div>
+                  <a href="#" class="text-xs text-[#666] underline">Links de compartilhamento</a>
+                  <h3 class="mt-1 text-[25px] leading-8 font-medium">Nome da atividade</h3>
+                </div>
+                <button class="payload-btn" type="button">Salvar</button>
+              </div>
+
+              <div class="grid grid-cols-[minmax(0,1fr)_270px] gap-8 p-8">
+                <form
+                  class="rounded-[4px] border border-[#dadada] bg-white p-7"
+                  aria-label="Editar link de compartilhamento"
+                >
+                  <div class="grid gap-5">
+                    <div>
+                      <label class="payload-label"
+                        >Título <span class="text-red-600">*</span></label
+                      >
+                      <div class="payload-input">Nome da atividade</div>
+                      <p class="payload-help">
+                        Título do cartão no WhatsApp e da página de anúncio.
+                      </p>
+                    </div>
+                    <div class="grid grid-cols-2 gap-5">
+                      <div>
+                        <label class="payload-label"
+                          >Slug <span class="text-red-600">*</span></label
+                        >
+                        <div class="payload-input">nome-da-atividade</div>
+                        <p class="payload-help">jorgesolla1313.com.br/nome-da-atividade</p>
+                      </div>
+                      <div>
+                        <label class="payload-label"
+                          >Modo do link <span class="text-red-600">*</span></label
+                        >
+                        <div class="payload-input flex items-center justify-between">
+                          <span>Página de anúncio</span
+                          ><svg
+                            viewBox="0 0 24 24"
+                            class="size-4"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.5"
+                          >
+                            <path d="m6 9 6 6 6-6" />
+                          </svg>
+                        </div>
+                        <p class="payload-help">
+                          Opções: “Levar direto ao destino” ou “Página de anúncio”.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div class="payload-section">
+                      <div class="mb-3 flex items-end justify-between">
+                        <div>
+                          <h4 class="m-0 text-[16px] font-medium">Destinos</h4>
+                          <p class="payload-help m-0">
+                            Pré-cadastre os lugares para trocar sem digitar URL no dia.
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          class="payload-btn payload-btn-ghost min-h-8 px-3 py-1"
+                        >
+                          + Adicionar destino
+                        </button>
+                      </div>
+                      <div class="grid gap-2">
+                        <div class="payload-array-row">
+                          <div
+                            class="flex items-center justify-between border-b border-[#e2e2e2] bg-[#f8f8f8] px-3 py-2"
+                          >
+                            <div class="flex items-center gap-2">
+                              <svg
+                                viewBox="0 0 24 24"
+                                class="size-4 text-[#888]"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <circle cx="9" cy="5" r="1" />
+                                <circle cx="9" cy="12" r="1" />
+                                <circle cx="9" cy="19" r="1" />
+                                <circle cx="15" cy="5" r="1" />
+                                <circle cx="15" cy="12" r="1" />
+                                <circle cx="15" cy="19" r="1" /></svg
+                              ><b>01 · Google Meet</b>
+                            </div>
+                            <button class="border-0 bg-transparent text-[#777]">•••</button>
+                          </div>
+                          <div class="grid grid-cols-[0.65fr_1.35fr] gap-4 p-3">
+                            <div>
+                              <label class="payload-label">Rótulo</label>
+                              <div class="payload-input">Google Meet</div>
+                            </div>
+                            <div>
+                              <label class="payload-label">URL do destino</label>
+                              <div class="payload-input text-[#777]">https://…</div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="payload-array-row">
+                          <div
+                            class="flex items-center justify-between border-b border-[#e2e2e2] bg-[#f8f8f8] px-3 py-2"
+                          >
+                            <div class="flex items-center gap-2">
+                              <svg
+                                viewBox="0 0 24 24"
+                                class="size-4 text-[#888]"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                              >
+                                <circle cx="9" cy="5" r="1" />
+                                <circle cx="9" cy="12" r="1" />
+                                <circle cx="9" cy="19" r="1" />
+                                <circle cx="15" cy="5" r="1" />
+                                <circle cx="15" cy="12" r="1" />
+                                <circle cx="15" cy="19" r="1" /></svg
+                              ><b>02 · YouTube</b>
+                            </div>
+                            <button class="border-0 bg-transparent text-[#777]">•••</button>
+                          </div>
+                          <div class="grid grid-cols-[0.65fr_1.35fr] gap-4 p-3">
+                            <div>
+                              <label class="payload-label">Rótulo</label>
+                              <div class="payload-input">YouTube</div>
+                            </div>
+                            <div>
+                              <label class="payload-label">URL do destino</label>
+                              <div class="payload-input text-[#777]">https://…</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      class="payload-section rounded-[4px] border-2 border-[#333] bg-[#fbfbfb] p-4"
+                    >
+                      <div class="grid grid-cols-[1fr_auto] items-end gap-4">
+                        <div>
+                          <label class="payload-label text-[15px]">Destino no ar</label>
+                          <div class="payload-input flex items-center justify-between bg-white">
+                            <span>YouTube</span
+                            ><svg
+                              viewBox="0 0 24 24"
+                              class="size-4"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                            >
+                              <path d="m6 9 6 6 6-6" />
+                            </svg>
+                          </div>
+                          <p class="payload-help">
+                            Selecione um destino pré-cadastrado. Vazio = pré-transmissão.
+                          </p>
+                        </div>
+                        <button class="payload-btn h-10" type="button">Salvar</button>
+                      </div>
+                    </div>
+
+                    <div class="payload-section">
+                      <h4 class="m-0 text-[16px] font-medium">Dados do evento</h4>
+                      <p class="payload-help mb-4">
+                        Usados na página de anúncio e nas opções de agenda.
+                      </p>
+                      <div class="grid grid-cols-2 gap-5">
+                        <div>
+                          <label class="payload-label">Início</label>
+                          <div class="payload-input flex items-center justify-between">
+                            <span>03/10/2026 19:00</span
+                            ><svg
+                              viewBox="0 0 24 24"
+                              class="size-4 text-[#777]"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                            >
+                              <path d="M8 2v4M16 2v4M3 10h18" />
+                              <rect x="3" y="4" width="18" height="18" rx="2" />
+                            </svg>
+                          </div>
+                          <p class="payload-help">Horário da Bahia.</p>
+                        </div>
+                        <div>
+                          <label class="payload-label"
+                            >Fim <span class="font-normal text-[#777]">(opcional)</span></label
+                          >
+                          <div class="payload-input flex items-center justify-between text-[#888]">
+                            <span>Selecionar data e hora</span
+                            ><svg
+                              viewBox="0 0 24 24"
+                              class="size-4"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="1.5"
+                            >
+                              <path d="M8 2v4M16 2v4M3 10h18" />
+                              <rect x="3" y="4" width="18" height="18" rx="2" />
+                            </svg>
+                          </div>
+                          <p class="payload-help">Sem fim, a agenda usa duração padrão.</p>
+                        </div>
+                      </div>
+                      <div class="mt-5">
+                        <label class="payload-label">Local</label>
+                        <div class="payload-input">Online</div>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+
+                <aside class="self-start rounded-[4px] border border-[#dadada] bg-white p-5">
+                  <h4 class="m-0 text-[15px] font-medium">Publicação</h4>
+                  <label class="mt-5 flex items-center gap-3"
+                    ><span class="grid size-5 place-items-center rounded-[3px] bg-[#333] text-white"
+                      ><svg
+                        viewBox="0 0 24 24"
+                        class="size-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                      >
+                        <path d="m5 12 4 4L19 6" /></svg></span
+                    ><span
+                      ><b class="font-medium">Publicado</b
+                      ><small class="block text-[#777]">Desmarcado, responde 404.</small></span
+                    ></label
+                  >
+                  <div class="mt-5 border-t border-[#dadada] pt-5">
+                    <p class="m-0 text-xs text-[#777]">Link público</p>
+                    <p class="mt-1 break-all font-medium">
+                      jorgesolla1313.com.br/nome-da-atividade
+                    </p>
+                  </div>
+                  <button class="payload-btn mt-5 w-full" type="button">Salvar</button>
+                  <p class="mt-3 text-center text-[11px] leading-4 text-[#777]">
+                    No dia: escolha “Destino no ar” e salve. Não é preciso editar a URL.
+                  </p>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mx-auto mt-4 grid max-w-[1280px] gap-3 text-xs leading-5 text-[#6c615e] md:grid-cols-3"
+        >
+          <p class="m-0 rounded-lg border border-black/10 bg-white/75 p-3">
+            <b class="text-[#211b19]">Ação do dia:</b> “Destino no ar” recebe o maior contraste
+            dentro do formulário; escolher + salvar resolve.
+          </p>
+          <p class="m-0 rounded-lg border border-black/10 bg-white/75 p-3">
+            <b class="text-[#211b19]">Formulário nativo:</b> chrome, densidade, campos, arrays,
+            raios e ações seguem Payload; nenhuma navegação paralela.
+          </p>
+          <p class="m-0 rounded-lg border border-black/10 bg-white/75 p-3">
+            <b class="text-[#211b19]">Fail-closed visível:</b> vazio significa pré-transmissão no
+            modo anúncio; despublicado continua respondendo 404.
+          </p>
+        </div>
+      </section>
+
+      <footer class="mt-12 border-t border-black/10 pt-6 text-xs leading-5 text-[#6c615e]">
+        <b class="text-[#211b19]">Fonte de verdade visual:</b> marca oficial do kit 1313; tokens
+        <code>campaign-site</code>; menus no vocabulário shadcn; formulário no vocabulário Payload
+        3.82. Conteúdo propositalmente genérico. Único ativo pendente: imagem real do convite (<code
+          >NEEDS ASSET</code
+        >).
+      </footer>
+    </main>
+  </body>
+</html>
