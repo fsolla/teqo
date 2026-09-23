@@ -29,7 +29,7 @@ import {
 } from './lib/buildPdf.mjs'
 import { dieWithLabel, isTruthyEnv, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import { buildDossierReport } from './lib/dossieBlocks.mjs'
-import { buildBulletin } from './lib/dossieBulletin.mjs'
+import { buildBulletin, nextBulletinFit } from './lib/dossieBulletin.mjs'
 import { renderBulletinHtml } from './lib/dossieBulletinRender.mjs'
 import { DOSSIER_ERA_IDS } from './lib/dossieCareer.mjs'
 import { adjustPackPlan, packProbeSections } from './lib/dossiePack.mjs'
@@ -152,20 +152,22 @@ const report = buildDossierReport({
   unit: INSTITUTION_UNIT,
   narrative,
 })
-const bulletin = buildBulletin({
-  facts: report.bulletinFacts,
-  identity: { name: report.meta.subjectName, badges: report.meta.identityBadges },
-  unit: INSTITUTION_UNIT,
-  generatedAt,
-})
+const buildInstitutionBulletin = ({ printLimit = null, defenseLimit = null } = {}) =>
+  buildBulletin({
+    facts: report.bulletinFacts,
+    identity: { name: report.meta.subjectName, badges: report.meta.identityBadges },
+    unit: INSTITUTION_UNIT,
+    generatedAt,
+    printLimit,
+    ...(defenseLimit === null ? {} : { defenseLimit }),
+  })
+
+let bulletin = buildInstitutionBulletin()
+let bulletinHtml = renderBulletinHtml(bulletin)
 
 const dossierMd = renderDossierMd(report)
-const bulletinHtml = renderBulletinHtml(bulletin)
 
 const baseName = `${slug}-${generatedAt.toISOString().slice(0, 10)}`
-
-await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
-await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
 
 await mkdir(resolve(ROOT, outDir), { recursive: true })
 const dossierMdFile = join(outDir, `${baseName}-dossie.md`)
@@ -222,13 +224,28 @@ try {
       .join(' ')}`,
   )
 
-  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
   await emitHtmlPairPdf(browser, {
     dossierHtml,
     bulletinHtml,
     dossierPdf: resolve(ROOT, dossierPdfFile),
     bulletinPdf: resolve(ROOT, bulletinPdfFile),
+    // C209: same fit fallbacks as the other builders — index without page
+    // numbers for the dossiê, fewer printed facts/defenses for the boletim.
+    onDossierOverflow: async () => {
+      dossierHtml = renderDossierHtml(report, { pack, indexMode: 'labels' })
+      return dossierHtml
+    },
+    onBulletinOverflow: async () => {
+      const next = nextBulletinFit(bulletin)
+      if (!next) return null
+      bulletin = buildInstitutionBulletin(next)
+      bulletinHtml = renderBulletinHtml(bulletin)
+      return bulletinHtml
+    },
   })
+  // The cache carries the final documents (after any fit fallback), not the first pass.
+  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
+  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
 } catch (error) {
   die(error instanceof Error ? error.message : String(error))
 } finally {
@@ -238,7 +255,7 @@ try {
 console.log(`[${LABEL}] PDF → ${dossierPdfFile}`)
 console.log(`[${LABEL}] boletim PDF → ${bulletinPdfFile}`)
 console.log(
-  `[${LABEL}] ${report.meta.subjectName}: eras=${report.eras.length} entregas=${report.page1.deliveries.items.length} ` +
+  `[${LABEL}] ${report.meta.subjectName}: eras=${report.eras.length} pontos=${report.synthesis.totals.items} defesas=${report.defends.positions.length} ` +
     `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} páginas=${report.meta.pageTotal} html_bytes=${Buffer.byteLength(dossierHtml)}`,
 )
 

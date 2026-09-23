@@ -185,7 +185,7 @@ consolidação determinística.
     {
       "id": "era_c_emendas",                  // id do checklist da era
       "answer": "registro integral; aceita {{fonte}} / {{fonte:N}} — vai para o .md e para o lastro",
-      "summary": "opcional — versão curta, completa e auto-contida do answer, redigida para caber no resumo/boletim (C188)",
+      "position": "opcional — só em item `*_defesas`: rótulo curto da posição (ex. \"Ensino superior\")",
       "details": "opcional; aceita {{fonte}} / {{fonte:N}}",
       "brief": {                                // obrigatório no item publicado: copy reformulada, curta
         "title": "≤80 chars — manchete (o quê + onde)",
@@ -211,30 +211,24 @@ consolidação determinística.
 Checklist por era (ids):
 
 - **A:** `era_a_formacao`, `era_a_sesab`, `era_a_consultor_ms`, `era_a_conquista`,
-  `era_a_sas_ms`.
-- **B:** `era_b_sesab`, `era_b_equipamentos`, `era_b_programas`, `era_b_obras`.
+  `era_a_sas_ms`, `era_a_defesas`.
+- **B:** `era_b_sesab`, `era_b_equipamentos`, `era_b_programas`, `era_b_obras`,
+  `era_b_defesas`.
 - **C:** `era_c_discursos`, `era_c_proposicoes`, `era_c_emendas`,
-  `era_c_titulos`, `era_c_atuacao`.
+  `era_c_titulos`, `era_c_atuacao`, `era_c_defesas`.
+
+Os itens `era_X_defesas` são a dimensão **"O que Solla defende"** (`kind:
+defense`): `answer` = frase da posição, `details` = lastro identificado
+(ato/proposição, "Notícia: veículo · data" ou trecho de fala) e
+`sourceUrl`/`sourceDate` da fonte do lastro — **sem registro datado vira lacuna**,
+nunca posição inferida. Os demais itens (`kind: evidence`) alimentam as eras, a
+região e a síntese; itens de defesa **não** entram nessas listas.
 
 Item sem `sourceUrl`/`sourceDate`, item ausente ou item de outra era vira
 **lacuna** (`Não pesquisado.` / `Sem fonte: …`); `sphere` inválida vira lacuna
 (`Esfera inválida`). `phase` ∈ `autorizado|empenhado|liquidado|pago|restos`
 (default `nao_informado`). O `bulletinFacts` (ledger do boletim) só é populado
 por item **com fonte** — o boletim não introduz fato novo.
-
-**`summary` (C188):** o resumo de uma olhada e o boletim **nunca cortam texto no
-meio**. Essas superfícies imprimem o `summary` do item quando existe; sem ele,
-imprimem o `answer` integral e, se a página não couber, o builder re-renderiza
-apontando o aprofundamento (as páginas das eras, que sempre guardam
-`answer`/`details` integrais) — **sem "…"**. Escreva `summary` curto e
-auto-contido para os itens que viram entrega/gancho no resumo; é a única forma de
-o texto que você redigiu aparecer no resumo. Listas capadas (entregas, ganchos,
-números, itens regionais, fatos do boletim) sempre exibem o contador `e mais N` /
-`Mostrando X de Y` — nenhum item some em silêncio. `summary` e `brief` coexistem:
-o `brief` é a copy reformulada que o PDF imprime nas páginas de era/cartões; o
-`summary` alimenta as superfícies de resumo do dossiê e o ledger do boletim.
-
-**`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
 
 **`<slug>.narrative.json` (opcional; escrito pelo redator, auditado pelo
 orquestrador):
@@ -245,82 +239,85 @@ orquestrador):
   "generatedAt": "2026-09-18T00:26:19.000Z",  // obrigatório
   "title": "O que Jorge Solla fez por Ilhéus",
   "opening": ["parágrafo", "parágrafo", "parágrafo"],
-  "eras": { "A": "parágrafo", "B": "parágrafo", "C": "parágrafo" }
+  "eras": { "A": "parágrafo", "B": "parágrafo", "C": "parágrafo" },
+  "betweenEras": ["bullet", "bullet"]         // opcional — leitura entre eras
 }
 ```
 
 Sem o arquivo (ou com `municipalitySlug` diferente do snapshot), o builder **não
-falha**: a abertura repete a leitura dos números e cada era usa a consolidação
-determinística. `opening` e `eras` só podem conter fatos dos itens com fonte —
-nenhum número, data, nome ou órgão novo.
+falha**: a abertura repete a leitura dos números, cada era usa a consolidação
+determinística e a leitura entre eras é derivada dos registros. `opening`,
+`eras` e `betweenEras` só podem conter fatos dos itens com fonte — nenhum número,
+data, nome ou órgão novo.
 
-`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
+**`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
 em vez de cortar o texto com `…`, cada item publicado traz um `brief` **reescrito
 para caber** (`title` ≤80 / `note` ≤120) preservando o essencial (o quê, onde,
 valor + fase) — nunca inventa fato, nunca sugere exclusividade municipal para
-item `regiao`/`polo` e nunca troca a fase (empenho ≠ pagamento). O cartão/linha
-do PDF imprime `brief.title`/`brief.note`; o `answer`/`details` integrais ficam
-no registro e no companion `.md`. Sem `brief`, o renderer cai no texto integral e
-a guarda de fit A4 do builder **falha fechado** (não corta em silêncio). Tabelas
+item `regiao`/`polo` e nunca troca a fase (empenho ≠ pagamento). As folhas de era
+imprimem `brief.title`/`brief.note`; o `answer`/`details` integrais ficam no
+registro e no companion `.md`. Sem `brief`, o renderer cai no texto integral e a
+guarda de fit A4 do builder **falha fechado** (não corta em silêncio). Tabelas
 longas (lacunas, notícias) não usam `brief`: são **paginadas** em folhas de
 continuação com o texto inteiro.
-
 
 ## Conteúdo do dossiê
 
 - **Capa** — série municipal, "INSUMO INTERNO", território, região/polo adotado,
-  data, "como usar", escopo/versão.
-- **A contribuição (carta)** — redação de abertura sobre o que Solla fez pela
-  cidade e pela região ao longo das eras, em prosa, com a nota "Como ler" (cada
-  afirmação tem lastro em item datado; a redação não preenche por inferência).
-- **Trajetória completa** — a linha do tempo da carreira.
-- **Resumo de uma olhada** — identificação + entregas localizadas (badge de
-  esfera + valor + badge de fase + fonte); ganchos; o que falta. Guarda:
-  **autorizado ≠ empenhado ≠ liquidado ≠ pago**. É a única página com listas
-  capadas — e o "e mais N" aponta para a seção onde a lista completa está.
-- **Síntese** — leitura dos números com lastro (pontos por era e esfera,
-  concentração relativa, itens com valor por fase, recursos por fase, temas,
-  lacunas) + guardas de leitura; nada que não venha dos itens.
-- **Gráficos consolidados** — recursos **com execução por ano** (empilhado por
-  fase), **propostas/articulações sem fase informada** (lista com barra e valor),
-  abrangência (município × região × polo), trajetória por ano, áreas e lacunas
-  por era, painel do acervo. Valores sempre em R$ com a fase; recortes nunca
-  somados.
-- **Seção por era (A/B/C)** — parágrafo de consolidação ("O que esta era
-  entrega", do `narrative.json` ou determinístico) + recorte e método + trilha de
-  recuperação; tabela **Objeto/Valor/Ano/Fase/Esfera/Fonte**; cards "O que fez —
-  item, alcance e lastro"; títulos/honrarias locais. **Sem cap**: a era flui por
-  quantas folhas precisar (continuações com cabeçalho "continuação N"). Uma era
-  sem evidência é omitida (nunca inventada).
-- **Região / polo** — painel "Região não é cidade. Não some os dois recortes."
-  com contagem por recorte (**nenhum total combinado**) e prévia; em seguida
-  **as duas listas completas** em tabela (item/esfera/evidência/fonte), cada uma
-  fluindo por quantas folhas precisar; gancho e lacuna prioritária.
+  data, "como ler", escopo/versão.
+- **O essencial** — abre o documento: leitura do recorte (a redação de abertura),
+  fatos-chave (pontos com fonte por era, abrangência sem soma, valores por fase,
+  lacunas) e o **índice** com o número de página de cada seção. É a leitura antes
+  do inventário.
+- **Leitura entre eras** — bullets de concentração, instrumentos, continuidade,
+  alcance e lacunas que pesam (`betweenEras` do `narrative.json` ou derivação
+  determinística) + tabela **Era / Onde está a evidência / Como citar com
+  segurança / Limite**.
+- **Trajetória completa** — a linha do tempo da carreira em tabela
+  (período/papel/como recuperar), incertezas na própria linha.
+- **Seção por era (A/B/C)** — leitura da era ("Leitura da era", do
+  `narrative.json` ou determinística) + tabela **Objeto/Valor/Ano/Fase/Esfera/
+  Fonte** + lista **"O que fez · item — alcance — lastro"**. Fase e esfera são
+  texto, nunca selo colorido. **Sem cap**: a era flui por quantas folhas precisar
+  (continuações com cabeçalho "continuação N"). Uma era sem evidência é omitida
+  como seção e aparece no índice e na leitura entre eras com a nota "sem
+  evidência nominal suficiente; consulte as lacunas" — nunca inventada.
+- **Região / polo** — callout "Não somar." + tabela de leitura lado a lado
+  (**nenhum total combinado**) e, em seguida, **as duas listas completas** em
+  tabela (item/esfera/evidência/fonte), cada uma fluindo por quantas folhas
+  precisar.
+- **O que Solla defende** — seção própria e indexável: leitura dos registros
+  (não é opinião), lista de posições (`position-list`: rótulo da posição, leitura
+  com lastro, fonte + data + era) e, para cada item `era_X_defesas` sem registro,
+  a linha "Sem registro localizado" com a lacuna explícita. Só entra posição com
+  ato, notícia datada ou fala identificada como lastro.
 - **Lacunas explícitas**, **Notícias e documentos consultados** e **Acervo
-  interno** — tabelas/listas completas, também correntes (sem cap). O acervo é
-  **amostra declarada** (as falas mais recentes com link, de N do recorte
-  municipal) com painel do total; região/polo não entram nessa conta.
+  interno** — tabelas/listas completas, também correntes (sem cap). As notícias
+  ganham a coluna "Uso no dossiê" (era) e o resumo datado; o acervo é **amostra
+  declarada** (as falas mais recentes com link, de N do recorte municipal);
+  região/polo não entram nessa conta.
 - **Fontes e limites** — limites de cobertura; regras para uso editorial; nota de
   defeso eleitoral 2026.
 - **Nada some e nada é cortado:** o dossiê **não usa caps** — o builder mede a
   altura real de cada linha e pagina (grow/shrink) até a página ficar cheia sem
   estourar; listas continuam em folhas de continuação com o texto inteiro. O
-  único "e mais N" é o do resumo e o da amostra do acervo, ambos apontando para
-  onde o resto está.
+  único "e mais N" é o da amostra do acervo.
 
 ## Conteúdo do Boletim modelo (1 página A4)
 
-- Cabeçalho com município + rótulo **"Modelo — insumo interno"**; abertura
-  "O que Jorge Solla fez por <cidade>"; **≤6 destaques** (eyebrow "Área ·
-  cidade/região", número em destaque, título curto, nota); timeline de 4 passos
-  da trajetória; **"E mais" com ≤14 itens** em duas colunas; rodapé com defeso.
+- Cabeçalho com município + rótulo **"Modelo — insumo interno"**; título
+  "O que Jorge Solla fez por <cidade>"; lede curta; **≤6 destaques** em lista
+  (rótulo + texto, com o valor e a fase quando houver); **"O que Solla defende"**
+  com **≤2 defesas curtas** com lastro do ledger (bloco omitido quando não há
+  registro); trajetória em quatro períodos; **"E mais" com ≤14 itens** em lista;
+  rodapé com defeso.
 - **Sem declaração de fontes** (as fontes vivem exclusivamente no dossiê), sem
   CTA de campanha; herda **apenas** fatos com fonte do dossiê.
 
 ## Guardrails de produto (não negociáveis)
 
 - **Sem fonte, não publica**: afirmação não trivial sem URL+data vira lacuna.
-- **Redação e parágrafos com lastro**: a carta e o parágrafo de cada era só usam
+- **Redação e parágrafos com lastro**: a leitura de abertura e o parágrafo de cada era só usam
   fatos dos itens com fonte; o orquestrador audita citação por citação (nome,
   data, valor, órgão) e remove o que não tiver lastro.
 - **Dossiê sem caps**: o conteúdo flui por quantas páginas precisar; a página é
@@ -346,8 +343,8 @@ continuação com o texto inteiro.
 - **Folha do dossiê estourou**: o builder mede a altura real de cada linha e
   repagina (grow/shrink) até estabilizar; se uma folha continuar estourando, é
   porque **uma linha sozinha** não cabe — aperte a copy daquele item, nunca o
-  layout. Página **não-packed** (carta, resumo, síntese, gráficos, fontes)
-  estourando = corte copy ou reposicione o card.
+  layout. Página **não-packed** (O essencial, leitura entre eras, trajetória,
+  defende, fontes) estourando = corte copy ou enxugue o índice.
 - **Página pela metade**: o pack estabilizou? Confira o log (`pack estável`); se
   uma seção ficou rala, o problema é o custo medido (bloco novo) — não force cap,
   ajuste a copy do item que abre a seção.
@@ -370,10 +367,10 @@ continuação com o texto inteiro.
 
 - Intenção: `docs/plans/dossie-solla-cidade.md`; impl:
   `docs/plans/dossie-solla-cidade-impl.md`.
-- Designs hi-fi (fonte de verdade do port): `docs/plans/dossie-solla-cidade-ui-design.html`
-  e `docs/plans/dossie-solla-cidade-boletim-ui-design.html` — **desatualizados
-  desde a revisão de 2026-09-18** (carta, síntese, gráficos e folhas correntes
-  ainda não estão neles); um passe do `designer` precisa re-sincronizá-los.
+- Designs hi-fi (fonte de verdade do port): `docs/plans/dossies-sobrios-analiticos-ui-design.html`
+  (C209 — cenas do dossiê e do boletim, um artefato da família). Os hi-fi antigos
+  (`dossie-solla-cidade-ui-design.html` e `-boletim-ui-design.html`) ficam no repo
+  como registro e estão **superados**.
 - Precedente: `.agents/skills/relatorio-cidade/SKILL.md`,
   `.opencode/agent/relatorio-cidade.md`, `scripts/build-city-report.mjs`.
 - Scripts: `scripts/build-dossie-solla-cidade.mjs`,

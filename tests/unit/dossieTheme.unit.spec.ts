@@ -15,7 +15,7 @@ import { THEME_UNIT, themeSubjectPhrase } from '../../scripts/lib/dossieUnit.mjs
 // C190: theme/area content model + render. Grounds the third recorte: area
 // identity (label + canonical value), `area|segmento|rede` never summed, per-row
 // phase/source, empty-era state instead of silent omission, and a one-page
-// boletim that inherits only sourced facts.
+// boletim that inherits only sourced facts. C209: sober redesign.
 
 const generatedAt = new Date('2026-09-18T12:00:00.000Z')
 
@@ -91,6 +91,10 @@ const research = mergeDossierResearch(
           numbers: [{ label: 'Emenda', value: 'R$ 5,0 mi', year: '2024', phase: 'empenhado' }],
         }),
         item('era_c_titulos', 'C', { answer: 'Homenagem da área' }),
+        item('era_c_defesas', 'C', {
+          position: 'Educação básica',
+          answer: 'Defende o financiamento da educação básica',
+        }),
       ]),
       { unit: THEME_UNIT },
     ),
@@ -165,13 +169,6 @@ describe('buildDossierReport (theme unit)', () => {
     expect(listFor('network')?.total).toBe(1)
   })
 
-  it('declares overflow instead of truncating silently (C188 rule)', () => {
-    for (const list of report.reach.lists) {
-      expect(list).toMatchObject({ total: expect.any(Number), omitted: expect.any(Number) })
-    }
-    expect(report.page1.deliveries.omitted).toBeGreaterThanOrEqual(0)
-  })
-
   it('shows every sourced item — theme lists are never capped', () => {
     const manyItems = [
       item('era_c_emendas', 'C', { sphere: 'segmento' }),
@@ -224,7 +221,7 @@ describe('buildDossierReport (theme unit)', () => {
     expect(moneySynthesis.lines.join(' ')).toContain('R$ 1,2 mi pago')
     const html = renderDossierHtml(moneyReport)
     expect(html).toContain('R$ 1,2 mi')
-    expect(html).toContain('Recursos com execução por ano')
+    expect(html).toContain('Valores localizados, sem consolidar fases')
   })
 
   it('derives bulletinFacts only from sourced items', () => {
@@ -249,15 +246,15 @@ describe('renderDossierHtml/Md (theme unit)', () => {
       'capa',
       'resumo',
       'sintese',
-      'graficos',
+      'trajetoria',
       'era-a',
       'era-b',
       'era-c',
       'abrangencia',
-      'abrangencia-area',
-      'abrangencia-segmento',
-      'abrangencia-rede',
+      'defende',
       'lacunas',
+      'noticias',
+      'acervo',
       'fontes',
     ]) {
       expect(html).toContain(`data-page="${anchor}"`)
@@ -267,20 +264,21 @@ describe('renderDossierHtml/Md (theme unit)', () => {
     expect(html).toContain('Homenagem da área')
   })
 
-  it('prints the theme acervo scene with stats, canonical columns and the scope alert', () => {
-    expect(html).toContain('acervo-stat-grid')
-    expect(html).toContain('Universo recuperado')
-    expect(html).toContain('Amostra exibida')
+  it('prints the theme acervo scene with the canonical columns and the scope alert', () => {
     expect(html).toContain('Tema canônico')
     expect(html).toContain('Trecho/contexto')
-    expect(html).toContain('<code>educacao</code>')
+    // The editorial label carries the column; the canonical token lives in the
+    // identification table, never concatenated to the label.
+    expect(html).toContain('>Educação<')
+    expect(html).toContain('<dt>Token</dt><dd>educacao</dd>')
+    expect(html).not.toContain('Educação educacao')
     expect(html).toContain(
       'O tema prova pertinência ao recorte do acervo; não prova por si só entrega',
     )
+    expect(html).not.toContain('acervo-stat-grid')
   })
 
   it('prints the theme reach scene with the five columns and the ledger year', () => {
-    expect(html).toContain('document-table--reach')
     expect(html).toContain('Era / ano')
     expect(html).toContain('Valor / fase')
     expect(html).toContain('Evidência temática')
@@ -291,7 +289,7 @@ describe('renderDossierHtml/Md (theme unit)', () => {
     expect(html).toContain('Já consultado')
     expect(html).toContain('Próxima busca')
     expect(html).toContain('prioridade')
-    expect(html).toContain('<span class="phase">aberta</span>')
+    expect(html).toContain('aberta')
     expect(html).toContain(
       'Portais que não filtram por área não autorizam atribuição. Sem fonte temática, a linha permanece lacuna — nunca zero.',
     )
@@ -305,14 +303,12 @@ describe('renderDossierHtml/Md (theme unit)', () => {
     expect(html).toContain('Não filtram por área')
   })
 
-  it('uses the theme synthesis labels and the pela/pelo subject phrase', () => {
-    expect(html).toContain('Tipos de atuação com mais registros')
-    expect(html).toContain('Pontos com fonte por ano')
+  it('uses the theme subject phrase on the cover and the bulletin', () => {
     expect(html).toContain('O que Jorge Solla fez pela Educação')
     expect(html).toContain('pela Educação ao longo da carreira')
   })
 
-  it('prints the synthesis lines and the consolidated charts', () => {
+  it('prints the between-eras reading, never the old charts', () => {
     const synthesis = report.synthesis
     expect(synthesis).toBeTruthy()
     if (!synthesis) return
@@ -328,11 +324,11 @@ describe('renderDossierHtml/Md (theme unit)', () => {
     )
     expect(sphereTotal).toBe(synthesis.totals.items)
     expect(html).toContain('data-page="sintese"')
-    expect(html).toContain('data-page="graficos"')
-    expect(html).toContain('Síntese do que foi localizado')
-    expect(html).toContain('Gráficos consolidados')
-    expect(html).toContain('chart-grid')
-    expect(md).toContain('## Síntese do que foi localizado')
+    expect(html).toContain('Leitura entre eras')
+    expect(html).not.toContain('data-page="graficos"')
+    expect(html).not.toContain('Gráficos consolidados')
+    expect(html).not.toContain('chart-grid')
+    expect(md).toContain('## Leitura entre eras')
   })
 
   it('flows across continuation sheets when the pack plan splits a section', () => {
@@ -369,12 +365,12 @@ describe('renderDossierHtml/Md (theme unit)', () => {
       unit: THEME_UNIT,
     })
     const bigHtml = renderDossierHtml(bigReport, {
-      pack: { 'era:C': [1], 'scope:segmento': [1], news: [1] },
+      pack: { 'era:C': [1], scope: [1], news: [1] },
     })
     expect(bigHtml).toContain('data-page="era-c"')
     expect(bigHtml).toContain('data-page="era-c-2"')
-    expect(bigHtml).toContain('data-page="abrangencia-segmento"')
-    expect(bigHtml).toContain('data-page="abrangencia-segmento-2"')
+    expect(bigHtml).toContain('data-page="abrangencia"')
+    expect(bigHtml).toContain('data-page="abrangencia-2"')
     expect(bigHtml).toContain('data-page="noticias"')
     expect(bigHtml).toContain('data-page="noticias-2"')
     expect(bigHtml).toContain('continuação')
@@ -383,15 +379,15 @@ describe('renderDossierHtml/Md (theme unit)', () => {
     expect(anchors.length).toBe(bigReport.meta.pageTotal)
   })
 
-  it('ports the theme vocabulary and identity badges', () => {
+  it('ports the theme vocabulary and the sober classes', () => {
     expect(html).toContain('Dossiê temático')
-    expect(html).toContain('identity-badge')
-    expect(html).toContain('scope-sector')
-    expect(html).toContain('scope-network')
-    expect(html).toContain('phase-paid')
-    expect(html).toContain('phase-pending')
-    expect(html).toContain('Segmento/rede não é a área')
+    expect(html).toContain('index-list')
+    expect(html).toContain('position-list')
+    expect(html).toContain('phase-text')
+    expect(html).toContain('Uma ação dirigida a um segmento ou a uma rede')
     expect(html).toContain('Segmento e rede não são somados à área')
+    expect(html).not.toContain('identity-badge')
+    expect(html).not.toContain('scope-cards')
   })
 
   it('prints the defeso note', () => {
@@ -441,24 +437,20 @@ describe('buildBulletin (theme unit)', () => {
   })
   const html = renderBulletinHtml(bulletin)
 
-  it('is a single A4 page with the model label and identity pills', () => {
+  it('is a single A4 page with the model label and the subject phrase', () => {
     expect(html).toContain('data-page="boletim"')
     expect((html.match(/data-page="boletim"/g) ?? []).length).toBe(1)
-    expect(html).toContain('aria-label="Modelo de boletim informativo temático de uma página"')
     expect(html).toContain('Modelo — insumo interno')
-    expect(html).toContain('identity-pill')
-    expect(html).toContain('Educação')
-    expect(html).toContain('O que Jorge Solla fez pela <span class="accent">Educação</span>')
+    expect(html).toContain('O que Jorge Solla fez pela <span>Educação</span>')
   })
 
-  it('renders the theme pills with the canonical token in mono and the taxonomy note', () => {
-    expect(html).toContain('<span class="identity-pill">Área</span>')
-    expect(html).toContain('<span class="identity-pill identity-pill--code">educacao</span>')
-    expect(html).toContain('<span class="identity-pill">Taxonomia do acervo</span>')
-    expect(html).toContain('.identity-pill--code')
+  it('prints the defense block and the period list', () => {
+    expect(html).toContain('bulletin-defense-list')
+    expect(html).toContain('Defende o financiamento da educação básica')
+    expect(html).toContain('period-list')
   })
 
-  it('falls back to the year and then to a textual card (never a fake zero)', () => {
+  it('falls back to the year and never prints a fake zero', () => {
     const fact = (id: string, overrides: Record<string, unknown> = {}) => ({
       id,
       era: 'C',
@@ -482,27 +474,24 @@ describe('buildBulletin (theme unit)', () => {
     })
     const fallbackHtml = renderBulletinHtml(fallback)
     expect(fallback.highlights[0]).toMatchObject({ number: '2019' })
-    expect(fallback.highlights[1]).toMatchObject({ number: null, textual: true })
-    expect(fallbackHtml).toContain('highlight-card--textual')
+    expect(fallback.highlights[1]).toMatchObject({ number: null })
+    expect(fallbackHtml).toContain('2019')
+    expect(fallbackHtml).not.toContain('>0<')
   })
 
-  it('declares no sources and carries the defeso band', () => {
+  it('declares no sources and carries the defeso footer', () => {
     expect(html).not.toContain('source-link')
     expect(html).not.toContain('Fonte:')
-    expect(html).toContain('defeso-band')
-    expect(html).toContain('sem CTA')
+    expect(html).toContain('Defeso eleitoral')
     expect(html).toContain('área, segmento e rede não são somados')
   })
 
   it('keeps the phase next to a valued number (empenho ≠ pagamento)', () => {
-    expect(html).toContain('highlight-phase')
-    expect(html).toContain('phase-pending')
     expect(html).toContain('empenhado')
-    expect(html).toContain('phase-paid')
     expect(html).toContain('pago')
   })
 
-  it('renders the sparse variant when there are fewer than three facts', () => {
+  it('renders the sparse variant without filling the page', () => {
     const sparse = buildBulletin({
       facts: [report.bulletinFacts[0]],
       identity,
@@ -511,7 +500,6 @@ describe('buildBulletin (theme unit)', () => {
     })
     const sparseHtml = renderBulletinHtml(sparse)
     expect(sparse.sparse).toBe(true)
-    expect(sparseHtml).toContain('lacuna-panel')
     expect(sparseHtml).toContain('A página termina com espaço')
     expect(sparseHtml).toContain('entrega exclusiva da área')
   })
@@ -553,7 +541,8 @@ describe('buildBulletin (theme unit, one-page fit)', () => {
     expect(full.moreItems).toHaveLength(0)
     expect(fitted.highlights).toHaveLength(2)
     expect(fitted.moreItems).toHaveLength(0)
-    expect(fitted.factsPrinted).toBe(2)
+    // Two printed highlights plus the one defense (never dropped by the cap).
+    expect(fitted.factsPrinted).toBe(3)
     expect(fitted.factsPrintable).toBe(facts.length)
     expect(fitted.factsRemaining).toBeGreaterThan(full.factsRemaining)
     expect(renderBulletinHtml(fitted)).toContain(

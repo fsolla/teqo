@@ -13,6 +13,19 @@ const generatedAt = new Date('2026-09-17T12:00:00.000Z')
 const snapshot = {
   meta: { readAt: '2026-09-16T10:00:00.000Z', codeSha: 'abc1234', database: 'teqo_test' },
   municipality: { slug: 'ilheus', name: 'Ilhéus', region: 'Litoral Sul', ibgeCode: '2913606' },
+  speeches: {
+    topics: { themes: ['saude'] },
+    totalCount: 1,
+    rows: [
+      {
+        id: 31,
+        speechAt: '2024-05-10T00:00:00.000Z',
+        summary: 'Pronunciamento sobre saúde regional.',
+        officialTextUrl: 'https://camara.test/discurso-ilheus',
+        mentionExcerpt: 'a saúde da região',
+      },
+    ],
+  },
 }
 
 const research = mergeDossierResearch([
@@ -66,6 +79,14 @@ const research = mergeDossierResearch([
         sourceUrl: 'https://camara.test/titulo',
         sourceDate: '2026-09-10',
       },
+      {
+        id: 'era_c_defesas',
+        position: 'Ensino superior',
+        answer: 'Defende campus da UFBA na região',
+        details: 'INC 1497/2023',
+        sourceUrl: 'https://camara.test/inc-1497',
+        sourceDate: '2023-09-22',
+      },
     ],
     news: [
       {
@@ -73,6 +94,7 @@ const research = mergeDossierResearch([
         url: 'https://jornal.test/materia',
         publishedAt: '2024-06-01',
         outlet: 'Jornal Local',
+        summary: 'Resumo datado da matéria.',
       },
     ],
     gaps: [],
@@ -91,20 +113,54 @@ const report = buildDossierReport({
 describe('renderDossierHtml', () => {
   const html = renderDossierHtml(report)
 
-  it('anchors every page for the overflow guard and navigability', () => {
+  it('anchors every sheet for the overflow guard and navigability', () => {
     for (const anchor of [
       'capa',
-      'trajetoria',
       'resumo',
+      'sintese',
+      'trajetoria',
       'era-a',
       'era-b',
       'era-c',
       'regiao',
+      'defende',
       'lacunas',
+      'noticias',
+      'acervo',
       'fontes',
     ]) {
       expect(html).toContain(`data-page="${anchor}"`)
     }
+  })
+
+  it('opens the document with O essencial, the facts and the index with page numbers', () => {
+    expect(html).toContain('O essencial')
+    expect(html).toContain('Fatos-chave')
+    expect(html).toContain('index-list')
+    expect(html).toContain('index-page')
+    expect(html).toContain('<span class="index-page tabular">2</span>')
+  })
+
+  it('reads the eras between themselves and prints the operational synthesis', () => {
+    expect(html).toContain('Leitura entre eras')
+    expect(html).toContain('Síntese operacional')
+    expect(html).toContain('Concentração.')
+  })
+
+  it('prints the position list of O que Solla defende and the missing-register line', () => {
+    expect(html).toContain('O que Solla defende')
+    expect(html).toContain('position-list')
+    expect(html).toContain('Ensino superior')
+    expect(html).toContain('Sem registro localizado.')
+  })
+
+  it('is a sober document: no charts, cards, colored badges or image placeholders', () => {
+    expect(html).not.toContain('chart-grid')
+    expect(html).not.toContain('action-grid')
+    expect(html).not.toContain('scope-cards')
+    expect(html).not.toContain('asset-box')
+    expect(html).not.toContain('NEEDS ASSET')
+    expect(html).not.toContain('data-page="graficos"')
   })
 
   it('escapes untrusted research text', () => {
@@ -118,17 +174,20 @@ describe('renderDossierHtml', () => {
     expect(html).toContain('https://exemplo.test/conquista')
   })
 
-  it('keeps the region rule and the region/polo badge', () => {
-    expect(html).toContain('Região não é cidade')
-    expect(html).toContain('scope-region')
-  })
-
-  it('prints the defeso note', () => {
+  it('keeps the non-summable rule and the defeso note', () => {
+    expect(html).toContain('Não somar.')
     expect(html).toContain('Nota de defeso eleitoral 2026')
   })
 
-  it('renders the local honors only on their own era sheet (never on another era)', () => {
-    expect((html.match(/Títulos, honrarias e vínculos locais/g) ?? []).length).toBe(1)
+  it('renders the local honors once on the era-C sheet', () => {
+    const eraC = html.slice(html.indexOf('data-page="era-c"'), html.indexOf('data-page="regiao"'))
+    expect((eraC.match(/Título de cidadão honorário/g) ?? []).length).toBe(1)
+  })
+
+  it('prints the news with the summary and the era usage column', () => {
+    expect(html).toContain('Resumo datado da matéria.')
+    expect(html).toContain('Uso no dossiê')
+    expect(html).toContain('Era C')
   })
 })
 
@@ -203,7 +262,7 @@ describe('renderDossierHtml — era continuation sheets', () => {
   const report = buildDossierReport({ snapshot, research: manyActions, generatedAt })
   const html = renderDossierHtml(report, { pack: { 'era:C': [1] } })
 
-  it('paginates era action cards into continuation sheets instead of dropping them', () => {
+  it('paginates era list items into continuation sheets instead of dropping them', () => {
     expect(html).toContain('data-page="era-c"')
     expect(html).toContain('data-page="era-c-2"')
     for (let index = 0; index < 5; index += 1) {
@@ -212,12 +271,59 @@ describe('renderDossierHtml — era continuation sheets', () => {
   })
 })
 
+describe('renderDossierHtml — index fallback', () => {
+  it('drops the page numbers when the resumo sheet overflows (indexMode labels)', () => {
+    const html = renderDossierHtml(report, { indexMode: 'labels' })
+    expect(html).toContain('index-list')
+    expect(html).not.toContain('<span class="index-page tabular">2</span>')
+    expect(html).toContain('<span class="index-page tabular">—</span>')
+  })
+
+  it('keeps an omitted era in the index without a number or a page', () => {
+    const withoutEraA = mergeDossierResearch([
+      normalizeDossierResearchInput({
+        municipalitySlug: 'ilheus',
+        era: 'A',
+        researchedAt: '2026-09-16T10:00:00.000Z',
+        items: [],
+        news: [],
+        gaps: [],
+      }),
+      normalizeDossierResearchInput({
+        municipalitySlug: 'ilheus',
+        era: 'B',
+        researchedAt: '2026-09-16T10:00:00.000Z',
+        items: [
+          {
+            id: 'era_b_equipamentos',
+            answer: '1 hospital regional',
+            sourceUrl: 'https://saude.test/hospital',
+            sourceDate: '2026-09-10',
+          },
+        ],
+        news: [],
+        gaps: [],
+      }),
+    ])
+    const omittedReport = buildDossierReport({ snapshot, research: withoutEraA, generatedAt })
+    const omittedHtml = renderDossierHtml(omittedReport)
+    expect(omittedHtml).toContain('sem evidência nominal suficiente; consulte as lacunas')
+    expect(omittedHtml).not.toContain('data-page="era-a"')
+    const index = omittedHtml.slice(omittedHtml.indexOf('index-list'), omittedHtml.indexOf('</ol>'))
+    expect(index).toContain('<span class="index-number"></span>')
+  })
+})
+
 describe('renderDossierMd', () => {
   const md = renderDossierMd(report)
 
   it('mirrors the sections and keeps the sources clickable', () => {
     expect(md).toContain('# Dossiê Solla por cidade — Ilhéus')
-    expect(md).toContain('## Linha do tempo da carreira')
+    expect(md).toContain('## Índice')
+    expect(md).toContain('## O essencial')
+    expect(md).toContain('## Leitura entre eras')
+    expect(md).toContain('## Trajetória completa')
+    expect(md).toContain('## O que Solla defende')
     expect(md).toContain('## Região / polo')
     expect(md).toContain('## Lacunas explícitas')
     expect(md).toContain('[fonte](https://exemplo.test/conquista)')
@@ -225,6 +331,12 @@ describe('renderDossierMd', () => {
 
   it('carries the defeso note', () => {
     expect(md).toContain('defeso eleitoral')
+  })
+
+  it('links every index entry to an anchor that exists in the companion', () => {
+    const links = [...md.matchAll(/\]\(#([^)]+)\)/g)].map((match) => match[1])
+    expect(links.length).toBeGreaterThan(0)
+    for (const anchor of links) expect(md).toContain(`<a id="${anchor}"></a>`)
   })
 })
 
@@ -249,8 +361,14 @@ describe('renderBulletinHtml', () => {
     expect(html).not.toContain('portaldatransparencia.test')
   })
 
-  it('prints the trajectory and the defeso note', () => {
-    expect(html).toContain('Desde 1999')
+  it('prints the highlights as a list and the four-period trajectory', () => {
+    expect(html).toContain('bulletin-list')
+    expect(html).toContain('period-list')
     expect(html).toContain('Defeso eleitoral')
+  })
+
+  it('prints the defense block from the ledger', () => {
+    expect(html).toContain('bulletin-defense-list')
+    expect(html).toContain('Defende campus da UFBA na região')
   })
 })

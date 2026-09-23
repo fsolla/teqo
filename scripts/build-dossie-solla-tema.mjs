@@ -29,7 +29,7 @@ import {
 } from './lib/buildPdf.mjs'
 import { dieWithLabel, isTruthyEnv, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import { buildDossierReport } from './lib/dossieBlocks.mjs'
-import { buildBulletin } from './lib/dossieBulletin.mjs'
+import { buildBulletin, nextBulletinFit } from './lib/dossieBulletin.mjs'
 import { renderBulletinHtml } from './lib/dossieBulletinRender.mjs'
 import { DOSSIER_ERA_IDS } from './lib/dossieCareer.mjs'
 import { adjustPackPlan, packProbeSections } from './lib/dossiePack.mjs'
@@ -154,13 +154,14 @@ const bulletinIdentity = {
   value: report.meta.identity?.value ?? null,
   taxonomyNote: report.meta.identity?.taxonomyNote ?? null,
 }
-const buildThemeBulletin = (printLimit = null) =>
+const buildThemeBulletin = ({ printLimit = null, defenseLimit = null } = {}) =>
   buildBulletin({
     facts: report.bulletinFacts,
     identity: bulletinIdentity,
     unit: THEME_UNIT,
     generatedAt,
     printLimit,
+    ...(defenseLimit === null ? {} : { defenseLimit }),
   })
 
 let bulletin = buildThemeBulletin()
@@ -227,23 +228,29 @@ try {
       .join(' ')}`,
   )
 
-  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
   await emitHtmlPairPdf(browser, {
     dossierHtml,
     bulletinHtml,
     dossierPdf: resolve(ROOT, dossierPdfFile),
     bulletinPdf: resolve(ROOT, bulletinPdfFile),
-    // One-page fit by measurement (C188/C190): while the boletim overflows,
-    // rebuild it with two fewer printed facts — the source panel and the facts
-    // beyond the cap stay counted in the "e mais N" line, never truncated.
+    // One-page fit by measurement (C188/C190/C209): while the boletim overflows,
+    // rebuild it with fewer printed facts and then fewer defenses — the source
+    // panel and the facts beyond the cap stay counted in the "e mais N" line,
+    // never truncated.
+    onDossierOverflow: async () => {
+      dossierHtml = renderDossierHtml(report, { pack, indexMode: 'labels' })
+      return dossierHtml
+    },
     onBulletinOverflow: async () => {
-      const next = bulletin.factsPrinted - 2
-      if (bulletin.factsPrinted === 0 || next < 0) return null
+      const next = nextBulletinFit(bulletin)
+      if (!next) return null
       bulletin = buildThemeBulletin(next)
       bulletinHtml = renderBulletinHtml(bulletin)
       return bulletinHtml
     },
   })
+  // The cache carries the final documents (after any fit fallback), not the first pass.
+  await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.dossie.html`)), dossierHtml)
   await writeFile(resolve(ROOT, join(CACHE_DIR, `${baseName}.boletim.html`)), bulletinHtml)
 } catch (error) {
   die(error instanceof Error ? error.message : String(error))
@@ -254,7 +261,7 @@ try {
 console.log(`[${LABEL}] PDF → ${dossierPdfFile}`)
 console.log(`[${LABEL}] boletim PDF → ${bulletinPdfFile}`)
 console.log(
-  `[${LABEL}] ${report.meta.subjectName}: eras=${report.eras.length} entregas=${report.page1.deliveries.items.length} ` +
+  `[${LABEL}] ${report.meta.subjectName}: eras=${report.eras.length} pontos=${report.synthesis.totals.items} defesas=${report.defends.positions.length} ` +
     `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} páginas=${report.meta.pageTotal} html_bytes=${Buffer.byteLength(dossierHtml)}`,
 )
 

@@ -9,36 +9,16 @@
  */
 
 import { formatDateTimeBr, formatMoneyCompact } from './cityReportFormat.mjs'
-import {
-  CAREER_TIMELINE,
-  DOSSIER_ERAS,
-  DOSSIER_SCOPE,
-  careerTimelineHighlights,
-} from './dossieCareer.mjs'
+import { CAREER_TIMELINE, DOSSIER_ERAS, DOSSIER_ERA_IDS, DOSSIER_SCOPE } from './dossieCareer.mjs'
+import { dossierChecklistForEra } from './dossieResearch.mjs'
 import {
   INSTITUTION_UNIT,
   MUNICIPALITY_UNIT,
   isSubjectUnit,
   resolveDossierUnit,
 } from './dossieUnit.mjs'
-import { capList, stripInlineSources, summarySurfaceText } from './reportText.mjs'
+import { stripInlineSources } from './reportText.mjs'
 
-/**
- * Only the resumo ("one look") caps its lists; the full sections flow across as
- * many sheets as they need (the builder packs by measured height) — C186/C187
- * revision of 2026-09-18, same rule for both recortes.
- */
-const MAX_DELIVERIES_PAGE_ONE = 3
-const MAX_HOOKS_PAGE_ONE = 2
-const MAX_PENDING_PAGE_ONE = 4
-
-/** @param {string} sphere @param {any} [unit] @returns {string} */
-export const dossierSphereLabel = (sphere, unit = MUNICIPALITY_UNIT) =>
-  resolveDossierUnit(unit).sphereLabels?.[sphere] ?? sphere
-
-/** @param {string} sphere @param {any} [unit] @returns {string} */
-export const dossierSphereBadgeClass = (sphere, unit = MUNICIPALITY_UNIT) =>
-  resolveDossierUnit(unit).sphereBadgeClass?.[sphere] ?? ''
 const phaseLabels = {
   autorizado: 'autorizado',
   empenhado: 'empenhado',
@@ -142,9 +122,14 @@ const healthContext = (health) =>
       }))
     : []
 
+/**
+ * Câmara activity is national mandate context, not municipal evidence: the rows
+ * carry an explicit scope label and never claim a municipal sphere.
+ */
 const camaraItemsAsActions = (camara, era) =>
   (camara?.status === 'ok' ? (camara.items ?? []) : []).map((item) => ({
-    sphere: 'municipio',
+    sphere: null,
+    scopeLabel: 'mandato federal',
     year: item.year ? String(item.year) : null,
     title: item.title,
     detail: item.detail,
@@ -157,25 +142,22 @@ const camaraItemsAsActions = (camara, era) =>
  * @typedef {Object} DossierReport
  * @property {any} meta
  * @property {any} cover
- * @property {any} page1
  * @property {any[]} trajectory
- * @property {Array<{ id: string, label: string, period: string, subtitle: string, empty?: boolean, method: string, recovery: string, numbers: any, actions: any, honors: any }>} eras
+ * @property {Array<{ id: string, label: string, period: string, subtitle: string, empty?: boolean, omitted?: boolean, method: string, recovery: string, numbers: any, actions: any, honors: any }>} eras
+ * @property {{ facts: Array<{ label: string, text: string }> }} essentials
+ * @property {{ bullets: Array<{ label: string|null, text: string }>, table: any[] }} betweenEras
+ * @property {{ positions: any[], gaps: any[] }} defends
  * @property {{
  *   ruleTitle: string,
  *   ruleBody: string,
- *   municipal: { label: string, items: any[], total: number, remaining: number },
- *   regional: { label: string, items: any[], total: number, remaining: number },
- *   evidence: { items: any[], total: number, remaining: number },
+ *   municipal: { label: string, items: any[], total: number },
+ *   regional: { label: string, items: any[], total: number },
  *   context: any[],
- *   hook: any,
- *   priorityGap: any,
  * }} region
  * @property {{
  *   ruleTitle: string,
  *   ruleBody: string,
  *   lists: Array<{ key: string, label: string, sphere: string, items: any[], total: number, omitted: number }>,
- *   hook: any,
- *   priorityGap: any,
  * }} reach
  * @property {{ items: any[], total: number, omitted: number, recorte?: number, topics?: string[] }} acervo
  * @property {{
@@ -228,7 +210,6 @@ const buildMunicipalityReport = ({
   camara = null,
   health = null,
   generatedAt = new Date(),
-  textFallback = 'full',
   narrative = null,
 }) => {
   const municipality = snapshot.municipality ?? {}
@@ -238,7 +219,10 @@ const buildMunicipalityReport = ({
     ? `Território de Identidade ${region} · recorte regional não somável ao município`
     : 'Recorte regional não somável ao município'
 
-  const items = research.items ?? []
+  const allItems = research.items ?? []
+  /** C209: defense items are the "O que Solla defende" dimension — they never
+   * enter the evidence lists, the synthesis or the era tables. */
+  const items = allItems.filter((item) => item.kind !== 'defense')
   const municipalItems = items.filter((item) => item.sphere === 'municipio')
   const regionalItems = items.filter((item) => item.sphere !== 'municipio')
 
@@ -247,7 +231,7 @@ const buildMunicipalityReport = ({
 
   const researchActionsByEra = (era) =>
     items
-      .filter((item) => item.era === era)
+      .filter((item) => item.era === era && item.id !== 'era_c_titulos')
       .map((item) => ({
         sphere: item.sphere,
         year: item.numbers?.[0]?.year ?? null,
@@ -275,7 +259,7 @@ const buildMunicipalityReport = ({
             }))
         : []
     const actions = [...ownActions, ...extraActions]
-    if (numbers.length === 0 && actions.length === 0 && honors.length === 0) return null
+    const empty = numbers.length === 0 && actions.length === 0 && honors.length === 0
     return {
       ...era,
       method: eraMethod[era.id],
@@ -294,46 +278,12 @@ const buildMunicipalityReport = ({
       numbers,
       actions,
       honors,
+      empty,
+      /** C209: a city era without a single sourced item gets no sheet — it stays
+       * in the index/leitura with the explicit "sem evidência" note. */
+      omitted: empty,
     }
-  }).filter(Boolean)
-
-  const deliveries = capList(
-    [...municipalItems]
-      .sort((left, right) => {
-        const leftEra = left.era === 'C' ? 0 : 1
-        const rightEra = right.era === 'C' ? 0 : 1
-        if (leftEra !== rightEra) return leftEra - rightEra
-        const leftNumber = left.numbers?.length ? 0 : 1
-        const rightNumber = right.numbers?.length ? 0 : 1
-        return leftNumber - rightNumber
-      })
-      .map((item) => {
-        const { text, fromSummary } = summarySurfaceText(item, textFallback)
-        return {
-          sphere: item.sphere,
-          era: item.era,
-          year: item.numbers?.[0]?.year ?? null,
-          title: text,
-          detail: fromSummary ? item.details : textFallback === 'pointer' ? null : item.details,
-          brief: item.brief ?? null,
-          value: item.numbers?.[0]?.value ?? null,
-          phase: item.numbers?.[0]?.phase ?? null,
-          sourceUrl: item.sourceUrl,
-          sourceDate: item.sourceDate,
-        }
-      }),
-    MAX_DELIVERIES_PAGE_ONE,
-  )
-
-  const hooks = capList(
-    [...municipalItems, ...regionalItems].map((item) => ({
-      topic: item.area,
-      angle: summarySurfaceText(item, textFallback).text,
-      brief: item.brief ?? null,
-      sourceUrl: item.sourceUrl,
-    })),
-    MAX_HOOKS_PAGE_ONE,
-  )
+  })
 
   const gaps = (research.gaps ?? []).map((gap) => ({
     label: gap.label ?? gap.id,
@@ -341,19 +291,7 @@ const buildMunicipalityReport = ({
     nextStep: 'Apurar em fonte primária.',
   }))
 
-  const pending = capList(
-    (research.gaps ?? []).map((gap) => gap.label ?? gap.id),
-    MAX_PENDING_PAGE_ONE,
-  )
-
   const context = healthContext(health)
-  const regionItems = regionalItems.map((item) => ({
-    item: item.answer,
-    sphere: item.sphere,
-    evidence: item.details ?? item.label,
-    brief: item.brief ?? null,
-    sourceUrl: item.sourceUrl,
-  }))
 
   const speechFacts = speechFactsFromRows(snapshot, 'municipio')
   const acervo = {
@@ -381,14 +319,15 @@ const buildMunicipalityReport = ({
   })
 
   const bulletinFacts = [
-    ...items
+    ...allItems
       .filter((item) => Boolean(item.sourceUrl))
       .map((item) => ({
         id: item.id,
         era: item.era,
         sphere: item.sphere,
         area: item.area,
-        headline: stripInlineSources(summarySurfaceText(item).text),
+        defense: item.kind === 'defense',
+        headline: stripInlineSources(item.answer),
         detail: item.details ? stripInlineSources(item.details) : null,
         brief: item.brief
           ? {
@@ -466,14 +405,27 @@ const buildMunicipalityReport = ({
       scope: DOSSIER_SCOPE,
       version: 'Documento de trabalho · versão 01',
     },
-    page1: {
-      timeline: careerTimelineHighlights(),
-      deliveries,
-      hooks,
-      pending,
-    },
     trajectory: CAREER_TIMELINE,
     eras: eraSections,
+    essentials: buildEssentials({
+      items,
+      gaps: research.gaps ?? [],
+      synthesis,
+      unit: MUNICIPALITY_UNIT,
+      eras: eraSections,
+    }),
+    betweenEras: buildBetweenEras({
+      items,
+      gaps: research.gaps ?? [],
+      synthesis,
+      unit: MUNICIPALITY_UNIT,
+      narrative,
+    }),
+    defends: buildDefends({
+      items: allItems,
+      gaps: research.gaps ?? [],
+      defenseIds: defenseChecklistIds(MUNICIPALITY_UNIT),
+    }),
     acervo,
     synthesis,
     opening,
@@ -491,19 +443,15 @@ const buildMunicipalityReport = ({
         items: regionalItems,
         total: regionalItems.length,
       },
-      items: regionItems,
       context,
-      hook: hooks.items[0] ?? null,
-      priorityGap: pending.items[0] ?? null,
     },
     gaps,
-    acervo,
-    synthesis,
-    opening,
     news: (research.news ?? []).map((row) => ({
+      era: row.era ?? null,
       date: row.publishedAt,
       outlet: row.outlet ?? '—',
       title: row.title,
+      summary: row.summary ?? null,
       url: row.url,
     })),
     limits: {
@@ -528,28 +476,6 @@ const buildMunicipalityReport = ({
  * `subject` shape shares these sections; the vocabulary comes from    *
  * the unit descriptor.                                                *
  * ------------------------------------------------------------------ */
-
-/**
- * The resumo sheet is the "one look": its lists stay capped and the note points
- * to the full sections, which are never capped (they flow across sheets). The
- * acervo is a sample of the internal base — a source panel, not a finding — so
- * its count and year chart carry the whole volume.
- */
-const MAX_INSTITUTION_DELIVERIES = 3
-const MAX_INSTITUTION_TIMELINE = 3
-const MAX_INSTITUTION_HOOKS = 2
-const MAX_INSTITUTION_PENDING = 4
-
-/**
- * Wraps a capped list so the renderer can declare what stayed out ("e mais N")
- * instead of dropping it silently — the C188 no-truncation rule, enforced at
- * the owner for both recortes. `omitted` is the C187 renderer's name for the
- * same count `capList` calls `remaining`.
- */
-const capped = (list, max) => {
-  const { items, total, remaining } = capList(list, max)
-  return { items, total, omitted: remaining }
-}
 
 /**
  * Institution lists are never capped: the dossiê flows across as many sheets
@@ -748,7 +674,7 @@ const buildDossierSynthesis = ({
         .join(' · ')}.`,
     )
     lines.push(
-      `Abrangência: ${bySphere.map((row) => `${row.count} ${row.label}`).join(' · ')}. ${unit.synthesisSumGuard ?? 'Setor e rede não são somados à instituição.'}`,
+      `Abrangência: ${bySphere.map((row) => `${row.count} ${row.label}`).join(' · ')}. ${unit.synthesisSumGuard ?? 'recortes não são somados.'}`,
     )
     if (topEra) {
       lines.push(
@@ -878,6 +804,207 @@ const buildEraSummary = ({ era, items, money, scopeLabel, unit = INSTITUTION_UNI
   return parts.join(' ')
 }
 
+/* ---------------------------------------------------------------- *
+ * C209 analysis layer: "O essencial", "Leitura entre eras" and the  *
+ * "O que Solla defende" section. Everything below is a deterministic *
+ * reading of the sourced items/gaps — it introduces no fact.        *
+ * ---------------------------------------------------------------- */
+
+/** Ids of the `kind: 'defense'` checklist items of a unit (all three eras). */
+const defenseChecklistIds = (unit) =>
+  new Set(
+    DOSSIER_ERA_IDS.flatMap((era) =>
+      dossierChecklistForEra(era, unit)
+        .filter((item) => item.kind === 'defense')
+        .map((item) => item.id),
+    ),
+  )
+
+/**
+ * Positions Solla stands for (sourced `kind: 'defense'` items) plus the defense
+ * checklist gaps — a missing source is an explicit "sem registro localizado",
+ * never an inferred position.
+ */
+const buildDefends = ({ items, gaps, defenseIds }) => ({
+  positions: items
+    .filter((item) => item.kind === 'defense')
+    .map((item) => ({
+      id: item.id,
+      era: item.era,
+      label: item.position ?? item.area,
+      reading: item.answer,
+      details: item.details,
+      brief: item.brief ?? null,
+      sourceUrl: item.sourceUrl,
+      sourceDate: item.sourceDate,
+    })),
+  gaps: gaps
+    .filter((gap) => defenseIds.has(gap.id))
+    .map((gap) => ({
+      id: gap.id,
+      label: gap.label ?? gap.id,
+      reason: gap.reason,
+      era: /^era_([abc])_/i.exec(gap.id ?? '')?.[1]?.toUpperCase() ?? null,
+    })),
+})
+
+/** The "O essencial" key facts — a short reading of the sourced set. */
+const buildEssentials = ({ items, gaps, synthesis, unit, eras }) => {
+  const facts = []
+  if (items.length === 0) {
+    facts.push({
+      label: 'Nenhum ponto com fonte localizado:',
+      text: 'a leitura é a das lacunas explícitas — não completar por inferência.',
+    })
+    return { facts }
+  }
+  const omitted = eras.filter((era) => era.omitted).map((era) => era.id)
+  facts.push({
+    label: `${items.length} ${items.length === 1 ? 'ponto com fonte' : 'pontos com fonte'} no recorte:`,
+    text: `${synthesis.byEra.map((row) => `${row.count} na ${row.label}`).join(' · ')}.${
+      omitted.length
+        ? ` A Era ${omitted.join('/')} não tem evidência nominal suficiente e é omitida como seção.`
+        : ''
+    }`,
+  })
+  facts.push({
+    label: 'Abrangência sem soma:',
+    text: `${synthesis.bySphere
+      .map((row) => `${row.count} ${row.label}`)
+      .join(' · ')}. ${unit.synthesisSumGuard ?? 'recortes não são somados.'}`,
+  })
+  if (synthesis.moneyByPhase.length) {
+    facts.push({
+      label: 'Valores localizados, sem consolidar fases:',
+      text: `${synthesis.moneyByPhase
+        .map((row) => `${formatMoneyCompact(row.amount)} ${row.label}`)
+        .join(' · ')}. Empenho não é pagamento.`,
+    })
+  }
+  facts.push({
+    label: `${gaps.length} ${gaps.length === 1 ? 'lacuna declarada' : 'lacunas declaradas'}:`,
+    text: gaps.length
+      ? `prioridade: ${gaps[0].label ?? gaps[0].id}.`
+      : 'nenhuma lacuna declarada — confira a cobertura das eras.',
+  })
+  return { facts }
+}
+
+/**
+ * "Leitura entre eras": concentration, instruments, continuity, reach and the
+ * gaps that weigh. The narrative file may carry its own `betweenEras` bullets
+ * (array of strings); without them the reading is derived from the ledger.
+ */
+const buildBetweenEras = ({ items, gaps, synthesis, unit, narrative }) => {
+  const authored = Array.isArray(narrative?.betweenEras)
+    ? narrative.betweenEras
+        .filter((text) => typeof text === 'string' && text.trim())
+        .map((text) => text.trim())
+    : []
+  const bullets = []
+  if (authored.length) {
+    bullets.push(...authored.map((text) => ({ label: null, text })))
+  } else if (items.length === 0) {
+    bullets.push({
+      label: 'Lacunas que pesam.',
+      text: 'Nenhum ponto com fonte — a leitura é a das lacunas explícitas.',
+    })
+  } else {
+    const top = [...synthesis.byEra].sort((left, right) => right.count - left.count)[0]
+    if (top) {
+      bullets.push({
+        label: 'Concentração.',
+        text: `A ${top.label} reúne ${top.count} de ${items.length} pontos com fonte (${Math.round(
+          (top.count / items.length) * 100,
+        )}%).`,
+      })
+    }
+    const areasByEra = synthesis.byEra
+      .map((row) => ({
+        era: row.key,
+        areas: toRows(
+          countBy(
+            items.filter((item) => item.era === row.key),
+            (item) => item.area,
+          ),
+        ),
+      }))
+      .filter((row) => row.areas.length)
+    if (areasByEra.length) {
+      bullets.push({
+        label: 'Instrumentos.',
+        text: `${areasByEra
+          .map(
+            (row) =>
+              `Na Era ${row.era}, ${row.areas
+                .slice(0, 3)
+                .map((area) => `${area.key} (${area.count})`)
+                .join(', ')}`,
+          )
+          .join('; ')}. São registros de natureza distinta; a leitura preserva essa diferença.`,
+      })
+    }
+    const areaEras = new Map()
+    for (const item of items) {
+      const set = areaEras.get(item.area) ?? new Set()
+      set.add(item.era)
+      areaEras.set(item.area, set)
+    }
+    const continuous = [...areaEras].filter(([, eras]) => eras.size > 1)
+    bullets.push({
+      label: 'Continuidade documentada.',
+      text: continuous.length
+        ? `${continuous
+            .map(([area, eras]) => `${area} (${[...eras].sort().join(', ')})`)
+            .join(' · ')}.`
+        : 'Nenhuma área aparece em mais de uma era.',
+    })
+    bullets.push({
+      label: 'Alcance por era.',
+      text: `${synthesis.byEraSphere
+        .map(
+          (row) =>
+            `Era ${row.key}: ${
+              row.segments
+                .filter((segment) => segment.count > 0)
+                .map((segment) => `${segment.count} ${segment.label}`)
+                .join(', ') || 'sem registro'
+            }`,
+        )
+        .join(' · ')}.`,
+    })
+    if (gaps.length) {
+      bullets.push({
+        label: 'Lacunas que pesam.',
+        text: `${gaps.length} declaradas — prioridade: ${gaps[0].label ?? gaps[0].id}.`,
+      })
+    }
+  }
+
+  const table = synthesis.byEraSphere.map((row) => {
+    const present = row.segments.filter((segment) => segment.count > 0)
+    const direct = row.segments.find((segment) => segment.key === unit.defaultSphere)?.count ?? 0
+    const gapCount = synthesis.gapsByEra.find((gap) => gap.key === row.key)?.count ?? 0
+    return {
+      era: `${row.key} · ${DOSSIER_ERAS.find((era) => era.id === row.key)?.period ?? ''}`.trim(),
+      where: present.length
+        ? present.map((segment) => `${segment.count} ${segment.label}`).join(' · ')
+        : 'Sem registro com fonte localizado',
+      howToCite: present.length
+        ? 'Nomear objeto, fase e fonte'
+        : `Não atribuir ação ao ${unit.sphereLabels?.[unit.defaultSphere] ?? 'recorte'}`,
+      limit:
+        present.length === 0
+          ? 'Lacuna explícita'
+          : direct === 0
+            ? `Sem ${unit.sphereLabels?.[unit.defaultSphere] ?? 'recorte'} exclusivo localizado`
+            : `${gapCount} ${gapCount === 1 ? 'lacuna declarada' : 'lacunas declaradas'}`,
+    }
+  })
+
+  return { bullets, table }
+}
+
 const buildSubjectReport = (params) => {
   const { snapshot, research, generatedAt = new Date(), narrative = null } = params
   const unit = resolveDossierUnit(params.unit ?? INSTITUTION_UNIT)
@@ -885,8 +1012,10 @@ const buildSubjectReport = (params) => {
   const subjectName = identity.name ?? identity.label ?? identity.slug ?? '—'
   const speechFacts = speechFactsFromRows(snapshot, unit.defaultSphere)
 
-  const items = research.items ?? []
-  const directItems = items.filter((item) => item.sphere === unit.defaultSphere)
+  const allItems = research.items ?? []
+  /** C209: defense items are the "O que Solla defende" dimension — they never
+   * enter the evidence lists, the synthesis or the era tables. */
+  const items = allItems.filter((item) => item.kind !== 'defense')
 
   /** Honors live in their own sheet; they are not repeated as era action cards. */
   const researchActionsByEra = (era) =>
@@ -941,37 +1070,6 @@ const buildSubjectReport = (params) => {
     }
   })
 
-  const deliveryList = [...directItems]
-    .sort((left, right) => {
-      const leftEra = left.era === 'C' ? 0 : 1
-      const rightEra = right.era === 'C' ? 0 : 1
-      if (leftEra !== rightEra) return leftEra - rightEra
-      const leftNumber = left.numbers?.length ? 0 : 1
-      const rightNumber = right.numbers?.length ? 0 : 1
-      return leftNumber - rightNumber
-    })
-    .map((item) => ({
-      sphere: item.sphere,
-      era: item.era,
-      year: item.numbers?.[0]?.year ?? null,
-      title: item.answer,
-      detail: item.details,
-      brief: item.brief ?? null,
-      value: item.numbers?.[0]?.value ?? null,
-      phase: item.numbers?.[0]?.phase ?? null,
-      sourceUrl: item.sourceUrl,
-      sourceDate: item.sourceDate,
-    }))
-  const deliveries = capped(deliveryList, MAX_INSTITUTION_DELIVERIES)
-
-  const hookList = items.map((item) => ({
-    topic: item.area,
-    angle: item.answer,
-    brief: item.brief ?? null,
-    sourceUrl: item.sourceUrl,
-  }))
-  const hooks = capped(hookList, MAX_INSTITUTION_HOOKS)
-
   const acervo = {
     items: speechFacts.map((fact) => ({
       id: fact.id,
@@ -987,27 +1085,12 @@ const buildSubjectReport = (params) => {
     topics: snapshot.speeches?.topics ?? [],
   }
 
-  const timelineList = items
-    .filter((item) => item.sourceUrl)
-    .map((item) => ({
-      period: item.numbers?.[0]?.year ?? (item.sourceDate ?? '').slice(0, 4) ?? '—',
-      role: item.answer,
-      brief: item.brief ?? null,
-      source: item.label,
-      url: item.sourceUrl,
-    }))
-    .sort((left, right) => String(left.period).localeCompare(String(right.period)))
-  const timeline = capped(timelineList, MAX_INSTITUTION_TIMELINE)
-
   const gaps = (research.gaps ?? []).map((gap) => ({
     label: gap.label ?? gap.id,
     reason: gap.reason,
     nextStep: 'Apurar em fonte primária.',
     era: gapEraLabel(gap.id),
   }))
-  const pendingList = (research.gaps ?? []).map((gap) => gap.label ?? gap.id)
-  const pending = capped(pendingList, MAX_INSTITUTION_PENDING)
-
   const scopeItem = (sphere, key, label) => {
     const sphereItems = items.filter((item) => item.sphere === sphere)
     return {
@@ -1020,7 +1103,9 @@ const buildSubjectReport = (params) => {
           era: item.era,
           sphere: item.sphere,
           area: item.area,
-          year: item.numbers?.[0]?.year ?? (item.sourceDate ?? '').slice(0, 4) ?? null,
+          year:
+            item.numbers?.[0]?.year ??
+            (item.sourceDate ? String(item.sourceDate).slice(0, 4) : null),
           value: item.numbers?.[0]?.value ?? null,
           phase: item.numbers?.[0]?.phase ?? null,
           title: item.answer,
@@ -1046,13 +1131,14 @@ const buildSubjectReport = (params) => {
     unit,
   })
 
-  const bulletinFacts = items
+  const bulletinFacts = allItems
     .filter((item) => Boolean(item.sourceUrl))
     .map((item) => ({
       id: item.id,
       era: item.era,
       sphere: item.sphere,
       area: item.area,
+      defense: item.kind === 'defense',
       headline: stripInlineSources(item.answer),
       detail: item.details ? stripInlineSources(item.details) : null,
       brief: item.brief
@@ -1121,26 +1207,41 @@ const buildSubjectReport = (params) => {
       scope: unit.copy.coverScope,
       version: 'Documento de trabalho · versão 01',
     },
-    page1: { timeline, deliveries, hooks, pending },
     trajectory: CAREER_TIMELINE,
     eras: eraSections,
+    essentials: buildEssentials({
+      items,
+      gaps: research.gaps ?? [],
+      synthesis,
+      unit,
+      eras: eraSections,
+    }),
+    betweenEras: buildBetweenEras({
+      items,
+      gaps: research.gaps ?? [],
+      synthesis,
+      unit,
+      narrative,
+    }),
+    defends: buildDefends({
+      items: allItems,
+      gaps: research.gaps ?? [],
+      defenseIds: defenseChecklistIds(unit),
+    }),
     acervo,
     synthesis,
     reach: {
       ruleTitle: unit.copy.reachRuleTitle,
       ruleBody: unit.copy.reachRuleBody,
       lists: scopeLists,
-      hook: hooks.items[0] ?? null,
-      priorityGap: pending.items[0] ?? null,
     },
     gaps,
-    acervo,
-    synthesis,
-    opening,
     news: (research.news ?? []).map((row) => ({
+      era: row.era ?? null,
       date: row.publishedAt,
       outlet: row.outlet ?? '—',
       title: row.title,
+      summary: row.summary ?? null,
       url: row.url,
     })),
     limits: {

@@ -6,7 +6,6 @@ import {
   mergeDossierResearch,
   normalizeDossierResearchInput,
 } from '../../scripts/lib/dossieResearch.mjs'
-import { SUMMARY_POINTER_COPY } from '../../scripts/lib/reportText.mjs'
 
 const generatedAt = new Date('2026-09-17T12:00:00.000Z')
 
@@ -48,6 +47,11 @@ const research = mergeDossierResearch([
         numbers: [{ label: 'Recurso', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
       }),
       item('era_c_titulos', { answer: 'Cidadão Ilheense' }),
+      item('era_c_defesas', {
+        position: 'Ensino superior',
+        answer: 'Defende a implantação de campus da UFBA na região',
+        details: 'INC 1497/2023 · Câmara dos Deputados',
+      }),
     ]),
   ),
 ])
@@ -138,7 +142,14 @@ describe('buildDossierReport', () => {
     expect(report.bulletinFacts.some((fact) => fact.area === 'Emendas')).toBe(true)
   })
 
-  it('omits an era that has no number and no action', () => {
+  it('marks the defense items on the bulletin ledger', () => {
+    const report = build()
+    const defense = report.bulletinFacts.find((fact) => fact.id === 'era_c_defesas')
+    expect(defense).toMatchObject({ defense: true })
+    expect(report.bulletinFacts.find((fact) => fact.id === 'era_c_emendas')?.defense).toBe(false)
+  })
+
+  it('keeps an era without evidence in the report, omitted as a section (C209)', () => {
     const empty = mergeDossierResearch([
       normalizeDossierResearchInput(eraFile('A', [])),
       normalizeDossierResearchInput(eraFile('B', [])),
@@ -152,113 +163,113 @@ describe('buildDossierReport', () => {
       health: { status: 'gap', items: [] },
       generatedAt,
     })
-    expect(report.eras).toHaveLength(0)
+    expect(report.eras).toHaveLength(3)
+    expect(report.eras.every((era) => era.omitted)).toBe(true)
   })
 
-  it('caps the page-1 deliveries and keeps the full timeline on its own page', () => {
+  it('keeps the trajectory and the defeso limits', () => {
     const report = build()
-    expect(report.page1.deliveries.items.length).toBeLessThanOrEqual(3)
-    expect(report.page1.deliveries.total).toBeGreaterThanOrEqual(
-      report.page1.deliveries.items.length,
-    )
-    expect(report.page1.timeline.length).toBe(6)
-    expect(report.trajectory.length).toBeGreaterThan(report.page1.timeline.length)
-  })
-
-  it('prefers the researcher summary on the resumo and keeps the integral in the era (C188)', () => {
-    const summarized = mergeDossierResearch([
-      normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
-      normalizeDossierResearchInput(eraFile('B', [item('era_b_sesab')])),
-      normalizeDossierResearchInput(
-        eraFile('C', [
-          item('era_c_emendas', {
-            summary: 'Emenda de R$ 1,2 mi empenhada em 2024.',
-            numbers: [{ label: 'Recurso', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
-          }),
-        ]),
-      ),
-    ])
-    const report = build({ research: summarized })
-    const delivery = report.page1.deliveries.items.find((row: { era: string }) => row.era === 'C')!
-    expect(delivery.title).toBe('Emenda de R$ 1,2 mi empenhada em 2024.')
-    const eraC = report.eras.find((era) => era?.id === 'C')!
-    expect(
-      eraC.actions.some(
-        (action: { title: string }) => action.title === 'Resposta de era_c_emendas',
-      ),
-    ).toBe(true)
-  })
-
-  it('falls back to a pointer line (never "…") without losing the era integral (C188)', () => {
-    const report = build({ textFallback: 'pointer' })
-    const delivery = report.page1.deliveries.items[0]
-    expect(delivery.title).toBe(SUMMARY_POINTER_COPY)
-    expect(delivery.detail).toBeNull()
-    expect(delivery.title.includes('…')).toBe(false)
-    const eraC = report.eras.find((era) => era?.id === 'C')!
-    expect(
-      eraC.actions.some(
-        (action: { title: string }) => action.title === 'Resposta de era_c_emendas',
-      ),
-    ).toBe(true)
-  })
-
-  it('keeps the researcher summary even on the pointer pass (C188)', () => {
-    const summarized = mergeDossierResearch([
-      normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
-      normalizeDossierResearchInput(eraFile('B', [item('era_b_sesab')])),
-      normalizeDossierResearchInput(
-        eraFile('C', [
-          item('era_c_emendas', {
-            summary: 'Emenda de R$ 1,2 mi empenhada em 2024.',
-            numbers: [{ label: 'Recurso', value: 'R$ 1,2 mi', year: '2024', phase: 'empenhado' }],
-          }),
-        ]),
-      ),
-    ])
-    const report = build({ research: summarized, textFallback: 'pointer' })
-    const summaryDelivery = report.page1.deliveries.items.find(
-      (row: { era: string }) => row.era === 'C',
-    )!
-    expect(summaryDelivery.title).toBe('Emenda de R$ 1,2 mi empenhada em 2024.')
-    const hook = report.page1.hooks.items.find(
-      (row: { angle: string }) => row.angle === SUMMARY_POINTER_COPY,
-    )
-    expect(Boolean(hook)).toBe(true)
-  })
-
-  it('counts every capped list so nothing disappears in silence (C188)', () => {
-    const manyRegional = mergeDossierResearch([
-      normalizeDossierResearchInput(
-        eraFile(
-          'A',
-          [
-            'era_a_formacao',
-            'era_a_sesab',
-            'era_a_consultor_ms',
-            'era_a_conquista',
-            'era_a_sas_ms',
-          ].map((id) => item(id, { sphere: 'regiao' })),
-        ),
-      ),
-      normalizeDossierResearchInput(eraFile('B', [])),
-      normalizeDossierResearchInput(eraFile('C', [])),
-    ])
-    const report = build({ research: manyRegional })
-    const eraA = report.eras.find((era) => era?.id === 'A')!
-    expect(eraA.actions).toHaveLength(5)
-    // Uncapped (2026-09-18): the full lists flow across sheets, so there is no
-    // remaining/omitted count on the era or region lists.
-    expect(eraA).not.toHaveProperty('camaraActionsRemaining')
-    expect(report.region.regional.items).toHaveLength(5)
-    expect(report.region.regional.total).toBe(5)
-    expect(report.region.regional).not.toHaveProperty('remaining')
-  })
-
-  it('carries the defeso limits and the editorial rules', () => {
-    const report = build()
+    expect(report.trajectory.length).toBeGreaterThan(6)
     expect(report.limits.editorial).toContain('Sem fonte, não publica.')
     expect(report.limits.coverage.join(' ')).toContain('2011')
+  })
+
+  it('reads the sourced set into O essencial facts (never a new fact)', () => {
+    const report = build()
+    expect(report.essentials.facts.length).toBeGreaterThanOrEqual(3)
+    const labels = report.essentials.facts.map((fact: { label: string }) => fact.label).join(' ')
+    expect(labels).toContain('pontos com fonte')
+    expect(labels).toContain('Abrangência sem soma')
+    expect(labels).toContain('lacunas declaradas')
+    expect(report.essentials.facts.map((fact: { text: string }) => fact.text).join(' ')).toContain(
+      'Empenho não é pagamento.',
+    )
+  })
+
+  it('derives the between-eras reading from the ledger', () => {
+    const report = build()
+    expect(
+      report.betweenEras.bullets.map((bullet: { label: string | null }) => bullet.label),
+    ).toContain('Concentração.')
+    expect(report.betweenEras.table).toHaveLength(3)
+    expect(report.betweenEras.table[0]).toMatchObject({
+      where: expect.any(String),
+      howToCite: expect.any(String),
+      limit: expect.any(String),
+    })
+  })
+
+  it('prefers the narrative betweenEras bullets when the writer provides them', () => {
+    const report = build({
+      narrative: { betweenEras: ['Leitura autoral do conjunto.', 'Segunda linha.'] },
+    })
+    expect(report.betweenEras.bullets).toEqual([
+      { label: null, text: 'Leitura autoral do conjunto.' },
+      { label: null, text: 'Segunda linha.' },
+    ])
+  })
+
+  it('separates the positions with lastro from the defense gaps (fail-closed)', () => {
+    const report = build()
+    expect(report.defends.positions).toContainEqual(
+      expect.objectContaining({
+        id: 'era_c_defesas',
+        label: 'Ensino superior',
+        reading: 'Defende a implantação de campus da UFBA na região',
+        sourceUrl: 'https://exemplo.test/era_c_defesas',
+      }),
+    )
+    // Era A/B defenses were not researched: explicit gaps, never an inference.
+    expect(report.defends.gaps.map((gap: { id: string }) => gap.id)).toEqual([
+      'era_a_defesas',
+      'era_b_defesas',
+    ])
+  })
+
+  it('degrades a defense without a source to an explicit gap', () => {
+    const unsourced = mergeDossierResearch([
+      normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
+      normalizeDossierResearchInput(eraFile('B', [item('era_b_sesab')])),
+      normalizeDossierResearchInput(
+        eraFile('C', [
+          item('era_c_defesas', {
+            position: 'Saúde regional',
+            answer: 'Defende o SAMU regional',
+            sourceUrl: null,
+          }),
+        ]),
+      ),
+    ])
+    const report = build({ research: unsourced })
+    expect(report.defends.positions).toHaveLength(0)
+    expect(report.defends.gaps).toContainEqual(
+      expect.objectContaining({ id: 'era_c_defesas', reason: expect.stringMatching(/Sem fonte/) }),
+    )
+  })
+
+  it('keeps the news summary and the era for the sources table', () => {
+    const withNews = mergeDossierResearch([
+      normalizeDossierResearchInput(eraFile('A', [item('era_a_conquista')])),
+      normalizeDossierResearchInput(eraFile('B', [item('era_b_sesab')])),
+      normalizeDossierResearchInput({
+        ...eraFile('C', [item('era_c_emendas')]),
+        news: [
+          {
+            title: 'Matéria local',
+            url: 'https://jornal.test/materia',
+            publishedAt: '2024-06-01',
+            outlet: 'Jornal Local',
+            summary: 'Resumo datado da matéria.',
+          },
+        ],
+      }),
+    ])
+    const report = build({ research: withNews })
+    expect(report.news[0]).toMatchObject({
+      era: 'C',
+      summary: 'Resumo datado da matéria.',
+      outlet: 'Jornal Local',
+    })
   })
 })
 
@@ -266,6 +277,14 @@ describe('dossier checklist coverage', () => {
   it('every checklist item is bound to an era', () => {
     for (const era of ['A', 'B', 'C'] as const) {
       expect(dossierChecklistForEra(era).every((row) => row.era === era)).toBe(true)
+    }
+  })
+
+  it('carries one defense item per era (kind: defense)', () => {
+    for (const era of ['A', 'B', 'C'] as const) {
+      const defenses = dossierChecklistForEra(era).filter((row) => row.kind === 'defense')
+      expect(defenses).toHaveLength(1)
+      expect(defenses[0].id).toBe(`era_${era.toLowerCase()}_defesas`)
     }
   })
 })

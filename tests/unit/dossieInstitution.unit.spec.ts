@@ -11,9 +11,10 @@ import {
 import { INSTITUTION_UNIT } from '../../scripts/lib/dossieUnit.mjs'
 
 // C187: institution content model + render. Grounds the institutional recorte:
-// identity badges, `instituicao|setor|rede` never summed, per-row phase/source,
+// identity rows, `instituicao|setor|rede` never summed, per-row phase/source,
 // empty-era state instead of silent omission, and a one-page boletim that
-// inherits only sourced facts.
+// inherits only sourced facts. C209: sober redesign (analysis first, lists and
+// tables, "O que Solla defende").
 
 const generatedAt = new Date('2026-09-17T12:00:00.000Z')
 
@@ -94,6 +95,10 @@ const research = mergeDossierResearch(
           numbers: [{ label: 'Emenda', value: 'R$ 5,0 mi', year: '2024', phase: 'empenhado' }],
         }),
         item('era_c_titulos', 'C', { answer: 'Título de cidadão honorário' }),
+        item('era_c_defesas', 'C', {
+          position: 'Financiamento',
+          answer: 'Defende o financiamento das universidades federais',
+        }),
       ]),
       { unit: INSTITUTION_UNIT },
     ),
@@ -148,13 +153,6 @@ describe('buildDossierReport (institution unit)', () => {
     expect(listFor('institution')?.items.some((row) => row.id === 'era_a_vinculo')).toBe(false)
     expect(listFor('sector')?.total).toBe(1)
     expect(listFor('network')?.total).toBe(1)
-  })
-
-  it('declares overflow instead of truncating silently (C188 rule)', () => {
-    for (const list of report.reach.lists) {
-      expect(list).toMatchObject({ total: expect.any(Number), omitted: expect.any(Number) })
-    }
-    expect(report.page1.deliveries.omitted).toBeGreaterThanOrEqual(0)
   })
 
   it('shows every sourced item — institution lists are never capped', () => {
@@ -212,7 +210,7 @@ describe('buildDossierReport (institution unit)', () => {
     expect(paid).toMatchObject({ count: 1, amount: 1_200_000 })
     const html = renderDossierHtml(moneyReport)
     expect(html).toContain('R$ 1,2 mi')
-    expect(html).toContain('Recursos com execução por ano')
+    expect(html).toContain('Valores localizados, sem consolidar fases')
   })
 
   it('derives bulletinFacts only from sourced items', () => {
@@ -226,6 +224,16 @@ describe('buildDossierReport (institution unit)', () => {
     expect(report.bulletinFacts.some((fact) => fact.id === 'fala-11')).toBe(true)
     expect(renderDossierMd(report)).toContain('## Acervo interno (read-only)')
   })
+
+  it('reads the positions with lastro and the missing defenses', () => {
+    expect(report.defends.positions).toContainEqual(
+      expect.objectContaining({ label: 'Financiamento', era: 'C' }),
+    )
+    expect(report.defends.gaps.map((gap: { id: string }) => gap.id)).toEqual([
+      'era_a_defesas',
+      'era_b_defesas',
+    ])
+  })
 })
 
 describe('renderDossierHtml/Md (institution unit)', () => {
@@ -237,23 +245,23 @@ describe('renderDossierHtml/Md (institution unit)', () => {
       'capa',
       'resumo',
       'sintese',
-      'graficos',
+      'trajetoria',
       'era-a',
       'era-b',
       'era-c',
       'abrangencia',
-      'abrangencia-instituicao',
-      'abrangencia-setor',
-      'abrangencia-rede',
       'titulos',
+      'defende',
       'lacunas',
+      'noticias',
+      'acervo',
       'fontes',
     ]) {
       expect(html).toContain(`data-page="${anchor}"`)
     }
   })
 
-  it('prints the synthesis lines and the consolidated charts', () => {
+  it('prints the synthesis lines and the between-eras reading, never the old charts', () => {
     const synthesis = report.synthesis
     expect(synthesis).toBeTruthy()
     if (!synthesis) return
@@ -269,11 +277,11 @@ describe('renderDossierHtml/Md (institution unit)', () => {
     )
     expect(sphereTotal).toBe(synthesis.totals.items)
     expect(html).toContain('data-page="sintese"')
-    expect(html).toContain('data-page="graficos"')
-    expect(html).toContain('Síntese do que foi localizado')
-    expect(html).toContain('Gráficos consolidados')
-    expect(html).toContain('chart-grid')
-    expect(md).toContain('## Síntese do que foi localizado')
+    expect(html).toContain('Leitura entre eras')
+    expect(html).not.toContain('data-page="graficos"')
+    expect(html).not.toContain('Gráficos consolidados')
+    expect(html).not.toContain('chart-grid')
+    expect(md).toContain('## Leitura entre eras')
   })
 
   it('flows across continuation sheets when the pack plan splits a section', () => {
@@ -310,12 +318,12 @@ describe('renderDossierHtml/Md (institution unit)', () => {
       unit: INSTITUTION_UNIT,
     })
     const bigHtml = renderDossierHtml(bigReport, {
-      pack: { 'era:C': [1], 'scope:setor': [1], news: [1] },
+      pack: { 'era:C': [1], scope: [1], news: [1] },
     })
     expect(bigHtml).toContain('data-page="era-c"')
     expect(bigHtml).toContain('data-page="era-c-2"')
-    expect(bigHtml).toContain('data-page="abrangencia-setor"')
-    expect(bigHtml).toContain('data-page="abrangencia-setor-2"')
+    expect(bigHtml).toContain('data-page="abrangencia"')
+    expect(bigHtml).toContain('data-page="abrangencia-2"')
     expect(bigHtml).toContain('data-page="noticias"')
     expect(bigHtml).toContain('data-page="noticias-2"')
     expect(bigHtml).toContain('continuação')
@@ -324,24 +332,27 @@ describe('renderDossierHtml/Md (institution unit)', () => {
     expect(anchors.length).toBe(bigReport.meta.pageTotal)
   })
 
-  it('ports the institutional classes and identity badges', () => {
-    expect(html).toContain('identity-badge')
-    expect(html).toContain('scope-sector')
-    expect(html).toContain('scope-network')
-    expect(html).toContain('phase-paid')
-    expect(html).toContain('phase-pending')
+  it('ports the sober classes: index, position list, tables and phase as text', () => {
+    expect(html).toContain('index-list')
+    expect(html).toContain('position-list')
+    expect(html).toContain('plain-list')
+    expect(html).toContain('document-table')
+    expect(html).toContain('phase-text')
+    expect(html).not.toContain('identity-badge')
+    expect(html).not.toContain('scope-cards')
+    expect(html).not.toContain('asset-box')
   })
 
   it('prints the non-summable rule and the defeso note', () => {
-    expect(html).toContain('Setor/rede não é a instituição')
+    expect(html).toContain('Não somar.')
     expect(html).toContain('Nota de defeso eleitoral 2026')
   })
 
-  it('renders the honors scene with date, nature and the reading panels', () => {
-    expect(html).toContain('Data, natureza e fonte primária')
-    expect(html).toContain('Como ler')
-    expect(html).toContain('Vínculo documentado')
-    expect(html).toContain('Honraria documentada')
+  it('renders the honors scene with date, nature and the reading rule', () => {
+    expect(html).toContain('Títulos, honrarias e vínculos')
+    expect(html).toContain('Data')
+    expect(html).toContain('Natureza')
+    expect(html).toContain('Como ler:')
   })
 
   it('escapes untrusted research text', () => {
@@ -367,8 +378,15 @@ describe('renderDossierHtml/Md (institution unit)', () => {
   it('mirrors the institution sections in markdown', () => {
     expect(md).toContain('# Dossiê Solla por instituição — UFBA')
     expect(md).toContain('## Abrangência: instituição × setor × rede')
+    expect(md).toContain('## Títulos, honrarias e vínculos')
     expect(md).toContain('## Lacunas explícitas')
     expect(md).toContain('[fonte](https://ufba.test/era_a_formacao)')
+  })
+
+  it('links every index entry to an anchor that exists in the companion', () => {
+    const links = [...md.matchAll(/\]\(#([^)]+)\)/g)].map((match) => match[1])
+    expect(links.length).toBeGreaterThan(0)
+    for (const anchor of links) expect(md).toContain(`<a id="${anchor}"></a>`)
   })
 })
 
@@ -384,30 +402,27 @@ describe('buildBulletin (institution unit)', () => {
   })
   const html = renderBulletinHtml(bulletin)
 
-  it('is a single A4 page with the model label and identity pills', () => {
+  it('is a single A4 page with the model label and the institution name', () => {
     expect(html).toContain('data-page="boletim"')
     expect((html.match(/data-page="boletim"/g) ?? []).length).toBe(1)
     expect(html).toContain('Modelo — insumo interno')
-    expect(html).toContain('identity-pill')
     expect(html).toContain('UFBA')
   })
 
-  it('declares no sources and carries the defeso band', () => {
+  it('declares no sources and carries the defeso footer', () => {
     expect(html).not.toContain('source-link')
     expect(html).not.toContain('Fonte:')
-    expect(html).toContain('defeso-band')
-    expect(html).toContain('sem CTA')
+    expect(html).toContain('Defeso eleitoral')
+    expect(html).toContain('Não publicar sem revisão')
   })
 
   it('keeps the phase next to a valued number (empenho ≠ pagamento)', () => {
-    expect(html).toContain('highlight-phase')
-    expect(html).toContain('phase-pending')
     expect(html).toContain('empenhado')
-    expect(html).toContain('phase-paid')
     expect(html).toContain('pago')
+    expect(html).toContain('bulletin-list')
   })
 
-  it('renders the sparse variant when there are fewer than three facts', () => {
+  it('renders the sparse variant without filling the page', () => {
     const sparse = buildBulletin({
       facts: [report.bulletinFacts[0]],
       identity: { name: 'UFBA', badges: ['Universidade'] },
@@ -416,7 +431,7 @@ describe('buildBulletin (institution unit)', () => {
     })
     const sparseHtml = renderBulletinHtml(sparse)
     expect(sparse.sparse).toBe(true)
-    expect(sparseHtml).toContain('lacuna-panel')
     expect(sparseHtml).toContain('A página termina com espaço')
+    expect(sparseHtml).toContain('note-line')
   })
 })

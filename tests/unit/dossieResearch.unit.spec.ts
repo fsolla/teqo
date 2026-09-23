@@ -43,15 +43,23 @@ describe('normalizeDossierResearchInput', () => {
     expect(research.items.every((item) => item.sphere === 'municipio')).toBe(true)
   })
 
-  it('normalizes the optional per-item summary without changing the source contract (C188)', () => {
-    const items = dossierChecklistForEra('C').map((item) => validItem(item.id))
-    items[0] = validItem(items[0].id, { summary: '  Recurso de R$ 1 mi empenhado em 2024.  ' })
-    items[1] = validItem(items[1].id, { summary: '   ' })
-    const research = normalizeDossierResearchInput(eraResearch('C', { items }))
-    expect(research.items[0].summary).toBe('Recurso de R$ 1 mi empenhado em 2024.')
-    expect(research.items[0].answer).toBe(`Resposta de ${items[0].id}`)
-    expect(research.items[1].summary).toBeNull()
-    expect(research.gaps).toEqual([])
+  it('marks the defense checklist items with kind and normalizes the position label (C209)', () => {
+    const research = normalizeDossierResearchInput(
+      eraResearch('C', {
+        items: [
+          validItem('era_c_emendas'),
+          validItem('era_c_defesas', {
+            position: '  Ensino superior  ',
+            answer: 'Defende campus da UFBA na região',
+          }),
+        ],
+      }),
+    )
+    const defense = research.items.find((item) => item.id === 'era_c_defesas')
+    const evidence = research.items.find((item) => item.id === 'era_c_emendas')
+    expect(defense).toMatchObject({ kind: 'defense', position: 'Ensino superior' })
+    expect(evidence?.kind).toBe('evidence')
+    expect(evidence?.position).toBeNull()
   })
 
   it('normalizes the reformulated brief and drops it when it has no title', () => {

@@ -22,9 +22,9 @@ token fora dos 18 canônicos **falha fechado**, nunca vira slug inventado.
 O dossiê temático **não usa caps**: cada seção (eras, abrangência, lacunas,
 notícias, acervo) flui por quantas páginas precisar, com quebra só entre linhas
 — o orquestrador não decide o corte, o builder mede e pagina. Sobre essa base
-vêm a **redação de abertura** (carta), a **síntese** dos números e os **gráficos
-consolidados**, e cada era abre com um **parágrafo de consolidação** do que ela
-entrega.
+vêm **O essencial** (redação de abertura + fatos-chave + índice), a **leitura
+entre eras**, a abrangência e o **O que Solla defende**, e cada era abre com a
+**leitura da era**.
 
 ## Quando usar
 
@@ -194,7 +194,7 @@ consolidação determinística.
     {
       "id": "era_c_emendas",                  // id do checklist da era
       "answer": "R$ 5,0 milhões para a rede de ensino",
-      "summary": "opcional — versão curta, completa e auto-contida do answer, redigida para caber no resumo/boletim (C188)",
+      "position": "opcional — só em item `*_defesas`: rótulo curto da posição (ex. \"Educação básica\")",
       "details": "opcional; aceita {{fonte}} / {{fonte:N}}",
       "brief": {                               // obrigatório no item publicado: copy reformulada, curta
         "title": "≤80 chars — manchete (o quê + onde)",
@@ -220,11 +220,19 @@ consolidação determinística.
 Checklist por era (ids):
 
 - **A:** `era_a_formacao`, `era_a_sesab`, `era_a_consultor_ms`, `era_a_conquista`,
-  `era_a_sas_ms`, `era_a_vinculo`.
+  `era_a_sas_ms`, `era_a_vinculo`, `era_a_defesas`.
 - **B:** `era_b_sesab`, `era_b_politicas`, `era_b_investimentos`,
-  `era_b_convenios`, `era_b_articulacao`.
+  `era_b_convenios`, `era_b_articulacao`, `era_b_defesas`.
 - **C:** `era_c_discursos`, `era_c_proposicoes`, `era_c_relatorias`,
-  `era_c_emendas`, `era_c_programas`, `era_c_audiencias`, `era_c_titulos`.
+  `era_c_emendas`, `era_c_programas`, `era_c_audiencias`, `era_c_titulos`,
+  `era_c_defesas`.
+
+Os itens `era_X_defesas` são a dimensão **"O que Solla defende"** (`kind:
+defense`): `answer` = frase da posição, `details` = lastro identificado
+(ato/proposição, "Notícia: veículo · data" ou trecho de fala) e
+`sourceUrl`/`sourceDate` da fonte do lastro — **sem registro datado vira lacuna**,
+nunca posição inferida. Os demais itens (`kind: evidence`) alimentam as eras, a
+abrangência e a síntese; itens de defesa **não** entram nessas listas.
 
 A **abrangência** (`sphere`) é `area` | `segmento` | `rede`; `segmento` e `rede`
 não são a área e **nunca são somados** a ela (cada linha informa sua
@@ -234,16 +242,16 @@ vira lacuna. `phase` ∈ `autorizado|empenhado|liquidado|pago|restos` (default
 `nao_informado`; empenho **não** é pagamento). O `bulletinFacts` (ledger do
 boletim) só é populado por item **com fonte** — o boletim não introduz fato novo.
 
-**`brief` (copy reformulada, sem reticências) e `summary` (C188).** As páginas
-A4 têm altura fixa: o `brief` é a copy que o PDF imprime nas páginas de era, nas
-listas de abrangência e nos cartões do boletim (o `answer`/`details` integrais
-ficam no `.md` e no lastro); sem ele o builder imprime o texto integral e a
-página pode estourar. Escreva `brief.title` ≤ 80 e `brief.note` ≤ 120 chars para
-**todo item publicado**; o `summary` alimenta as superfícies de resumo. O
-boletim de uma página **mede e reduz por medição**: o painel do acervo (falas
-com link) entra no contador "e mais N fatos com fonte", nunca nos destaques; se
-ainda não couber, o builder re-renderiza com menos fatos impressos e declara o
-resto — sem truncar texto e sem descarte silencioso.
+**`brief` (copy reformulada, sem reticências).** As páginas A4 têm altura fixa:
+o `brief` é a copy que o PDF imprime nas páginas de era, nas listas de
+abrangência e na lista do boletim (o `answer`/`details` integrais ficam no `.md`
+e no lastro); sem ele o builder imprime o texto integral e a página pode
+estourar. Escreva `brief.title` ≤ 80 e `brief.note` ≤ 120 chars para **todo item
+publicado**. O boletim de uma página **mede e reduz por medição**: o painel do
+acervo (falas com link) entra no contador "e mais N fatos com fonte", nunca nos
+destaques; se ainda não couber, o builder re-renderiza com menos fatos impressos
+e depois com menos defesas, declarando o resto — sem truncar texto e sem
+descarte silencioso.
 
 `<slug>.narrative.json` (opcional; escrito pelo redator, auditado pelo
 orquestrador):
@@ -254,78 +262,78 @@ orquestrador):
   "generatedAt": "2026-09-18T00:26:19.000Z",  // obrigatório
   "title": "O que Jorge Solla fez pela Educação",
   "opening": ["parágrafo", "parágrafo", "parágrafo"],
-  "eras": { "A": "parágrafo", "B": "parágrafo", "C": "parágrafo" }
+  "eras": { "A": "parágrafo", "B": "parágrafo", "C": "parágrafo" },
+  "betweenEras": ["bullet", "bullet"]         // opcional — leitura entre eras
 }
 ```
 
 Sem o arquivo (ou com `themeSlug` diferente do snapshot), o builder **não
-falha**: a abertura repete a leitura dos números e cada era usa a consolidação
-determinística. `opening` e `eras` só podem conter fatos dos itens com fonte —
-nenhum número, data, nome ou órgão novo.
+falha**: a abertura repete a leitura dos números, cada era usa a consolidação
+determinística e a leitura entre eras é derivada dos registros. `opening`,
+`eras` e `betweenEras` só podem conter fatos dos itens com fonte — nenhum número,
+data, nome ou órgão novo.
 
 ## Conteúdo do dossiê
 
 - **Capa** — série temática, "INSUMO INTERNO — defeso 2026", identificação da
-  área (label `Educação` + valor canônico `educacao` + nota da taxonomia), data,
-  "como usar", escopo/versão.
-- **A contribuição (carta)** — redação de abertura sobre o que Solla fez pela
-  área ao longo das eras, em prosa, com a nota "Como ler" (cada afirmação tem
-  lastro em item datado; a redação não preenche por inferência).
-- **Resumo de uma olhada** — identificação (área/token/origem/filtro) + linha do
-  tempo documentada do vínculo; principais entregas localizadas (badge de
-  abrangência + valor + badge de fase + fonte); gancho para a agenda; o que
-  falta. Guarda: **autorizado ≠ empenhado ≠ liquidado ≠ pago**. É a única página
-  com listas capadas — e o "e mais N" aponta para a seção onde a lista completa
-  está.
-- **Síntese** — leitura dos números com lastro (pontos por era e abrangência,
-  concentração relativa, itens com valor por fase, recursos por fase, temas,
-  lacunas) + guardas de leitura; nada que não venha dos itens.
-- **Gráficos consolidados** — recursos **com execução por ano** (empilhado por
-  fase), **propostas/articulações sem fase informada**, abrangência, trajetória
-  por ano, áreas e lacunas por era, painel do acervo. Valores sempre em R$ com a
-  fase; recortes nunca somados.
-- **Seção por era (A/B/C)** — parágrafo de consolidação ("O que esta era
-  entrega") + recorte e método + trilha de recuperação; tabela
-  **Objeto/Valor/Ano/Fase/Abrangência/Fonte**; cards "Papéis e iniciativas com
-  evidência visível". **Sem cap**: a era flui por quantas folhas precisar
-  (continuações com cabeçalho "continuação N"). Uma era **sem evidência** vira
-  **página de lacuna explícita** (nunca seção em branco nem "zero").
-- **Abrangência: área × segmento × rede** — painel "Segmento/rede não é a área.
-  Não some os recortes." com contagem por recorte (**nenhum total combinado**) e
-  prévia; em seguida **as três listas completas** em tabela
-  (item/abrangência/evidência/fonte), cada uma fluindo por quantas folhas
-  precisar; gancho e lacuna prioritária.
+  área (label + valor canônico + nota da taxonomia), data, "como usar",
+  escopo/versão.
+- **O essencial** — abre o documento: leitura do recorte (a redação de abertura),
+  identificação da área, fatos-chave (pontos com fonte por era, abrangência sem
+  soma, valores por fase, lacunas) e o **índice** com o número de página de cada
+  seção.
+- **Leitura entre eras** — bullets de concentração, instrumentos, continuidade,
+  alcance e lacunas que pesam (`betweenEras` do `narrative.json` ou derivação
+  determinística) + tabela **Era / Onde está a evidência / Como citar com
+  segurança / Limite**.
+- **Trajetória completa** — a linha do tempo da carreira em tabela
+  (período/papel/como recuperar), incertezas na própria linha.
+- **Seção por era (A/B/C)** — leitura da era ("Leitura da era", do
+  `narrative.json` ou determinística) + tabela **Objeto/Valor/Ano/Fase/
+  Abrangência/Fonte** + lista **"O que fez · item — alcance — lastro"**. Fase e
+  abrangência são texto, nunca selo colorido. **Sem cap**: a era flui por quantas
+  folhas precisar (continuações com cabeçalho "continuação N"). Uma era **sem
+  evidência** vira **página de lacuna explícita** (nunca seção em branco nem
+  "zero").
+- **Abrangência: área × segmento × rede** — callout "Não somar." + tabela de
+  leitura lado a lado (**nenhum total combinado**) e, em seguida, **as três
+  listas completas** em tabela (item/abrangência/evidência/fonte), cada uma
+  fluindo por quantas folhas precisar; a cena temática acrescenta Era/ano,
+  Valor/fase e a evidência temática.
+- **O que Solla defende** — seção própria e indexável: leitura dos registros
+  (não é opinião), lista de posições (`position-list`: rótulo da posição, leitura
+  com lastro, fonte + data + era) e, para cada item `era_X_defesas` sem registro,
+  a linha "Sem registro localizado" com a lacuna explícita. Só entra posição com
+  ato, notícia datada ou fala identificada como lastro.
 - **Lacunas explícitas**, **Notícias e documentos consultados** e **Acervo
-  interno por tema** — tabelas/listas completas, também correntes (sem cap). O
-  acervo é **amostra declarada** (as falas mais recentes com link, de N do
-  recorte `Speech.topics = <valor>`) com painel do total e do universo.
-- **Fontes e limites** — limites de cobertura; regras para uso editorial; nota de
-  defeso eleitoral 2026.
+  interno por tema** — tabelas/listas completas, também correntes (sem cap). As
+  notícias ganham a coluna "Uso no dossiê" (era) e o resumo datado; o acervo é
+  **amostra declarada** (as falas mais recentes com link, de N do recorte
+  `Speech.topics = <valor>`).
+- **Fontes e limites** — hierarquia de fontes; limites de cobertura; regras para
+  uso editorial; nota de defeso eleitoral 2026.
 - **Nada some e nada é cortado:** o dossiê temático **não usa caps** — o builder
   mede a altura real de cada linha e pagina (grow/shrink) até a página ficar
   cheia sem estourar; listas continuam em folhas de continuação com o texto
-  inteiro. O único "e mais N" é o do resumo e o da amostra do acervo, ambos
-  apontando para onde o resto está.
+  inteiro. O único "e mais N" é o da amostra do acervo.
 
 ## Conteúdo do Boletim modelo (1 página A4)
 
-- Cabeçalho com o nome da área + identity pills + rótulo **"Modelo — insumo
-  interno"**; faixa de **defeso** ("sem CTA · sem propaganda"); abertura "O que
-  Jorge Solla fez na área de <área>"; **≤6 destaques** (eyebrow "Área ·
-  abrangência", número em destaque, título curto, nota); timeline de 4 passos da
-  trajetória; **"E mais" com ≤14 itens** em duas colunas; rodapé com controle
-  editorial e defeso. Com **poucos fatos**, usa a variação de lacuna (não cria
-  cards vazios para chegar a seis). O painel do acervo **não ocupa vaga de
-  destaque**: entra no contador "e mais N fatos com fonte"; se os fatos
-  impressos ainda estourarem a folha, o builder mede e reduz o conjunto
-  impresso até caber, declarando o resto — nunca corta texto.
+- Cabeçalho com o nome da área + rótulo **"Modelo — insumo interno"**; título
+  "O que Jorge Solla fez pela área de <área>"; lede curta; **≤6 destaques** em
+  lista (rótulo + texto, com o valor e a fase quando houver); **"O que Solla
+  defende"** com **≤2 defesas curtas** com lastro do ledger (bloco omitido quando
+  não há registro); trajetória em quatro períodos; **"E mais" com ≤14 itens** em
+  lista; rodapé com controle editorial e defeso. Com **poucos fatos**, a página
+  termina com espaço — sem preencher por inferência nem inventar número. O painel do acervo
+  **não ocupa vaga de destaque**: entra no contador "e mais N fatos com fonte".
 - **Sem declaração de fontes** (as fontes vivem exclusivamente no dossiê), sem
   CTA de campanha; herda **apenas** fatos com fonte do dossiê.
 
 ## Guardrails de produto (não negociáveis)
 
 - **Sem fonte, não publica**: afirmação não trivial sem URL+data vira lacuna.
-- **Redação e parágrafos com lastro**: a carta e o parágrafo de cada era só usam
+- **Redação e parágrafos com lastro**: a leitura de abertura e o parágrafo de cada era só usam
   fatos dos itens com fonte; o orquestrador audita citação por citação (nome,
   data, valor, órgão) e remove o que não tiver lastro.
 - **Empenho ≠ pagamento**: cada valor acompanha sua fase; nunca consolidar.
@@ -351,8 +359,8 @@ nenhum número, data, nome ou órgão novo.
 - **Folha do dossiê estourou**: o builder mede a altura real de cada linha e
   repagina (grow/shrink) até estabilizar; se uma folha continuar estourando, é
   porque **uma linha sozinha** não cabe — aperte a copy/caps daquele item, nunca
-  o layout. Página **não-packed** (carta, resumo, síntese, gráficos, fontes)
-  estourando = corte copy ou reposicione o card.
+  o layout. Página **não-packed** (O essencial, leitura entre eras, trajetória,
+  defende, fontes) estourando = corte copy ou enxugue o índice.
 - **Página pela metade**: o pack estabilizou? Confira o log (`pack estável`); se
   uma seção ficou rala, o problema é o custo medido (bloco novo) — não force
   cap, ajuste a copy do item que abre a seção.
@@ -372,10 +380,10 @@ nenhum número, data, nome ou órgão novo.
 
 - Intenção: `docs/plans/dossie-solla-tema.md`; impl:
   `docs/plans/dossie-solla-tema-impl.md`.
-- Designs hi-fi (fonte de verdade do port):
-  `docs/plans/dossie-solla-tema-ui-design.html` e
-  `docs/plans/dossie-solla-tema-boletim-ui-design.html` — variantes da família
-  C187; um passe do `designer` os mantém sincronizados com a revisão corrente.
+- Designs hi-fi (fonte de verdade do port): `docs/plans/dossies-sobrios-analiticos-ui-design.html`
+  (C209 — cenas do dossiê e do boletim, um artefato da família). Os hi-fi antigos
+  (`dossie-solla-tema-ui-design.html` e `-boletim-ui-design.html`) ficam no repo
+  como registro e estão **superados**.
 - Skills irmãs: `.agents/skills/dossie-solla-cidade/SKILL.md` (dona do pipeline)
   e `.agents/skills/dossie-solla-instituicao/SKILL.md` (segundo recorte).
 - Scripts: `scripts/build-dossie-solla-tema.mjs`,

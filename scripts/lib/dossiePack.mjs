@@ -15,7 +15,7 @@
 
 /**
  * Per-sheet reserve for the block margins the tight probe zeroes out
- * (`.block` 3.4mm, `.action-grid`/`.document-table` top margins). The A4 fit
+ * (section/block margins, `.document-table`/list top margins). The A4 fit
  * guard still catches any residue; the reserve keeps a first pack from
  * overflowing.
  */

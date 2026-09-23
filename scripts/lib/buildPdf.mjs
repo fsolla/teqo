@@ -107,7 +107,7 @@ export const measureDocumentSheets = async (browser, html) => {
     return await page.evaluate(() =>
       [...document.querySelectorAll('[data-page]')].map((sheet) => {
         const children = [...sheet.children].filter(
-          (child) => !child.classList.contains('report-footer'),
+          (child) => !child.classList.contains('running-footer'),
         )
         const used = children.reduce(
           (max, child) =>
@@ -127,15 +127,15 @@ export const measureDocumentSheets = async (browser, html) => {
 }
 
 /**
- * Probe pass of the packed institution sections (C187 flowing sheets): each
- * `[data-pack-section]` sheet carries every unit (`[data-pack-unit]` with
- * `data-pack-layout` = tr|card); returns the fixed overhead and the row costs
- * (a card row is a pair, its cost the taller card) the packer consumes.
+ * Probe pass of the packed flowing sections: each `[data-pack-section]` sheet
+ * carries every unit (`[data-pack-unit]` with `data-pack-layout`); returns the
+ * fixed overhead and the row costs (a `card` row is a pair, its cost the taller
+ * card) the packer consumes.
  *
- * The probe renders with `INSTITUTION_PROBE_CSS` (auto height, no gaps), so the
- * overhead is the true fixed content: headers, section titles, the era method
- * (tagged `data-pack-fixed="method"`, absent from continuation sheets) and the
- * footer. The packer adds the card-row gap back.
+ * The probe renders with the renderer's probe CSS (auto height, no margins), so
+ * the overhead is the true fixed content: headers, section titles and the blocks
+ * tagged `data-pack-fixed` (absent from continuation sheets). The packer adds
+ * the row gap back.
  */
 const PACK_CARD_ROW_GAP_PX = Math.round(3 * MM_TO_PX)
 
@@ -265,13 +265,13 @@ export const emitHtmlPairPdf = async (
       )
     }
   }
-  if (!resumoOnly) {
-    assertPageFits(
-      await measurePageOverflows(page, A4_PAGE_BUDGET_PX),
-      'Página(s) do dossiê',
-      'Corte copy/caps — nenhuma página pode ser cortada pelo overflow.',
-    )
-  }
+  // The whole document is always asserted: the resumo-only fallback shortens
+  // the resumo, but every other fixed sheet must still fit the A4 (fail-closed).
+  assertPageFits(
+    await measurePageOverflows(page, A4_PAGE_BUDGET_PX),
+    'Página(s) do dossiê',
+    'Corte copy/caps — nenhuma página pode ser cortada pelo overflow.',
+  )
   await printA4Pdf(page, dossierPdf)
 
   let currentBulletinHtml = bulletinHtml

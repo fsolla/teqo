@@ -106,19 +106,20 @@ describe('dossiê temático sem caps + redação (revisão 2026-09-18)', () => {
     expect(skill, 'continuation sheets carry the header').toContain('continuação N')
   })
 
-  it('documents the opening letter, the synthesis and the charts', () => {
-    expect(skill).toContain('A contribuição (carta)')
-    expect(skill).toContain('**Síntese**')
-    expect(skill).toContain('Gráficos consolidados')
-    expect(skill, 'the era opens with a consolidation paragraph').toMatch(
-      /O que esta era\s+entrega/,
-    )
+  it('documents the analysis-first sections and the sober design', () => {
+    expect(skill).toContain('O essencial')
+    expect(skill).toContain('Leitura entre eras')
+    expect(skill).toContain('O que Solla defende')
+    expect(skill, 'the era opens with its reading').toContain('Leitura da era')
+    expect(skill, 'the charts were retired').not.toContain('Gráficos consolidados')
   })
 
   it('pins the narrative contract and the writer receipt', () => {
     expect(skill).toContain('## Recibo do redator')
     expect(skill).toContain('"themeSlug": "educacao"')
     expect(skill, 'the narrative file carries the era paragraphs').toContain('"eras": {')
+    expect(skill, 'the narrative may carry the between-eras bullets').toContain('"betweenEras"')
+    expect(skill, 'the defense checklist item is documented').toContain('era_c_defesas')
     expect(skill, 'the orchestrator audits the citations').toMatch(/audita/i)
   })
 })
