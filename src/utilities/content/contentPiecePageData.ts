@@ -2,10 +2,17 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import { toContentPieceViewModel, type ContentPieceViewModel } from '@/lib/contentPiece'
+import { toContentPieceViewModel } from '@/lib/contentPiece'
+import {
+  contentPieceCirculationFromRows,
+  resolveContentPieceCirculation,
+  type ContentPieceCirculationCounts,
+  type ContentPieceRowViewModel,
+} from '@/lib/contentPieceCirculation'
 import { CONTENT_PIECE_NOT_FOUND_MESSAGE } from '@/lib/schemas/contentPiece'
 import type { CampaignUser } from '@/payload-types'
 import { type RawSearchParams } from '@/utilities/campaignListUrl'
+import { loadContentEventCountsBySubject } from '@/utilities/content/contentEventAggregate'
 import {
   buildContentPieceListWhere,
   contentPiecePageSize,
@@ -74,8 +81,42 @@ export const loadContentPieceFormOptions = async (
   return { municipalities: result.docs.map((doc) => ({ id: doc.id, name: doc.name })) }
 }
 
+type ContentPieceCirculationLookup =
+  | { ok: true; byPieceId: Map<number, ContentPieceCirculationCounts> }
+  | { ok: false }
+
+/**
+ * C213 — the counters of the pieces on screen, read in ONE aggregate query. A
+ * failed read is not a failed page: every piece resolves to the design's
+ * `unavailable` state instead (the list never depends on the numbers it shows).
+ */
+const loadCirculationLookup = async (
+  payload: Payload,
+  pieces: readonly { id: number }[],
+): Promise<ContentPieceCirculationLookup> => {
+  const result = await loadContentEventCountsBySubject(payload, {
+    subjectType: 'peca',
+    subjectIds: pieces.map((piece) => String(piece.id)),
+  })
+  if (!result.ok) return { ok: false }
+
+  return { ok: true, byPieceId: contentPieceCirculationFromRows(result.rows) }
+}
+
+const toContentPieceRow = (
+  record: Parameters<typeof toContentPieceViewModel>[0],
+  lookup: ContentPieceCirculationLookup,
+): ContentPieceRowViewModel => ({
+  ...toContentPieceViewModel(record),
+  circulation: resolveContentPieceCirculation({
+    counts: lookup.ok ? lookup.byPieceId.get(record.id) : undefined,
+    hasBeenPublished: Boolean(record.publishedAt),
+    unavailable: !lookup.ok,
+  }),
+})
+
 export type ContentPieceListPageData = {
-  rows: ContentPieceViewModel[]
+  rows: ContentPieceRowViewModel[]
   state: ContentPieceListState
   redirectHref?: string
   totalDocs: number
@@ -110,9 +151,10 @@ export const loadContentPieceListPageData = async (
     overrideAccess: false,
   })
   const resolvedUrl = resolveContentPieceListUrl(rawSearchParams, result.totalPages)
+  const circulation = await loadCirculationLookup(payload, result.docs)
 
   return {
-    rows: result.docs.map((doc) => toContentPieceViewModel(doc)),
+    rows: result.docs.map((doc) => toContentPieceRow(doc, circulation)),
     state: resolvedUrl.state,
     redirectHref: resolvedUrl.redirectHref,
     totalDocs: result.totalDocs,
@@ -121,7 +163,7 @@ export const loadContentPieceListPageData = async (
 }
 
 export type ContentPieceDetailPageData = {
-  piece: ContentPieceViewModel & {
+  piece: ContentPieceRowViewModel & {
     description: string | null
     transcript: string | null
     institution: string | null
@@ -157,7 +199,8 @@ export const loadContentPieceDetailPageData = async (
   const piece = result.docs[0]
   if (!piece) throw new ContentPieceNotFoundError()
 
-  const viewModel = toContentPieceViewModel(piece)
+  const circulation = await loadCirculationLookup(payload, [piece])
+  const viewModel = toContentPieceRow(piece, circulation)
   return {
     piece: {
       ...viewModel,

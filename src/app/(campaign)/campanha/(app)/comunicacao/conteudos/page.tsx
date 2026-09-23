@@ -56,6 +56,7 @@ export default async function ContentPiecesPage({ searchParams }: ContentPiecesP
     { id: 'piece', label: 'Peça', mandatory: true },
     { id: 'processing', label: 'Processamento' },
     { id: 'publication', label: 'Publicação' },
+    { id: 'circulation', label: 'Circulação' },
     { id: 'action', label: 'Próxima ação', mandatory: true },
   ])
 

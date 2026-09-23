@@ -1002,6 +1002,81 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(afterUnpublish.media).toBeTruthy()
     })
 
+    test('the list and the ficha show the anonymous circulation counters', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecacirc')
+      const draftMarker = campaign.fixtures.value('pecacircrascunho')
+      const offAirMarker = campaign.fixtures.value('pecacircoff')
+      const { piece } = await createPiece(campaign, { marker, status: 'publicado' })
+      await createPiece(campaign, { marker: draftMarker })
+      const offAir = await createPiece(campaign, { marker: offAirMarker, status: 'publicado' })
+
+      for (const type of ['abertura', 'abertura', 'download', 'compartilhar_link'] as const) {
+        await campaign.fixtures.payload.create({
+          collection: 'contentEvent',
+          data: { type, subjectType: 'peca', subjectId: String(piece.id) },
+          overrideAccess: true,
+        })
+      }
+      // Unpublished AFTER circulating: the history stays visible.
+      await campaign.fixtures.payload.update({
+        collection: 'contentPiece',
+        id: offAir.piece.id,
+        data: { status: 'rascunho' },
+        overrideAccess: true,
+      })
+      await campaign.fixtures.payload.create({
+        collection: 'contentEvent',
+        data: { type: 'abertura', subjectType: 'peca', subjectId: String(offAir.piece.id) },
+        overrideAccess: true,
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const list = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${marker}`)).text(),
+      )
+      expect(list).toContain('Circulação')
+      expect(list).toMatch(/Aberturas<\/span><span[^>]*>2<\/span>/)
+      expect(list).toMatch(/Downloads<\/span><span[^>]*>1<\/span>/)
+      expect(list).toMatch(/WhatsApp<\/span><span[^>]*>0<\/span>/)
+      expect(list).toMatch(/Link<\/span><span[^>]*>1<\/span>/)
+
+      const draftList = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${draftMarker}`)).text(),
+      )
+      expect(draftList).toContain('Sem dados — ainda não publicada')
+
+      const offAirList = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${offAirMarker}`)).text(),
+      )
+      expect(offAirList).toContain('Histórico de quando esteve publicada · peça fora do ar')
+
+      const ficha = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos/${piece.id}`)).text(),
+      )
+      expect(ficha).toContain('Circulação')
+      expect(ficha).toMatch(/Aberturas<\/dt><dd[^>]*>2<\/dd>/)
+      expect(ficha).toMatch(/Downloads<\/dt><dd[^>]*>1<\/dd>/)
+      expect(ficha).toMatch(/WhatsApp<\/dt><dd[^>]*>0<\/dd>/)
+      expect(ficha).toMatch(/Link copiado<\/dt><dd[^>]*>1<\/dd>/)
+      expect(ficha).toContain('compare os sinais sem somá-los')
+      expect(ficha).toContain('sem IP persistido, cookie de identidade ou rastreio entre peças')
+
+      for (const pieceId of [piece.id, offAir.piece.id]) {
+        await campaign.fixtures.payload
+          .delete({
+            collection: 'contentEvent',
+            where: { subjectId: { equals: String(pieceId) } },
+            overrideAccess: true,
+          })
+          .catch(() => undefined)
+      }
+    })
+
     test('the private file answers only the Central roles, with range and download', async ({
       campaign,
       campaignRequest,

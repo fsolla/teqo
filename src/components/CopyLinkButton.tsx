@@ -11,6 +11,12 @@ type CopyLinkButtonProps = {
   url: string
   variant?: 'default' | 'outline' | 'ghost'
   className?: string
+  /**
+   * Called only when the text actually landed in the clipboard (C213 counts the
+   * share-by-link of a piece). The control itself never counts: it is shared
+   * with the cut surfaces.
+   */
+  onCopied?: () => void
 }
 
 /**
@@ -19,7 +25,12 @@ type CopyLinkButtonProps = {
  * A relative path is resolved against the current origin on click, so a server
  * component can pass `publicPath` directly.
  */
-export const CopyLinkButton = ({ url, variant = 'outline', className }: CopyLinkButtonProps) => {
+export const CopyLinkButton = ({
+  url,
+  variant = 'outline',
+  className,
+  onCopied,
+}: CopyLinkButtonProps) => {
   const { feedback, copy } = useCopyFeedback()
 
   return (
@@ -29,7 +40,9 @@ export const CopyLinkButton = ({ url, variant = 'outline', className }: CopyLink
         variant={variant}
         className={cn('min-h-10', className)}
         onClick={() => {
-          void copy(new URL(url, window.location.origin).toString())
+          void copy(new URL(url, window.location.origin).toString()).then((copied) => {
+            if (copied) onCopied?.()
+          })
         }}
       >
         {feedback === 'copied' ? (

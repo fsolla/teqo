@@ -1,10 +1,11 @@
 import config from '@payload-config'
-import { NextResponse } from 'next/server'
+import { after, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
 import { CONTENT_MEDIA_SLUG } from '@/lib/contentPiece'
 import { contentPieceDownloadFilename } from '@/lib/contentPieceCatalog'
 import { PRIVATE_MEDIA_CACHE_CONTROL } from '@/lib/privateMedia'
+import { recordContentEvent } from '@/utilities/content/contentEventWrite'
 import { getPublishedContentPieceBySlug } from '@/utilities/content/contentPieceReads'
 import {
   buildPrivateMediaResponse,
@@ -49,13 +50,33 @@ export const GET = async (
     .catch(() => null)
   if (!media?.filename) return notFound()
 
-  return buildPrivateMediaResponse({
+  const download = new URL(request.url).searchParams.get('download') === '1'
+  const rangeHeader = request.headers.get('range')
+  const response = await buildPrivateMediaResponse({
     media,
     staticDir: resolvePrivateMediaStaticDir(payload, CONTENT_MEDIA_SLUG),
-    rangeHeader: request.headers.get('range'),
-    download: new URL(request.url).searchParams.get('download') === '1',
+    rangeHeader,
+    download,
     // The voter downloads `jorge-solla-1313-<slug>.<ext>`, never the internal
     // upload name; the object key stays `media.filename`.
     dispositionFilename: contentPieceDownloadFilename(slug, media.filename),
   })
+
+  // C213 — one download served is one anonymous counter, and only a FULL
+  // `?download=1` request counts: a plain media GET is play/preview, and a
+  // ranged request is a resumed transfer (counting each part would multiply one
+  // download). `after` keeps the write off the response path — a lost count is
+  // acceptable, a slower download is not.
+  if (download && !rangeHeader && response.status === 200) {
+    const pieceId = piece.id
+    after(async () => {
+      await recordContentEvent({
+        type: 'download',
+        subjectType: 'peca',
+        subjectId: String(pieceId),
+      })
+    })
+  }
+
+  return response
 }

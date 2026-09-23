@@ -5,7 +5,7 @@ import type { Payload } from 'payload'
 
 import type { CampaignUser } from '@/payload-types'
 import { getAdvisorMunicipalityIds, isCampaignCoordinator } from '@/utilities/campaignAccess'
-import { drizzleResultRows } from '@/utilities/drizzleBulk'
+import { drizzleResultRows, getPayloadDrizzle } from '@/utilities/drizzleBulk'
 import { toAggregateSqlConditions } from '@/utilities/supporter/supporterListSqlFilters'
 import type { SupporterListState } from '@/utilities/supporter/supporterUi'
 import type { SupporterListOverviewViewModel } from '@/utilities/supporter/supporterViewModels'
@@ -14,10 +14,6 @@ type AccessConstraint =
   | { kind: 'all' }
   | { kind: 'none' }
   | { kind: 'municipalitySet'; ids: number[] }
-
-type PostgresDb = {
-  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
-}
 
 const resolveAccessConstraint = async (
   payload: Pick<Payload, 'find'>,
@@ -92,9 +88,8 @@ export const computeSupporterListOverviewAggregate = async (
   if (payload.db.name !== 'postgres') {
     throw new Error('O overview de apoiadores exige o adaptador PostgreSQL.')
   }
-  const database = payload.db as unknown as { drizzle?: PostgresDb }
-  const drizzle = database.drizzle
-  if (!drizzle || typeof drizzle.execute !== 'function') {
+  const drizzle = getPayloadDrizzle(payload)
+  if (!drizzle) {
     throw new Error('A sessão PostgreSQL do overview de apoiadores não está disponível.')
   }
 

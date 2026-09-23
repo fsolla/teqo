@@ -1,11 +1,32 @@
 import 'server-only'
 
+import { sql } from '@payloadcms/db-postgres'
 import type { Payload } from 'payload'
 
 export type DrizzleTables = Record<string, Record<string, unknown>>
 
 type PayloadDbTables = {
   tables: DrizzleTables
+}
+
+/** The raw-SQL executor Payload's Postgres adapter exposes (drizzle session). */
+export type PayloadDrizzle = {
+  execute: (query: ReturnType<typeof sql>) => Promise<unknown>
+}
+
+/**
+ * The drizzle session of the Postgres adapter, or null when the database is
+ * not PostgreSQL or the session is unavailable. Single owner of the
+ * `payload.db` narrowing the raw-SQL readers share; callers decide whether
+ * that is an error (throw) or a degraded read (fail soft).
+ */
+export const getPayloadDrizzle = (payload: Pick<Payload, 'db'>): PayloadDrizzle | null => {
+  if (payload.db.name !== 'postgres') return null
+
+  const database = payload.db as unknown as { drizzle?: PayloadDrizzle }
+  return database.drizzle && typeof database.drizzle.execute === 'function'
+    ? database.drizzle
+    : null
 }
 
 /** ~15-16 columns × 500 ≈ 7500-8000 bind params — well under PG's 65535 param limit. */

@@ -1,23 +1,26 @@
 import Link from 'next/link'
 
+import { ContentPieceCirculationCounters } from '@/components/campaign/content/ContentPieceCirculationCounters'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
 import {
   ContentPieceProcessingBadge,
   ContentPiecePublicationBadge,
 } from '@/components/campaign/content/ContentPieceStatusBadge'
 import { Button } from '@/components/ui/button'
-import { contentPieceStepLabels, type ContentPieceViewModel } from '@/lib/contentPiece'
+import { contentPieceStepLabels } from '@/lib/contentPiece'
+import type { ContentPieceRowViewModel } from '@/lib/contentPieceCirculation'
 
 /**
  * C211 — the Central list on mobile (approved design scenes 5): one card per
  * piece with the title + processing state, the type/publication line and the
- * single "Abrir" (or "Reprocessar" when it failed).
+ * single "Abrir" (or "Reprocessar" when it failed). C213 adds the piece's
+ * circulation counters (2×2 grid) right above the action.
  */
 export const ContentPieceCardList = ({
   rows,
   empty,
 }: {
-  rows: readonly ContentPieceViewModel[]
+  rows: readonly ContentPieceRowViewModel[]
   empty?: React.ReactNode
 }) => (
   <div className="flex flex-col gap-3 md:hidden">
@@ -50,6 +53,12 @@ export const ContentPieceCardList = ({
         ) : piece.processingStatus === 'falhou' && piece.failureMessage ? (
           <p className="mt-2 text-xs text-red-800">{piece.failureMessage}</p>
         ) : null}
+
+        <ContentPieceCirculationCounters
+          circulation={piece.circulation}
+          isPublished={piece.isPublished}
+          layout="card"
+        />
 
         {piece.canRetry ? (
           <ContentPieceRetryButton contentPieceId={piece.id} className="mt-3" />
