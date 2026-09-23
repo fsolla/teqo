@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 
+import { getCardModel } from '@/lib/cardModels'
 import { contentEventRequestSchema } from '@/lib/schemas/contentEvent'
+import { getStateDeputyCard } from '@/lib/stateDeputyCatalog'
 import {
   checkContentEventRateLimit,
   contentEventClientKey,
@@ -12,18 +14,19 @@ import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 export const dynamic = 'force-dynamic'
 
 /**
- * C213 — the public anonymous beacon of the Central de Conteúdos. The visitor's
- * browser fires one event (abertura, download, compartilhar WhatsApp/link) and
- * forgets it: every response is silent and the client never reads it.
+ * C213/S32 — the public anonymous beacon of the Central de Conteúdos and of the
+ * personalized cards. The visitor's browser fires one event (abertura, download,
+ * compartilhar WhatsApp/link; the card download) and forgets it: every response
+ * is silent and the client never reads it.
  *
  * There is no cookie and no session here, so there is nothing to authorize —
  * the same-origin check and the in-memory limiter are bar-raisers against a
- * third-party page or a trivial loop, never a security boundary. The route
- * writes nothing when the slug does not resolve to a PUBLISHED piece (the
- * cached public read is the gate — the same one the media route uses), so a
- * draft or an unknown slug is indistinguishable from a recorded event. Fail
- * soft end to end: a malformed body, a throttled client, a read failure or a
- * write failure never produce an error the page has to handle.
+ * third-party page or a trivial loop, never a security boundary. Each variant
+ * has its own public gate: the piece writes nothing when the slug does not
+ * resolve to a PUBLISHED piece, and the card writes nothing when the model id
+ * or the state-deputy slug is not in the committed catalogs. Fail soft end to
+ * end: a malformed body, a throttled client, a read failure or a write failure
+ * never produce an error the page has to handle.
  */
 
 const NO_STORE = { 'Cache-Control': 'no-store' } as const
@@ -84,6 +87,31 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   if (!parsed.success) return silentResponse(400)
 
   if (!checkContentEventRateLimit(contentEventClientKey(request.headers))) {
+    return silentResponse(204)
+  }
+
+  // S32 — the card download: the model and the state deputy are validated
+  // against the committed catalogs; the route never trusts an arbitrary id.
+  if ('cardModelId' in parsed.data) {
+    const model = getCardModel(parsed.data.cardModelId)
+    if (!model) return silentResponse(400)
+
+    const requestedDeputySlug = parsed.data.stateDeputySlug
+    let variant: string | null = null
+    if (model.stateDeputyPicker === true) {
+      const deputy = requestedDeputySlug ? getStateDeputyCard(requestedDeputySlug) : undefined
+      if (!deputy) return silentResponse(400)
+      variant = deputy.slug
+    } else if (requestedDeputySlug) {
+      return silentResponse(400)
+    }
+
+    await recordContentEvent({
+      type: parsed.data.type,
+      subjectType: 'card',
+      subjectId: model.id,
+      variant,
+    })
     return silentResponse(204)
   }
 

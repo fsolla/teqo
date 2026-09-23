@@ -3,6 +3,8 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { isUnrestrictedCampaignRole } from '@/lib/campaignRoles'
+import { resolveCardDownloadCounts, type CardDownloadCountsView } from '@/lib/cardDownloadCounts'
+import { CARD_MODELS } from '@/lib/cardModels'
 import type { AccessibleMunicipality } from '@/lib/municipalityProximity'
 import { relationshipId, requireRelationshipId } from '@/lib/relationship'
 import type { VoteEstimateScenario } from '@/lib/voteEstimate'
@@ -12,6 +14,7 @@ import {
   loadStatewideStaffVoteTotalCentral,
   recordCampaignVoteSummarySnapshotIfNeeded,
 } from '@/utilities/campaignVoteSummarySnapshot'
+import { loadContentEventCountsBySubject } from '@/utilities/content/contentEventAggregate'
 import {
   pickDashboardPriorityMunicipalities,
   type DashboardPriorityMunicipality,
@@ -232,6 +235,23 @@ export type CampaignHomeSummaryView = Pick<StaffDashboardView, 'goalCoverage'> &
   staffVoteTotalCentral: StaffDashboardView['staffVoteTotalByScenario']['central']
   /** Statewide Δ over 7 Bahia civil days; null until enough daily snapshots exist. */
   homeSummaryDelta: number | null
+  /** S32 — anonymous download counters per card model (unavailable omits the block). */
+  cardDownloads: CardDownloadCountsView
+}
+
+/**
+ * S32 — one aggregate query for the six card models; a failed read answers
+ * `unavailable` and the home omits the block (the counters are accessory).
+ */
+export const loadCampaignHomeCardDownloads = async (
+  payload: Pick<Payload, 'db'>,
+): Promise<CardDownloadCountsView> => {
+  const result = await loadContentEventCountsBySubject(payload, {
+    subjectType: 'card',
+    subjectIds: CARD_MODELS.map((model) => model.id),
+  })
+
+  return resolveCardDownloadCounts(result.ok ? result.rows : null)
 }
 
 /** Slim loader for `/campanha` — scope + rollup + coverage + B57 delta. */
@@ -252,8 +272,9 @@ export const loadCampaignHomeSummary = async (
     : await loadStatewideStaffVoteTotalCentral(payload)
 
   // B57 option A: hero stays actor-scoped; delta compares statewide live vs T−7d snapshot.
-  const [homeSummaryDelta] = await Promise.all([
+  const [homeSummaryDelta, cardDownloads] = await Promise.all([
     loadCampaignHomeSummaryDelta(payload, statewideTotal),
+    loadCampaignHomeCardDownloads(payload),
     recordCampaignVoteSummarySnapshotIfNeeded(payload, statewideTotal),
   ])
 
@@ -261,5 +282,6 @@ export const loadCampaignHomeSummary = async (
     staffVoteTotalCentral: rollup.staffVoteTotalByScenario.central,
     goalCoverage: goalCoverageBundle.aggregateByScenario.central,
     homeSummaryDelta,
+    cardDownloads,
   }
 }

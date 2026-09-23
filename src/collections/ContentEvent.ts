@@ -15,10 +15,11 @@ import { canReadContentPiece } from '@/utilities/campaignAccess'
  * same mechanism, never a second collection).
  *
  * The row carries the event type and the subject — `subjectType` + `subjectId`
- * (the internal piece id today; the card model id later) — and nothing else:
- * no IP, no cookie, no user-agent, no session, no visitor identity. Counting is
- * best-effort (fail-soft): the public page, the download and the share never
- * depend on a row landing here.
+ * (the internal piece id; the card model id) — plus the optional `variant`
+ * (S32: the state-deputy slug chosen on the team/colinha card models), and
+ * nothing else: no IP, no cookie, no user-agent, no session, no visitor
+ * identity. Counting is best-effort (fail-soft): the public page, the download
+ * and the share never depend on a row landing here.
  *
  * There is deliberately NO hook: a write here must never bust the public
  * `contentPieces` listing tag (a counter is not content). Rows are written only
@@ -76,6 +77,18 @@ export const ContentEvent: CollectionConfig = {
       admin: {
         description:
           'Id interno da peça (peça) ou do modelo (card). Nunca um identificador de visitante.',
+      },
+    },
+    {
+      // S32 — the sub-key of the subject, when it has one: the state-deputy
+      // slug chosen on the team/colinha card models. It is a public catalog
+      // slug, never a visitor identifier.
+      name: 'variant',
+      type: 'text',
+      label: 'Variante',
+      admin: {
+        description:
+          'Slug do estadual escolhido (modelos de card com escolha estadual). Nunca um identificador de visitante.',
       },
     },
   ],

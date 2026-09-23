@@ -1292,6 +1292,10 @@ export interface ContentEvent {
    * Id interno da peça (peça) ou do modelo (card). Nunca um identificador de visitante.
    */
   subjectId: string;
+  /**
+   * Slug do estadual escolhido (modelos de card com escolha estadual). Nunca um identificador de visitante.
+   */
+  variant?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2764,6 +2768,7 @@ export interface ContentEventSelect<T extends boolean = true> {
   type?: T;
   subjectType?: T;
   subjectId?: T;
+  variant?: T;
   updatedAt?: T;
   createdAt?: T;
 }

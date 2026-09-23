@@ -38,9 +38,11 @@ vi.mock('@/utilities/content/contentEventAggregate', async (importOriginal) => {
 
 import { POST as postContentEvent } from '@/app/(frontend)/api/content-events/route'
 import { GET as getPublicPieceMedia } from '@/app/(frontend)/conteudos/[slug]/midia/route'
+import { resolveCardDownloadCounts } from '@/lib/cardDownloadCounts'
 import { contentPieceCirculationFromRows } from '@/lib/contentPieceCirculation'
 import type { CampaignUser, ContentMedia } from '@/payload-types'
 import config from '@/payload.config'
+import { loadCampaignHomeCardDownloads } from '@/utilities/campaignDashboardData'
 import { loadContentEventCountsBySubject } from '@/utilities/content/contentEventAggregate'
 import {
   loadContentPieceDetailPageData,
@@ -66,7 +68,7 @@ const flushAfterCallbacks = async (): Promise<void> => {
   await Promise.all(afterCallbacks.splice(0))
 }
 
-const eventRowsOf = async (subjectIds: number[]) =>
+const eventRowsOf = async (subjectIds: Array<number | string>) =>
   payload.find({
     collection: 'contentEvent',
     where: { subjectId: { in: subjectIds.map(String) } },
@@ -160,6 +162,12 @@ describe('content events (C213)', () => {
       fixtures.createCampaignUser('leader'),
     ])
     afterCallbacks.length = 0
+    // The card counters are global by model id — each test starts from zero.
+    await payload.delete({
+      collection: 'contentEvent',
+      where: { subjectType: { equals: 'card' } },
+      overrideAccess: true,
+    })
   })
 
   afterAll(async () => {
@@ -368,6 +376,142 @@ describe('content events (C213)', () => {
 
     expect(throttled.status).toBe(204)
     expect((await eventRowsOf([piece.id])).docs).toHaveLength(0)
+  })
+
+  it('records a card download with the state-deputy slug on the picker models', async () => {
+    const accepted = await postEvent({
+      type: 'download',
+      subjectType: 'card',
+      cardModelId: 'minha-colinha',
+      stateDeputySlug: 'julio',
+    })
+    expect(accepted.status).toBe(204)
+    expect(accepted.headers.get('Cache-Control')).toBe('no-store')
+
+    const rows = await eventRowsOf(['minha-colinha'])
+    expect(rows.docs).toHaveLength(1)
+    expect(rows.docs[0]).toMatchObject({
+      type: 'download',
+      subjectType: 'card',
+      subjectId: 'minha-colinha',
+      variant: 'julio',
+    })
+  })
+
+  it('records a card download without a slug on the models without a picker', async () => {
+    expect(
+      (await postEvent({ type: 'download', subjectType: 'card', cardModelId: 'eu-sou-solla' }))
+        .status,
+    ).toBe(204)
+
+    const rows = await eventRowsOf(['eu-sou-solla'])
+    expect(rows.docs).toHaveLength(1)
+    expect(rows.docs[0]).toMatchObject({
+      type: 'download',
+      subjectType: 'card',
+      subjectId: 'eu-sou-solla',
+      variant: null,
+    })
+  })
+
+  it('refuses the card bodies that cannot come from the committed catalogs', async () => {
+    // Unknown model id.
+    expect(
+      (
+        await postEvent({
+          type: 'download',
+          subjectType: 'card',
+          cardModelId: 'modelo-inventado',
+        })
+      ).status,
+    ).toBe(400)
+    // Picker model without the chosen deputy.
+    expect(
+      (await postEvent({ type: 'download', subjectType: 'card', cardModelId: 'minha-colinha' }))
+        .status,
+    ).toBe(400)
+    // Unknown deputy slug.
+    expect(
+      (
+        await postEvent({
+          type: 'download',
+          subjectType: 'card',
+          cardModelId: 'minha-colinha',
+          stateDeputySlug: 'nao-existe',
+        })
+      ).status,
+    ).toBe(400)
+    // Slug on a model without a picker.
+    expect(
+      (
+        await postEvent({
+          type: 'download',
+          subjectType: 'card',
+          cardModelId: 'eu-sou-solla',
+          stateDeputySlug: 'julio',
+        })
+      ).status,
+    ).toBe(400)
+    // The card only counts the download in v1.
+    expect(
+      (await postEvent({ type: 'abertura', subjectType: 'card', cardModelId: 'eu-sou-solla' }))
+        .status,
+    ).toBe(400)
+    // The piece contract is untouched by the card variant.
+    expect((await postEvent({ type: 'abertura', pieceSlug: 'peca-qualquer' })).status).toBe(204)
+
+    expect(
+      (await eventRowsOf(['modelo-inventado', 'minha-colinha', 'eu-sou-solla'])).docs,
+    ).toHaveLength(0)
+  })
+
+  it('aggregates the card counters through the same reader, apart from the pieces', async () => {
+    await payload.create({
+      collection: 'contentEvent',
+      data: {
+        type: 'download',
+        subjectType: 'card',
+        subjectId: 'minha-colinha',
+        variant: 'julio',
+      },
+      overrideAccess: true,
+    })
+    // Same subject key under the piece type must never leak into the cards.
+    await payload.create({
+      collection: 'contentEvent',
+      data: { type: 'download', subjectType: 'peca', subjectId: 'minha-colinha' },
+      overrideAccess: true,
+    })
+
+    const result = await loadContentEventCountsBySubject(payload, {
+      subjectType: 'card',
+      subjectIds: ['minha-colinha', 'eu-sou-solla'],
+    })
+    const view = resolveCardDownloadCounts(result.ok ? result.rows : null)
+
+    expect(view.state).toBe('data')
+    if (view.state !== 'data') return
+    expect(view.counts.filter((entry) => entry.count > 0)).toEqual([
+      { modelId: 'minha-colinha', label: 'Minha colinha', count: 1 },
+    ])
+  })
+
+  it('loads the home card counters as data, empty and unavailable', async () => {
+    await expect(loadCampaignHomeCardDownloads(payload)).resolves.toEqual({ state: 'empty' })
+
+    await payload.create({
+      collection: 'contentEvent',
+      data: { type: 'download', subjectType: 'card', subjectId: 'time-de-voce' },
+      overrideAccess: true,
+    })
+    const view = await loadCampaignHomeCardDownloads(payload)
+    expect(view.state).toBe('data')
+    if (view.state !== 'data') return
+    expect(view.counts.find((entry) => entry.modelId === 'time-de-voce')?.count).toBe(1)
+    expect(view.counts).toHaveLength(6)
+
+    vi.mocked(loadContentEventCountsBySubject).mockResolvedValueOnce({ ok: false })
+    await expect(loadCampaignHomeCardDownloads(payload)).resolves.toEqual({ state: 'unavailable' })
   })
 
   it('keeps the collection closed to every campaign write and open to communication reads', async () => {

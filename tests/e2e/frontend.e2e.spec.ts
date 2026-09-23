@@ -1843,11 +1843,21 @@ test.describe('Cards personalizados (S14)', () => {
     await primary.click()
     await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
 
-    const [download] = await Promise.all([
+    const [download, downloadEvent] = await Promise.all([
       page.waitForEvent('download'),
+      // S32 — the download beacons one anonymous event with the model id; the
+      // model without a picker never carries a state-deputy slug.
+      page.waitForRequest(
+        (request) => request.url().includes('/api/content-events') && request.method() === 'POST',
+      ),
       dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
     ])
     expect(download.suggestedFilename()).toBe('card-jorge-solla-eu-sou-solla.png')
+    expect(downloadEvent.postDataJSON()).toEqual({
+      type: 'download',
+      subjectType: 'card',
+      cardModelId: 'eu-sou-solla',
+    })
     const downloadPath = await download.path()
     expect(downloadPath).toBeTruthy()
     expect(readFileSync(downloadPath!).subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true)
@@ -2266,11 +2276,21 @@ test.describe('Cards personalizados (S30 — Time do estadual)', () => {
     await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
     await expect(dialog.getByText('Julio Pinheiro · 13999')).toBeVisible()
 
-    const [download] = await Promise.all([
+    const [download, downloadEvent] = await Promise.all([
       page.waitForEvent('download'),
+      // S32 — the picker model carries the chosen state-deputy slug.
+      page.waitForRequest(
+        (request) => request.url().includes('/api/content-events') && request.method() === 'POST',
+      ),
       dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
     ])
     expect(download.suggestedFilename()).toBe('card-jorge-solla-time-do-estadual.png')
+    expect(downloadEvent.postDataJSON()).toEqual({
+      type: 'download',
+      subjectType: 'card',
+      cardModelId: 'time-do-estadual',
+      stateDeputySlug: 'julio',
+    })
     expect(
       readFileSync((await download.path())!)
         .subarray(0, 8)
@@ -2407,8 +2427,21 @@ test.describe('Cards personalizados (S31 — Minha colinha)', () => {
     // The picked row is filled: the first box carries the `1` glyph ink.
     await expect.poll(() => colinhaBoxPixel(canvas)).toEqual([20, 20, 20, 255])
 
-    const [download] = await Promise.all([page.waitForEvent('download'), primary.click()])
+    const [download, downloadEvent] = await Promise.all([
+      page.waitForEvent('download'),
+      // S32 — the picker model carries the chosen state-deputy slug.
+      page.waitForRequest(
+        (request) => request.url().includes('/api/content-events') && request.method() === 'POST',
+      ),
+      primary.click(),
+    ])
     expect(download.suggestedFilename()).toBe('card-jorge-solla-minha-colinha.png')
+    expect(downloadEvent.postDataJSON()).toEqual({
+      type: 'download',
+      subjectType: 'card',
+      cardModelId: 'minha-colinha',
+      stateDeputySlug: 'julio',
+    })
     expect(
       readFileSync((await download.path())!)
         .subarray(0, 8)

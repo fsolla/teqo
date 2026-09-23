@@ -26,6 +26,12 @@ export type ContentEventInput = {
   type: ContentEventType
   subjectType: ContentEventSubjectType
   subjectId: string
+  /**
+   * S32 — the optional sub-key of the subject: the state-deputy slug chosen on
+   * the card models with a state-deputy picker. A public catalog slug, never a
+   * visitor identifier.
+   */
+  variant?: string | null
 }
 
 export const recordContentEvent = async (event: ContentEventInput): Promise<boolean> => {
@@ -41,6 +47,7 @@ export const recordContentEvent = async (event: ContentEventInput): Promise<bool
         type: event.type,
         subjectType: event.subjectType,
         subjectId: event.subjectId,
+        variant: event.variant ?? null,
       },
       // Intentional admin bypass: the caller already resolved the public gate
       // (a published piece / a served file); `create` is denied by design.

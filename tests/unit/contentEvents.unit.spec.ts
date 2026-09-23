@@ -2,7 +2,11 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { CONTENT_EVENT_ENDPOINT, sendContentPieceEvent } from '@/lib/contentEvents'
+import {
+  CONTENT_EVENT_ENDPOINT,
+  sendCardDownloadEvent,
+  sendContentPieceEvent,
+} from '@/lib/contentEvents'
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -13,7 +17,7 @@ describe('ContentEvent collection contract', () => {
     const { ContentEvent } = await import('@/collections/ContentEvent')
 
     const fieldNames = ContentEvent.fields.map((field) => ('name' in field ? field.name : ''))
-    expect(fieldNames).toEqual(['type', 'subjectType', 'subjectId'])
+    expect(fieldNames).toEqual(['type', 'subjectType', 'subjectId', 'variant'])
     for (const forbidden of ['ip', 'useragent', 'cookie', 'session', 'visitor', 'fingerprint']) {
       expect(fieldNames.some((name) => name.toLowerCase().includes(forbidden))).toBe(false)
     }
@@ -92,5 +96,53 @@ describe('sendContentPieceEvent', () => {
     sendContentPieceEvent('download', 'peca')
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('sendCardDownloadEvent', () => {
+  it('carries the model id and the state-deputy slug on the picker models', async () => {
+    const sendBeacon = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('navigator', { sendBeacon })
+
+    sendCardDownloadEvent('minha-colinha', 'julio')
+
+    expect(sendBeacon).toHaveBeenCalledTimes(1)
+    const [endpoint, blob] = sendBeacon.mock.calls[0]!
+    expect(endpoint).toBe(CONTENT_EVENT_ENDPOINT)
+    await expect((blob as Blob).text()).resolves.toBe(
+      JSON.stringify({
+        type: 'download',
+        subjectType: 'card',
+        cardModelId: 'minha-colinha',
+        stateDeputySlug: 'julio',
+      }),
+    )
+  })
+
+  it('omits the slug key on models without a picker (null or undefined)', async () => {
+    const sendBeacon = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('navigator', { sendBeacon })
+
+    sendCardDownloadEvent('eu-sou-solla', null)
+
+    const [, blob] = sendBeacon.mock.calls[0]!
+    await expect((blob as Blob).text()).resolves.toBe(
+      JSON.stringify({ type: 'download', subjectType: 'card', cardModelId: 'eu-sou-solla' }),
+    )
+  })
+
+  it('never throws when the beacon and the fetch both fail', async () => {
+    vi.stubGlobal('navigator', {
+      sendBeacon: vi.fn().mockImplementation(() => {
+        throw new Error('beacon exploded')
+      }),
+    })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+
+    expect(() => sendCardDownloadEvent('time-do-estadual', 'julio')).not.toThrow()
+    await Promise.resolve()
+
+    vi.stubGlobal('fetch', undefined)
+    expect(() => sendCardDownloadEvent('time-do-estadual', 'julio')).not.toThrow()
   })
 })

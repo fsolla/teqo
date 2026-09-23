@@ -14,6 +14,7 @@ describe('CampaignHomeSummary', () => {
         view={{
           staffVoteTotalCentral: 125_430,
           homeSummaryDelta: 5_000,
+          cardDownloads: { state: 'empty' },
           goalCoverage: {
             goal: 200_000,
             committed: 80_000,
@@ -40,6 +41,7 @@ describe('CampaignHomeSummary', () => {
         view={{
           staffVoteTotalCentral: 0,
           homeSummaryDelta: null,
+          cardDownloads: { state: 'empty' },
           goalCoverage: {
             goal: 0,
             committed: 0,
@@ -60,6 +62,7 @@ describe('CampaignHomeSummary', () => {
         view={{
           staffVoteTotalCentral: 12_345,
           homeSummaryDelta: 0,
+          cardDownloads: { state: 'empty' },
           goalCoverage: {
             goal: 0,
             committed: 0,
