@@ -91,6 +91,10 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/shareLink',
       'src/lib/calendarEvent.ts',
       'src/utilities/shareLinkReads.ts',
+      // S27-FOLLOWUP-DRY — the single owner of the public OG image fallback
+      // (delegated by the share-link resolver and the pages below), so a diff
+      // there must wake every spec that pins an og:image.
+      'src/utilities/ogImageReads.ts',
       // The tag/revalidation vocabulary owner for the shareLinks listing.
       'src/utilities/documents.ts',
       'src/collections/ShareLink.ts',
@@ -135,6 +139,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/jingle',
       'src/lib/radio',
       'src/utilities/jingleReads.ts',
+      // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
+      'src/utilities/ogImageReads.ts',
       // The tag/revalidation vocabulary owner for the jingles listing.
       'src/utilities/documents.ts',
       'src/collections/Jingle.ts',
@@ -154,6 +160,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/contentPieceCatalog',
       'src/lib/contentPieceShare',
       'src/utilities/content/contentPieceReads.ts',
+      // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
+      'src/utilities/ogImageReads.ts',
       // The tag/revalidation vocabulary owner for the content pieces listing.
       'src/utilities/documents.ts',
       'src/collections/ContentPiece.ts',
@@ -452,6 +460,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/app/(frontend)/corte',
       'src/components/SpeechCutShareActions.tsx',
       'src/components/CopyLinkButton.tsx',
+      // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
+      'src/utilities/ogImageReads.ts',
     ],
     specs: ['campaignSpeechCut'],
   },

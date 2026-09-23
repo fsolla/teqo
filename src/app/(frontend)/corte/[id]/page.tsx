@@ -11,7 +11,8 @@ import { speechCoverUrl } from '@/lib/speechVod'
 import type { Media, Speech, SpeechCut } from '@/payload-types'
 import { getCachedDocumentById, isNotFoundError } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
-import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
+import { resolveOgImage } from '@/utilities/ogImageReads'
+import { absoluteSitePath, resolveSiteMetadata, truncate } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
@@ -77,18 +78,8 @@ export async function generateMetadata({
   const globalMetadata = await getCachedGlobal('metadata')()
   const { siteUrl, siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
   const canonicalUrl = absoluteSitePath(siteUrl, speechCutPublicPath(cut.id))
-  const youtubeCover = youtubeCoverUrl(cut)
 
-  let fallbackImage: Media | null = null
-  if (!youtubeCover && globalMetadata.image) {
-    fallbackImage =
-      typeof globalMetadata.image === 'number'
-        ? await getCachedDocumentById('media', String(globalMetadata.image))()
-        : globalMetadata.image
-  }
-  const imageUrl =
-    youtubeCover ??
-    (fallbackImage?.url && siteUrl ? toAbsoluteUrl(fallbackImage.url, siteUrl) : undefined)
+  const { url: imageUrl } = await resolveOgImage(youtubeCoverUrl(cut))
   const title = `${cut.title} | ${siteName}`
   const description = truncate(cut.description, MAX_DESCRIPTION_LENGTH)
   const images = imageUrl ? [{ url: imageUrl, alt: cut.title }] : []

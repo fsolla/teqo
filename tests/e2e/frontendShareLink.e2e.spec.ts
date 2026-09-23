@@ -11,6 +11,7 @@ import {
 } from '../../src/lib/campaignTime.js'
 import { formatICalDate } from '../../src/lib/ical.js'
 import { adminHeaders } from '../helpers/adminApi'
+import { metaContent } from '../helpers/metaContent'
 import { seedTestUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
 
@@ -65,15 +66,6 @@ type ShareLinkInput = {
   startsAt?: string
   location?: string
   image?: number
-}
-
-/** Reads a meta tag by one attribute and returns its `content` (attribute-order tolerant). */
-const metaContent = (html: string, attribute: string, value: string): string | null => {
-  for (const tag of html.match(/<meta\b[^>]*>/g) ?? []) {
-    if (!tag.includes(`${attribute}="${value}"`)) continue
-    return tag.match(/content="([^"]*)"/)?.[1] ?? null
-  }
-  return null
 }
 
 const createMedia = async (

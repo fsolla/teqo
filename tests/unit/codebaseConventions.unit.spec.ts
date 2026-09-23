@@ -521,6 +521,10 @@ describe('src/utilities top-level is pinned', () => {
     // OPS52 — media storage env resolution; shared by payload.config.ts
     // (fail-closed S3/Garage switch) and its unit spec.
     'mediaStorage.ts',
+    // S27-FOLLOWUP-DRY — single owner of the public frontend's OG image
+    // fallback (own upload/URL first, then the `metadata` global, absolutized
+    // on the deployment origin); the sibling of `globalReads.ts`.
+    'ogImageReads.ts',
     'onda0Provision.ts',
     'organizationData.ts',
     'payloadTransaction.ts',

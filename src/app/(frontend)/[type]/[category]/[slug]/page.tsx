@@ -2,9 +2,9 @@ import type { Crumb } from '@/components/SiteHeader'
 import { SiteHeader } from '@/components/SiteHeader'
 import { Badge } from '@/components/ui/Badge'
 import type { Media, Post } from '@/payload-types'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { extractFirstImageFromLexical } from '@/utilities/extractFirstImageFromLexical'
 import { getCachedGlobal } from '@/utilities/globalReads'
+import { resolveOgImage } from '@/utilities/ogImageReads'
 import {
   POST_TYPE_LABELS,
   formatPostDate,
@@ -18,7 +18,7 @@ import {
   isPostType,
   isPostVisible,
 } from '@/utilities/posts'
-import { absoluteSitePath, resolveSiteMetadata, toAbsoluteUrl, truncate } from '@/utilities/seo'
+import { absoluteSitePath, resolveSiteMetadata, truncate } from '@/utilities/seo'
 import { convertLexicalToHTML } from '@payloadcms/richtext-lexical/html'
 import type { Metadata } from 'next'
 import Image from 'next/image'
@@ -43,24 +43,15 @@ export async function generateStaticParams(): Promise<RouteParams[]> {
     .filter((entry): entry is RouteParams => entry !== null)
 }
 
-type Metadatum = Awaited<ReturnType<ReturnType<typeof getCachedGlobal<'metadata'>>>>
-
-/** Resolve the OG image: cover image first, then first body image, then the global fallback. */
-async function resolveOgImage(post: Post, globalImage: Metadatum['image']): Promise<Media | null> {
+/**
+ * The post's own OG image: a populated cover image first, then the first body
+ * image. A bare cover id (depth-0 read) is skipped, same as the previous
+ * policy — the chain stays cover → body → global fallback.
+ */
+const postOgImage = (post: Post): Media | null => {
   const cover =
     typeof post.coverImage === 'object' && post.coverImage !== null ? post.coverImage : null
-  if (cover) return cover
-
-  const bodyImage = post.body ? extractFirstImageFromLexical(post.body) : null
-  if (bodyImage) return bodyImage
-
-  if (globalImage) {
-    return typeof globalImage === 'number'
-      ? await getCachedDocumentById('media', String(globalImage))()
-      : globalImage
-  }
-
-  return null
+  return cover ?? (post.body ? extractFirstImageFromLexical(post.body) : null)
 }
 
 export async function generateMetadata({
@@ -84,8 +75,8 @@ export async function generateMetadata({
   const canonicalPath = getPostCanonicalPath(post)
   const canonicalUrl = canonicalPath ? absoluteSitePath(siteUrl, canonicalPath) : undefined
 
-  const image = await resolveOgImage(post, globalMetadata.image)
-  const imageUrl = image?.url && siteUrl ? toAbsoluteUrl(image.url, siteUrl) : undefined
+  const image = await resolveOgImage(postOgImage(post))
+  const imageUrl = image.url ?? undefined
 
   const description = post.subtitle
     ? truncate(post.subtitle, MAX_DESCRIPTION_LENGTH)
@@ -100,10 +91,10 @@ export async function generateMetadata({
         {
           url: imageUrl,
           secureUrl: imageUrl,
-          width: image?.width ?? undefined,
-          height: image?.height ?? undefined,
-          alt: image?.alt,
-          type: image?.mimeType ?? undefined,
+          width: image.media?.width ?? undefined,
+          height: image.media?.height ?? undefined,
+          alt: image.media?.alt,
+          type: image.media?.mimeType ?? undefined,
         },
       ]
     : []
@@ -155,8 +146,8 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
   const { siteUrl, siteName } = resolveSiteMetadata(globalMetadata)
   const canonicalUrl = absoluteSitePath(siteUrl, canonicalPath)
 
-  const ogImage = await resolveOgImage(post, globalMetadata.image)
-  const ogImageUrl = ogImage?.url && siteUrl ? toAbsoluteUrl(ogImage.url, siteUrl) : undefined
+  const ogImage = await resolveOgImage(postOgImage(post))
+  const ogImageUrl = ogImage.url ?? undefined
 
   const categoryName = getCategoryName(post)
   const categorySlug = getCategorySlug(post)

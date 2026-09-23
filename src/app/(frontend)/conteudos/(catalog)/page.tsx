@@ -17,17 +17,11 @@ import {
   type ContentPieceCatalogSearchParams,
   type ContentPiecePublicItem,
 } from '@/lib/contentPieceCatalog'
-import type { Media } from '@/payload-types'
 import { getPublishedContentPieceItems } from '@/utilities/content/contentPieceReads'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { hasPublishedJingles } from '@/utilities/jingleReads'
-import {
-  absoluteSitePath,
-  resolveDeploymentOrigin,
-  resolveSiteMetadata,
-  toAbsoluteUrl,
-} from '@/utilities/seo'
+import { resolveOgImage } from '@/utilities/ogImageReads'
+import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import type { Metadata } from 'next'
 
 const CATALOG_TITLE = 'Central de Conteúdos — Peça voto pra Solla 1313'
@@ -51,27 +45,10 @@ export async function generateMetadata(): Promise<Metadata> {
   ])
   const { siteUrl, siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
   const canonicalUrl = absoluteSitePath(siteUrl, CONTENT_PIECE_CATALOG_PATH)
-  const deploymentOrigin = resolveDeploymentOrigin(siteUrl)
 
   const firstImage = items.find(isImagePiece)
-  const ownImageUrl =
-    firstImage?.file && deploymentOrigin
-      ? toAbsoluteUrl(firstImage.file.path, deploymentOrigin)
-      : undefined
+  const { url: imageUrl } = await resolveOgImage(firstImage?.file?.path)
 
-  let fallbackImage: Media | null = null
-  if (!ownImageUrl && globalMetadata.image) {
-    fallbackImage =
-      typeof globalMetadata.image === 'number'
-        ? await getCachedDocumentById('media', String(globalMetadata.image))()
-        : globalMetadata.image
-  }
-
-  const imageUrl =
-    ownImageUrl ??
-    (fallbackImage?.url && deploymentOrigin
-      ? toAbsoluteUrl(fallbackImage.url, deploymentOrigin)
-      : undefined)
   const title = `${CATALOG_TITLE} | ${siteName}`
   const images = imageUrl ? [{ url: imageUrl, alt: CATALOG_TITLE }] : []
 

@@ -1,8 +1,8 @@
 import { RefreshRouteOnSave } from '@/components/RefreshRouteOnSave'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { isStagingSite } from '@/lib/siteEnvironment'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
+import { resolveOgImage } from '@/utilities/ogImageReads'
 import { resolveSiteMetadata } from '@/utilities/seo'
 import { Analytics } from '@vercel/analytics/next'
 import { SpeedInsights } from '@vercel/speed-insights/next'
@@ -22,11 +22,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const { siteUrl, title, description, siteName, twitterCreator, twitterDescription, keywords } =
     resolveSiteMetadata(payload)
 
-  let image = payload.image
-
-  if (typeof image === 'number') {
-    image = await getCachedDocumentById('media', String(payload.image))()
-  }
+  const { url: imageUrl, media } = await resolveOgImage(null)
 
   return {
     title,
@@ -46,13 +42,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName,
       title,
       description,
-      images: image?.url
+      images: imageUrl
         ? [
             {
-              url: image.url,
-              width: image.width!,
-              height: image.height!,
-              alt: image.alt,
+              url: imageUrl,
+              width: media?.width ?? undefined,
+              height: media?.height ?? undefined,
+              alt: media?.alt,
             },
           ]
         : [],
@@ -62,7 +58,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description: twitterDescription,
       creator: twitterCreator,
-      images: image?.url ? [image.url] : [],
+      images: imageUrl ? [imageUrl] : [],
     },
   }
 }

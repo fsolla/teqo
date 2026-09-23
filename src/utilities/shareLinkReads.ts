@@ -1,15 +1,13 @@
 import 'server-only'
 
 import { resolveLiveShareLinkDestination, type ShareLinkLiveTarget } from '@/lib/shareLink'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCollectionListingTag } from '@/utilities/documents'
-import { getCachedGlobal } from '@/utilities/globalReads'
-import { resolveDeploymentOrigin, resolveSiteMetadata, toAbsoluteUrl } from '@/utilities/seo'
+import { resolveOgImage } from '@/utilities/ogImageReads'
 import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
 
-import type { Media, ShareLink } from '@/payload-types'
+import type { ShareLink } from '@/payload-types'
 
 // Config-dependent cached read of a published share link by slug. Kept apart
 // from `documents.ts` (the tag vocabulary/revalidation contract collections
@@ -71,34 +69,12 @@ export const loadPublishedShareLinkLiveTarget = async (
   return resolveLiveShareLinkDestination(link.destinations)
 }
 
-const mediaOf = (value: Media | number | null | undefined): Media | null =>
-  typeof value === 'object' && value !== null ? value : null
-
 /**
  * The card image: the link's own upload first; without it the site default
- * image of the `metadata` global — never a relative URL the WhatsApp crawler
- * cannot resolve. Media lives behind this app's `/api/media/file/…` proxy, so
- * the absolute URL is built on the deployment origin (`NEXT_PUBLIC_SITE_URL`),
- * not on the `metadata` global `URL`: the global can be a canonical domain
- * served by another platform (today the legacy WordPress), which 404s the
- * proxy path and makes WhatsApp drop the thumbnail. The global `siteUrl` is
- * the fallback when the env is missing.
+ * image of the `metadata` global. Delegates to the single OG owner
+ * (`ogImageReads.ts`), which absolutizes on the deployment origin — never on
+ * the global `URL` (a canonical domain served elsewhere 404s the media proxy
+ * and makes WhatsApp drop the thumbnail).
  */
-export const resolveShareLinkOgImageUrl = async (link: ShareLink): Promise<string | null> => {
-  const globalMetadata = await getCachedGlobal('metadata')()
-  const { siteUrl } = resolveSiteMetadata(globalMetadata)
-  const origin = resolveDeploymentOrigin(siteUrl)
-  if (!origin) return null
-
-  const configured = mediaOf(link.image)?.url
-  if (configured) return toAbsoluteUrl(configured, origin)
-
-  const fallback =
-    typeof globalMetadata.image === 'number'
-      ? await getCachedDocumentById('media', String(globalMetadata.image))()
-      : globalMetadata.image
-  const fallbackUrl = mediaOf(fallback)?.url
-  if (!fallbackUrl) return null
-
-  return toAbsoluteUrl(fallbackUrl, origin)
-}
+export const resolveShareLinkOgImageUrl = async (link: ShareLink): Promise<string | null> =>
+  (await resolveOgImage(link.image)).url

@@ -4,6 +4,7 @@ import type { APIRequestContext } from '@playwright/test'
 import { request as playwrightRequest } from '@playwright/test'
 
 import { adminHeaders } from '../helpers/adminApi'
+import { metaContent } from '../helpers/metaContent'
 import { seedTestUser } from '../helpers/seedUser'
 import type { CampaignE2EOwnership } from './fixtures/campaignE2EFixtures.js'
 import { assertCampaignRedirect, expect, rendered, test } from './fixtures/campaignHttpTest.js'
@@ -153,6 +154,11 @@ test.describe('Acervo speech cuts (C167)', () => {
       // body gradient this page used to inherit; the attribute is the guard.
       expect(html).toContain('data-theme="editorial"')
       expect(html).toContain('https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg')
+      // S27-FOLLOWUP-DRY — the OG meta carries the same absolute thumbnail
+      // (the cut's own image wins over the global fallback) via the single owner.
+      expect(metaContent(html, 'property', 'og:image')).toBe(
+        'https://i.ytimg.com/vi/lLhRDkSPw0A/hqdefault.jpg',
+      )
       expect(html).toContain('Ver sessão no YouTube')
     } finally {
       await anonymous.dispose()
