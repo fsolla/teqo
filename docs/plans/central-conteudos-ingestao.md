@@ -1,7 +1,7 @@
 # C211 — Central de Conteúdos — enviar, transcrever e catalogar as peças de campanha (interno)
 
 Status: rascunho
-Atualizado em: 2026-09-22
+Atualizado em: 2026-09-23
 Issue: #1254
 Priority: P1
 Impeccable: C — fluxo novo na vertical `/campanha/comunicacao`
@@ -65,7 +65,7 @@ Este item é o lado interno: a assessoria envia peças em lote (ou cola um link 
 - **Processamento:** "Processando" | "Pronto" | "Falhou" (com "Reprocessar").
 - **Envio em lote:** vários arquivos numa vez → uma peça por arquivo; falha de um não derruba os outros.
 - **Catalogação automática (revisável):** título, descrição, tipo, temas, cidade, região, instituição, data, duração, transcrição/texto.
-- **Adicionar por link:** Instagram/YouTube (colar link) — a peça entra com a mídia extraída e catalogada quando houver caminho oficial; sem caminho oficial, circula pelo link e o arquivo pode ser anexado pela assessoria. Mídia de terceiro nunca é baixada.
+- **Adicionar por link:** Instagram/YouTube (colar link) — a peça entra com a mídia extraída e catalogada quando houver caminho oficial; sem caminho oficial, circula pelo link e o arquivo pode ser anexado pela assessoria. Mídia de terceiro nunca é baixada. **Refinado 2026-09-23 (oEmbed, C212 §Q2):** thumbnail e metadados de terceiro não são extraídos nem persistidos; renderizar o embed de terceiro é do item futuro do C212 §Q4(d) — o C211 segue sem oEmbed.
 - **Varredura automática do Instagram:** investigação aprovada no gate → **C212** (viabilidade com API oficial × scraping; o C211 aplica o mecanismo que ela recomendar). Scraping não é mecanismo — nem no C211 nem no C212.
 - **Acervo de falas e cortes:** fora por produto; entram só se a assessoria adicionar manualmente como peça.
 
@@ -102,7 +102,7 @@ Este item é o lado interno: a assessoria envia peças em lote (ou cola um link 
 
 - **Varredura automática do Instagram?** **Decidido no gate:** investigar agora, via **C212** (viabilidade com a API oficial; scraping fora). O C211 mantém o link manual como caminho e aplica o mecanismo que o C212 recomendar. _(decidido)_
 - **Peça nasce "Rascunho" ou "Publicado"?** **Opções:** A) "Rascunho" por padrão, publicar é gesto explícito | B) publica no envio | C) escolher no envio. **Recomendação:** A — evita material sem revisão no ar e deixa o kill switch com lugar claro. _(assumido — validar com produto)_
-- **Peça por link: circula ou é baixada?** **Decidido no gate:** extrair e catalogar quando houver caminho oficial (conteúdo próprio); sem caminho oficial, circular pelo link. **Corte que permanece:** mídia de terceiro nunca é baixada. _(decidido — refinar no C212)_
+- **Peça por link: circula ou é baixada?** **Decidido no gate:** extrair e catalogar quando houver caminho oficial (conteúdo próprio); sem caminho oficial, circular pelo link. **Corte que permanece:** mídia de terceiro nunca é baixada. _(decidido — refinado no C212; refinamento datado 2026-09-23 — C211-FOLLOWUP-OEMBED, Issue #1263)_ O oEmbed de terceiro só serve para **renderizar** o post embutido — "consuming, manipulating, extracting, or persisting the metadata and content … is strictly prohibited" (doc datada em 2026-09-22; ver §Q2 de `docs/plans/central-conteudos-varredura-instagram.md`); a extração de arquivo continua só da conta própria via Graph API.
 - **Limite do envio em lote?** **Opções:** A) limite generoso com aviso claro acima dele | B) sem limite | C) limite baixo (≈10). **Recomendação:** A — o caso real é despejo de material de um evento; o valor é decisão da implementação. _(assumido — validar com produto)_
 
 ## Referências
