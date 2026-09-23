@@ -7,25 +7,22 @@
  * dossiê ledger already carries (`buildDossierReport().bulletinFacts`), never at
  * new research. This module owns the fail-closed validation, the deny-list that
  * keeps staff-only/scenario keys out and the deterministic shed order that keeps
- * the four-page cap honest: the PDF prints at most four fixed sheets, so on
- * overflow the lowest-priority lists lose items (declared, never silent) and
- * everything stays in the companion `.md`.
+ * the four-sheet cap honest: the PDF prints four fixed recorte-only sheets
+ * (defesas → essencial + pedido → qa 1/2 → qa 2/2), so on overflow the
+ * lowest-priority lists lose items (declared, never silent) and everything stays
+ * in the companion `.md`.
  */
 
 export const BRIEFING_LABEL = 'Insumo interno de capacitação — não publicar'
 export const BRIEFING_PAGE_TOTAL = 4
-export const BRIEFING_ANCHORS = ['essencial', 'defesas', 'qa', 'evitar']
+export const BRIEFING_ANCHORS = ['defesas', 'essencial', 'qa', 'qa-2']
 export const BRIEFING_QA_SIDES = ['direita', 'esquerda', 'entrega']
 /** Sides the briefing must always print at least once (C210 guardrail). */
 const REQUIRED_QA_SIDES = ['direita', 'esquerda']
 
 export const BRIEFING_MINIMUMS = {
   essential: 3,
-  scriptSteps: 3,
   qa: 4,
-  avoid: 3,
-  beforeAnswer: 2,
-  unsure: 2,
 }
 
 /** Staff-only electoral scenarios never enter the handout (intention guardrail). */
@@ -50,15 +47,11 @@ const TEXT_CAPS = {
   essentialNote: 200,
   defenseTitle: 120,
   defenseNote: 200,
-  scriptTitle: 90,
-  scriptNote: 220,
+  plan: 220,
   qaQuestion: 180,
   qaAcknowledge: 200,
   qaAnswer: 520,
   qaClose: 200,
-  avoidTitle: 120,
-  avoidNote: 200,
-  checklistItem: 200,
 }
 
 const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== ''
@@ -107,18 +100,34 @@ const warnIfOver = (warnings, text, max, label) => {
  * bulletin already refuses it a printed slot, so the briefing refuses it an
  * anchor: an "essencial" item is never a speech sample.
  *
+ * A checklist id repeats across items (the research file has several items per
+ * id), so a bare `factId` resolves to the first item — the legacy behavior. To
+ * anchor a specific item of a repeated id the item carries the research item's
+ * `sourceUrl` as a disambiguator: the anchor only counts when the pair
+ * (`factId`, `sourceUrl`) resolves in the same sourced fact. Wrong pair = null
+ * and the caller fails closed.
+ *
  * @param {any[]} facts
  * @param {string} factId
+ * @param {string|null} [sourceUrl]
  * @returns {any|null}
  */
-export const briefingAnchorFact = (facts, factId) =>
-  (Array.isArray(facts) ? facts : []).find((fact) => fact?.id === factId && !fact.sourcePanel) ??
-  null
+export const briefingAnchorFact = (facts, factId, sourceUrl = null) => {
+  const candidates = (Array.isArray(facts) ? facts : []).filter(
+    (fact) => fact?.id === factId && !fact.sourcePanel,
+  )
+  if (isNonEmptyString(sourceUrl)) {
+    return candidates.find((fact) => fact.sourceUrl === sourceUrl) ?? null
+  }
+  return candidates[0] ?? null
+}
 
 /**
  * The anchor rule of every item: exactly one of `factId | gapReason`, and a
  * `factId` only counts when it resolves in a sourced, non-panel ledger fact.
- * Returns the resolved anchor; `normalizeAnchor` adds the copy validation.
+ * When the id repeats, the item's optional `sourceUrl` (copied from the research
+ * item) picks the exact fact. Returns the resolved anchor; `normalizeAnchor`
+ * adds the copy validation.
  */
 const resolveAnchor = (item, { facts, label }) => {
   const hasFact = isNonEmptyString(item.factId)
@@ -127,10 +136,13 @@ const resolveAnchor = (item, { facts, label }) => {
     fail(`${label}: exige exatamente um de "factId" | "gapReason".`)
   }
   if (hasGap) return { factId: null, gapReason: item.gapReason.trim(), fact: null }
-  const fact = briefingAnchorFact(facts, item.factId)
+  const sourceUrl = isNonEmptyString(item.sourceUrl) ? item.sourceUrl.trim() : null
+  const fact = briefingAnchorFact(facts, item.factId, sourceUrl)
   if (!fact?.sourceUrl) {
     fail(
-      `${label}: factId "${item.factId}" não resolve em fato com fonte do dossiê — sem fonte, não entra.`,
+      `${label}: factId "${item.factId}"${
+        sourceUrl ? ` + sourceUrl "${sourceUrl}"` : ''
+      } não resolve em fato com fonte do dossiê — sem fonte, não entra.`,
     )
   }
   return { factId: fact.id, gapReason: null, fact }
@@ -175,24 +187,15 @@ const normalizeDefenses = (raw, options) =>
     }),
   )
 
-const normalizeScript = (raw, options) => {
-  const steps = raw.script?.steps ?? []
-  assertList(steps, 'script.steps')
-  assertMinimum(steps, BRIEFING_MINIMUMS.scriptSteps, 'script.steps')
-  return {
-    steps: steps.map((step, index) => {
-      assertKey(step, 'title', `script.steps[${index}]`)
-      assertKey(step, 'note', `script.steps[${index}]`)
-      warnIfOver(
-        options.warnings,
-        step.title,
-        TEXT_CAPS.scriptTitle,
-        `script.steps[${index}].title`,
-      )
-      warnIfOver(options.warnings, step.note, TEXT_CAPS.scriptNote, `script.steps[${index}].note`)
-      return { title: step.title.trim(), note: step.note.trim() }
-    }),
-  }
+/**
+ * The vote plan is one line of copy under the literal request — the generic
+ * five-step roteiro was retired (C210 replan): the sheet prints the literal ask
+ * and this single line, nothing else.
+ */
+const normalizePlan = (raw, options) => {
+  assertKey(raw, 'plan', 'briefing.json')
+  warnIfOver(options.warnings, raw.plan, TEXT_CAPS.plan, 'plan')
+  return raw.plan.trim()
 }
 
 const normalizeQa = (raw, options) => {
@@ -212,7 +215,7 @@ const normalizeQa = (raw, options) => {
     warnIfOver(options.warnings, item.answer, TEXT_CAPS.qaAnswer, `${label}.answer`)
     warnIfOver(options.warnings, item.close, TEXT_CAPS.qaClose, `${label}.close`)
     const anchor = resolveAnchor(
-      { factId: item.factId, gapReason: item.gapReason },
+      { factId: item.factId, gapReason: item.gapReason, sourceUrl: item.sourceUrl },
       { facts: options.facts, label },
     )
     return {
@@ -229,38 +232,6 @@ const normalizeQa = (raw, options) => {
     fail('qa: o briefing cobre os dois lados — exige ao menos 1 "direita" e 1 "esquerda".')
   }
   return items
-}
-
-const normalizeAvoid = (raw, options) => {
-  const avoid = raw.avoid ?? []
-  assertList(avoid, 'avoid')
-  assertMinimum(avoid, BRIEFING_MINIMUMS.avoid, 'avoid')
-  return avoid.map((item, index) => {
-    assertKey(item, 'title', `avoid[${index}]`)
-    assertKey(item, 'note', `avoid[${index}]`)
-    warnIfOver(options.warnings, item.title, TEXT_CAPS.avoidTitle, `avoid[${index}].title`)
-    warnIfOver(options.warnings, item.note, TEXT_CAPS.avoidNote, `avoid[${index}].note`)
-    return { title: item.title.trim(), note: item.note.trim() }
-  })
-}
-
-const normalizeChecklist = (raw, options) => {
-  const beforeAnswer = raw.checklist?.beforeAnswer ?? []
-  const unsure = raw.checklist?.unsure ?? []
-  assertList(beforeAnswer, 'checklist.beforeAnswer')
-  assertList(unsure, 'checklist.unsure')
-  assertMinimum(beforeAnswer, BRIEFING_MINIMUMS.beforeAnswer, 'checklist.beforeAnswer')
-  assertMinimum(unsure, BRIEFING_MINIMUMS.unsure, 'checklist.unsure')
-  const items = (list, label) =>
-    list.map((value, index) => {
-      if (!isNonEmptyString(value)) fail(`${label}[${index}]: item não vazio.`)
-      warnIfOver(options.warnings, value, TEXT_CAPS.checklistItem, `${label}[${index}]`)
-      return value.trim()
-    })
-  return {
-    beforeAnswer: items(beforeAnswer, 'checklist.beforeAnswer'),
-    unsure: items(unsure, 'checklist.unsure'),
-  }
 }
 
 /**
@@ -302,11 +273,9 @@ export const normalizeBriefingContent = (raw, { unit, slug, facts = [] }) => {
     lede: raw.lede.trim(),
     essential,
     defenses: normalizeDefenses(raw, { facts, warnings }),
-    script: normalizeScript(raw, { facts, warnings }),
+    plan: normalizePlan(raw, { warnings }),
     qa: normalizeQa(raw, { facts, warnings }),
-    avoid: normalizeAvoid(raw, { facts, warnings }),
-    checklist: normalizeChecklist(raw, { facts, warnings }),
-    shed: { qa: 0, defenses: 0, checklist: 0, avoid: 0 },
+    shed: { qa: 0, defenses: 0 },
     warnings,
   }
 }
@@ -328,10 +297,10 @@ const qaShedIndex = (qa) => {
 
 /**
  * One shed step: drop a single item from the lowest-priority list that is still
- * above its minimum (qa → defesas → conferir → evitar), never breaking the
- * two-sides coverage. Essential, roteiro and identification never shed. Returns
- * a new content object, or `null` when nothing else may be dropped — the caller
- * then fails closed.
+ * above its minimum (qa → defesas), never breaking the two-sides coverage.
+ * Essential, the principles copy and the pedido never shed. Returns a new
+ * content object, or `null` when nothing else may be dropped — the caller then
+ * fails closed.
  *
  * @param {any} content
  * @returns {any|null}
@@ -352,29 +321,6 @@ export const trimBriefing = (content) => {
   if (content.defenses.length > 0) {
     shed.defenses += 1
     return { ...content, defenses: content.defenses.slice(0, -1), shed }
-  }
-  const checklistTotal = content.checklist.beforeAnswer.length + content.checklist.unsure.length
-  if (checklistTotal > BRIEFING_MINIMUMS.beforeAnswer + BRIEFING_MINIMUMS.unsure) {
-    shed.checklist += 1
-    if (content.checklist.unsure.length > BRIEFING_MINIMUMS.unsure) {
-      return {
-        ...content,
-        checklist: { ...content.checklist, unsure: content.checklist.unsure.slice(0, -1) },
-        shed,
-      }
-    }
-    return {
-      ...content,
-      checklist: {
-        ...content.checklist,
-        beforeAnswer: content.checklist.beforeAnswer.slice(0, -1),
-      },
-      shed,
-    }
-  }
-  if (content.avoid.length > BRIEFING_MINIMUMS.avoid) {
-    shed.avoid += 1
-    return { ...content, avoid: content.avoid.slice(0, -1), shed }
   }
   return null
 }

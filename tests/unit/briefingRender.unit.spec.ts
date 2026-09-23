@@ -9,8 +9,9 @@ import {
 } from '../../scripts/lib/dossieResearch.mjs'
 import { MUNICIPALITY_UNIT } from '../../scripts/lib/dossieUnit.mjs'
 
-// C210: the briefing is the approved gate design ported to inline print CSS —
-// four fixed A4 sheets, the internal label on each and the request literal. The
+// C210 (replanejado 2026-09-23): the briefing is the approved gate design ported
+// to inline print CSS — four fixed recorte sheets (defesas → essencial + pedido
+// → qa 1/2 → qa 2/2), the internal label on each and the request literal. The
 // tests pin the anchors the page guard reads, the guards that cannot regress
 // (literal label, "vote 1313", source per anchor) and the `.md` superset.
 
@@ -47,12 +48,16 @@ const research = mergeDossierResearch([
 const report = buildDossierReport({ snapshot, research, generatedAt })
 const facts = report.bulletinFacts
 
-const rawContent = (qaCount = 5, avoidCount = 5) => ({
+const rawContent = (qaCount = 5) => ({
   unitId: 'municipality',
   municipalitySlug: 'ilheus',
   generatedAt: generatedAt.toISOString(),
   subtitle: 'Litoral Sul · consulta antes e durante o contato',
-  lede: 'Use um fato local de cada vez.',
+  lede: 'Universidade pública não é gasto: é projeto de país.',
+  defenses: [
+    { factId: 'era_b_programas', title: 'Ensino superior', note: 'Defesa regional.' },
+    { factId: 'era_b_equipamentos', title: 'Saúde perto de casa', note: 'Defesa local.' },
+  ],
   essential: [
     {
       factId: 'era_b_equipamentos',
@@ -62,14 +67,7 @@ const rawContent = (qaCount = 5, avoidCount = 5) => ({
     { factId: 'era_b_programas', title: 'Saúde em Movimento', note: 'Menção direta.' },
     { gapReason: 'sem fala própria localizada', title: 'Sem fala local', note: 'Anote a lacuna.' },
   ],
-  defenses: [{ factId: 'era_b_programas', title: 'Ensino superior', note: 'Defesa regional.' }],
-  script: {
-    steps: [
-      { title: 'Comece pela relação', note: 'Escute antes de argumentar.' },
-      { title: 'Use um fato do recorte', note: 'Diga o alcance.' },
-      { title: 'Peça explicitamente', note: 'Nome e número.' },
-    ],
-  },
+  plan: 'Combine onde, quando e como votar e registre o compromisso nomeado.',
   qa: Array.from({ length: qaCount }, (_value, index) => ({
     side: index % 2 === 0 ? 'direita' : 'esquerda',
     question: `Pergunta ${index}`,
@@ -78,14 +76,6 @@ const rawContent = (qaCount = 5, avoidCount = 5) => ({
     close: 'Posso contar com o 1313?',
     factId: 'era_b_equipamentos',
   })),
-  avoid: Array.from({ length: avoidCount }, (_value, index) => ({
-    title: `Anti-padrão ${index}`,
-    note: 'Encerre com respeito.',
-  })),
-  checklist: {
-    beforeAnswer: ['**Fonte e data** do fato', '**Alcance:** município'],
-    unsure: ['**Diga com clareza:** não tenho', '**Anote a pergunta** sem PII'],
-  },
 })
 
 const content = normalizeBriefingContent(rawContent(), {
@@ -97,8 +87,8 @@ const content = normalizeBriefingContent(rawContent(), {
 describe('renderBriefingHtml', () => {
   const html = renderBriefingHtml(content, { unit: MUNICIPALITY_UNIT, report })
 
-  it('renders exactly the four fixed sheets the page guard counts', () => {
-    for (const anchor of ['essencial', 'defesas', 'qa', 'evitar']) {
+  it('renders exactly the four fixed recorte sheets the page guard counts', () => {
+    for (const anchor of ['defesas', 'essencial', 'qa', 'qa-2']) {
       expect(html).toContain(`data-page="${anchor}"`)
     }
     expect((html.match(/class="sheet/g) ?? []).length).toBe(4)
@@ -111,9 +101,30 @@ describe('renderBriefingHtml', () => {
     }
   })
 
-  it('renders the literal request with the vote number', () => {
+  it('opens with the principles copy and the defenses, not a cover', () => {
+    const firstSheet = html.split('data-page="essencial"')[0]
+    expect(firstSheet).toContain('Princípios e crenças')
+    expect(firstSheet).toContain('Universidade pública não é gasto: é projeto de país.')
+    expect(firstSheet).toContain('O que Solla defende')
+    expect(firstSheet).not.toContain('Como usar')
+  })
+
+  it('renders the literal request with the vote number and the one-line plan', () => {
     expect(html).toContain('vote 1313, Jorge Solla')
     expect(html).toContain('request-line')
+    expect(html).toContain('request-block')
+    expect(html).toContain('compromisso nomeado')
+  })
+
+  it('splits the qa list across the two last sheets', () => {
+    const firstQa = html.split('data-page="qa"')[1].split('data-page="qa-2"')[0]
+    const secondQa = html.split('data-page="qa-2"')[1]
+    expect((html.match(/class="qa-item"/g) ?? []).length).toBe(5)
+    expect(firstQa).toContain('Pergunta 0')
+    expect(firstQa).toContain('Pergunta 2')
+    expect(firstQa).not.toContain('Pergunta 4')
+    expect(secondQa).toContain('Pergunta 3')
+    expect(secondQa).toContain('Pergunta 4')
   })
 
   it('links every anchored item to its sourced fact and marks the lacuna', () => {
@@ -134,14 +145,6 @@ describe('renderBriefingHtml', () => {
     expect(trimmed.qa).toHaveLength(4)
   })
 
-  it('does not contradict the shed defenses with the no-record lacuna line', () => {
-    const trimmed = trimBriefing(trimBriefing(content)!)!
-    const shedHtml = renderBriefingHtml(trimmed, { unit: MUNICIPALITY_UNIT, report })
-    expect(trimmed.defenses).toHaveLength(0)
-    expect(shedHtml).toContain('e mais 1 defesa no briefing completo (.md)')
-    expect(shedHtml).not.toContain('Sem registro localizado no dossiê.')
-  })
-
   it('prints the lacuna line only when the recorte never had a defense', () => {
     const noDefenses = normalizeBriefingContent(
       { ...rawContent(), defenses: [] },
@@ -152,16 +155,10 @@ describe('renderBriefingHtml', () => {
     )
   })
 
-  it('keeps the guard copy of the unit on the first and last sheets', () => {
-    expect(html).toContain('região e polo não são somados ao município')
-    expect(html).toContain('Não publicar, encaminhar como peça')
-  })
-
-  it('bold-prints the checklist scan prefix and names the recorte in the kicker', () => {
-    expect(html).toContain('<strong>Fonte e data</strong> do fato')
-    expect(html).toContain('<strong>Diga com clareza:</strong> não tenho')
+  it('names the recorte in the kicker and the footer', () => {
     expect(html).toContain('Briefing de capacitação · Ilhéus')
     expect(html).toContain('Briefing de capacitação · cidade')
+    expect(html).toContain('<strong>Recorte:</strong> cidade · Ilhéus')
   })
 })
 
@@ -170,7 +167,7 @@ describe('renderBriefingMd (companion superset)', () => {
     let trimmed = content
     while (trimBriefing(trimmed)) trimmed = trimBriefing(trimmed)!
     expect(trimmed.qa.length).toBeLessThan(content.qa.length)
-    expect(trimmed.avoid.length).toBeLessThan(content.avoid.length)
+    expect(trimmed.defenses.length).toBeLessThan(content.defenses.length)
     const droppedQuestion = content.qa.find(
       (item: { question: string }) =>
         !trimmed.qa.some((kept: { question: string }) => kept.question === item.question),
@@ -181,13 +178,14 @@ describe('renderBriefingMd (companion superset)', () => {
     expect(md).toContain(droppedQuestion.question)
     expect(md).toContain('Insumo interno de capacitação — não publicar')
     expect(md).toContain('vote 1313, Jorge Solla')
+    expect(md).toContain('**Plano:** Combine onde, quando e como votar')
     expect(md).toContain('[fonte](https://saude.test/ambulancia)')
-    expect(md).toContain('## O que conferir no dossiê')
-    expect(md).toContain('## Limites e defeso')
-    // The fixed guidance printed on the sheets is part of the reference copy.
-    expect(md).toContain('**Como usar.**')
-    expect(md).toContain('**Por que assim:**')
-    expect(md).toContain('**Régua visível:**')
+    expect(md).toContain('## O que Solla defende')
+    expect(md).toContain('## O essencial do recorte')
+    expect(md).toContain('## O pedido')
+    expect(md).toContain('## Perguntas prováveis × melhores respostas')
+    expect(md).not.toContain('## O que evitar')
+    expect(md).not.toContain('## Limites e defeso')
     expect((md.match(/^### /gm) ?? []).length).toBe(5)
   })
 })

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <title>Design — Briefing de capacitação Solla</title>
+    <title>Design — Briefing de capacitação Solla · defesas, essencial e Q&amp;A</title>
     <style type="text/tailwindcss">
       @theme {
         --color-ink: #18232d;
@@ -156,8 +156,8 @@
         letter-spacing: -0.015em;
       }
 
-      .lede {
-        max-width: 158mm;
+      .principles-copy {
+        max-width: 162mm;
         margin: 3mm 0 0;
         font-size: 10.2pt;
         line-height: 1.5;
@@ -178,31 +178,22 @@
         color: var(--ink);
       }
 
-      .line-list,
-      .script-list,
-      .avoid-list,
-      .check-list {
+      .line-list {
         margin: 3mm 0 0;
         padding: 0;
         border-top: 0.35mm solid var(--ink);
         list-style: none;
       }
 
-      .line-list li,
-      .script-list li,
-      .avoid-list li,
-      .check-list li {
+      .line-list li {
         position: relative;
-        padding: 2.5mm 0 2.5mm 6mm;
+        padding: 2.35mm 0 2.35mm 6mm;
         border-bottom: 0.2mm solid var(--line-light);
       }
 
-      .line-list li::before,
-      .script-list li::before,
-      .avoid-list li::before,
-      .check-list li::before {
+      .line-list li::before {
         position: absolute;
-        top: 3.7mm;
+        top: 3.55mm;
         left: 0;
         width: 2.2mm;
         height: 0.45mm;
@@ -217,10 +208,10 @@
 
       .line-meta {
         display: block;
-        margin-top: 0.8mm;
+        margin-top: 0.7mm;
         color: var(--ink-soft);
         font-size: 7.8pt;
-        line-height: 1.4;
+        line-height: 1.36;
       }
 
       .source {
@@ -229,11 +220,24 @@
         font-weight: 700;
       }
 
+      .more-note {
+        margin: 3mm 0 0;
+        color: var(--ink-soft);
+        font-size: 8pt;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
+      .request-block {
+        margin-top: 5mm;
+        padding: 4.5mm 5mm 4mm;
+        border: 0.35mm solid var(--line);
+        border-left: 1.2mm solid var(--accent);
+        background: var(--note);
+      }
+
       .request-line {
-        margin: 3.5mm 0 0;
-        padding: 4mm 0;
-        border-top: 0.6mm solid var(--ink);
-        border-bottom: 0.6mm solid var(--ink);
+        margin: 2mm 0 0;
         font-size: 14pt;
         font-weight: 650;
         line-height: 1.3;
@@ -245,25 +249,17 @@
         font-style: normal;
       }
 
-      .script-list {
-        counter-reset: script-step;
+      .request-plan {
+        margin: 3mm 0 0;
+        padding-top: 2.5mm;
+        border-top: 0.25mm solid var(--line);
+        color: var(--ink-soft);
+        font-size: 8.6pt;
+        line-height: 1.4;
       }
 
-      .script-list li {
-        min-height: 14mm;
-        padding-left: 13mm;
-        counter-increment: script-step;
-      }
-
-      .script-list li::before {
-        top: 2.7mm;
-        width: 8mm;
-        height: auto;
-        color: var(--accent);
-        background: none;
-        content: counter(script-step, decimal-leading-zero);
-        font-size: 8pt;
-        font-weight: 700;
+      .request-plan strong {
+        color: var(--ink);
       }
 
       .qa-list {
@@ -307,31 +303,6 @@
         font-weight: 700;
       }
 
-      .avoid-list strong,
-      .check-list strong {
-        font-weight: 700;
-      }
-
-      .two-column {
-        display: grid;
-        margin-top: 5mm;
-        grid-template-columns: 1fr 1fr;
-        gap: 8mm;
-      }
-
-      .limits {
-        margin-top: 5mm;
-        padding-top: 3mm;
-        border-top: 0.6mm solid var(--ink);
-      }
-
-      .limits p {
-        margin: 1.5mm 0 0;
-        color: var(--ink-soft);
-        font-size: 8pt;
-        line-height: 1.42;
-      }
-
       .brief-footer {
         display: flex;
         margin-top: auto;
@@ -346,52 +317,6 @@
 
       .brief-footer strong {
         color: var(--ink);
-      }
-
-      .sheet-compact .section {
-        margin-top: 3.8mm;
-      }
-
-      .sheet-compact .avoid-list,
-      .sheet-compact .check-list {
-        margin-top: 2mm;
-      }
-
-      .sheet-compact .avoid-list li,
-      .sheet-compact .check-list li {
-        padding-top: 1.65mm;
-        padding-bottom: 1.65mm;
-        font-size: 8.7pt;
-        line-height: 1.32;
-      }
-
-      .sheet-compact .avoid-list li::before,
-      .sheet-compact .check-list li::before {
-        top: 2.8mm;
-      }
-
-      .sheet-compact .two-column {
-        margin-top: 3.8mm;
-        gap: 6mm;
-      }
-
-      .sheet-compact .section-title {
-        font-size: 12.5pt;
-      }
-
-      .sheet-compact .limits {
-        margin-top: 3.5mm;
-        padding-top: 2mm;
-      }
-
-      .sheet-compact .limits p {
-        margin-top: 1mm;
-        font-size: 7.5pt;
-        line-height: 1.32;
-      }
-
-      .sheet-compact .brief-footer {
-        padding-top: 1.8mm;
       }
 
       @media (max-width: 760px) {
@@ -426,7 +351,7 @@
         }
 
         .brief-subtitle,
-        .lede {
+        .principles-copy {
           font-size: 14px;
         }
 
@@ -451,31 +376,29 @@
           font-size: 20px;
         }
 
-        .line-list li,
-        .script-list li,
-        .avoid-list li,
-        .check-list li {
+        .line-list li {
           padding-top: 12px;
           padding-bottom: 12px;
         }
 
-        .line-list li::before,
-        .avoid-list li::before,
-        .check-list li::before {
+        .line-list li::before {
           top: 20px;
         }
 
         .line-meta,
         .qa-question,
         .qa-answer,
-        .limits p {
+        .request-plan {
           font-size: 13px;
         }
 
-        .qa-item,
-        .two-column {
+        .qa-item {
           grid-template-columns: 1fr;
           gap: 10px;
+        }
+
+        .request-block {
+          padding: 18px;
         }
 
         .request-line {
@@ -520,396 +443,423 @@
   <body>
     <header class="gate-intro">
       <p class="m-0 text-xs font-bold uppercase tracking-[.14em] text-accent">
-        C210 · referência visual do gate
+        C210 · referência visual replanejada
       </p>
       <h1 class="mt-2 text-2xl font-semibold tracking-tight text-ink">
-        Briefing de capacitação · família sóbria
+        Briefing de capacitação · quatro folhas do recorte
       </h1>
       <p class="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">
-        Quatro folhas A4, sem marca de campanha, cartões, selos ou gráficos. No celular, as mesmas
-        folhas refluem em uma coluna com corpo de 14 px para consulta em campo. O conteúdo é insumo
-        interno: fatos vêm do dossiê; lacunas permanecem lacunas.
+        O briefing deixa de funcionar como capa ou manual genérico: abre pelas posições de Solla,
+        concentra os fatos que sustentam a conversa e dedica metade do documento às perguntas reais
+        do recorte. A referência abaixo usa a UFBA para provar densidade e fit; o port mantém a
+        mesma gramática sóbria da família, sem marca de campanha.
       </p>
     </header>
 
     <main>
       <section class="scene">
-        <p class="scene-label">Folha 1/4 · O essencial do recorte</p>
-        <article class="sheet" aria-label="O essencial do briefing de Miguel Calmon">
+        <p class="scene-label">Folha 1/4 · O que Solla defende</p>
+        <article class="sheet" data-page="defesas" aria-label="O que Solla defende na UFBA">
           <header class="brief-head">
             <div>
-              <p class="kicker">Briefing de capacitação · cidade</p>
-              <h2 class="brief-title">Miguel Calmon</h2>
-              <p class="brief-subtitle">
-                Piemonte da Diamantina · consulta antes e durante o contato
-              </p>
+              <p class="kicker">Briefing de capacitação · instituição</p>
+              <h2 class="brief-title">O que Solla defende</h2>
+              <p class="brief-subtitle">UFBA · princípios que orientam posição e voto</p>
             </div>
             <p class="internal-label">
-              Insumo interno de capacitação — não publicar
+              INSUMO INTERNO DE CAPACITAÇÃO — NÃO PUBLICAR
               <span class="page-no">folha 1/4</span>
             </p>
           </header>
 
           <section class="section">
-            <p class="eyebrow">Comece por aqui</p>
-            <h3 class="section-title">O essencial do recorte</h3>
-            <p class="lede">
-              Use um fato local de cada vez. Separe o que ocorreu no município do que atende a
-              região. Não transforme articulação, indicação ou valor autorizado em entrega
-              concluída.
+            <p class="eyebrow">Princípios e crenças · leitura dos registros, não opinião</p>
+            <p class="principles-copy">
+              Universidade pública forte combina autonomia, acesso e permanência. Para Solla, o
+              conhecimento só cumpre seu papel quando chega ao povo — no ensino, na pesquisa e no
+              SUS — com financiamento público e respeito à comunidade universitária.
             </p>
             <ul class="line-list">
               <li>
                 <span class="line-title"
-                  >A evidência municipal mais concentrada está na gestão estadual da saúde.</span
+                  >Hospitais universitários devem permanecer integrados ao SUS.</span
                 >
                 <span class="line-meta"
-                  >Ambulância, Saúde em Movimento, Olhar Brasil, atenção domiciliar e gestão da
-                  Santa Casa aparecem com menção direta a Miguel Calmon.
-                  <span class="source">[B-01–B-07]</span></span
+                  >Ensino, pesquisa e assistência não são missões concorrentes: o hospital forma
+                  profissionais enquanto atende quem precisa.
+                  <span class="source">Hupes no SUS · 2007</span></span
                 >
               </li>
               <li>
                 <span class="line-title"
-                  >A Santa Casa aparece com 80 leitos e emergência 24 horas no registro de
-                  2012.</span
+                  >Autonomia universitária inclui respeitar a escolha de reitor.</span
                 >
                 <span class="line-meta"
-                  >Fase do valor anual não informada: cite o serviço, não some valores.
-                  <span class="source">Jornal Grande Bahia · 25/01/2012</span></span
+                  >A comunidade deve participar da direção da universidade; lista tríplice não pode
+                  servir para ignorar o resultado da consulta.
+                  <span class="source">Câmara dos Deputados · 2019</span></span
                 >
               </li>
               <li>
                 <span class="line-title"
-                  >No mandato federal, os registros localizados têm alcance regional.</span
+                  >Educação e ciência precisam ficar fora do aperto fiscal.</span
                 >
                 <span class="line-meta"
-                  >Campus da UFBA, Policlínica, seminário e articulações em Jacobina não são
-                  entregas exclusivas ao município. <span class="source">[C-01–C-08]</span></span
+                  >Custeio e investimento previsíveis protegem laboratórios, aulas, hospitais e a
+                  capacidade de planejar.
+                  <span class="source">Registros legislativos · 2016–2023</span></span
                 >
               </li>
               <li>
                 <span class="line-title"
-                  >Não há fala própria localizada com menção nominal à cidade.</span
+                  >Expandir é levar universidade pública para além da capital.</span
                 >
                 <span class="line-meta"
-                  >Resultado de busca não prova ausência histórica. Se perguntarem além do que está
-                  documentado, anote e confira no dossiê. <span class="source">[L-07]</span></span
+                  >Interiorização aproxima formação, pesquisa e desenvolvimento das necessidades de
+                  cada território baiano.
+                  <span class="source">Atuação parlamentar · 2023</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Entrar não basta: permanência estudantil sustenta o acesso.</span
+                >
+                <span class="line-meta"
+                  >Assistência, bolsas e condições de estudo fazem a política de inclusão chegar à
+                  formatura. <span class="source">Registros sobre educação · 2019–2024</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title">Cotas corrigem barreiras históricas de acesso.</span>
+                <span class="line-meta"
+                  >A universidade pública se fortalece quando representa melhor a sociedade que a
+                  financia e serve.
+                  <span class="source">Defesa da universidade pública · 2019</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Patrimônio universitário precisa voltar ao uso acadêmico.</span
+                >
+                <span class="line-meta"
+                  >Restaurar a Famed preserva memória, mas também recupera espaço para ensino,
+                  pesquisa e extensão.
+                  <span class="source">Famed/UFBA · registros 2015–2026</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Defender a UFBA é defender um serviço público essencial.</span
+                >
+                <span class="line-meta"
+                  >Em 2019, a resposta aos cortes ligou universidade, soberania científica e
+                  direitos sociais — sem tratar educação como privilégio.
+                  <span class="source">Mobilização nacional · 2019</span></span
                 >
               </li>
             </ul>
+            <p class="more-note">
+              Se o orçamento de impressão estourar: exibir “e mais N defesas no briefing completo
+              (.md)”.
+            </p>
           </section>
 
-          <div class="rule-note">
-            <strong>Como usar.</strong> Antes: escolha dois fatos e ensaie o pedido. Durante:
-            escute, responda com um fato verificável e peça o voto. Depois: registre a dúvida que
-            ficou sem resposta para o próximo ciclo do dossiê.
-          </div>
-
           <footer class="brief-footer">
-            <span
-              ><strong>Regra:</strong> município ≠ região · fase acompanha valor · sem fonte, não
-              afirmar</span
-            >
-            <span>Briefing de capacitação · 1/4</span>
+            <span><strong>Recorte:</strong> instituição · UFBA</span>
+            <span>folha 1/4</span>
           </footer>
         </article>
       </section>
 
       <section class="scene">
-        <p class="scene-label">Folha 2/4 · Defesas + roteiro do pedido</p>
-        <article class="sheet" aria-label="O que Solla defende e roteiro do pedido de voto">
+        <p class="scene-label">Folha 2/4 · O essencial do recorte + O pedido</p>
+        <article
+          class="sheet"
+          data-page="essencial"
+          aria-label="O essencial da UFBA e o pedido de voto"
+        >
           <header class="brief-head">
             <div>
-              <p class="kicker">Briefing de capacitação · Miguel Calmon</p>
-              <h2 class="brief-title">Defesas e pedido de voto</h2>
-              <p class="brief-subtitle">Do fato local ao compromisso nomeado</p>
+              <p class="kicker">Briefing de capacitação · instituição</p>
+              <h2 class="brief-title">O essencial do recorte</h2>
+              <p class="brief-subtitle">UFBA · fatos que sustentam a conversa</p>
             </div>
             <p class="internal-label">
-              Insumo interno de capacitação — não publicar
+              INSUMO INTERNO DE CAPACITAÇÃO — NÃO PUBLICAR
               <span class="page-no">folha 2/4</span>
             </p>
           </header>
 
           <section class="section">
-            <p class="eyebrow">Leitura dos registros · não é opinião</p>
-            <h3 class="section-title">O que Solla defende</h3>
+            <p class="eyebrow">Fatos-âncora · fase junto ao valor</p>
             <ul class="line-list">
               <li>
-                <span class="line-title">Ensino superior público no Piemonte da Diamantina.</span>
+                <span class="line-title">Hupes no SUS · articulação concluída em 2007.</span>
                 <span class="line-meta"
-                  >Defesa registrada de campus da UFBA em Jacobina, junto com Jequié e Seabra.
-                  Alcance regional.
-                  <span class="source">INC 1497/2023 · Jornal da Chapada, 22/09/2023</span></span
-                >
-              </li>
-              <li>
-                <span class="line-title">Fortalecimento da estrutura regional de diagnóstico.</span>
-                <span class="line-meta"
-                  >Registro de articulação pela ressonância da Policlínica de Jacobina; autoria da
-                  emenda atribuída a Amauri Teixeira.
-                  <span class="source">Marcelino Galo · 14/04/2018</span></span
+                  >A integração consolidou assistência, ensino e pesquisa no hospital universitário.
+                  <span class="source">Hupes/UFBA · 2007</span></span
                 >
               </li>
               <li>
                 <span class="line-title"
-                  >Promessa nominal para Miguel Calmon: sem registro localizado.</span
+                  >Rehuf · programa instituído em 2010 e regulamentado em 2011.</span
                 >
                 <span class="line-meta"
-                  >Não completar com proposta genérica nem apresentar ação regional como promessa
-                  municipal.</span
+                  >O financiamento compartilhado enfrentou o subfinanciamento dos hospitais
+                  universitários federais.
+                  <span class="source">Governo Federal · 2010–2011</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title">Emendas 2015–2026 · fase declarada em cada valor.</span>
+                <span class="line-meta"
+                  >O histórico separa autorizado, empenhado e pago; valores de fases diferentes não
+                  são somados nem apresentados como entrega concluída.
+                  <span class="source">Dossiê UFBA · consulta 2026</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Famed · restauro vinculado à recuperação do uso acadêmico.</span
+                >
+                <span class="line-meta"
+                  >O registro conecta preservação do prédio histórico a ensino, pesquisa e extensão.
+                  <span class="source">UFBA/Iphan · registros 2015–2026</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title">Novo PAC · investimento anunciado em 2025.</span>
+                <span class="line-meta"
+                  >Cite como anúncio do Governo Federal e informe a etapa registrada; não antecipe
+                  obra concluída nem atribua execução ao parlamentar.
+                  <span class="source">Novo PAC · 2025</span></span
+                >
+              </li>
+              <li>
+                <span class="line-title"
+                  >Defesa pública da UFBA · mobilização registrada em 2019.</span
+                >
+                <span class="line-meta"
+                  >A posição contra cortes e ataques à universidade é lastro político do recorte,
+                  não entrega material.
+                  <span class="source">Câmara dos Deputados · 2019</span></span
                 >
               </li>
             </ul>
           </section>
 
-          <section class="section">
-            <p class="eyebrow">Roteiro curto · fale como pessoa, não como disparo</p>
-            <h3 class="section-title">Faça o pedido com clareza</h3>
+          <section class="request-block" aria-label="Pedido de voto">
+            <p class="eyebrow">O pedido</p>
             <p class="request-line">
-              “Posso contar com você? Para deputado federal, <em>vote 1313, Jorge Solla</em>.”
+              Posso contar com você? Para deputado federal, <em>vote 1313, Jorge Solla.</em>
             </p>
-            <ol class="script-list">
-              <li>
-                <span class="line-title">Comece pela relação.</span>
-                <span class="line-meta"
-                  >“Quero conversar com você porque sua opinião importa para mim.” Escute antes de
-                  argumentar.</span
-                >
-              </li>
-              <li>
-                <span class="line-title">Use um fato do recorte.</span>
-                <span class="line-meta"
-                  >Escolha um item da folha 1. Diga se é municipal ou regional e preserve o
-                  estágio.</span
-                >
-              </li>
-              <li>
-                <span class="line-title">Peça explicitamente: vote 1313.</span>
-                <span class="line-meta"
-                  >Não pare em “pense com carinho”. Nome e número tornam o compromisso claro.</span
-                >
-              </li>
-              <li>
-                <span class="line-title">Combine o plano de voto: onde, quando e como.</span>
-                <span class="line-meta"
-                  >“Você já sabe onde vota? Em que horário pretende ir? Como vai chegar?” Oriente
-                  sem pressionar.</span
-                >
-              </li>
-              <li>
-                <span class="line-title">Feche com compromisso nomeado.</span>
-                <span class="line-meta"
-                  >“Então ficou combinado: para deputado federal, Jorge Solla, 1313?” Se houver
-                  dúvida, não force; combine retorno.</span
-                >
-              </li>
-            </ol>
+            <p class="request-plan">
+              <strong>Plano:</strong> combine onde, quando e como votar e registre o compromisso
+              nomeado.
+            </p>
           </section>
 
-          <div class="rule-note">
-            <strong>Por que assim:</strong> contato pessoal e relacional mobiliza melhor do que
-            broadcast; escuta e narrativa vêm antes do argumento. Evidência internacional orienta o
-            método, mas EUA ≠ Brasil — aqui o plano ajuda também a lembrar o número na urna.
-          </div>
-
           <footer class="brief-footer">
-            <span
-              >Base de capacitação: Nickerson &amp; Rogers 2010 · Schein et al. 2021 · Kalla &amp;
-              Broockman 2020</span
-            >
-            <span>Briefing de capacitação · 2/4</span>
+            <span><strong>Recorte:</strong> instituição · UFBA</span>
+            <span>folha 2/4</span>
           </footer>
         </article>
       </section>
 
       <section class="scene">
-        <p class="scene-label">Folha 3/4 · Perguntas prováveis × melhores respostas</p>
-        <article class="sheet" aria-label="Perguntas prováveis e melhores respostas">
+        <p class="scene-label">Folha 3/4 · Perguntas prováveis × melhores respostas (1/2)</p>
+        <article
+          class="sheet"
+          data-page="qa"
+          aria-label="Perguntas prováveis e melhores respostas sobre a UFBA, parte 1"
+        >
           <header class="brief-head">
             <div>
-              <p class="kicker">Briefing de capacitação · Miguel Calmon</p>
+              <p class="kicker">Briefing de capacitação · UFBA</p>
               <h2 class="brief-title">Perguntas prováveis × melhores respostas</h2>
-              <p class="brief-subtitle">Reconhecer → fato local verificável → pedido</p>
+              <p class="brief-subtitle">Parte 1 de 2 · posições e escolhas</p>
             </div>
             <p class="internal-label">
-              Insumo interno de capacitação — não publicar
+              INSUMO INTERNO DE CAPACITAÇÃO — NÃO PUBLICAR
               <span class="page-no">folha 3/4</span>
             </p>
           </header>
 
           <div class="rule-note">
-            <strong>Régua visível:</strong> reconheça a preocupação em uma frase, sem repetir o
-            ataque; responda com um fato local verificável; feche perguntando se pode contar com o
-            voto 1313. Se o dossiê não sustenta a resposta, diga que vai conferir.
+            <strong>Régua:</strong> reconhecer sem repetir o ataque → responder com fato e fonte →
+            fechar no pedido.
           </div>
 
           <ol class="qa-list">
             <li class="qa-item">
               <p class="qa-question">
-                <span class="qa-side">Objeção à direita</span>“Não voto no PT / não gosto do Lula.”
+                <span class="qa-side">Objeção à direita</span>“Universidade pública virou lugar de
+                partido.”
               </p>
               <p class="qa-answer">
-                <b>Reconhecer:</b> “Entendo que a escolha partidária pesa.” <b>Fato:</b> em Miguel
-                Calmon, há registros nominais de ações na saúde durante a gestão estadual, como
-                Saúde em Movimento, ambulância e atenção domiciliar. <b>Fechar:</b> “Olhando esse
-                trabalho no município, posso contar com seu voto 1313 para deputado federal?”
+                <b>Reconhecer:</b> “Universidade deve servir à sociedade inteira.” <b>Fato:</b> no
+                recorte da UFBA, a defesa de Solla liga autonomia a serviços concretos: formação,
+                pesquisa e atendimento pelo Hupes no SUS.
+                <span class="source">Hupes/UFBA · 2007</span> <b>Fechar:</b> “Por essa universidade
+                pública a serviço do povo, posso contar com o 1313?”
               </p>
             </li>
             <li class="qa-item">
               <p class="qa-question">
-                <span class="qa-side">Objeção à direita</span>“E o governo de Jerônimo? O que fez
-                aqui?”
+                <span class="qa-side">Objeção à direita</span>“Por que tirar educação do teto? Todo
+                mundo precisa cortar.”
               </p>
               <p class="qa-answer">
-                <b>Reconhecer:</b> “É justo cobrar o que chegou ao município.” <b>Fato:</b> este
-                briefing não traz entrega do governo atual comprovada para responder isso; ele
-                registra ações de outros períodos e iniciativas regionais. <b>Fechar:</b> “Posso
-                conferir essa pergunta no dossiê e voltar? Sobre o trabalho documentado de Solla,
-                posso pedir seu voto 1313?”
+                <b>Reconhecer:</b> “Cobrar responsabilidade com dinheiro público é correto.”
+                <b>Fato:</b> corte linear paralisa laboratório, aula e hospital; os registros
+                mostram defesa de financiamento previsível para a universidade cumprir essas três
+                funções. <span class="source">Registros legislativos · 2016–2023</span>
+                <b>Fechar:</b> “Você apoia proteger esse investimento com o voto 1313?”
               </p>
             </li>
             <li class="qa-item">
               <p class="qa-question">
-                <span class="qa-side">Objeção à esquerda</span>“Se o PT governa a Bahia, por que
-                ainda falta tanto?”
+                <span class="qa-side">Objeção à direita</span>“Cota não tira vaga de quem estudou
+                mais?”
               </p>
               <p class="qa-answer">
-                <b>Reconhecer:</b> “A cobrança é legítima; ação feita não apaga o que falta.”
-                <b>Fato:</b> o levantamento registra serviços no município, mas também lacunas: não
-                localizou emenda individual de Solla para Miguel Calmon nem obra estadual nominal na
-                janela consultada. <b>Fechar:</b> “A proposta é cobrar sem esconder lacunas. Posso
-                contar com seu voto 1313?”
+                <b>Reconhecer:</b> “A preocupação com mérito e oportunidade é legítima.”
+                <b>Fato:</b>
+                a posição registrada combina cotas com permanência: abrir a porta e dar condição de
+                concluir o curso, sem baixar a exigência acadêmica.
+                <span class="source">Defesa da universidade pública · 2019</span> <b>Fechar:</b>
+                “Essa combinação faz sentido para você? Posso contar com o 1313?”
               </p>
             </li>
             <li class="qa-item">
               <p class="qa-question">
-                <span class="qa-side">Objeção à esquerda</span>“Por que falar de Jacobina se eu moro
-                em Miguel Calmon?”
+                <span class="qa-side">Objeção à esquerda</span>“Autonomia vale mesmo quando o
+                governo discorda da eleição para reitor?”
               </p>
               <p class="qa-answer">
-                <b>Reconhecer:</b> “Você tem razão em separar cidade e região.” <b>Fato:</b> campus
-                da UFBA e Policlínica aparecem como iniciativas regionais em Jacobina; o material
-                não as chama de entrega exclusiva a Miguel Calmon. <b>Fechar:</b> “Defender
-                estrutura regional sem apagar o município faz sentido para você? Posso contar com o
+                <b>Reconhecer:</b> “Autonomia só vale se valer também no conflito.”
+                <b>Fato:</b> Solla registrou em 2019 a defesa do respeito à escolha da comunidade
+                universitária, sem transformar a lista tríplice em veto político.
+                <span class="source">Câmara dos Deputados · 2019</span> <b>Fechar:</b> “Para
+                sustentar essa posição no Congresso, posso contar com o 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Objeção à esquerda</span>“Expandir campus sem permanência não
+                é inclusão pela metade?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “É; matrícula sem condição de ficar não resolve.” <b>Fato:</b> as
+                defesas do recorte tratam interiorização, cotas e assistência estudantil como partes
+                da mesma política. <span class="source">Registros sobre educação · 2019–2024</span>
+                <b>Fechar:</b> “Para cobrar expansão com permanência, posso contar com seu voto
                 1313?”
-              </p>
-            </li>
-            <li class="qa-item">
-              <p class="qa-question">
-                <span class="qa-side">Dúvida sobre entrega</span>“Ele prometeu o quê para Miguel
-                Calmon?”
-              </p>
-              <p class="qa-answer">
-                <b>Reconhecer:</b> “Promessa precisa estar registrada.” <b>Fato:</b> não foi
-                localizada promessa nominal para o município; há defesa regional de campus da UFBA
-                em Jacobina e registros de atuação em saúde. <b>Fechar:</b> “Não vou inventar
-                promessa. Pelo trabalho comprovado, você considera votar 1313?”
               </p>
             </li>
           </ol>
 
           <footer class="brief-footer">
-            <span
-              ><strong>Não debata para vencer.</strong> Preserve a relação, responda o verificável e
-              anote a lacuna.</span
-            >
-            <span>Briefing de capacitação · 3/4</span>
+            <span><strong>Recorte:</strong> instituição · UFBA</span>
+            <span>folha 3/4</span>
           </footer>
         </article>
       </section>
 
       <section class="scene">
-        <p class="scene-label">Folha 4/4 · O que evitar + conferência + limites</p>
-        <article class="sheet sheet-compact" aria-label="O que evitar e o que conferir no dossiê">
+        <p class="scene-label">Folha 4/4 · Perguntas prováveis × melhores respostas (2/2)</p>
+        <article
+          class="sheet"
+          data-page="qa-2"
+          aria-label="Perguntas prováveis e melhores respostas sobre a UFBA, continuação"
+        >
           <header class="brief-head">
             <div>
-              <p class="kicker">Briefing de capacitação · Miguel Calmon</p>
-              <h2 class="brief-title">O que evitar</h2>
-              <p class="brief-subtitle">
-                Proteja a relação, a verdade do recorte e os limites do material
-              </p>
+              <p class="kicker">Briefing de capacitação · UFBA</p>
+              <h2 class="brief-title">Perguntas prováveis × melhores respostas</h2>
+              <p class="brief-subtitle">Continuação · parte 2 de 2 · entrega e atribuição</p>
             </div>
             <p class="internal-label">
-              Insumo interno de capacitação — não publicar
+              INSUMO INTERNO DE CAPACITAÇÃO — NÃO PUBLICAR
               <span class="page-no">folha 4/4</span>
             </p>
           </header>
 
-          <section class="section">
-            <ul class="avoid-list">
-              <li>
-                <strong>Confrontar para ganhar a discussão.</strong> Em território hostil, encerre
-                com respeito; não transforme contato em duelo.
-              </li>
-              <li>
-                <strong>Envergonhar ou expor o eleitor.</strong> Pressão pesada gera reação. Convide
-                ao compromisso sem constranger.
-              </li>
-              <li>
-                <strong>Repetir o ataque ou o mito.</strong> Não lidere pela acusação. Reconheça a
-                preocupação e ofereça uma explicação factual alternativa.
-              </li>
-              <li>
-                <strong>Trocar conversa por broadcast impessoal.</strong> WhatsApp 1-a-1 e pessoa de
-                confiança vêm antes de corrente ou disparo em massa.
-              </li>
-              <li>
-                <strong>Prometer sem lastro.</strong> Indicação não é obra; articulação não é
-                autoria; autorizado não é pago; região não é município.
-              </li>
-            </ul>
-          </section>
+          <ol class="qa-list">
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Dúvida sobre entrega</span>“O que Solla entregou de concreto
+                para a UFBA?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “A pergunta precisa separar atuação, recurso e execução.”
+                <b>Fato:</b> o dossiê ancora a integração do Hupes ao SUS, o Rehuf e emendas entre
+                2015 e 2026, sempre com autoria e fase explícitas.
+                <span class="source">Dossiê UFBA · consulta 2026</span> <b>Fechar:</b> “Pelo
+                conjunto documentado, posso contar com seu voto 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Dúvida sobre entrega</span>“A emenda foi anunciada ou o
+                dinheiro chegou?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “Essa diferença muda a resposta.” <b>Fato:</b> cada valor do
+                recorte vem acompanhado da fase — autorizado, empenhado ou pago — e só o que está
+                registrado pode ser afirmado.
+                <span class="source">Dossiê UFBA · registros 2015–2026</span> <b>Fechar:</b> “Com
+                essa prestação de contas sem inflar entrega, posso contar com o 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Dúvida sobre entrega</span>“O Novo PAC é obra de Solla?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “Não é correto personalizar uma obra do Governo Federal.”
+                <b>Fato:</b> o registro de 2025 deve ser citado como investimento anunciado pelo
+                Novo PAC, com a etapa informada; articulação parlamentar não vira autoria da
+                execução. <span class="source">Novo PAC · 2025</span> <b>Fechar:</b> “Para apoiar e
+                fiscalizar esse investimento no Congresso, posso contar com o 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Objeção à esquerda</span>“Restaurar prédio histórico é
+                prioridade com tanta falta de assistência?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “Patrimônio não pode competir com permanência estudantil.”
+                <b>Fato:</b> a defesa da Famed é recuperar um espaço de ensino, pesquisa e extensão;
+                ela não substitui custeio, bolsas ou assistência.
+                <span class="source">Famed/UFBA · registros 2015–2026</span> <b>Fechar:</b> “Para
+                defender as duas frentes sem falsa escolha, posso contar com o 1313?”
+              </p>
+            </li>
+            <li class="qa-item">
+              <p class="qa-question">
+                <span class="qa-side">Dúvida sobre entrega</span>“Por que citar o Hupes se ele é da
+                universidade?”
+              </p>
+              <p class="qa-answer">
+                <b>Reconhecer:</b> “O hospital é patrimônio público da universidade; não é de um
+                parlamentar.” <b>Fato:</b> o ponto do recorte é a atuação pela integração ao SUS em
+                2007 e a defesa de financiamento para manter assistência, ensino e pesquisa juntos.
+                <span class="source">Hupes/UFBA · 2007</span> <b>Fechar:</b> “Por essa defesa dos
+                hospitais universitários no SUS, posso contar com seu voto 1313?”
+              </p>
+            </li>
+          </ol>
 
-          <div class="two-column">
-            <section>
-              <p class="eyebrow">Antes de responder</p>
-              <h3 class="section-title">O que conferir no dossiê</h3>
-              <ul class="check-list">
-                <li><strong>Fonte e data</strong> do fato que pretende usar.</li>
-                <li><strong>Alcance:</strong> município, região ou polo.</li>
-                <li><strong>Fase do valor:</strong> autorizado, empenhado, liquidado ou pago.</li>
-                <li><strong>Autoria:</strong> quem apresentou, destinou ou executou.</li>
-                <li>
-                  <strong>Lacuna:</strong> o que a busca não localizou e não pode ser inferido.
-                </li>
-              </ul>
-            </section>
-
-            <section>
-              <p class="eyebrow">Consulta em campo</p>
-              <h3 class="section-title">Se você não souber</h3>
-              <ul class="check-list">
-                <li><strong>Diga com clareza:</strong> “Não tenho esse dado confirmado aqui.”</li>
-                <li><strong>Anote a pergunta</strong> sem pedir dado pessoal desnecessário.</li>
-                <li><strong>Combine retorno</strong> por canal 1-a-1, se a pessoa quiser.</li>
-                <li><strong>Leve a lacuna</strong> à coordenação para conferência no dossiê.</li>
-                <li>
-                  <strong>Não improvise</strong> número, promessa, fonte ou resposta do governo.
-                </li>
-              </ul>
-            </section>
-          </div>
-
-          <section class="limits">
-            <p class="eyebrow">Limites e defeso</p>
-            <p>
-              Material interno de capacitação. Não publicar, encaminhar como peça, impulsionar nem
-              adaptar sem revisão editorial e jurídica. Sem CTA público, marca de campanha, cenário
-              eleitoral, estimativa de votos ou dado staff-only. Os fatos foram selecionados do
-              dossiê de Miguel Calmon e devem ser conferidos na fonte antes de uso público.
-            </p>
-            <p>
-              A evidência de mobilização citada no treinamento é majoritariamente internacional e
-              não mede automaticamente o Brasil. Use os princípios para orientar contato pessoal,
-              plano de voto e lembrança do número — nunca para prometer efeito ou misturar
-              resultados de estudos diferentes.
-            </p>
-          </section>
+          <p class="more-note">
+            Se houver mais perguntas priorizadas: exibir “e mais N perguntas no briefing completo
+            (.md)”.
+          </p>
 
           <footer class="brief-footer">
-            <span>Anti-padrões: Lau et al. 2007 · Ecker et al. 2022 · Debunking Handbook 2020</span>
-            <span>Briefing de capacitação · 4/4</span>
+            <span><strong>Recorte:</strong> instituição · UFBA</span>
+            <span>folha 4/4</span>
           </footer>
         </article>
       </section>

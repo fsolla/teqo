@@ -1,15 +1,22 @@
 ---
 name: briefing-capacitacao-solla
-description: 'Gera o Briefing de capacitação Solla 1313 por recorte (cidade · instituição · tema): PDF A4 de até 4 páginas + companion .md, derivado do dossiê já pesquisado (sem segunda pesquisa factual), com essencial com fonte, roteiro do pedido de voto (vote 1313 + plano de voto + compromisso nomeado), perguntas prováveis × melhores respostas dos dois lados e o que evitar; aceita um recorte ou um lote separado por vírgula.'
+description: 'Gera o Briefing de capacitação Solla 1313 por recorte (cidade · instituição · tema): PDF A4 de até 4 páginas + companion .md, derivado do dossiê já pesquisado (sem segunda pesquisa factual), todo de recorte — princípios/crenças e defesas de Solla com fonte, fatos-âncora e o pedido literal do voto 1313, e perguntas prováveis × melhores respostas dos dois lados; aceita um recorte ou um lote separado por vírgula.'
 ---
 
 # Briefing de capacitação Solla 1313 (C210)
 
 Entrega, por recorte (**cidade · instituição · tema**), um **PDF A4 de até 4
-páginas + companion `.md`** para quem vai **pedir o voto 1313** no recorte:
-essencial com fato-âncora e fonte, o que Solla defende, **roteiro do pedido**
-("vote 1313" + plano de voto + compromisso nomeado), **perguntas prováveis ×
-melhores respostas** (ataques da direita **e** da esquerda) e **o que evitar**.
+páginas + companion `.md`** para quem vai **pedir o voto 1313** no recorte.
+Depois do replanejamento (2026-09-23), o briefing é **todo do recorte** — não tem
+capa, manual genérico, roteiro de passos, anti-padrões nem limites:
+
+1. **O que Solla defende** — princípios/crenças do recorte (abertura) + posições
+   com lastro (fonte e data);
+2. **O essencial do recorte** — fatos-âncora com **fase junto ao valor** e o
+   **pedido literal** do voto + **uma linha** de plano;
+3. **Perguntas prováveis × melhores respostas (1/2 e 2/2)** — as perguntas reais
+   do recorte, metade do documento, com os dois lados.
+
 É **insumo interno de capacitação**: rótulo literal
 `Insumo interno de capacitação — não publicar` em todas as folhas, sem CTA
 público, sem marca publicável, artefato gitignored.
@@ -77,7 +84,8 @@ recorte **não** cancela os demais (**sucesso parcial** explícito).
    build/ssh, não commita.
 3. **Auditoria de citações (orquestrador).** Confere citação por citação (nome,
    data, valor, órgão, alcance) contra os `research.json`; todo item ancorado
-   aponta um `factId` real e todo texto sem lastro é corrigido ou removido.
+   aponta um `factId` real que **lastreia a nota** (o ledger resolve o id pelo
+   primeiro item daquele id) e todo texto sem lastro é corrigido ou removido.
    Fato novo não entra: vira `gapReason`.
 4. **Build local (por recorte), offline:**
    ```bash
@@ -90,7 +98,8 @@ recorte **não** cancela os demais (**sucesso parcial** explícito).
    `--unit=institution|theme` para os outros recortes (default `municipality`).
    O build valida o `briefing.json` **fechado** (âncora que não resolve em fato
    com fonte = erro; chave de cenário/staff-only = erro), renderiza as **4 folhas
-   fixas**, mede cada folha e emite **1 PDF** com a guarda de teto de páginas
+   fixas do recorte** (`defesas → essencial + pedido → qa 1/2 → qa 2/2`), mede
+   cada folha e emite **1 PDF** com a guarda de teto de páginas
    (`emitHtmlSinglePdf`, `maxPages=4`). Saídas:
    `docs/research/dossie-solla-<recorte>/<slug>-<YYYY-MM-DD>-briefing.pdf` +
    `-briefing.md`; intermediários gitignored em `data/dossie-solla-<recorte>/`.
@@ -98,11 +107,11 @@ recorte **não** cancela os demais (**sucesso parcial** explícito).
    (ok|failed) · briefing (quando ok) · motivo (quando falha)`.
 
 O teto de **4 páginas é rígido**: se uma folha estourar, o build **corta por
-prioridade declarada** (`qa` até o mínimo de 4 com os dois lados → `defesas` →
-`conferir` → `evitar` até o mínimo de 3) e **declara o resto na folha** ("e mais
-N no briefing completo (.md)"); o companion `.md` carrega **tudo**. Essencial,
-roteiro e identificação **nunca** são cortados; se nem o mínimo couber, o build
-falha fechado apontando a lista a encurtar.
+prioridade** (`qa` até o mínimo de 4 com os dois lados → `defesas` até esvaziar)
+e **declara o resto na folha** ("e mais N no briefing completo (.md)"); o
+companion `.md` carrega **tudo**. O essencial (fatos-âncora), o **pedido** e a
+identificação **nunca** são cortados; se nem o mínimo couber, o build falha
+fechado apontando a lista a encurtar.
 
 ## Contrato do `<slug>.briefing.json`
 
@@ -112,44 +121,48 @@ Escrito pelo autor, validado pelo build (`scripts/lib/briefingContent.mjs`):
 {
   "unitId": "municipality",                     // municipality | institution | theme
   "municipalitySlug": "miguel-calmon",          // chave = slugField da unidade (institutionSlug | themeSlug)
-  "generatedAt": "2026-09-22T12:00:00.000Z",    // obrigatório
+  "generatedAt": "2026-09-23T12:00:00.000Z",    // obrigatório
   "subtitle": "Piemonte da Diamantina · consulta antes e durante o contato", // opcional
-  "lede": "≤380 chars — como usar o essencial",
-  "essential": [                               // ≥3; cada item: factId XOR gapReason
-    { "factId": "era_b_equipamentos", "title": "≤120", "note": "≤200" },
+  "lede": "≤380 chars — princípios e crenças do recorte (abre a folha 1)",
+  "defenses": [                                 // posições com lastro (folha 1); [] = linha de lacuna
+    { "factId": "era_b_defesas", "sourceUrl": "https://…", "title": "≤120", "note": "≤200" }
+  ],
+  "essential": [                                // ≥3; fatos-âncora (folha 2); cada item: factId XOR gapReason
+    { "factId": "era_b_equipamentos", "sourceUrl": "https://…", "title": "≤120", "note": "≤200" },
     { "gapReason": "sem fala própria localizada", "title": "…", "note": "…" }
   ],
-  "defenses": [ { "factId": "…", "title": "…", "note": "…" } ], // opcional (C209); [] = linha de lacuna
-  "script": { "steps": [ { "title": "≤90", "note": "≤220" } ] }, // ≥3 passos; o pedido é literal do renderer
+  "plan": "≤220 chars — uma linha de plano de voto/compromisso nomeado",  // obrigatório
   "qa": [                                       // ≥4, com ≥1 "direita" e ≥1 "esquerda"
     { "side": "direita|esquerda|entrega", "question": "≤180",
       "acknowledge": "≤200", "answer": "≤520", "close": "≤200",
-      "factId": "era_b_sesab" /* XOR */ "gapReason": "sem registro localizado" }
-  ],
-  "avoid": [ { "title": "≤120", "note": "≤200" } ],             // ≥3
-  "checklist": { "beforeAnswer": ["≤200"], "unsure": ["≤200"] } // ≥2 em cada; **negrito** no prefixo
+      "factId": "era_b_sesab", "sourceUrl": "https://…" /* XOR */ "gapReason": "sem registro localizado" }
+  ]
 }
 ```
 
 Regras duras:
 
 - `unitId` e o slug têm de casar com o recorte do build (outro recorte = erro);
-- cada item de `essential`/`defenses`/`qa` exige **exatamente um** de
+- cada item de `defenses`/`essential`/`qa` exige **exatamente um** de
   `factId | gapReason`; `factId` tem de resolver num fato do ledger **com
   `sourceUrl`** — **sem fonte, o item não entra**;
+- o id de checklist **se repete** entre itens do research e o ledger resolve o
+  `factId` puro pelo **primeiro item** daquele id; para ancorar outro item, o
+  autor copia o `sourceUrl` do item do research no campo `sourceUrl` do âncora
+  (o par `factId` + `sourceUrl` precisa bater — par errado falha fechado);
 - `qa` cobre os dois lados (≥1 `direita` e ≥1 `esquerda`); `entrega` é opcional;
 - **proibido** qualquer chave de cenário/estimativa/staff-only
   (`estimatedVotes`, `scenario`, `projection`, `polls`, …) — o briefing não tem
   campo numérico; valor/fase vêm do fato-âncora no render;
 - caps de texto acima do limite são **aviso** (o autor encurta); quem falha
   fechado é a guarda de fit/páginas;
-- no `checklist`, o autor marca em `**negrito**` o prefixo que a folha imprime
-  como palavra-chave de varredura (`"**Fonte e data** do fato…"`) — é o único
-  marcador inline aceito.
+- a folha 1 abre com `lede` (princípios/crenças) e a lista `defenses` — o autor
+  deve trazer **6–10 defesas** para encher a folha; a folha 3–4 acomoda **8–10
+  perguntas** (o build divide a lista ao meio).
 
 O pedido é **literal do renderer** (não reescreva no JSON): "Posso contar com
-você? Para deputado federal, **vote 1313, Jorge Solla**." — com plano de voto
-(onde/quando/como) e compromisso nomeado nos passos do roteiro.
+você? Para deputado federal, **vote 1313, Jorge Solla**." — o `plan` é a única
+linha de orientação que o autor escreve.
 
 ## Recibo do autor
 
@@ -162,9 +175,10 @@ JSON:
   "slug": "miguel-calmon",
   "status": "ok",              // ou "failed"
   "briefingPath": "data/dossie-solla-cidade/miguel-calmon.briefing.json",
-  "essentialCount": 4,
-  "qaCount": 5,
-  "sides": ["direita", "esquerda"],
+  "essentialCount": 5,
+  "defensesCount": 8,
+  "qaCount": 9,
+  "sides": ["direita", "esquerda", "entrega"],
   "anchoredFactIds": ["era_b_equipamentos", "era_b_programas", "era_c_atuacao"],
   "gapCount": 3,               // itens com gapReason + lacunas do recorte
   "failureReason": "…"         // opcional (só quando status = failed)
@@ -175,24 +189,25 @@ JSON:
 no summary final. Arquivo ausente = o build falha com o ponteiro para esta
 skill (não há fallback determinístico: o briefing é redação, não consolidação).
 
-## Conteúdo do briefing (4 folhas fixas)
+## Conteúdo do briefing (4 folhas fixas, todas do recorte)
 
-- **Folha 1 — O essencial do recorte** (`data-page="essencial"`): identificação
-  do recorte + lede ("como usar") + fatos-âncora com fonte ou lacuna declarada +
-  regra do recorte (esfera/fase) no rodapé.
-- **Folha 2 — Defesas e pedido** (`data-page="defesas"`): "o que Solla defende"
-  (C209 quando existir; sem registro = linha de lacuna, nunca proposta genérica)
-  + roteiro do pedido com o literal do voto 1313 + 3–5 passos (relação → fato →
-  pedido explícito → plano de voto → compromisso nomeado).
-- **Folha 3 — Perguntas prováveis × melhores respostas** (`data-page="qa"`):
-  régua visível (reconhecer → fato local verificável → fechar no pedido) + Q&A
-  dos dois lados; resposta ancorada num fato-âncora ou declarada como lacuna ("o
-  dossiê não sustenta; vou conferir").
-- **Folha 4 — O que evitar + conferência + limites** (`data-page="evitar"`):
-  anti-padrões (confronto, humilhação, repetir o ataque, broadcast impessoal,
-  prometer sem lastro), "o que conferir no dossiê", "se você não souber" e os
-  limites/defeso (inclusive: evidência internacional orienta o método, não mede
-  o Brasil).
+- **Folha 1 — O que Solla defende** (`data-page="defesas"`): princípios/crenças
+  do recorte (o `lede`) e as posições (`defenses`) com título, leitura e
+  `fonte · data`. Sem registro = linha de lacuna, nunca posição genérica.
+- **Folha 2 — O essencial do recorte + O pedido** (`data-page="essencial"`):
+  fatos-âncora com **fase junto ao valor** e fonte (sem trajetória de formação) e
+  o bloco do pedido com a frase literal + a linha de `plan`.
+- **Folha 3 — Perguntas prováveis × melhores respostas (1/2)** (`data-page="qa"`):
+  régua curta (reconhecer → fato com fonte → fechar no pedido) e a primeira
+  metade do Q&A (pergunta + reconhecer/fato/fechar), dois lados.
+- **Folha 4 — Perguntas prováveis × melhores respostas (2/2)**
+  (`data-page="qa-2"`): continuação com a segunda metade do Q&A e o "e mais N"
+  quando houver corte.
+
+**Fora do briefing** (replanejamento 2026-09-23): capa/objetivo, trajetória,
+roteiro de passos, justificativa científica, "o que evitar", "o que conferir",
+"se você não souber" e "limites e defeso" — o rótulo interno em todas as folhas
+já carrega o aviso de insumo.
 
 ## Guardrails de produto (não negociáveis)
 
@@ -223,7 +238,7 @@ skill (não há fallback determinístico: o briefing é redação, não consolid
   está sem fonte — troque por um `factId` real ou declare `gapReason`; nunca
   "aproxime" o texto.
 - **Folha estourou**: o build corta por prioridade e declara o resto; se a
-  mensagem disser que nem o mínimo cabe, **encurte as listas** (QA/essencial),
+  mensagem disser que nem o mínimo cabe, **encurte as listas** (Q&A/defesas),
   não o layout.
 - **`unitId`/slug de outro recorte**: o build recusa o par — pare e regenere o
   `briefing.json` para o recorte certo.
@@ -250,9 +265,3 @@ skill (não há fallback determinístico: o briefing é redação, não consolid
   `.agents/skills/dossie-solla-tema/SKILL.md`.
 - Voz/rebates: `.opencode/skills/solla-comunicacao/SKILL.md`,
   `.opencode/skills/solla-comunicacao/referencia/tom-e-exemplos.md`.
-- Evidência de mobilização citada no treinamento: Nickerson & Rogers 2010;
-  Gerber & Green 2000; Kalla & Broockman 2018/2020; Schein et al. 2021;
-  Michelson et al. 2024; Nickerson 2008; Gerber & Rogers 2009; Gerber, Green &
-  Larimer 2008; Cialdini & Goldstein 2004; Broockman & Kalla 2016; Grimmer,
-  Messing & Westwood 2012; Wood & Porter 2019; Lau, Sigelman & Rovner 2007;
-  Ecker et al. 2022; Debunking Handbook 2020.
