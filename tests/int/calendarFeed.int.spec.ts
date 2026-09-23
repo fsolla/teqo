@@ -34,6 +34,10 @@ const requireOk = (result: CalendarFeedLinkResult): CalendarFeedOk => {
   return result
 }
 
+// The feed folds content lines longer than 75 octets (RFC 5545 §3.1), so a
+// subscriber must unfold (`CRLF + space`) before matching logical content.
+const unfoldICal = (body: string): string => body.replace(/\r\n /g, '')
+
 const validActivityInput = (municipalityId: number, title: string) => ({
   title,
   tags: ['Caminhada'],
@@ -520,7 +524,7 @@ describe('campaign calendar feed domain', () => {
     expect(first.headers.get('Cache-Control')).toBe('public, no-cache')
     expect(first.headers.get('ETag')).toMatch(/^"[0-9a-f]{64}"$/)
     expect(first.headers.get('Last-Modified')).toMatch(/ GMT$/)
-    const firstBody = await first.text()
+    const firstBody = unfoldICal(await first.text())
     expect(firstBody).toContain(titleA)
     expect(firstBody).not.toContain(titleB)
     expect(firstBody).toContain('X-PUBLISHED-TTL:PT1H')
@@ -537,7 +541,7 @@ describe('campaign calendar feed domain', () => {
     // with a changed validator — the C113 acceptance.
     const second = await getFeed()
     expect(second.status).toBe(200)
-    const secondBody = await second.text()
+    const secondBody = unfoldICal(await second.text())
     expect(secondBody).toContain(titleA)
     expect(secondBody).toContain(titleB)
     expect(second.headers.get('ETag')).not.toBe(firstEtag)
@@ -576,7 +580,7 @@ describe('campaign calendar feed domain', () => {
       overrideAccess: false,
     })
     const cancelled = await getFeed()
-    const cancelledBody = await cancelled.text()
+    const cancelledBody = unfoldICal(await cancelled.text())
     expect(cancelledBody).not.toContain(titleB)
     expect(cancelledBody).toContain(titleA)
 
