@@ -1,4 +1,4 @@
-import { escapeICalText, formatICalDate } from '@/lib/ical'
+import { escapeICalText, foldICalLine, formatICalDate } from '@/lib/ical'
 
 /**
  * S29 — pure builders for the calendar options of an announcement link
@@ -90,5 +90,5 @@ export const buildCalendarEventIcs = ({
   if (event.location) lines.push(`LOCATION:${escapeICalText(event.location)}`)
 
   lines.push('END:VEVENT', 'END:VCALENDAR')
-  return lines.join('\r\n')
+  return lines.map(foldICalLine).join('\r\n')
 }

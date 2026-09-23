@@ -12,6 +12,11 @@ import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures
  * fetch the feed via `campaign.baseURL + path` — never the canonical origin,
  * which is deliberately non-resolving.
  */
+
+// The feed folds content lines longer than 75 octets (RFC 5545 §3.1), so a
+// subscriber must unfold (`CRLF + space`) before matching logical content.
+const unfoldICal = (body: string): string => body.replace(/\r\n /g, '')
+
 test.describe('Agenda — link de import (C98)', () => {
   test.setTimeout(90_000)
 
@@ -65,7 +70,7 @@ test.describe('Agenda — link de import (C98)', () => {
     const response = await page.request.get(`${campaign.baseURL}${new URL(feedUrl).pathname}`)
     expect(response.status()).toBe(200)
     expect(response.headers()['content-type']).toContain('text/calendar')
-    const body = await response.text()
+    const body = unfoldICal(await response.text())
     expect(body).toContain('BEGIN:VCALENDAR')
     expect(body).toContain(title)
   })
@@ -170,7 +175,7 @@ test.describe('Agenda — link de import (C98)', () => {
     expect(first.status()).toBe(200)
     expect(first.headers()['cache-control']).toBe('public, no-cache')
     expect(first.headers()['etag']).toMatch(/^"[0-9a-f]{64}"$/)
-    const firstBody = await first.text()
+    const firstBody = unfoldICal(await first.text())
     expect(firstBody).toContain(titleA)
     expect(firstBody).not.toContain(titleB)
     expect(firstBody).toContain('X-PUBLISHED-TTL:PT1H')
@@ -192,7 +197,7 @@ test.describe('Agenda — link de import (C98)', () => {
     // commitment created after the first, with a changed validator.
     const second = await request.get(feedUrl)
     expect(second.status()).toBe(200)
-    const secondBody = await second.text()
+    const secondBody = unfoldICal(await second.text())
     expect(secondBody).toContain(titleA)
     expect(secondBody).toContain(titleB)
     expect(second.headers()['etag']).not.toBe(firstEtag)
@@ -230,7 +235,7 @@ test.describe('Agenda — link de import (C98)', () => {
     })
     const cancelled = await request.get(feedUrl)
     expect(cancelled.status()).toBe(200)
-    const cancelledBody = await cancelled.text()
+    const cancelledBody = unfoldICal(await cancelled.text())
     expect(cancelledBody).not.toContain(titleB)
     expect(cancelledBody).toContain(titleA)
 

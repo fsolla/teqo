@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto'
 
 import { allDayCivilDateOf, allDayExclusiveEndDate } from '@/lib/activityAllDay'
 import { buildActivityDescriptionParts } from '@/lib/activityDescription'
-import { escapeICalText, formatICalDate } from '@/lib/ical'
+import { escapeICalText, foldICalLine, formatICalDate } from '@/lib/ical'
 import type { Activity, CalendarFeed } from '@/payload-types'
 import { advisorMunicipalityScopeWhere } from '@/utilities/access/shared'
 import type { Payload, Where } from 'payload'
@@ -73,7 +73,7 @@ export const generateICalFeed = (
   }
 
   lines.push('END:VCALENDAR')
-  return lines.join('\r\n')
+  return lines.map(foldICalLine).join('\r\n')
 }
 
 const computeFeedLastModified = (activities: Activity[], feedUpdatedAt?: string): string => {
