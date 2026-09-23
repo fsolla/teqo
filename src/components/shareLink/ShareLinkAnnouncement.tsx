@@ -44,7 +44,6 @@ export const ShareLinkAnnouncement = ({
 }) => {
   const [live, setLive] = useState<ShareLinkLiveTarget | null>(null)
   const isLive = live !== null
-  const hasImage = Boolean(view.imageUrl)
   const hasEventDetails = Boolean(view.eventLabel || view.location)
 
   useEffect(() => {
@@ -100,13 +99,13 @@ export const ShareLinkAnnouncement = ({
           className={cn(
             'relative z-1 mx-auto grid max-w-6xl overflow-hidden rounded-[18px] border border-(--campaign-line) bg-white',
             'shadow-[0_18px_50px_rgb(71_19_14/10%)]',
-            hasImage && 'lg:grid-cols-[0.95fr_1.05fr]',
+            view.imageUrl && 'lg:grid-cols-[0.95fr_1.05fr]',
           )}
         >
-          {hasImage ? (
+          {view.imageUrl ? (
             <div className="relative aspect-[1.91/1] w-full overflow-hidden bg-[#184e92] lg:aspect-auto lg:min-h-[535px]">
               <Image
-                src={view.imageUrl as string}
+                src={view.imageUrl}
                 alt={view.imageAlt}
                 fill
                 priority
@@ -142,9 +141,9 @@ export const ShareLinkAnnouncement = ({
             )}
 
             {!isLive && hasEventDetails ? (
-              <dl className="mt-4 grid gap-3 border-y border-black/10 py-4 text-sm sm:mt-7 sm:gap-4 sm:py-5">
+              <div className="mt-4 grid gap-3 border-y border-black/10 py-4 text-sm sm:mt-7 sm:gap-4 sm:py-5">
                 {view.eventLabel ? (
-                  <div className="flex items-start gap-3">
+                  <dl className="m-0 flex items-start gap-3">
                     <CalendarIcon
                       className="mt-0.5 size-5 flex-none text-(--pt-red)"
                       strokeWidth={2}
@@ -156,7 +155,7 @@ export const ShareLinkAnnouncement = ({
                         Horário da Bahia
                       </dd>
                     </div>
-                  </div>
+                  </dl>
                 ) : null}
                 {view.location ? (
                   <div className="flex items-center gap-3">
@@ -165,15 +164,18 @@ export const ShareLinkAnnouncement = ({
                       strokeWidth={2}
                       aria-hidden="true"
                     />
-                    <dt className="font-bold text-black">{view.location}</dt>
+                    <span className="font-bold text-black">{view.location}</span>
                   </div>
                 ) : null}
-              </dl>
+              </div>
             ) : null}
 
-            <div className="mt-auto pt-5 sm:pt-7" aria-live="polite">
+            <div className="mt-auto pt-5 sm:pt-7">
               {isLive && live ? (
-                <div className="mb-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-black/55">
+                <div
+                  aria-live="polite"
+                  className="mb-3 flex flex-wrap items-center justify-center gap-2 text-xs font-bold text-black/55"
+                >
                   <span>Destino no ar</span>
                   <span className="rounded-full bg-(--campaign-band) px-2.5 py-1 text-black">
                     {live.label || 'Destino'}
@@ -204,7 +206,10 @@ export const ShareLinkAnnouncement = ({
               )}
 
               {!isLive ? (
-                <p className="mt-3 text-center text-xs font-medium text-black/55 sm:text-sm">
+                <p
+                  aria-live="polite"
+                  className="mt-3 text-center text-xs font-medium text-black/55 sm:text-sm"
+                >
                   A transmissão ainda não começou.
                 </p>
               ) : null}

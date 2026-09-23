@@ -100,7 +100,7 @@ Não se aplica — a intenção não apresenta dado agregado (sem contagem/analy
 
 - [ ] Aceite de produto da intenção ainda coberto (modo por link; pool com rótulo; direct sem no-ar recusado; anúncio com data/local; Entrar desativado→ativo ~1 min; agenda Google+.ics com data e sem data esconde o botão; compartilha o link curto; despublicado 404; nada hardcoded para 03/10)
 - [ ] Invariantes AGENTS/engineering-standards (URL pública intacta; S19 sem mudança de comportamento; fail-closed/noindex; sem Consent/PII; schema só por migration `push:false`; `overrideAccess` documentado; lib→utilities→components→app; pt-BR em copy, inglês em identificador)
-- [ ] Testes de domínio previstos (unit/int) onde access/write paths mudam — obrigatórios: unit `shareLink` (modo/live/`shareLinkIcsPath`), unit `calendarEvent` (Google/ICS/2h), unit `shareLinkAnnouncement` (view + ilha de ativação jsdom), unit `contentShare` (`event`); int `shareLink` (hook cross-field com mensagens, loader publicado, live target fail-closed). Discricionários: admin e2e do checkbox; ETag do `.ics`. E2E obrigatório estendendo `frontendShareLink`: página de anúncio 200/noindex/sem refresh, `.ics` 200/404, redirect pós-live, e a regressão S19 (redirect/meta/no-JS/404/republicação) — o spec já é do conjunto curado.
+- [ ] Testes de domínio previstos (unit/int) onde access/write paths mudam — obrigatórios: unit `shareLink` (modo/live/`shareLinkIcsPath`), unit `calendarEvent` (Google/ICS/2h), unit `shareLinkAnnouncement` (view model), unit `contentShare` (`event`); int `shareLink` (hook cross-field com mensagens, loader publicado, live target fail-closed). Discricionários: admin e2e do checkbox; ETag do `.ics`. E2E obrigatório estendendo `frontendShareLink`: página de anúncio 200/noindex/sem refresh, `.ics` 200/404, redirect pós-live, e a regressão S19 (redirect/meta/no-JS/404/republicação) — o spec já é do conjunto curado. A **ilha de ativação** é coberta por e2e (client real, prod e dev) em vez de unit jsdom.
 
 ## Self-score (decision-quality)
 
@@ -111,3 +111,10 @@ Não se aplica — a intenção não apresenta dado agregado (sem contagem/analy
 5. **Intenção satisfeita:** 5 — todos os bullets do aceite mapeados em componentes/fases/testes, incluindo a questão em aberto aprovada (B: link volta a levar direto).
 
 Média 4.8/5 — plano aprovado no modo `--auto`.
+
+## Débitos triados (review do PR #1280)
+
+- **Folding RFC 5545 (75 octets) no `.ics`** — registrado como **#1281** (`S29-FOLLOWUP`, kind chore, P3): owner `src/lib/ical.ts`, 2 call sites (`lib/calendarEvent.ts`, `utilities/calendarFeed.ts`).
+- **`importMap.js` tracked apesar do OPS99** — descartado: dívida pré-existente do `main`, classe já rastreada em #772/#791 + postmortem 2026-09-12; reavaliar `git rm --cached` quando o guard do #772 fechar.
+- **Rate limiting da rota `live`** — deferido: gatilho = pico anômalo de requisições na rota (mitigação barata: cache in-memory de 5–10s no loader).
+- **Settle dev-only de 6s no e2e `frontendShareLink`** — deferido: gatilho = primeira flake local do spec (trocar por condição observável); o SQL cru é deliberado e documentado (isola a race de revalidação/HMR).

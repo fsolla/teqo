@@ -12,7 +12,6 @@ import {
   isReservedShareLinkSlug,
   isValidShareLinkDestination,
   isValidShareLinkSlug,
-  resolveLiveShareLinkDestination,
   resolveShareLinkMode,
   type ShareLinkDestinationLike,
 } from '@/lib/shareLink'
@@ -79,14 +78,15 @@ const validateShareLinkConfiguration: CollectionBeforeValidateHook = ({
     ? (nextData.destinations as ShareLinkDestinationLike[])
     : []
 
-  if (destinations.filter((destination) => destination?.live).length > 1) {
+  const liveCount = destinations.filter((destination) => destination?.live).length
+  if (liveCount > 1) {
     throw new APIError(SHARE_LINK_LIVE_DUPLICATE_MESSAGE, 400)
   }
 
-  if (
-    resolveShareLinkMode(nextData.mode) === 'direct' &&
-    !resolveLiveShareLinkDestination(destinations)
-  ) {
+  // Only the absence of a flagged row is the `direct` rule's business: a live
+  // row with a malformed URL must surface the field's own URL message (the
+  // runtime read still fails closed on it).
+  if (resolveShareLinkMode(nextData.mode) === 'direct' && liveCount === 0) {
     throw new APIError(SHARE_LINK_DIRECT_WITHOUT_LIVE_MESSAGE, 400)
   }
 

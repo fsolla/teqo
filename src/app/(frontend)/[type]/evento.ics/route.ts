@@ -2,8 +2,6 @@ import { buildCalendarEventIcs } from '@/lib/calendarEvent'
 import { shareLinkIcsUid } from '@/lib/shareLink'
 import { getCachedPublishedShareLinkBySlug } from '@/utilities/shareLinkReads'
 
-export const dynamicParams = true
-
 type RouteParams = { type: string }
 
 /**
