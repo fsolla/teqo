@@ -1,5 +1,7 @@
 # Impl: Briefing de capacitação Solla 1313 — até 4 páginas para quem vai pedir voto no recorte (cidade · instituição · tema)
 
+> **Replanejado em 2026-09-23** (4 folhas 100% recorte; âncora item-level por `sourceUrl`; `plan` no lugar do roteiro; sem evitar/conferir/limites): ver `docs/changelog/2026-09-23-c210-replan.md`, a skill atualizada e o design `docs/plans/briefing-capacitacao-solla-ui-design.html`. Este plano fica como histórico do desenho original (C210).
+
 Status: aprovado
 Atualizado em: 2026-09-22
 Issue: #1252

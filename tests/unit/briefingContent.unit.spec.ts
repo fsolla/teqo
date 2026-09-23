@@ -15,9 +15,11 @@ import {
 } from '../../scripts/lib/dossieResearch.mjs'
 import { MUNICIPALITY_UNIT, THEME_UNIT } from '../../scripts/lib/dossieUnit.mjs'
 
-// C210: the authored briefing may only anchor on the dossiê ledger (facts with
-// source). These tests pin the fail-closed validation, the deny-list and the
-// deterministic shed order that keeps the four-sheet PDF honest.
+// C210 (replanejado 2026-09-23): the authored briefing may only anchor on the
+// dossiê ledger (facts with source) and is 100% recorte — princípios/crenças,
+// defesas, fatos-âncora, uma linha de plano e Q&A. These tests pin the
+// fail-closed validation, the deny-list and the deterministic shed order that
+// keeps the four-sheet PDF honest.
 
 const generatedAt = new Date('2026-09-22T12:00:00.000Z')
 const snapshot = {
@@ -73,20 +75,17 @@ const validRaw = (overrides: Record<string, unknown> = {}) => ({
   municipalitySlug: 'ilheus',
   generatedAt: generatedAt.toISOString(),
   subtitle: 'Litoral Sul · consulta antes e durante o contato',
-  lede: 'Use um fato local de cada vez.',
+  lede: 'Universidade pública não é gasto: é projeto de país.',
+  defenses: [
+    { factId: 'era_c_atuacao', title: 'Ensino superior', note: 'Defesa regional.' },
+    { factId: 'era_b_programas', title: 'Saúde da Família', note: 'Defesa local.' },
+  ],
   essential: [
     { factId: 'era_b_equipamentos', title: 'Ambulância', note: 'Registro local de 2012.' },
     { factId: 'era_b_programas', title: 'Saúde em Movimento', note: 'Menção direta.' },
     { gapReason: 'sem fala própria localizada', title: 'Sem fala local', note: 'Anote a lacuna.' },
   ],
-  defenses: [{ factId: 'era_c_atuacao', title: 'Ensino superior', note: 'Defesa regional.' }],
-  script: {
-    steps: [
-      { title: 'Comece pela relação', note: 'Escute antes de argumentar.' },
-      { title: 'Use um fato do recorte', note: 'Diga o alcance.' },
-      { title: 'Peça explicitamente', note: 'Nome e número.' },
-    ],
-  },
+  plan: 'Combine onde, quando e como votar e registre o compromisso nomeado.',
   qa: [
     {
       side: 'direita',
@@ -129,17 +128,6 @@ const validRaw = (overrides: Record<string, unknown> = {}) => ({
       factId: 'era_c_atuacao',
     },
   ],
-  avoid: [
-    { title: 'Confrontar para ganhar', note: 'Encerre com respeito.' },
-    { title: 'Envergonhar o eleitor', note: 'Pressão pesada gera reação.' },
-    { title: 'Prometer sem lastro', note: 'Indicação não é obra.' },
-    { title: 'Repetir o ataque', note: 'Ofereça a explicação alternativa.' },
-    { title: 'Broadcast impessoal', note: 'WhatsApp 1-a-1 vem antes.' },
-  ],
-  checklist: {
-    beforeAnswer: ['Fonte e data', 'Alcance', 'Fase do valor'],
-    unsure: ['Diga que não tem o dado', 'Anote a pergunta', 'Combine retorno'],
-  },
   ...overrides,
 })
 
@@ -152,7 +140,10 @@ describe('normalizeBriefingContent', () => {
     expect(content.essential).toHaveLength(3)
     expect(content.essential[0].fact?.sourceUrl).toBe('https://saude.test/ambulancia')
     expect(content.essential[2].gapReason).toBe('sem fala própria localizada')
+    expect(content.defenses).toHaveLength(2)
+    expect(content.defenses[0].fact?.sourceUrl).toBe('https://camara.test/ufba')
     expect(content.qa).toHaveLength(5)
+    expect(content.plan).toMatch(/compromisso nomeado/)
     expect(content.warnings).toEqual([])
   })
 
@@ -161,9 +152,10 @@ describe('normalizeBriefingContent', () => {
     expect(() => normalize(validRaw({ municipalitySlug: 'itabuna' }))).toThrow(/não é "ilheus"/)
   })
 
-  it('requires generatedAt and a lede', () => {
+  it('requires generatedAt, a lede and the one-line plan', () => {
     expect(() => normalize(validRaw({ generatedAt: 'ontem' }))).toThrow(/generatedAt inválido/)
     expect(() => normalize(validRaw({ lede: '' }))).toThrow(/"lede" obrigatório/)
+    expect(() => normalize(validRaw({ plan: '' }))).toThrow(/"plan" obrigatório/)
   })
 
   it('demands exactly one of factId | gapReason per item', () => {
@@ -218,16 +210,15 @@ describe('normalizeBriefingContent', () => {
         ),
       }),
     ).toThrow(/dois lados/)
-    expect(() => normalize({ ...raw, avoid: [] })).toThrow(/avoid: mínimo de 3/)
-    expect(() =>
-      normalize({ ...raw, checklist: { beforeAnswer: ['só um'], unsure: ['a', 'b'] } }),
-    ).toThrow(/checklist.beforeAnswer: mínimo de 2/)
+    expect(() => normalize({ ...raw, qa: [] })).toThrow(/qa: mínimo de 4/)
+    expect(() => normalize({ ...raw, essential: [] })).toThrow(/essential: mínimo de 3/)
   })
 
   it('reports over-cap text as a warning, never as a hard failure', () => {
     const raw = validRaw()
-    const content = normalize({ ...raw, lede: 'a'.repeat(500) })
+    const content = normalize({ ...raw, lede: 'a'.repeat(500), plan: 'b'.repeat(300) })
     expect(content.warnings.join('\n')).toMatch(/lede: 500 chars/)
+    expect(content.warnings.join('\n')).toMatch(/plan: 300 chars/)
   })
 
   it('resolves anchors through the unit slugField (theme seam)', () => {
@@ -267,6 +258,48 @@ describe('normalizeBriefingContent', () => {
     ).toThrow(/não resolve em fato com fonte/)
   })
 
+  it('resolves a repeated id through the item sourceUrl and fails closed on a wrong pair', () => {
+    const duplicated = [
+      {
+        id: 'era_b_equipamentos',
+        sourceUrl: 'https://saude.test/ambulancia-2',
+        sourceDate: '2019-01-01',
+      },
+      ...facts,
+    ]
+    const raw = validRaw({
+      essential: [
+        {
+          factId: 'era_b_equipamentos',
+          sourceUrl: 'https://saude.test/ambulancia-2',
+          title: 'Ambulância nova',
+          note: 'Registro de 2019.',
+        },
+        { factId: 'era_b_programas', title: 'Saúde em Movimento', note: 'Menção direta.' },
+        {
+          gapReason: 'sem fala própria localizada',
+          title: 'Sem fala local',
+          note: 'Anote a lacuna.',
+        },
+      ],
+    })
+    const content = normalizeBriefingContent(raw, {
+      unit: MUNICIPALITY_UNIT,
+      slug: 'ilheus',
+      facts: duplicated,
+    })
+    expect(content.essential[0].fact?.sourceDate).toBe('2019-01-01')
+    const wrongPair = (raw.essential as Record<string, unknown>[]).map((item, index) =>
+      index === 0 ? { ...item, sourceUrl: 'https://saude.test/nao-existe' } : item,
+    )
+    expect(() =>
+      normalizeBriefingContent(
+        { ...raw, essential: wrongPair },
+        { unit: MUNICIPALITY_UNIT, slug: 'ilheus', facts: duplicated },
+      ),
+    ).toThrow(/não resolve em fato com fonte/)
+  })
+
   it('reports qa caps with the real field names, once each', () => {
     const raw = validRaw()
     const qa = (raw.qa as Record<string, unknown>[]).map((item, index) =>
@@ -291,28 +324,43 @@ describe('briefingAnchorFact', () => {
     )
     expect(briefingAnchorFact(facts, 'não-existe')).toBeNull()
   })
+
+  it('disambiguates a repeated id by the exact sourceUrl', () => {
+    const duplicated = [
+      {
+        id: 'era_b_programas',
+        sourceUrl: 'https://saude.test/programas',
+        sourceDate: '2013-05-10',
+      },
+      {
+        id: 'era_b_programas',
+        sourceUrl: 'https://saude.test/programas-2',
+        sourceDate: '2020-01-01',
+      },
+    ]
+    expect(briefingAnchorFact(duplicated, 'era_b_programas')?.sourceDate).toBe('2013-05-10')
+    expect(
+      briefingAnchorFact(duplicated, 'era_b_programas', 'https://saude.test/programas-2')
+        ?.sourceDate,
+    ).toBe('2020-01-01')
+    expect(briefingAnchorFact(duplicated, 'era_b_programas', 'https://nope.test')).toBeNull()
+  })
 })
 
 describe('trimBriefing (deterministic shed order)', () => {
   const content = normalize()
 
-  it('drops qa first, then defenses, then checklist, then avoid', () => {
+  it('drops qa first, then defenses, then stops', () => {
     const first = trimBriefing(content)!
     expect(first.qa).toHaveLength(BRIEFING_MINIMUMS.qa)
-    expect(first.shed).toEqual({ qa: 1, defenses: 0, checklist: 0, avoid: 0 })
+    expect(first.shed).toEqual({ qa: 1, defenses: 0 })
     const second = trimBriefing(first)!
-    expect(second.defenses).toHaveLength(0)
-    expect(second.shed).toEqual({ qa: 1, defenses: 1, checklist: 0, avoid: 0 })
+    expect(second.defenses).toHaveLength(1)
+    expect(second.shed).toEqual({ qa: 1, defenses: 1 })
     const third = trimBriefing(second)!
-    expect(third.shed.checklist).toBe(1)
-    const fourth = trimBriefing(third)!
-    expect(fourth.shed.checklist).toBe(2)
-    expect(fourth.checklist.beforeAnswer.length + fourth.checklist.unsure.length).toBe(
-      BRIEFING_MINIMUMS.beforeAnswer + BRIEFING_MINIMUMS.unsure,
-    )
-    const fifth = trimBriefing(fourth)!
-    expect(fifth.avoid).toHaveLength(BRIEFING_MINIMUMS.avoid + 1)
-    expect(fifth.shed.avoid).toBe(1)
+    expect(third.defenses).toHaveLength(0)
+    expect(third.shed).toEqual({ qa: 1, defenses: 2 })
+    expect(trimBriefing(third)).toBeNull()
   })
 
   it('never silences a required side when shedding qa', () => {
@@ -334,7 +382,7 @@ describe('trimBriefing (deterministic shed order)', () => {
     expect(trimmed.qa.at(-1)?.side).toBe('direita')
   })
 
-  it('never touches essential or the script and stops at the minimums', () => {
+  it('never touches the essential, the principles copy or the plan', () => {
     let current = content
     let next = trimBriefing(current)
     let guard = 0
@@ -345,11 +393,9 @@ describe('trimBriefing (deterministic shed order)', () => {
     }
     expect(current.qa).toHaveLength(BRIEFING_MINIMUMS.qa)
     expect(current.defenses).toHaveLength(0)
-    expect(current.checklist.beforeAnswer).toHaveLength(BRIEFING_MINIMUMS.beforeAnswer)
-    expect(current.checklist.unsure).toHaveLength(BRIEFING_MINIMUMS.unsure)
-    expect(current.avoid).toHaveLength(BRIEFING_MINIMUMS.avoid)
     expect(current.essential).toEqual(content.essential)
-    expect(current.script).toEqual(content.script)
+    expect(current.lede).toBe(content.lede)
+    expect(current.plan).toBe(content.plan)
     expect(next).toBeNull()
   })
 })

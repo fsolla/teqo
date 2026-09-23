@@ -1,13 +1,15 @@
 /**
  * Briefing de capacitação builder (C210): snapshot + per-era research + the
- * authored `<slug>.briefing.json` → one internal A4 PDF (fixed four sheets) and
- * the `.md` companion.
+ * authored `<slug>.briefing.json` → one internal A4 PDF (four fixed recorte
+ * sheets: defesas → essencial + pedido → qa 1/2 → qa 2/2) and the `.md`
+ * companion.
  *
  * Runs on the workstation, offline: no database access, no official-source
  * fetch — the briefing derives from the dossiê JSONs already researched, and
  * every anchor must resolve in the `bulletinFacts` ledger (facts with source).
- * The four-page cap is a hard guard: on overflow the lowest-priority lists shed
- * by priority (declared on the sheet, complete in the `.md`), never silently.
+ * The four-sheet cap is a hard guard: on overflow the lowest-priority lists shed
+ * by priority (qa → defesas; declared on the sheet, complete in the `.md`),
+ * never silently.
  *
  * Usage:
  *   NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-dossie-solla-briefing.mjs \
@@ -147,9 +149,9 @@ try {
     maxPages: BRIEFING_PAGE_TOTAL,
     requiredAnchors: BRIEFING_ANCHORS,
     label: 'O briefing',
-    // Four fixed sheets: on overflow the lowest-priority list sheds one item
-    // per pass (qa → defesas → conferir → evitar) until it fits; the remainder
-    // stays counted on the sheet and complete in the `.md`.
+    // Four fixed recorte sheets: on overflow the lowest-priority list sheds one
+    // item per pass (qa → defesas) until it fits; the remainder stays counted on
+    // the sheet and complete in the `.md`.
     onOverflow: () => {
       const trimmed = trimBriefing(printContent)
       if (!trimmed) return null
