@@ -18,6 +18,10 @@ export const CONTENT_PIECE_ACTIVE_CHIP = cn(
 export const CONTENT_PIECE_TAG =
   'inline-flex rounded-full bg-[#eef4fb] px-2 py-1 text-[11px] font-extrabold text-[#184e92]'
 
+/** S28 — the neutral badge of a theme-mode result that only matched the query. */
+export const CONTENT_PIECE_EXACT_TAG =
+  'inline-flex rounded-full border border-black/12 bg-white px-2 py-1 text-[11px] font-extrabold text-[#514945]'
+
 export const CONTENT_PIECE_PRIMARY_BUTTON = cn(
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-(--pt-yellow) px-4 font-[family-name:var(--font-exo2)] text-sm font-extrabold text-(--pt-yellow-ink) no-underline',
   'shadow-[0_4px_0_#cfb900] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 active:translate-y-[2px] active:shadow-[0_2px_0_#cfb900] motion-reduce:transition-none',

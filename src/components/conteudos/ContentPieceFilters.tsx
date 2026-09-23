@@ -11,11 +11,11 @@ import {
   type ContentPieceCatalogParams,
 } from '@/lib/contentPieceCatalog'
 
+import { ContentPieceSearchMode } from './ContentPieceSearchMode'
 import {
   CONTENT_PIECE_ACTIVE_CHIP,
   CONTENT_PIECE_CHIP,
   CONTENT_PIECE_FOCUS,
-  CONTENT_PIECE_PRIMARY_BUTTON,
 } from './contentPieceClasses'
 
 const FIELD_CLASS =
@@ -25,21 +25,27 @@ const DROPDOWN_LINK =
   'flex min-h-9 items-center rounded-lg px-2.5 text-sm font-medium text-black hover:bg-(--campaign-band) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red)'
 
 /**
- * S27 — the catalogue filters (artefato: cenas 01/06): a GET form (works
- * without JS, the URL is the state) with the search term plus one chip per
- * facet — a `<details>` menu when empty, an active chip with its removal link
- * when set. Facets that no published piece carries never render.
+ * S28 — the catalogue filters (artefato: cenas 07–09): a GET form (works
+ * without JS, the URL is the state) with the search term, the mode segmented
+ * control and one chip per facet — a `<details>` menu when empty, an active
+ * chip with its removal link when set. There is no submit button: Enter on the
+ * field searches and changing the mode submits. Facets that no published piece
+ * carries never render; in the theme mode the links keep `prefetch={false}` so
+ * a prefetched (never expanded) payload does not poison the client router
+ * cache.
  */
 export const ContentPieceFilters = ({
   params,
   facets,
   activeFilters,
+  themeUnavailable,
 }: {
   params: ContentPieceCatalogParams
   facets: ContentPieceCatalogFacets
   activeFilters: readonly ContentPieceCatalogActiveFilter[]
+  themeUnavailable: boolean
 }) => {
-  const hasActiveFilters = activeFilters.length > 0
+  const themeMode = params.mode === 'tema'
   const termFilter = activeFilters.find((filter) => filter.facet === 'q')
   const facetFilters = activeFilters.filter(
     (filter): filter is typeof filter & { facet: ContentPieceCatalogFacet } => filter.facet !== 'q',
@@ -53,8 +59,8 @@ export const ContentPieceFilters = ({
         ) : null,
       )}
 
-      <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
-        <div className="relative">
+      <div className="grid gap-3 rounded-xl bg-(--campaign-cream) p-4 sm:grid-cols-[1fr_300px]">
+        <div className="relative self-end">
           <input
             type="search"
             name="q"
@@ -73,52 +79,52 @@ export const ContentPieceFilters = ({
             </Link>
           ) : null}
         </div>
-        <button type="submit" className={`${CONTENT_PIECE_PRIMARY_BUTTON} px-6`}>
-          {hasActiveFilters ? 'Buscar peças' : 'Escolher uma peça e pedir voto'}
-        </button>
-      </div>
+        <ContentPieceSearchMode mode={params.mode} themeUnavailable={themeUnavailable} />
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {facetFilters.map((filter) => (
-          <Link
-            key={filter.facet}
-            href={filter.removeHref}
-            aria-label={`Remover filtro ${filter.label}: ${filter.value}`}
-            className={CONTENT_PIECE_ACTIVE_CHIP}
-          >
-            {filter.label} · {filter.value}
-            <span aria-hidden="true" className="text-base leading-none">
-              ×
-            </span>
-          </Link>
-        ))}
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+          {facetFilters.map((filter) => (
+            <Link
+              key={filter.facet}
+              href={filter.removeHref}
+              prefetch={themeMode ? false : undefined}
+              aria-label={`Remover filtro ${filter.label}: ${filter.value}`}
+              className={CONTENT_PIECE_ACTIVE_CHIP}
+            >
+              {filter.label} · {filter.value}
+              <span aria-hidden="true" className="text-base leading-none">
+                ×
+              </span>
+            </Link>
+          ))}
 
-        {CONTENT_PIECE_CATALOG_FACETS.map((facet) =>
-          params[facet] || facets[facet].length === 0 ? null : (
-            <details key={facet} className="relative">
-              <summary
-                className={`${CONTENT_PIECE_CHIP} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
-              >
-                {contentPieceCatalogFacetLabels[facet]}
-                <span aria-hidden="true" className="text-base leading-none">
-                  ⌄
-                </span>
-              </summary>
-              <ul className="absolute z-20 mt-1 max-h-72 min-w-44 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1 shadow-[0_12px_30px_rgb(0_0_0/15%)]">
-                {facets[facet].map((option) => (
-                  <li key={option.value}>
-                    <Link
-                      href={buildContentPieceCatalogHref({ ...params, [facet]: option.value })}
-                      className={DROPDOWN_LINK}
-                    >
-                      {option.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ),
-        )}
+          {CONTENT_PIECE_CATALOG_FACETS.map((facet) =>
+            params[facet] || facets[facet].length === 0 ? null : (
+              <details key={facet} className="relative">
+                <summary
+                  className={`${CONTENT_PIECE_CHIP} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+                >
+                  {contentPieceCatalogFacetLabels[facet]}
+                  <span aria-hidden="true" className="text-base leading-none">
+                    ⌄
+                  </span>
+                </summary>
+                <ul className="absolute z-20 mt-1 max-h-72 min-w-44 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1 shadow-[0_12px_30px_rgb(0_0_0/15%)]">
+                  {facets[facet].map((option) => (
+                    <li key={option.value}>
+                      <Link
+                        href={buildContentPieceCatalogHref({ ...params, [facet]: option.value })}
+                        prefetch={themeMode ? false : undefined}
+                        className={DROPDOWN_LINK}
+                      >
+                        {option.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ),
+          )}
+        </div>
       </div>
     </form>
   )

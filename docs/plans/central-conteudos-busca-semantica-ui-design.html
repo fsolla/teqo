@@ -71,6 +71,37 @@
         color: #184e92;
         box-shadow: 0 1px 4px rgb(0 0 0/12%);
       }
+      .seg-option {
+        display: flex;
+        min-height: 42px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 7px;
+        padding: 0 10px;
+        color: #3f3937;
+        font-size: 13px;
+        font-weight: 800;
+        white-space: nowrap;
+      }
+      .seg-option.is-hover {
+        background: rgb(255 255 255/58%);
+        color: #184e92;
+      }
+      .seg-option.is-focus {
+        outline: 3px solid #e4102f;
+        outline-offset: 2px;
+      }
+      .seg-option.is-disabled {
+        cursor: not-allowed;
+        color: #8b6c1a;
+        opacity: 0.64;
+      }
+      .evidence-mark {
+        border-radius: 3px;
+        background: #fff09a;
+        padding: 0 2px;
+        font-weight: 800;
+      }
       .chip {
         display: inline-flex;
         min-height: 38px;
@@ -137,6 +168,14 @@
           Uma escolha clara de modo e uma explicação curta por peça. Nada de score, ruído ou
           resultado forçado.
         </p>
+        <div class="mt-5 rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4 text-sm leading-6">
+          <b class="text-[#184e92]">Revisão aditiva · trigger (a) do work-issue</b>
+          <p class="mt-1 text-[#514945]">
+            As cenas 01–04 permanecem como registro aprovado. As cenas 05–09 abaixo fecham os
+            estados do port; quando houver diferença de detalhe, a cena nova é a referência canônica
+            para o estado nomeado.
+          </p>
+        </div>
       </header>
 
       <section>
@@ -276,6 +315,302 @@
               Degradação · mobile 390 · nenhum resultado fantasma.
             </p>
           </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 05</span>
+          <h2>Desktop 1280 · resultado por tema × resultado só pelo termo exato</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white p-10">
+          <div class="flex items-end justify-between gap-6">
+            <div>
+              <p class="text-xs font-bold tracking-[0.08em] text-[#184e92] uppercase">
+                Mesmo modo · proveniências diferentes
+              </p>
+              <h3 class="display mt-1 text-2xl font-black">
+                Resultados para “saúde do trabalhador”
+              </h3>
+            </div>
+            <span class="text-xs text-[#6c615e]">Por tema ativo</span>
+          </div>
+          <div class="mt-6 grid grid-cols-2 gap-5">
+            <article class="card grid min-h-[540px] grid-rows-[190px_1fr]">
+              <div class="asset">NEEDS ASSET · POSTER REAL</div>
+              <div class="flex flex-col p-5">
+                <div>
+                  <span
+                    class="inline-flex rounded-full bg-[#eef4fb] px-2 py-1 text-xs font-bold text-[#184e92]"
+                    >✦ Tema</span
+                  >
+                  <h4 class="mt-3 text-lg font-extrabold">Reduzir a jornada também é cuidar</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Vídeo · Trabalho · Salvador</p>
+                  <div class="mt-4 rounded-lg bg-[#f5f5f4] p-4">
+                    <b class="text-xs">Por que apareceu</b>
+                    <p class="mt-1 text-sm leading-6">
+                      “…reduzir a jornada protege a
+                      <span class="evidence-mark">saúde de quem trabalha</span>…”
+                    </p>
+                  </div>
+                </div>
+                <a class="mt-auto pt-5 text-sm font-extrabold text-[#a21c1c]">Abrir peça →</a>
+              </div>
+            </article>
+            <article class="card grid min-h-[540px] grid-rows-[190px_1fr]">
+              <div class="asset">NEEDS ASSET · POSTER REAL</div>
+              <div class="flex flex-col p-5">
+                <div>
+                  <span
+                    class="inline-flex rounded-full border border-black/12 bg-white px-2 py-1 text-xs font-bold text-[#514945]"
+                    >Termo exato</span
+                  >
+                  <h4 class="mt-3 text-lg font-extrabold">Saúde do trabalhador em debate</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Card · Saúde · Salvador</p>
+                </div>
+                <a class="mt-auto pt-5 text-sm font-extrabold text-[#a21c1c]">Abrir peça →</a>
+              </div>
+            </article>
+          </div>
+          <div class="mt-5 grid grid-cols-2 gap-5 text-xs leading-5 text-[#6c615e]">
+            <p>
+              <b class="text-black">Com casamento temático:</b> selo azul + bloco de evidência real.
+            </p>
+            <p>
+              <b class="text-black">Só casou o q:</b> selo neutro “Termo exato”; o espaço não é
+              preenchido por um bloco vazio ou inventado. Os cards mantêm a mesma altura da grade.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 06</span>
+          <h2>Evidência temática sem trecho correspondente · texto real, sem falsa citação</h2>
+        </div>
+        <div class="grid gap-8 lg:grid-cols-[1fr_390px]">
+          <article class="frame rounded-xl bg-white p-8">
+            <div class="max-w-2xl">
+              <span class="rounded-full bg-[#eef4fb] px-2 py-1 text-xs font-bold text-[#184e92]"
+                >✦ Tema</span
+              >
+              <h3 class="mt-3 text-xl font-extrabold">Mutirão leva atendimento ao Subúrbio</h3>
+              <p class="mt-1 text-xs text-[#6c615e]">Vídeo · Saúde · Salvador</p>
+              <div class="mt-5 rounded-lg bg-[#f5f5f4] p-4">
+                <div class="flex items-baseline justify-between gap-4">
+                  <b class="text-xs">Por que apareceu</b>
+                  <span class="text-[11px] font-bold text-[#6c615e]">Descrição da peça</span>
+                </div>
+                <p class="mt-2 text-sm leading-6">
+                  Atendimento perto de casa, com equipes reunidas para ampliar o acesso da população
+                  aos serviços públicos.
+                </p>
+              </div>
+            </div>
+          </article>
+          <aside class="frame rounded-xl bg-[#fff8f2] p-6 text-sm leading-6">
+            <b class="text-[#a21c1c]">Regra visual deste fallback</b>
+            <ul class="mt-3 list-disc space-y-2 pl-5 text-[#514945]">
+              <li>mantém “✦ Tema” e “Por que apareceu”;</li>
+              <li>usa trecho real da descrição ou do resumo;</li>
+              <li><b>sem aspas</b>, porque não é uma janela de frase casada;</li>
+              <li>sem marca-texto, negrito ou termo sugerido pelo modelo;</li>
+              <li>“Descrição da peça” explicita a origem sem prometer casamento textual.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 07</span>
+          <h2>Expansão concluída sem termos · lista literal, sem alarme</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white p-10">
+          <div class="grid grid-cols-[1fr_300px] gap-3 rounded-xl bg-[#fff8f2] p-4">
+            <input class="field" value="saúde" aria-label="Buscar peças" />
+            <div>
+              <span class="mb-1 block text-xs font-bold text-[#6c615e]">Buscar por:</span>
+              <div class="seg">
+                <span class="seg-option">Termo exato</span
+                ><span class="seg-option active">✦ Por tema</span>
+              </div>
+            </div>
+            <div class="col-span-2 flex flex-wrap gap-2">
+              <span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span
+              ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+              ><span class="chip">Instituição⌄</span>
+            </div>
+          </div>
+          <div class="mt-7 grid grid-cols-3 gap-4">
+            <article class="card p-4">
+              <span
+                class="rounded-full border border-black/12 px-2 py-1 text-xs font-bold text-[#514945]"
+                >Termo exato</span
+              >
+              <h3 class="mt-3 font-extrabold">Saúde pública perto de quem precisa</h3>
+            </article>
+            <article class="card p-4">
+              <span
+                class="rounded-full border border-black/12 px-2 py-1 text-xs font-bold text-[#514945]"
+                >Termo exato</span
+              >
+              <h3 class="mt-3 font-extrabold">Defender a saúde é cuidar da Bahia</h3>
+            </article>
+            <article class="card p-4">
+              <span
+                class="rounded-full border border-black/12 px-2 py-1 text-xs font-bold text-[#514945]"
+                >Termo exato</span
+              >
+              <h3 class="mt-3 font-extrabold">Mais recursos para a saúde</h3>
+            </article>
+          </div>
+        </div>
+        <p
+          class="desktop mx-auto mt-3 rounded-lg border border-dashed border-[#184e92]/35 bg-[#eef4fb] p-4 text-sm leading-6"
+        >
+          <b>NOTA DO DESIGN · não é microcopy da tela:</b> “Por tema” continua ativo porque foi o
+          modo pedido, mas não aparece aviso, explicação operacional nem selo “Tema”. A lista é
+          exatamente a busca literal e cada peça encontrada recebe apenas “Termo exato”. O usuário
+          não precisa saber que a expansão devolveu zero termos.
+        </p>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 08</span>
+          <h2>Bloco canônico de busca · desktop 1280 e mobile 390</h2>
+        </div>
+        <div class="grid items-start gap-8 xl:grid-cols-[1fr_390px]">
+          <article class="frame rounded-xl bg-white p-8">
+            <p class="text-xs font-bold tracking-[0.08em] text-[#184e92] uppercase">Desktop</p>
+            <div class="mt-4 grid grid-cols-[1fr_300px] gap-3 rounded-xl bg-[#fff8f2] p-4">
+              <input class="field self-end" value="fim da escala 6x1" aria-label="Buscar peças" />
+              <div>
+                <span class="mb-1 block text-xs font-bold text-[#6c615e]">Buscar por:</span>
+                <div class="seg">
+                  <span class="seg-option">Termo exato</span
+                  ><span class="seg-option active">✦ Por tema</span>
+                </div>
+              </div>
+              <div class="col-span-2 flex flex-wrap gap-2">
+                <span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span
+                ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+                ><span class="chip">Instituição⌄</span>
+              </div>
+            </div>
+            <p class="mt-4 text-xs leading-5 text-[#6c615e]">
+              Grade canônica: <b>1fr + 300px</b>. Não há botão de submit: Enter no campo busca;
+              mudar o modo submete. Abaixo permanecem as cinco facetas do S27, na ordem existente.
+            </p>
+          </article>
+          <article class="phone frame overflow-hidden bg-white p-4">
+            <p class="text-xs font-bold tracking-[0.08em] text-[#184e92] uppercase">Mobile</p>
+            <div class="mt-3 rounded-xl bg-[#fff8f2] p-3">
+              <input class="field" value="fim da escala 6x1" aria-label="Buscar peças" />
+              <span class="mt-3 block text-xs font-bold text-[#6c615e]">Buscar por:</span>
+              <div class="seg mt-1">
+                <span class="seg-option">Termo exato</span
+                ><span class="seg-option active">✦ Por tema</span>
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span
+                ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+                ><span class="chip">Instituição⌄</span>
+              </div>
+            </div>
+            <p class="mt-4 text-xs leading-5 text-[#6c615e]">
+              Uma coluna; nenhuma faceta é substituída por “Mais filtros”. Sem botão de submit.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 09</span>
+          <h2>Segmented · hover, foco, ativo e indisponível</h2>
+        </div>
+        <div class="frame rounded-xl bg-white p-8">
+          <div class="grid gap-6 lg:grid-cols-4">
+            <div>
+              <p class="mb-2 text-xs font-bold text-[#6c615e]">HOVER · opção disponível</p>
+              <div class="seg">
+                <span class="seg-option active">Termo exato</span
+                ><span class="seg-option is-hover">✦ Por tema</span>
+              </div>
+            </div>
+            <div>
+              <p class="mb-2 text-xs font-bold text-[#6c615e]">FOCO VISÍVEL · teclado</p>
+              <div class="seg">
+                <span class="seg-option">Termo exato</span
+                ><span class="seg-option is-focus">✦ Por tema</span>
+              </div>
+            </div>
+            <div>
+              <p class="mb-2 text-xs font-bold text-[#6c615e]">ATIVO</p>
+              <div class="seg">
+                <span class="seg-option">Termo exato</span
+                ><span class="seg-option active">✦ Por tema</span>
+              </div>
+            </div>
+            <div>
+              <p class="mb-2 text-xs font-bold text-[#6c615e]">INDISPONÍVEL · degradação</p>
+              <div class="seg">
+                <span class="seg-option active !text-black">Termo exato</span
+                ><span class="seg-option is-disabled">⚠ Por tema</span>
+              </div>
+            </div>
+          </div>
+          <div
+            class="mt-7 grid gap-5 border-t border-black/10 pt-6 text-sm leading-6 md:grid-cols-2"
+          >
+            <div>
+              <b>Interação e acessibilidade</b>
+              <p class="mt-1 text-[#514945]">
+                As duas opções são um único grupo de rádio. Tab entra no grupo; setas
+                esquerda/direita alternam a opção; foco usa contorno vermelho de 3px com offset de
+                2px; trocar o modo submete a busca. Hover não se confunde com seleção.
+              </p>
+            </div>
+            <div>
+              <b>Degradação consolidada</b>
+              <p class="mt-1 text-[#514945]">
+                O aviso âmbar da cena 04 permanece. “Termo exato” fica ativo; “⚠ Por tema” fica
+                desabilitado, sem ação.
+                <b>Não há botão “Ver resultados exatos” no bloco canônico</b>: a lista exata já está
+                presente. O retry, quando oferecido, vive no aviso, não ocupa o lugar do submit
+                removido.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>REGISTRO DA REVISÃO</span>
+          <h2>Leituras do mock e loading</h2>
+        </div>
+        <div class="frame grid gap-6 rounded-xl bg-[#181514] p-7 text-white md:grid-cols-2">
+          <div>
+            <b class="text-[#ffeb00]">Leitura confirmada</b>
+            <p class="mt-2 text-sm leading-6 text-white/80">
+              “Mais filtros⌄” e o h3 “Encontre uma peça para pedir voto” das cenas 01–02 eram
+              abreviações do mock, não um redesenho do S27. O port preserva a fileira real de cinco
+              facetas — Tipo · Cidade · Região · Tema · Instituição — e preserva integralmente o
+              hero do S27, inclusive seu CTA narrativo de pedido de voto.
+            </p>
+          </div>
+          <div>
+            <b class="text-[#ffeb00]">Loading confirmado</b>
+            <p class="mt-2 text-sm leading-6 text-white/80">
+              O skeleton existente do S27 cobre a espera do modo tema. Não há nova informação ou
+              decisão durante a espera; portanto, uma cena de loading específica seria redundante e
+              não faz parte desta revisão.
+            </p>
+          </div>
         </div>
       </section>
     </main>

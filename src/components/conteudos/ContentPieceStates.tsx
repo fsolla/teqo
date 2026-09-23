@@ -3,10 +3,12 @@ import Link from 'next/link'
 
 import {
   CONTENT_PIECE_CATALOG_PATH,
+  buildContentPieceCatalogHref,
   type ContentPieceCatalogActiveFilter,
+  type ContentPieceCatalogParams,
 } from '@/lib/contentPieceCatalog'
 
-import { CONTENT_PIECE_PRIMARY_BUTTON } from './contentPieceClasses'
+import { CONTENT_PIECE_OUTLINE_BUTTON, CONTENT_PIECE_PRIMARY_BUTTON } from './contentPieceClasses'
 
 /**
  * S27 — the honest states of the Central (artefato: cena 05/06). Zero
@@ -67,4 +69,57 @@ export const ContentPieceNoResults = ({
       Limpar filtros
     </Link>
   </section>
+)
+
+/**
+ * S28 — the honest empty of the theme mode (artefato: cena 03): no weak result
+ * fills the board, and the three ways out are the reformulation, the exact
+ * search and the clear filters.
+ */
+export const ContentPieceThemeNoResults = ({ params }: { params: ContentPieceCatalogParams }) => (
+  <section className="rounded-2xl border border-[#184e92]/15 bg-[#f9faff] px-5 py-10 text-center sm:px-8 sm:py-14">
+    <h2 className="border-0 pb-0 font-[family-name:var(--font-exo2)] text-xl font-black sm:text-2xl">
+      Nenhuma peça combina bem com esse tema
+    </h2>
+    <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-(--campaign-muted)">
+      Não mostramos um resultado fraco só para preencher a tela.
+    </p>
+    <div className="mt-6 flex flex-wrap justify-center gap-2">
+      <Link
+        href={buildContentPieceCatalogHref({ ...params, q: '', mode: null })}
+        className={`${CONTENT_PIECE_PRIMARY_BUTTON} sm:min-w-40`}
+      >
+        Reformular busca
+      </Link>
+      <Link
+        href={buildContentPieceCatalogHref({ ...params, mode: null })}
+        className={CONTENT_PIECE_OUTLINE_BUTTON}
+      >
+        Usar termo exato
+      </Link>
+      <Link href={CONTENT_PIECE_CATALOG_PATH} className={CONTENT_PIECE_OUTLINE_BUTTON}>
+        Limpar filtros
+      </Link>
+    </div>
+  </section>
+)
+
+/**
+ * S28 — the degradation notice (artefato: cenas 04/09): the exact search keeps
+ * working and the retry lives here (the canonical block has no submit button).
+ * The link never prefetches: a prefetched payload is never expanded and would
+ * poison the client router cache.
+ */
+export const ContentPieceThemeFallbackNotice = ({ retryHref }: { retryHref: string }) => (
+  <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-5 text-amber-900">
+    <b>Busca por tema indisponível agora.</b>
+    <br />A busca exata continua funcionando.{' '}
+    <Link
+      href={retryHref}
+      prefetch={false}
+      className="font-bold text-amber-950 underline underline-offset-2 focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red)"
+    >
+      Tentar por tema novamente
+    </Link>
+  </div>
 )

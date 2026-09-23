@@ -166,6 +166,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/content/contentPieceReads.ts',
       // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
       'src/utilities/ogImageReads.ts',
+      // S28 — the theme-mode loader of the same public surface.
+      'src/utilities/content/contentPieceThemeSearch.ts',
       // The tag/revalidation vocabulary owner for the content pieces listing.
       'src/utilities/documents.ts',
       'src/collections/ContentPiece.ts',
@@ -375,8 +377,10 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     // C199 — the recordings' timestamped ASR uses the same provider owner; the
     // acervo spec exercises the recordings surface the job feeds.
+    // S28 — the same owner now generalizes the expansion for the public
+    // Central, so a diff there must wake the public spec too.
     prefixes: ['src/utilities/ai'],
-    specs: ['campaignAiTranscribe', 'campaignSpeechAcervo'],
+    specs: ['campaignAiTranscribe', 'campaignSpeechAcervo', 'frontendConteudos'],
   },
   {
     // Zod input schemas surface in the browser through form flows; the

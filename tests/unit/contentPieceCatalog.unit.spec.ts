@@ -11,6 +11,8 @@ import {
   contentPieceMediaPath,
   contentPiecePublicPath,
   contentPieceTextExcerpt,
+  contentPieceThemeMatch,
+  contentPieceThemeTerms,
   filterContentPieceCatalogItems,
   parseContentPieceCatalogParams,
   toContentPiecePublicItem,
@@ -52,6 +54,7 @@ describe('content piece catalog params', () => {
         tema: 'economia-trabalho',
         instituicao: 'camara-dos-deputados',
         q: '  escala  ',
+        mode: 'tema',
       }),
     ).toEqual({
       tipo: 'video',
@@ -60,6 +63,7 @@ describe('content piece catalog params', () => {
       tema: 'economia-trabalho',
       instituicao: 'camara-dos-deputados',
       q: 'escala',
+      mode: 'tema',
     })
 
     expect(parseContentPieceCatalogParams({ tipo: 'inexistente', tema: 'nada' })).toEqual({
@@ -69,9 +73,19 @@ describe('content piece catalog params', () => {
       tema: null,
       instituicao: null,
       q: '',
+      mode: null,
     })
     expect(parseContentPieceCatalogParams({ cidade: '../etc/passwd' }).cidade).toBeNull()
     expect(parseContentPieceCatalogParams({}).q).toBe('')
+  })
+
+  it('parses the theme mode only with a query and drops unknown modes', () => {
+    expect(parseContentPieceCatalogParams({ q: 'escala', mode: 'tema' }).mode).toBe('tema')
+    // `exato` is the default and never serialized; unknown values mean exact too.
+    expect(parseContentPieceCatalogParams({ q: 'escala', mode: 'exato' }).mode).toBeNull()
+    expect(parseContentPieceCatalogParams({ q: 'escala', mode: 'semantico' }).mode).toBeNull()
+    expect(parseContentPieceCatalogParams({ q: '  ', mode: 'tema' }).mode).toBeNull()
+    expect(parseContentPieceCatalogParams({ mode: 'tema' }).mode).toBeNull()
   })
 
   it('builds the canonical href with a fixed order and no empty params', () => {
@@ -88,6 +102,11 @@ describe('content piece catalog params', () => {
     expect(buildContentPieceCatalogHref({ tipo: 'video', tema: null, q: '' })).toBe(
       '/conteudos?tipo=video',
     )
+    expect(buildContentPieceCatalogHref({ q: 'escala', mode: 'tema' })).toBe(
+      '/conteudos?q=escala&mode=tema',
+    )
+    // A mode without a query has nothing to expand and is not serialized.
+    expect(buildContentPieceCatalogHref({ q: '', mode: 'tema' })).toBe('/conteudos')
   })
 
   it('lists the active filters with their removal hrefs', () => {
@@ -177,6 +196,88 @@ describe('content piece catalog filtering', () => {
     expect(idsFor({ q: 'saúde' })).toEqual([1, 2])
     expect(idsFor({ tipo: 'video', cidade: 'feira-de-santana' })).toEqual([])
     expect(idsFor({ tipo: 'video', q: 'escala' })).toEqual([1])
+  })
+
+  it('ORs the literal query with the expanded theme terms, facets still AND', () => {
+    const idsForTerms = (raw: Record<string, string>, terms: string[]) =>
+      filterContentPieceCatalogItems(items, parseContentPieceCatalogParams(raw), terms).map(
+        (row) => row.id,
+      )
+
+    // No terms is byte-identical to the literal search.
+    expect(idsForTerms({ q: 'escala' }, [])).toEqual([1])
+    // The expanded term surfaces a piece the query alone would not.
+    expect(idsForTerms({ q: 'giro' }, ['card'])).toEqual([2])
+    expect(idsForTerms({ q: 'zzz' }, ['card', 'giro'])).toEqual([2])
+    // Facets keep narrowing the OR result.
+    expect(idsForTerms({ q: 'zzz', tipo: 'video' }, ['card'])).toEqual([])
+    expect(idsForTerms({ q: 'zzz' }, ['ESCALA'])).toEqual([1])
+  })
+})
+
+describe('content piece theme terms and provenance (S28)', () => {
+  it('drops empty terms, duplicates and the literal query itself', () => {
+    expect(contentPieceThemeTerms('escala', ['', '  ', 'Escala', 'fim da escala 6x1'])).toEqual([
+      'fim da escala 6x1',
+    ])
+    expect(contentPieceThemeTerms('escala', ['FIM DA ESCALA', 'fim da escala'])).toEqual([
+      'FIM DA ESCALA',
+    ])
+  })
+
+  it('quotes the transcript window that carries the term', () => {
+    const match = contentPieceThemeMatch(source({ searchText: 'a reducao da jornada e saude' }), [
+      'redução da jornada',
+    ])
+
+    expect(match?.term).toBe('redução da jornada')
+    expect(match?.evidence?.quoted).toBe(true)
+    expect(match?.evidence?.source).toBe('transcript')
+    expect(match?.evidence?.parts.some((part) => part.highlighted)).toBe(true)
+  })
+
+  it('falls back to the description window when the transcript does not carry it', () => {
+    const match = contentPieceThemeMatch(
+      source({
+        transcript: null,
+        description: 'Solla explica a jornada de trabalho.',
+        searchText: 'jornada de trabalho',
+      }),
+      ['jornada de trabalho'],
+    )
+
+    expect(match?.evidence?.source).toBe('description')
+    expect(match?.evidence?.quoted).toBe(true)
+  })
+
+  it('shows a real passage without highlight when the match came from elsewhere', () => {
+    const match = contentPieceThemeMatch(
+      source({ searchText: 'camara dos deputados saude', description: 'Solla explica a jornada.' }),
+      ['camara dos deputados'],
+    )
+
+    expect(match?.term).toBe('camara dos deputados')
+    expect(match?.evidence?.quoted).toBe(false)
+    expect(match?.evidence?.source).toBe('description')
+    expect(match?.evidence?.parts).toEqual([
+      { text: 'Solla explica a jornada.', highlighted: false },
+    ])
+  })
+
+  it('never claims a term the haystack does not carry', () => {
+    expect(contentPieceThemeMatch(source(), ['escola sem partido'])).toBeNull()
+    expect(contentPieceThemeMatch(source(), [])).toBeNull()
+  })
+
+  it('annotates the public item only when the theme mode passes terms', () => {
+    const themed = source({ searchText: 'a reducao da jornada e saude' })
+    const item = toContentPiecePublicItem(themed, { themeTerms: ['redução da jornada'] })
+    expect(item?.themeMatch?.term).toBe('redução da jornada')
+
+    const literal = toContentPiecePublicItem(themed)
+    expect(literal?.themeMatch).toBeNull()
+    // The transcript itself never reaches the view model.
+    expect(literal && 'transcript' in literal).toBe(false)
   })
 })
 
