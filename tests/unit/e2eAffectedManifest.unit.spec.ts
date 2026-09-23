@@ -71,6 +71,10 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // S21 — deliberate: the jingles page/player/download contract is new and
       // the migration makes every PR of this delivery high-risk (curated only).
       'frontendJingles',
+      // S27 — deliberate: the Central catalogue/piece page, the public media
+      // route and the vote share sheet are new contracts over the C211
+      // collection (curated only).
+      'frontendConteudos',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

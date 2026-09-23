@@ -7,6 +7,7 @@ import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
 import { JingleHomeSection } from '@/components/jingles/JingleHomeSection'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
+import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
 import type { ReactNode } from 'react'
 import { CampaignCardsSection } from './CampaignCardsSection'
@@ -119,6 +120,8 @@ export default async function HomePage() {
   // S21/S22 — one cached listing (`unstable_cache` tag `jingles`) serves the
   // home sound section and the footer's discovery flag, keeping the home static.
   const jingles = await getPublishedJingleItems()
+  // S27 — the Central's discovery flag (cached under the `contentPieces` tag).
+  const showConteudos = await hasPublishedContentPieces()
   const homeJingles = jingles.slice(0, 3)
 
   return (
@@ -247,7 +250,7 @@ export default async function HomePage() {
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
-      <CampaignFooter showJingles={jingles.length > 0} />
+      <CampaignFooter showJingles={jingles.length > 0} showConteudos={showConteudos} />
     </>
   )
 }

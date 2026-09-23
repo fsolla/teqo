@@ -36,6 +36,30 @@ describe('private media response rules (C193/C199)', () => {
     expect(privateMediaContentType(null)).toBe(PRIVATE_MEDIA_FALLBACK_MIME_TYPE)
   })
 
+  // S27 — the content pieces' photo/audio families: a published photo must
+  // render and an audio piece must play, so these render inline; markup
+  // (SVG) and formats browsers do not render (HEIC) stay download-only.
+  it('serves the content piece image and audio families inline', () => {
+    for (const mimeType of [
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'image/avif',
+      'audio/mp4',
+      'audio/aac',
+      'audio/ogg',
+      'audio/opus',
+      'audio/wav',
+      'audio/webm',
+      'audio/flac',
+    ]) {
+      expect(privateMediaContentType(mimeType), mimeType).toBe(mimeType)
+    }
+
+    expect(privateMediaContentType('image/heic')).toBe(PRIVATE_MEDIA_FALLBACK_MIME_TYPE)
+    expect(privateMediaContentType('image/svg+xml')).toBe(PRIVATE_MEDIA_FALLBACK_MIME_TYPE)
+  })
+
   it('builds both filename forms and encodes non-ASCII', () => {
     expect(privateMediaContentDisposition('reel.mp4', false)).toBe(
       'inline; filename="reel.mp4"; filename*=UTF-8\'\'reel.mp4',
