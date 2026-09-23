@@ -27,7 +27,7 @@ import {
 } from './lib/buildPdf.mjs'
 import { dieWithLabel, isTruthyEnv, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
 import { buildDossierReport } from './lib/dossieBlocks.mjs'
-import { buildBulletin } from './lib/dossieBulletin.mjs'
+import { buildBulletin, nextBulletinFit } from './lib/dossieBulletin.mjs'
 import { renderBulletinHtml } from './lib/dossieBulletinRender.mjs'
 import { CAMARA_DEFAULT_FROM, fetchCamaraActivity } from './lib/dossieCamara.mjs'
 import { DOSSIER_ERA_IDS } from './lib/dossieCareer.mjs'
@@ -194,14 +194,23 @@ if (!narrative) {
 }
 
 /**
- * Builds the dossiê + boletim for a given fit fallback and pack plan. The resumo
- * page never cuts with "…": pass 1 prints the researcher's `summary` (or the
- * full answer); if the resumo sheet overflows the A4 guard, pass 2 re-renders
- * with `textFallback: 'pointer'` so the lines without a `summary` point to the
- * era pages (which keep the integral). The other sections flow by measurement
- * (`pack`), so they multiply sheets instead of being capped.
+ * Builds the dossiê + boletim for a given pack plan and fit fallback. The
+ * flowing sections multiply sheets by measurement (`pack`), so nothing is
+ * capped; if the resumo sheet overflows the A4 guard, the fallback re-renders
+ * with the index without page numbers (`indexMode: 'labels'`) before failing
+ * closed. The one-page boletim shrinks by printed facts (`printLimit`) and then
+ * by defenses (`defenseLimit`) until it fits — never truncated.
  */
-const buildArtifacts = ({ textFallback = 'full', pack = null, probe = false } = {}) => {
+/** Set by the dossier fit fallback; reused by every later rebuild. */
+let dossierIndexMode = 'pages'
+
+const buildArtifacts = ({
+  indexMode = dossierIndexMode,
+  pack = null,
+  probe = false,
+  printLimit = null,
+  defenseLimit = null,
+} = {}) => {
   const report = buildDossierReport({
     snapshot,
     research,
@@ -209,7 +218,6 @@ const buildArtifacts = ({ textFallback = 'full', pack = null, probe = false } = 
     camara,
     health,
     generatedAt,
-    textFallback,
     narrative,
   })
   const bulletin = buildBulletin({
@@ -217,11 +225,13 @@ const buildArtifacts = ({ textFallback = 'full', pack = null, probe = false } = 
     municipality: snapshot.municipality.name,
     region: snapshot.municipality.region ?? null,
     generatedAt,
+    printLimit,
+    ...(defenseLimit === null ? {} : { defenseLimit }),
   })
   return {
     report,
     bulletin,
-    dossierHtml: renderDossierHtml(report, { pack, probe }),
+    dossierHtml: renderDossierHtml(report, { pack, probe, indexMode }),
     dossierMd: renderDossierMd(report),
     bulletinHtml: renderBulletinHtml(bulletin),
   }
@@ -284,11 +294,19 @@ try {
     bulletinHtml: artifacts.bulletinHtml,
     dossierPdf: resolve(ROOT, dossierPdfFile),
     bulletinPdf: resolve(ROOT, bulletinPdfFile),
-    // Budget-gated 2-pass (C188): if the resumo sheet with the full text
-    // overflows, rebuild with pointer lines (no "…") before failing closed.
+    // Budget-gated fallback (C188/C209): if the resumo sheet with the full index
+    // overflows, rebuild with the index without page numbers before failing
+    // closed. The boletim shrinks its printed facts and then its defenses.
     onDossierOverflow: async () => {
-      artifacts = buildArtifacts({ textFallback: 'pointer', pack })
+      dossierIndexMode = 'labels'
+      artifacts = buildArtifacts({ pack })
       return artifacts.dossierHtml
+    },
+    onBulletinOverflow: async () => {
+      const next = nextBulletinFit(artifacts.bulletin)
+      if (!next) return null
+      artifacts = buildArtifacts({ pack, ...next })
+      return artifacts.bulletinHtml
     },
     resumoOnly: true,
   })
@@ -312,7 +330,7 @@ console.log(`[${LABEL}] companion → ${dossierMdFile}`)
 console.log(`[${LABEL}] PDF → ${dossierPdfFile}`)
 console.log(`[${LABEL}] boletim PDF → ${bulletinPdfFile}`)
 console.log(
-  `[${LABEL}] ${snapshot.municipality.name}: eras=${report.eras.length} entregas=${report.page1.deliveries.items.length} ` +
+  `[${LABEL}] ${snapshot.municipality.name}: eras=${report.eras.length} pontos=${report.synthesis.totals.items} defesas=${report.defends.positions.length} ` +
     `highlights=${bulletin.highlights.length} lacunas=${research.gaps.length} páginas=${report.meta.pageTotal} html_bytes=${Buffer.byteLength(dossierHtml)}`,
 )
 

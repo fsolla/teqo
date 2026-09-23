@@ -26,6 +26,22 @@ const DOSSIER_PHASES = ['autorizado', 'empenhado', 'liquidado', 'pago', 'restos'
 export const DOSSIER_BRIEF_TITLE_MAX = 80
 export const DOSSIER_BRIEF_NOTE_MAX = 120
 
+/**
+ * C209: a checklist item of `kind: 'defense'` is a position/priority Solla
+ * stands for in the recorte. It enters through the same item→research→report
+ * contract (answer + sourceUrl + sourceDate) and feeds the "O que Solla
+ * defende" section; without a dated source it degrades to an explicit gap.
+ */
+const DEFENSE_AREA = 'Posições e defesas'
+
+const defenseItem = (era, label) => ({
+  id: `era_${era.toLowerCase()}_defesas`,
+  era,
+  area: DEFENSE_AREA,
+  label,
+  kind: 'defense',
+})
+
 /** Municipality checklist (C186). `area` labels the boletim card. */
 const MUNICIPALITY_RESEARCH_CHECKLIST = [
   {
@@ -58,6 +74,7 @@ const MUNICIPALITY_RESEARCH_CHECKLIST = [
     area: 'Ministério da Saúde',
     label: 'Secretaria de Atenção à Saúde do Ministério da Saúde (2003–2005)',
   },
+  defenseItem('A', 'Posições e defesas sobre o município e a região (até 2006)'),
   { id: 'era_b_sesab', era: 'B', area: 'Saúde estadual', label: 'Gestão da SESAB (2007–2014)' },
   {
     id: 'era_b_equipamentos',
@@ -77,6 +94,7 @@ const MUNICIPALITY_RESEARCH_CHECKLIST = [
     area: 'Obras',
     label: 'Obras e investimentos em saúde no município/região',
   },
+  defenseItem('B', 'Posições e defesas sobre o município e a região (2007–2014)'),
   {
     id: 'era_c_discursos',
     era: 'C',
@@ -107,6 +125,7 @@ const MUNICIPALITY_RESEARCH_CHECKLIST = [
     area: 'Atuação regional',
     label: 'Atuação e articulação regional',
   },
+  defenseItem('C', 'Posições e defesas sobre o município e a região (2015–2027)'),
 ]
 
 /** Institution checklist (C187) — same eras, institution-oriented. */
@@ -141,6 +160,7 @@ const INSTITUTION_RESEARCH_CHECKLIST = [
     area: 'Ministério da Saúde',
     label: 'Secretaria de Atenção à Saúde do MS com interface institucional',
   },
+  defenseItem('A', 'Posições e defesas sobre a instituição (até 2006)'),
   {
     id: 'era_a_vinculo',
     era: 'A',
@@ -177,6 +197,7 @@ const INSTITUTION_RESEARCH_CHECKLIST = [
     area: 'Convênios',
     label: 'Convênios, termos e parcerias formais com a instituição',
   },
+  defenseItem('B', 'Posições e defesas sobre a instituição (2007–2014)'),
   {
     id: 'era_c_discursos',
     era: 'C',
@@ -213,6 +234,7 @@ const INSTITUTION_RESEARCH_CHECKLIST = [
     area: 'Parcerias',
     label: 'Parcerias, audiências e articulação formal com a instituição',
   },
+  defenseItem('C', 'Posições e defesas sobre a instituição (2015–2027)'),
 ]
 
 /** Theme/area checklist (C190) — same eras, area-oriented. */
@@ -253,6 +275,7 @@ const THEME_RESEARCH_CHECKLIST = [
     area: 'Vínculo',
     label: 'Atuação documentada na área (pesquisa, conselho, docência)',
   },
+  defenseItem('A', 'Posições e defesas sobre a área (até 2006)'),
   {
     id: 'era_b_sesab',
     era: 'B',
@@ -283,6 +306,7 @@ const THEME_RESEARCH_CHECKLIST = [
     area: 'Articulação',
     label: 'Articulação regional e setorial da área',
   },
+  defenseItem('B', 'Posições e defesas sobre a área (2007–2014)'),
   {
     id: 'era_c_discursos',
     era: 'C',
@@ -325,9 +349,10 @@ const THEME_RESEARCH_CHECKLIST = [
     area: 'Reconhecimento',
     label: 'Títulos, honrarias e homenagens ligadas à área',
   },
+  defenseItem('C', 'Posições e defesas sobre a área (2015–2027)'),
 ]
 
-/** @type {Record<string, Array<{ id: string, era: string, area: string, label: string }>>} */
+/** @type {Record<string, Array<{ id: string, era: string, area: string, label: string, kind?: string }>>} */
 const CHECKLIST_BY_UNIT = {
   municipality: MUNICIPALITY_RESEARCH_CHECKLIST,
   institution: INSTITUTION_RESEARCH_CHECKLIST,
@@ -342,7 +367,7 @@ export const DOSSIER_RESEARCH_CHECKLIST_IDS = MUNICIPALITY_RESEARCH_CHECKLIST.ma
 /**
  * @param {string} era
  * @param {any} [unit]
- * @returns {Array<{ id: string, era: string, area: string, label: string }>}
+ * @returns {Array<{ id: string, era: string, area: string, label: string, kind?: string }>}
  */
 export const dossierChecklistForEra = (era, unit = MUNICIPALITY_UNIT) =>
   checklistFor(resolveDossierUnit(unit)).filter((item) => item.era === era)
@@ -499,13 +524,17 @@ export const normalizeDossierResearchInput = (raw, { unit } = {}) => {
       era,
       label: checklistItem.label,
       area: checklistItem.area,
+      // C209: `defense` items feed the "O que Solla defende" section; every other
+      // item is evidence for the era/recorte sections.
+      kind: checklistItem.kind ?? 'evidence',
       answer,
-      // Optional short, complete, self-contained rewrite of `answer` (C188): the
-      // resumo/boletim print it as-is; the era pages keep `answer`/`details`
-      // integral. Inherits the item's source — not a new fact.
-      summary: isNonEmptyString(entry.summary) ? entry.summary.trim() : null,
-      details: isNonEmptyString(entry.details) ? entry.details.trim() : null,
+      // C209: `brief` is the reformulated, shorter copy the fixed A4 surfaces
+      // print; the integral `answer`/`details` stay in the record and the .md.
       brief,
+      // Optional short label of the position/priority (defense items); the
+      // checklist `area` is the fallback when the researcher does not name it.
+      position: isNonEmptyString(entry.position) ? entry.position.trim() : null,
+      details: isNonEmptyString(entry.details) ? entry.details.trim() : null,
       sphere,
       numbers: normalizeNumbers(entry),
       sourceUrl,

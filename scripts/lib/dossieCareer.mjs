@@ -119,23 +119,6 @@ export const BULLETIN_TIMELINE_STEPS = [
 ]
 
 /**
- * The six cells the hi-fi page-1 "trajetória" grid shows; the complete timeline
- * (with every period and recovery trail) lives on the dedicated página de
- * trajetória — the page-1 grid must stay a one-glance read.
- */
-const CAREER_HIGHLIGHT_PERIODS = [
-  '1999–2002',
-  '2003–2005',
-  '01/01/2007–18/01/2014',
-  '2015–2019',
-  '2019–2023',
-  '2023–2027',
-]
-
-export const careerTimelineHighlights = () =>
-  CAREER_TIMELINE.filter((row) => CAREER_HIGHLIGHT_PERIODS.includes(row.period))
-
-/**
  * Non-negotiable career facts the renderers may print without a per-item source
  * (they are the identity of the document). Anything beyond this needs a source.
  */

@@ -17,8 +17,10 @@ três eras terem sido pesquisadas, pelo agente principal.
    `sourceDate`; `gaps[]` são lacunas explícitas).
 2. Escrever `data/dossie-solla-tema/<slug>.narrative.json` no contrato da skill:
    `themeSlug`, `generatedAt`, `title`, `opening` (3 parágrafos, 110–150
-   palavras) e `eras` (A/B/C, 80–120 palavras cada) — prosa corrida, contando a
-   contribuição de Solla para a área por era.
+   palavras), `eras` (A/B/C, 80–120 palavras cada) — prosa corrida, contando a
+   contribuição de Solla para a área por era — e `betweenEras` (2–5 bullets
+   curtos de leitura entre eras: concentração, instrumentos, continuidade,
+   alcance/ruptura e lacunas que pesam).
 3. Devolver **apenas o recibo curto** (seção "Recibo do redator" da skill).
 
 ## Limites
@@ -30,6 +32,9 @@ três eras terem sido pesquisadas, pelo agente principal.
 - Valor sempre com a fase informada; **empenho ≠ pagamento**; "emenda de bancada
   proposta" não é execução.
 - Sem bullets, sem listas, sem reticências, sem CTA de campanha, sem PII; não
-  use as palavras "dossiê", "insumo" ou "pesquisa" dentro dos parágrafos.
+  use as palavras "dossiê", "insumo" ou "pesquisa" dentro dos parágrafos (os
+  bullets de `betweenEras` seguem a mesma régua).
+- **"O que Solla defende" não é sua:** as posições vêm dos itens `era_X_defesas`
+  com fonte; não atribua defesa sem registro em lugar nenhum da redação.
 - **Não** rode ssh, extração ou build; **não** edite os `research.json`; **não**
   commite nada (artefato gitignored, repo público).
