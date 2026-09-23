@@ -453,6 +453,8 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     // The stored event is the subject only: no IP, cookie, user-agent or any
     // other visitor identifier — the privacy contract, pinned row by row.
+    // (`variant` is the S32 state-deputy slug sub-key: a public catalog slug,
+    // never a visitor identifier.)
     const listed = await request.get(
       `${BASE_URL}/api/contentEvent?limit=1&depth=0&where[subjectId][equals]=${piece.id}`,
       { headers },
@@ -465,6 +467,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
       'subjectType',
       'type',
       'updatedAt',
+      'variant',
     ])
   })
 
