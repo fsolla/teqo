@@ -145,6 +145,10 @@ test.afterAll(async ({ request }) => {
   const headers = await adminHeaders(request, BASE_URL).catch(() => null)
   if (!headers) return
   for (const id of createdPieceIds.splice(0)) {
+    // C213 — the anonymous events of the piece go with it (the spec owns both).
+    await request
+      .delete(`${BASE_URL}/api/contentEvent?where[subjectId][equals]=${id}`, { headers })
+      .catch(() => undefined)
     await request.delete(`${BASE_URL}/api/contentPiece/${id}`, { headers }).catch(() => undefined)
   }
   for (const id of createdMediaIds.splice(0)) {
@@ -325,6 +329,81 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(
       page.getByText('O compartilhamento usa o link da publicação no Instagram.'),
     ).toBeVisible()
+  })
+
+  test('counts the anonymous circulation of the piece', async ({ page, request, context }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryPiece(request, headers)
+    const title = `Circulação anônima ${uniqueMarker()}`
+    const piece = await createPiece(request, headers, { title, type: 'video' })
+
+    const eventCount = async (type: string): Promise<number> => {
+      const response = await request.get(
+        `${BASE_URL}/api/contentEvent?limit=0&depth=0&where[and][0][subjectId][equals]=${piece.id}&where[and][1][type][equals]=${type}`,
+        { headers },
+      )
+      expect(response.ok(), await response.text()).toBeTruthy()
+      return ((await response.json()) as { totalDocs: number }).totalDocs
+    }
+
+    const beaconFor = (type: string) =>
+      page.waitForRequest((candidate) => {
+        if (!candidate.url().includes('/api/content-events')) return false
+        try {
+          return (candidate.postDataJSON() as { type?: string } | null)?.type === type
+        } catch {
+          return false
+        }
+      })
+
+    // Abertura: the piece page mount beacons once, carrying the public slug.
+    const openBeacon = beaconFor('abertura')
+    await page.goto(`/conteudos/${piece.slug}`)
+    expect((await openBeacon).postDataJSON()).toEqual({ type: 'abertura', pieceSlug: piece.slug })
+    await expect.poll(() => eventCount('abertura')).toBe(1)
+
+    // Download: the SERVER counts the full file request (the click alone would
+    // count a cancelled download).
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('link', { name: `Baixar ${title}` }).click(),
+    ])
+    expect(download.suggestedFilename()).toBe(`jorge-solla-1313-${piece.slug}.mp4`)
+    await expect.poll(() => eventCount('download')).toBe(1)
+
+    // WhatsApp and link stay apart, each counted on its own control.
+    await page.getByRole('button', { name: `Compartilhar ${title}` }).click()
+    const sheet = page.getByRole('dialog', { name: 'Compartilhar peça' })
+    await context.route('https://wa.me/**', (route) =>
+      route.fulfill({ body: '', contentType: 'text/html' }),
+    )
+    const whatsAppBeacon = beaconFor('compartilhar_whatsapp')
+    await sheet.getByRole('link', { name: 'Abrir no WhatsApp' }).click()
+    await whatsAppBeacon
+
+    await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+    const linkBeacon = beaconFor('compartilhar_link')
+    await sheet.getByRole('button', { name: 'Copiar link' }).click()
+    await linkBeacon
+
+    await expect.poll(() => eventCount('compartilhar_whatsapp')).toBe(1)
+    await expect.poll(() => eventCount('compartilhar_link')).toBe(1)
+
+    // The stored event is the subject only: no IP, cookie, user-agent or any
+    // other visitor identifier — the privacy contract, pinned row by row.
+    const listed = await request.get(
+      `${BASE_URL}/api/contentEvent?limit=1&depth=0&where[subjectId][equals]=${piece.id}`,
+      { headers },
+    )
+    const doc = ((await listed.json()) as { docs: Record<string, unknown>[] }).docs[0]!
+    expect(Object.keys(doc).sort()).toEqual([
+      'createdAt',
+      'id',
+      'subjectId',
+      'subjectType',
+      'type',
+      'updatedAt',
+    ])
   })
 
   test('flips the kill switch, the discovery and the piece page without a deploy', async ({

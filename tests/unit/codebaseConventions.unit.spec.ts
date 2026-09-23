@@ -211,6 +211,10 @@ describe('campaign JSON mutation route convention', () => {
       'admin-session authenticated (payload.auth, users collection) + explicit isSameOriginRequest; bodyless action returning the sync status — the campaignJsonMutationRoute envelope is campaign-scoped ({status:error})',
     ],
     [
+      'src/app/(frontend)/api/content-events/route.ts',
+      'anonymous public beacon (C213): reads no cookie and no session, so there is no CSRF surface to guard — the write is gated by the published-slug read and throttled in memory; explicit isSameOriginRequest is still a bar-raiser, and the campaign-scoped error envelope does not apply',
+    ],
+    [
       'src/app/(campaign)/campanha/api/ai-chat/route.ts',
       'streaming AI endpoint (ReadableStream, not JSON) — cookie-authenticated via campaign-token, origin-checked by cookie path',
     ],

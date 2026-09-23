@@ -52,7 +52,8 @@ export const copyFeedbackLiveMessages = copyFeedbackLiveMessagesBySubject.link
  * The one copy-to-clipboard feedback contract of the share controls (C166 share
  * sheet, C167 cut share kit): the label per state, the screen-reader live
  * message and the auto-reset. `copy` never throws — a denied clipboard is the
- * `error` state.
+ * `error` state — and answers whether the text landed, so a caller that counts
+ * the action (C213's share-by-link) only counts a real copy.
  */
 export const useCopyFeedback = () => {
   const [feedback, setFeedback] = useState<CopyFeedback>('idle')
@@ -63,12 +64,14 @@ export const useCopyFeedback = () => {
     return () => clearTimeout(reset)
   }, [feedback])
 
-  const copy = async (text: string): Promise<void> => {
+  const copy = async (text: string): Promise<boolean> => {
     try {
       await navigator.clipboard.writeText(text)
       setFeedback('copied')
+      return true
     } catch {
       setFeedback('error')
+      return false
     }
   }
 

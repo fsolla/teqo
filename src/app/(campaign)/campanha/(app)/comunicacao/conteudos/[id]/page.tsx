@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { ContentPieceAttachFileButton } from '@/components/campaign/content/ContentPieceAttachFileButton'
+import { ContentPieceCirculationPanel } from '@/components/campaign/content/ContentPieceCirculationPanel'
 import { ContentPieceForm } from '@/components/campaign/content/ContentPieceForm'
 import { ContentPiecePublicationButton } from '@/components/campaign/content/ContentPiecePublicationButton'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
@@ -192,28 +193,34 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
         </div>
 
         <div>
-          <ContentPieceForm
-            piece={{
-              id: piece.id,
-              title: piece.title,
-              description: piece.description,
-              type: piece.type,
-              pieceDate: piece.pieceDate,
-              topics: piece.topics,
-              municipalityId: piece.municipalityId,
-              institution: piece.institution,
-              transcript: piece.transcript,
-            }}
-            municipalityOptions={options.municipalities}
-            formAction={updateContentPieceFormAction}
+          <ContentPieceCirculationPanel
+            circulation={piece.circulation}
+            isPublished={piece.isPublished}
           />
-          {piece.fileHref ? (
-            <div className="mt-4">
-              <Button asChild variant="outline" className="min-h-11">
-                <a href={`${piece.fileHref}?download=1`}>Baixar arquivo</a>
-              </Button>
-            </div>
-          ) : null}
+          <div className="mt-6 border-t pt-6">
+            <ContentPieceForm
+              piece={{
+                id: piece.id,
+                title: piece.title,
+                description: piece.description,
+                type: piece.type,
+                pieceDate: piece.pieceDate,
+                topics: piece.topics,
+                municipalityId: piece.municipalityId,
+                institution: piece.institution,
+                transcript: piece.transcript,
+              }}
+              municipalityOptions={options.municipalities}
+              formAction={updateContentPieceFormAction}
+            />
+            {piece.fileHref ? (
+              <div className="mt-4">
+                <Button asChild variant="outline" className="min-h-11">
+                  <a href={`${piece.fileHref}?download=1`}>Baixar arquivo</a>
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </CampaignPageShell>

@@ -19,6 +19,7 @@ import { CampaignVoteSummarySnapshot } from './collections/CampaignVoteSummarySn
 import { CampaignWebAuthnCredential } from './collections/CampaignWebAuthnCredential'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
+import { ContentEvent } from './collections/ContentEvent'
 import { ContentMedia } from './collections/ContentMedia'
 import { ContentPiece } from './collections/ContentPiece'
 import { ElectionCandidate } from './collections/ElectionCandidate'
@@ -130,6 +131,7 @@ export default buildConfig({
     ReelMedia,
     ContentPiece,
     ContentMedia,
+    ContentEvent,
     Recording,
     RecordingMedia,
     RecordingSegment,

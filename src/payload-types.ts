@@ -93,6 +93,7 @@ export interface Config {
     reelMedia: ReelMedia;
     contentPiece: ContentPiece;
     contentMedia: ContentMedia;
+    contentEvent: ContentEvent;
     recording: Recording;
     recordingMedia: RecordingMedia;
     recordingSegment: RecordingSegment;
@@ -146,6 +147,7 @@ export interface Config {
     reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
     contentPiece: ContentPieceSelect<false> | ContentPieceSelect<true>;
     contentMedia: ContentMediaSelect<false> | ContentMediaSelect<true>;
+    contentEvent: ContentEventSelect<false> | ContentEventSelect<true>;
     recording: RecordingSelect<false> | RecordingSelect<true>;
     recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
     recordingSegment: RecordingSegmentSelect<false> | RecordingSegmentSelect<true>;
@@ -1277,6 +1279,23 @@ export interface ContentMedia {
   focalY?: number | null;
 }
 /**
+ * Eventos anônimos de circulação (abertura, download, compartilhamento).
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contentEvent".
+ */
+export interface ContentEvent {
+  id: number;
+  type: 'abertura' | 'download' | 'compartilhar_whatsapp' | 'compartilhar_link';
+  subjectType: 'peca' | 'card';
+  /**
+   * Id interno da peça (peça) ou do modelo (card). Nunca um identificador de visitante.
+   */
+  subjectId: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2046,6 +2065,10 @@ export interface PayloadLockedDocument {
         value: number | ContentMedia;
       } | null)
     | ({
+        relationTo: 'contentEvent';
+        value: number | ContentEvent;
+      } | null)
+    | ({
         relationTo: 'recording';
         value: number | Recording;
       } | null)
@@ -2732,6 +2755,17 @@ export interface ContentMediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "contentEvent_select".
+ */
+export interface ContentEventSelect<T extends boolean = true> {
+  type?: T;
+  subjectType?: T;
+  subjectId?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3568,6 +3602,7 @@ export interface TaskCreateCollectionExport {
       | 'reelMedia'
       | 'contentPiece'
       | 'contentMedia'
+      | 'contentEvent'
       | 'recording'
       | 'recordingMedia'
       | 'recordingSegment'

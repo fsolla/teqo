@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
+import { sendContentPieceEvent } from '@/lib/contentEvents'
 import type { ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
 import { cn } from '@/lib/utils'
 
@@ -27,6 +28,16 @@ const originOrDurationFact = (item: ContentPiecePublicItem): Fact | null => {
 export const ContentPieceDetail = ({ item }: { item: ContentPiecePublicItem }) => {
   const [playing, setPlaying] = useState(false)
   const [sharing, setSharing] = useState(false)
+  // C213 — one open is one anonymous counter. The ref keeps the dev
+  // StrictMode's double effect from counting twice, and a client-side return
+  // to the page mounts a fresh component (a real second open).
+  const trackedOpen = useRef(false)
+
+  useEffect(() => {
+    if (trackedOpen.current) return
+    trackedOpen.current = true
+    sendContentPieceEvent('abertura', item.slug)
+  }, [item.slug])
 
   const facts = [
     item.topicLabels.length > 0 ? { label: 'Tema', value: item.topicLabels.join(', ') } : null,

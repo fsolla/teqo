@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 
 import { CopyLinkButton } from '@/components/CopyLinkButton'
 import { WhatsAppIcon } from '@/components/socialIcons'
+import { sendContentPieceEvent } from '@/lib/contentEvents'
 import type { ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
 import {
   buildContentPieceWhatsAppUrl,
@@ -156,6 +157,7 @@ export const ContentPieceShareSheet = ({
           href={buildContentPieceWhatsAppUrl(message)}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => sendContentPieceEvent('compartilhar_whatsapp', item.slug)}
           className={`${CONTENT_PIECE_PRIMARY_BUTTON} mt-3 w-full`}
         >
           <WhatsAppIcon className="size-4" />
@@ -173,7 +175,11 @@ export const ContentPieceShareSheet = ({
               {preparing ? 'Preparando…' : 'A mídia'}
             </button>
           ) : null}
-          <CopyLinkButton url={shareLink} className={CONTENT_PIECE_OUTLINE_BUTTON} />
+          <CopyLinkButton
+            url={shareLink}
+            className={CONTENT_PIECE_OUTLINE_BUTTON}
+            onCopied={() => sendContentPieceEvent('compartilhar_link', item.slug)}
+          />
         </div>
 
         <p className="mt-3 text-center text-[11px] leading-4 text-(--campaign-muted)">

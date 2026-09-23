@@ -153,12 +153,16 @@ export const E2E_AFFECTED_MANIFEST = [
   {
     // S27 — the public Central de Conteúdos: the facet/term catalogue, the
     // on-demand play, the private-media public route, the vote share sheet and
-    // the kill-switch contract over the C211 listing tag.
+    // the kill-switch contract over the C211 listing tag. C213 adds the
+    // anonymous beacon endpoint, its vocabulary and the event collection the
+    // public page (and the public download) write to.
     prefixes: [
       'src/app/(frontend)/conteudos',
+      'src/app/(frontend)/api/content-events',
       'src/components/conteudos',
       'src/lib/contentPieceCatalog',
       'src/lib/contentPieceShare',
+      'src/lib/contentEvents.ts',
       'src/utilities/content/contentPieceReads.ts',
       // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
       'src/utilities/ogImageReads.ts',
@@ -166,6 +170,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/documents.ts',
       'src/collections/ContentPiece.ts',
       'src/collections/ContentMedia.ts',
+      'src/collections/ContentEvent.ts',
       // The private-media response rules the public route reuses.
       'src/lib/privateMedia',
     ],
@@ -462,6 +467,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/CopyLinkButton.tsx',
       // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
       'src/utilities/ogImageReads.ts',
+      // C213 — the copy feedback the button consumes (its success now answers
+      // the share-by-link counter of the piece share sheet).
+      'src/lib/copyFeedback.ts',
     ],
     specs: ['campaignSpeechCut'],
   },
