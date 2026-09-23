@@ -55,6 +55,7 @@ import {
   getPublishedContentPieceItems,
   hasPublishedContentPieces,
 } from '@/utilities/content/contentPieceReads'
+import { loadContentPieceCatalogSearch } from '@/utilities/content/contentPieceThemeSearch'
 import {
   attachContentPieceMedia,
   receiveContentPieceUpload,
@@ -932,5 +933,128 @@ describe('content pieces (C211)', () => {
       overrideAccess: true,
     })
     expect((await callPublicPieceMedia({ slug: publishedSlug })).status).toBe(404)
+  })
+
+  it('finds a piece by the expanded theme terms with real evidence (S28)', async () => {
+    const marker = `tema-${Date.now()}`
+    const term = `atendimento universal ${marker}`
+    const match = await createPiece({
+      title: `Mutirão no Subúrbio ${marker}`,
+      transcript: `Garantir o ${term} na rede pública`,
+      status: 'publicado',
+    })
+
+    const expansionCalls: string[] = []
+    const data = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: 'defesa do SUS', mode: 'tema' },
+      requestHeaders: new Headers({ 'sec-fetch-mode': 'navigate' }),
+      expandTheme: async (theme) => {
+        expansionCalls.push(theme)
+        return { terms: [term] }
+      },
+    })
+
+    expect(expansionCalls).toEqual(['defesa do SUS'])
+    expect(data.themeUnavailable).toBe(false)
+    expect(data.themeApplied).toBe(true)
+    const item = data.items.find((row) => row.id === match.piece.id)
+    expect(item?.themeMatch?.term).toBe(term)
+    expect(item?.themeMatch?.evidence?.quoted).toBe(true)
+    expect(item?.themeMatch?.evidence?.parts.some((part) => part.highlighted)).toBe(true)
+  })
+
+  it('degrades to the literal search when the expansion is unavailable (S28)', async () => {
+    const marker = `literal-tema-${Date.now()}`
+    const match = await createPiece({ title: `Debate na rádio ${marker}`, status: 'publicado' })
+
+    const data = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: marker, mode: 'tema' },
+      requestHeaders: new Headers({ 'sec-fetch-mode': 'navigate' }),
+      expandTheme: async () => null,
+    })
+
+    expect(data.themeUnavailable).toBe(true)
+    expect(data.themeApplied).toBe(false)
+    const item = data.items.find((row) => row.id === match.piece.id)
+    expect(item).toBeTruthy()
+    expect(item?.themeMatch).toBeNull()
+  })
+
+  it('keeps the literal list without a notice when the expansion adds nothing (S28)', async () => {
+    const marker = `vazio-tema-${Date.now()}`
+    const match = await createPiece({ title: `Peça ${marker}`, status: 'publicado' })
+
+    const data = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: marker, mode: 'tema' },
+      requestHeaders: new Headers({ 'sec-fetch-mode': 'navigate' }),
+      expandTheme: async () => ({ terms: [] }),
+    })
+
+    expect(data.themeUnavailable).toBe(false)
+    expect(data.themeApplied).toBe(false)
+    expect(data.items.map((row) => row.id)).toEqual([match.piece.id])
+    expect(data.items.every((row) => row.themeMatch === null)).toBe(true)
+  })
+
+  it('never expands without navigation signals (S28)', async () => {
+    const marker = `inelegivel-${Date.now()}`
+    await createPiece({ title: `Peça ${marker}`, status: 'publicado' })
+
+    let called = false
+    const data = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: marker, mode: 'tema' },
+      requestHeaders: new Headers(),
+      expandTheme: async () => {
+        called = true
+        return { terms: [marker] }
+      },
+    })
+
+    expect(called).toBe(false)
+    expect(data.themeUnavailable).toBe(true)
+  })
+
+  it('keeps the literal search untouched without the mode (S28)', async () => {
+    const marker = `exato-${Date.now()}`
+    const match = await createPiece({ title: `Peça ${marker}`, status: 'publicado' })
+
+    let called = false
+    const data = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: marker },
+      requestHeaders: new Headers({ 'sec-fetch-mode': 'navigate' }),
+      expandTheme: async () => {
+        called = true
+        return { terms: [marker] }
+      },
+    })
+
+    expect(called).toBe(false)
+    expect(data.params.mode).toBeNull()
+    expect(data.themeUnavailable).toBe(false)
+    expect(data.items.map((row) => row.id)).toEqual([match.piece.id])
+  })
+
+  it('never surfaces a draft in the theme search (S28)', async () => {
+    const marker = `rascunho-tema-${Date.now()}`
+    const term = `texto sobre ${marker}`
+    const draft = await createPiece({
+      title: `Rascunho ${marker}`,
+      transcript: term,
+    })
+    const published = await createPiece({
+      title: `Publicada ${marker}`,
+      transcript: term,
+      status: 'publicado',
+    })
+
+    const data = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: `assunto ${marker}`, mode: 'tema' },
+      requestHeaders: new Headers({ 'sec-fetch-mode': 'navigate' }),
+      expandTheme: async () => ({ terms: [term] }),
+    })
+
+    const ids = data.items.map((row) => row.id)
+    expect(ids).toContain(published.piece.id)
+    expect(ids).not.toContain(draft.piece.id)
   })
 })

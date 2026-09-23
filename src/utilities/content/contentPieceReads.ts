@@ -1,6 +1,10 @@
 import 'server-only'
 
-import { toContentPiecePublicItem, type ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
+import {
+  toContentPiecePublicItem,
+  type ContentPiecePublicItem,
+  type ContentPiecePublicSource,
+} from '@/lib/contentPieceCatalog'
 import { getCollectionListingTag } from '@/utilities/documents'
 import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
@@ -56,14 +60,21 @@ const getCachedPublishedContentPieces = () =>
     tags: [getCollectionListingTag('contentPiece')],
   })
 
-/** Published pieces as serializable public view models, newest first. */
-export const getPublishedContentPieceItems = async (): Promise<ContentPiecePublicItem[]> => {
+/**
+ * The published records with the raw fields the public surface needs
+ * (`transcript`/`description` included, for the S28 theme provenance). The
+ * caller maps them into view models — with or without theme terms.
+ */
+export const getPublishedContentPieceRecords = async (): Promise<ContentPiecePublicSource[]> => {
   const { docs } = await getCachedPublishedContentPieces()()
-
   return docs
+}
+
+/** Published pieces as serializable public view models, newest first. */
+export const getPublishedContentPieceItems = async (): Promise<ContentPiecePublicItem[]> =>
+  (await getPublishedContentPieceRecords())
     .map((piece) => toContentPiecePublicItem(piece))
     .filter((item): item is ContentPiecePublicItem => item !== null)
-}
 
 /**
  * One published piece by its public slug. A draft (no slug), an unpublished

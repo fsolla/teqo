@@ -265,6 +265,48 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(page.getByRole('link', { name: 'Voltar à Central' })).toBeVisible()
   })
 
+  test('offers the theme mode and degrades honestly without the provider key', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryPiece(request, headers)
+    const marker = uniqueMarker()
+    const title = `Saúde do trabalhador ${marker}`
+    await createPiece(request, headers, { title, type: 'video' })
+
+    // The e2e build blanks DEEPSEEK_API_KEY (same as the C192 spec), so the
+    // theme mode always degrades: the exact results stay and the notice explains.
+    const response = await page.goto(`/conteudos?q=${marker}&mode=tema`)
+    expect(response?.status()).toBe(200)
+    await expect(page.getByRole('heading', { name: `Resultados para “${marker}”` })).toBeVisible()
+    await expect(page.getByRole('radio', { name: 'Termo exato' })).toBeChecked()
+    await expect(page.getByRole('radio', { name: 'Por tema' })).toBeDisabled()
+    await expect(page.getByText('Busca por tema indisponível agora.')).toBeVisible()
+    await expect(page.getByRole('link', { name: title, exact: true })).toBeVisible()
+    await expect(page.getByText('Por que apareceu')).toHaveCount(0)
+
+    // A mode without a query has nothing to expand: no notice, exact is active.
+    await page.goto('/conteudos?mode=tema')
+    await expect(page.getByText('Busca por tema indisponível agora.')).toHaveCount(0)
+    await expect(page.getByRole('radio', { name: 'Termo exato' })).toBeChecked()
+    await expect(page.getByRole('radio', { name: 'Por tema' })).toBeEnabled()
+
+    // Changing the mode submits the GET form with the query in force.
+    await page.goto(`/conteudos?q=${marker}`)
+    await page.getByRole('radio', { name: 'Por tema' }).check()
+    await expect(page).toHaveURL(new RegExp(`q=${marker}&mode=tema$`))
+    await expect(page.getByText('Busca por tema indisponível agora.')).toBeVisible()
+
+    // Enter on the field searches without JS (the canonical block has no button).
+    await page.goto('/conteudos')
+    const field = page.getByRole('searchbox', { name: 'Buscar peças' })
+    await field.fill(marker)
+    await field.press('Enter')
+    await expect(page).toHaveURL(new RegExp(`q=${marker}&mode=exato$`))
+    await expect(page.getByRole('link', { name: title, exact: true })).toBeVisible()
+  })
+
   test('opens the piece page with OG preview and the same actions', async ({ page, request }) => {
     const headers = await adminHeaders(request, BASE_URL)
     await unpublishEveryPiece(request, headers)

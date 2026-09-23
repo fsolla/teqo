@@ -18,9 +18,12 @@ import { ContentPieceShareSheet } from './ContentPieceShareSheet'
 export const ContentPieceCatalog = ({
   items,
   showCardInvite,
+  themeMode,
 }: {
   items: readonly ContentPiecePublicItem[]
   showCardInvite: boolean
+  /** S28 — the board is in the theme mode: cards state their provenance. */
+  themeMode: boolean
 }) => {
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [sharingItem, setSharingItem] = useState<ContentPiecePublicItem | null>(null)
@@ -39,6 +42,7 @@ export const ContentPieceCatalog = ({
     onToggle: () => setPlayingId((current) => (current === item.id ? null : item.id)),
     onEnded: () => setPlayingId((current) => (current === item.id ? null : current)),
     onShare: setSharingItem,
+    themeMode,
   })
 
   return (

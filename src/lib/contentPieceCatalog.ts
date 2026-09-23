@@ -25,7 +25,8 @@ import {
 import { slugify } from '@/lib/slug'
 import { formatSpeechClock, formatSpeechDate } from '@/lib/speechClock'
 import { SPEECH_TOPICS, type SpeechTopic } from '@/lib/speechFacets'
-import { normalizeForSearch } from '@/lib/speechSearch'
+import { buildHighlightedExcerpt, type SpeechHighlightPart } from '@/lib/speechHighlight'
+import { normalizeForSearch, uniqueByNormalizedForm } from '@/lib/speechSearch'
 
 export const CONTENT_PIECE_CATALOG_PATH = '/conteudos'
 
@@ -53,6 +54,13 @@ export const contentPieceCatalogFacetLabels: Record<ContentPieceCatalogFacet, st
   instituicao: 'Instituição',
 }
 
+/**
+ * S28 — search mode of the public catalogue. `tema` asks the theme expansion
+ * for related terms; the literal search is the default and is never serialized
+ * (existing deep links stay byte-identical). Only meaningful alongside `q`.
+ */
+export type ContentPieceCatalogMode = 'tema'
+
 export type ContentPieceCatalogParams = {
   tipo: ContentPieceType | null
   cidade: string | null
@@ -60,6 +68,7 @@ export type ContentPieceCatalogParams = {
   tema: SpeechTopic | null
   instituicao: string | null
   q: string
+  mode: ContentPieceCatalogMode | null
 }
 
 export type ContentPieceCatalogSearchParams = Record<string, string | string[] | undefined>
@@ -78,6 +87,7 @@ export const parseContentPieceCatalogParams = (
 ): ContentPieceCatalogParams => {
   const tipo = firstValue(raw.tipo)
   const tema = firstValue(raw.tema)
+  const q = firstValue(raw.q)
   const slugFacet = (facet: ContentPieceCatalogFacet): string | null => {
     const value = firstValue(raw[facet])
     return value && FACET_SLUG_PATTERN.test(value) ? value : null
@@ -89,7 +99,10 @@ export const parseContentPieceCatalogParams = (
     regiao: slugFacet('regiao'),
     tema: isContentPieceTopic(tema) ? tema : null,
     instituicao: slugFacet('instituicao'),
-    q: firstValue(raw.q),
+    q,
+    // Only `tema` is meaningful; anything else (and the default) means exact,
+    // and a mode without a term has nothing to expand.
+    mode: firstValue(raw.mode) === 'tema' && q ? 'tema' : null,
   }
 }
 
@@ -104,7 +117,12 @@ export const buildContentPieceCatalogHref = (
   if (params.tema) search.set('tema', params.tema)
   if (params.instituicao) search.set('instituicao', params.instituicao)
   const term = params.q?.trim()
-  if (term) search.set('q', term)
+  if (term) {
+    search.set('q', term)
+    // `tema` is the only non-default mode and it only makes sense with a query,
+    // so a mode without `q` canonicalizes away.
+    if (params.mode === 'tema') search.set('mode', 'tema')
+  }
 
   const query = search.toString()
   return query ? `${CONTENT_PIECE_CATALOG_PATH}?${query}` : CONTENT_PIECE_CATALOG_PATH
@@ -190,31 +208,64 @@ export const contentPieceCatalogActiveFilters = (
       facet: 'q',
       label: 'Busca',
       value: params.q.trim(),
-      removeHref: buildContentPieceCatalogHref({ ...params, q: '' }),
+      // Clearing the search clears the mode with it: `tema` has nothing to
+      // expand without a query.
+      removeHref: buildContentPieceCatalogHref({ ...params, q: '', mode: null }),
     })
   }
 
   return filters
 }
 
+/**
+ * S28 — the expanded terms that may claim "Tema" on a result: empty/duplicate
+ * terms are dropped and a term equal to the literal query is not a theme match
+ * (the piece surfaced by the query itself, not by the expansion).
+ */
+export const contentPieceThemeTerms = (query: string, themeTerms: readonly string[]): string[] => {
+  const normalizedQuery = normalizeForSearch(query)
+  return uniqueByNormalizedForm(themeTerms).filter(
+    (term) => normalizeForSearch(term) !== normalizedQuery,
+  )
+}
+
+const normalizedSearchTerms = (query: string, themeTerms: readonly string[]): string[] => {
+  const seen = new Set<string>()
+  const terms: string[] = []
+  for (const value of [query, ...themeTerms]) {
+    const normalized = normalizeForSearch(value)
+    if (!normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    terms.push(normalized)
+  }
+  return terms
+}
+
 /** All active facets combine (AND); the term matches the denormalized haystack. */
 export const filterContentPieceCatalogItems = (
   items: readonly ContentPiecePublicItem[],
   params: ContentPieceCatalogParams,
+  themeTerms: readonly string[] = [],
 ): ContentPiecePublicItem[] => {
-  const term = normalizeForSearch(params.q)
+  const searchTerms = normalizedSearchTerms(params.q, themeTerms)
 
-  return items.filter(
-    (item) =>
-      (!params.tipo || item.type === params.tipo) &&
-      (!params.cidade || (item.cityLabel !== null && slugify(item.cityLabel) === params.cidade)) &&
-      (!params.regiao ||
-        (item.regionLabel !== null && slugify(item.regionLabel) === params.regiao)) &&
-      (!params.tema || item.topics.includes(params.tema)) &&
-      (!params.instituicao ||
-        (item.institution !== null && slugify(item.institution) === params.instituicao)) &&
-      (!term || normalizeForSearch(item.searchText).includes(term)),
-  )
+  return items.filter((item) => {
+    if (
+      (params.tipo && item.type !== params.tipo) ||
+      (params.cidade && (item.cityLabel === null || slugify(item.cityLabel) !== params.cidade)) ||
+      (params.regiao &&
+        (item.regionLabel === null || slugify(item.regionLabel) !== params.regiao)) ||
+      (params.tema && !item.topics.includes(params.tema)) ||
+      (params.instituicao &&
+        (item.institution === null || slugify(item.institution) !== params.instituicao))
+    ) {
+      return false
+    }
+    if (searchTerms.length === 0) return true
+
+    const haystack = normalizeForSearch(item.searchText)
+    return searchTerms.some((term) => haystack.includes(term))
+  })
 }
 
 export type ContentPiecePublicSource = {
@@ -261,6 +312,8 @@ export type ContentPiecePublicItem = {
   /** `Tema · Local` (or institution/city fallbacks) — the card's metadata line. */
   metaLabel: string
   searchText: string
+  /** S28 — why the piece appeared in the theme mode; null in the literal search. */
+  themeMatch: ContentPieceThemeMatch | null
   publicPath: string
   /** The archived file, or null on a link piece — never partially populated. */
   file: ContentPiecePublicFile | null
@@ -274,6 +327,29 @@ type ContentPiecePublicFile = {
 }
 
 export type ContentPieceMediaKind = 'video' | 'audio' | 'image' | 'text' | 'other'
+
+/** S28 — where the "Por que apareceu" passage came from (label of the fallback). */
+type ContentPieceThemeEvidenceSource = 'transcript' | 'description' | 'excerpt'
+
+type ContentPieceThemeEvidence = {
+  parts: SpeechHighlightPart[]
+  truncatedStart: boolean
+  truncatedEnd: boolean
+  /**
+   * True when the passage is the window that carries the matched term (the
+   * quoted, highlighted one); false when it is a real passage of the piece that
+   * does not contain the term (no quotes, no highlight, no claim).
+   */
+  quoted: boolean
+  source: ContentPieceThemeEvidenceSource
+}
+
+export type ContentPieceThemeMatch = {
+  /** The expanded term that surfaced the piece (never the literal query). */
+  term: string
+  /** Real passage for "Por que apareceu"; null when the piece carries no text. */
+  evidence: ContentPieceThemeEvidence | null
+}
 
 /**
  * How the card/preview renders the archived file: the stored MIME decides
@@ -341,6 +417,71 @@ const durationLabelOf = (seconds: number | null | undefined): string | null =>
     ? formatSpeechClock(seconds)
     : null
 
+/**
+ * S28 — the first expanded term that actually surfaced this piece. The gate is
+ * the same normalized `includes` the filter runs over `searchText`, so the card
+ * never claims a theme the search did not use. The evidence is the window that
+ * carries the term (`transcript` > `description`, highlighted as one phrase);
+ * when the match came from another part of the haystack (title, topic, city,
+ * institution) the block falls back to a real passage of the piece without
+ * highlight — text of the piece, never a fabricated quote. Terms must already
+ * be filtered by `contentPieceThemeTerms` (the literal query is not a theme).
+ */
+export const contentPieceThemeMatch = (
+  record: ContentPiecePublicSource,
+  themeTerms: readonly string[],
+): ContentPieceThemeMatch | null => {
+  if (themeTerms.length === 0) return null
+
+  const haystack = normalizeForSearch(record.searchText ?? '')
+  const transcript = record.transcript?.trim() ?? ''
+  const description = record.description?.trim() ?? ''
+
+  for (const term of themeTerms) {
+    const normalized = normalizeForSearch(term)
+    if (!normalized || !haystack.includes(normalized)) continue
+
+    if (normalizeForSearch(transcript).includes(normalized)) {
+      return {
+        term,
+        evidence: {
+          ...buildHighlightedExcerpt(transcript, term, { phrase: true }),
+          quoted: true,
+          source: 'transcript',
+        },
+      }
+    }
+    if (normalizeForSearch(description).includes(normalized)) {
+      return {
+        term,
+        evidence: {
+          ...buildHighlightedExcerpt(description, term, { phrase: true }),
+          quoted: true,
+          source: 'description',
+        },
+      }
+    }
+
+    // A real short passage of the piece (never the whole 1200-char description
+    // on a card), without quotes: there is no matched term to point at.
+    const fallback = contentPieceTextExcerpt(description || transcript)
+    return {
+      term,
+      evidence: fallback
+        ? {
+            parts: [{ text: fallback, highlighted: false }],
+            truncatedStart: false,
+            truncatedEnd: false,
+            quoted: false,
+            source: description ? 'description' : 'excerpt',
+          }
+        : null,
+    }
+  }
+
+  return null
+}
+
 const dateLabelOf = (value: string | null | undefined): string | null =>
   value && /^\d{4}-\d{2}-\d{2}/.test(value) ? formatSpeechDate(value) : null
 
@@ -358,9 +499,13 @@ const mediaOf = (
  * Public view of one piece, or null when it may not be shown: no slug (never
  * published) or the `contentPieceIsPublic` predicate fails (published without
  * file and without link). The gate lives here too, not only in the query.
+ *
+ * S28 — `themeTerms` (already filtered by `contentPieceThemeTerms`) annotates
+ * the item with the theme match; empty in the literal search.
  */
 export const toContentPiecePublicItem = (
   record: ContentPiecePublicSource,
+  { themeTerms = [] }: { themeTerms?: readonly string[] } = {},
 ): ContentPiecePublicItem | null => {
   const slug = record.slug?.trim()
   if (!slug) return null
@@ -402,6 +547,7 @@ export const toContentPiecePublicItem = (
     pieceDateLabel: dateLabelOf(record.pieceDate),
     metaLabel,
     searchText: record.searchText ?? '',
+    themeMatch: contentPieceThemeMatch(record, themeTerms),
     publicPath: contentPiecePublicPath(slug),
     file: media
       ? {
