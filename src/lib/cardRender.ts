@@ -253,7 +253,7 @@ export const drawCardVisitorSilhouette = (ctx: CardDrawContext, window: CardRect
 }
 
 /** S30 — the foreground subject of a team composition. */
-export type TeamCardSubject =
+type TeamCardSubject =
   | {
       kind: 'photo'
       photo: CanvasImageSource
