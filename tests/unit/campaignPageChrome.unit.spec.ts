@@ -85,6 +85,16 @@ describe('campaignPageChrome', () => {
     expect(resolveCampaignPageChrome('/campanha/comunicacao/reels/42', 'communicator')).toBeNull()
   })
 
+  it('resolves the content Central list and leaves the ficha title to the page (C211)', () => {
+    expect(resolveCampaignPageChrome('/campanha/comunicacao/conteudos', 'communicator')).toEqual({
+      title: 'Conteúdos',
+      subtitle: 'Peças que alimentam a Central pública.',
+    })
+    expect(
+      resolveCampaignPageChrome('/campanha/comunicacao/conteudos/42', 'communicator'),
+    ).toBeNull()
+  })
+
   it('separates staff contatos from the leader meus-contatos (C139)', () => {
     expect(resolveCampaignPageChrome('/campanha/contatos', 'coordinator')).toEqual({
       title: 'Contatos',

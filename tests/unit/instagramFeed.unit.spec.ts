@@ -125,6 +125,7 @@ describe('parseInstagramMediaResponse', () => {
       caption: 'Legenda post1',
       mediaType: 'IMAGE',
       permalink: 'https://www.instagram.com/p/post1/',
+      mediaUrl: 'https://scontent.cdninstagram.com/post1.jpg',
       thumbnailUrl: 'https://scontent.cdninstagram.com/post1.jpg',
       timestamp: '2026-08-18T10:00:00+00:00',
     })
@@ -162,6 +163,7 @@ describe('eligibleInstagramPosts', () => {
       caption: 'A',
       mediaType: 'IMAGE',
       permalink: 'https://instagram.com/p/a/',
+      mediaUrl: null,
       timestamp: 't1',
     },
     {
@@ -169,6 +171,7 @@ describe('eligibleInstagramPosts', () => {
       caption: 'B',
       mediaType: 'IMAGE',
       permalink: 'https://instagram.com/p/b/',
+      mediaUrl: null,
       timestamp: 't2',
     },
     {
@@ -176,6 +179,7 @@ describe('eligibleInstagramPosts', () => {
       caption: 'C',
       mediaType: 'IMAGE',
       permalink: 'https://instagram.com/p/c/',
+      mediaUrl: null,
       timestamp: 't3',
     },
     {
@@ -183,6 +187,7 @@ describe('eligibleInstagramPosts', () => {
       caption: 'D',
       mediaType: 'IMAGE',
       permalink: 'https://instagram.com/p/d/',
+      mediaUrl: null,
       timestamp: 't4',
     },
   ]

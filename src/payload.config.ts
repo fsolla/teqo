@@ -19,6 +19,8 @@ import { CampaignVoteSummarySnapshot } from './collections/CampaignVoteSummarySn
 import { CampaignWebAuthnCredential } from './collections/CampaignWebAuthnCredential'
 import { Consent } from './collections/Consent'
 import { Contact } from './collections/Contact'
+import { ContentMedia } from './collections/ContentMedia'
+import { ContentPiece } from './collections/ContentPiece'
 import { ElectionCandidate } from './collections/ElectionCandidate'
 import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
@@ -126,6 +128,8 @@ export default buildConfig({
     SpeechCut,
     Reel,
     ReelMedia,
+    ContentPiece,
+    ContentMedia,
     Recording,
     RecordingMedia,
     RecordingSegment,
@@ -181,6 +185,8 @@ export default buildConfig({
               reelMedia: true,
               // C199 — private recording files; same failure mode if omitted.
               recordingMedia: true,
+              // C211 — private content-piece files; same failure mode if omitted.
+              contentMedia: true,
             },
             bucket: mediaStorage.bucket,
             config: {

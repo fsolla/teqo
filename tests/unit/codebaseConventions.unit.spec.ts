@@ -223,6 +223,14 @@ describe('campaign JSON mutation route convention', () => {
       'raw-body recording upload (the video streams to disk, metadata in the query) — cookie-authenticated via campaign-token + explicit same-origin check; cannot ride the JSON wrapper',
     ],
     [
+      'src/app/(campaign)/campanha/(app)/comunicacao/conteudos/enviar/route.ts',
+      'raw-body content piece upload (the file streams to disk, metadata in the query) — cookie-authenticated via campaign-token + explicit same-origin check; cannot ride the JSON wrapper',
+    ],
+    [
+      'src/app/(campaign)/campanha/(app)/comunicacao/conteudos/[id]/arquivo/route.ts',
+      'GET serves the private piece file and POST attaches the original as a raw body — cookie-authenticated via campaign-token + explicit same-origin check; cannot ride the JSON wrapper',
+    ],
+    [
       'src/app/(campaign)/campanha/agenda/google-webhook/[secret]/route.ts',
       'Google Calendar push delivery (empty body, not JSON) — public by design, authenticated by URL secret + X-Goog channel headers (never a campaign cookie)',
     ],

@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 
 import {
   CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES,
+  CAMPAIGN_COMMUNICATION_CONTEUDOS,
   CAMPAIGN_COMMUNICATION_CORTES,
   CAMPAIGN_COMMUNICATION_REELS,
   CAMPAIGN_CONTACTS_HOME,
@@ -133,6 +134,10 @@ export const campaignPageChromeCatalog = {
   reels: {
     title: 'Reels',
     subtitle: 'Tutoriais do site prontos para a assessoria baixar e publicar fora do Teqo.',
+  },
+  conteudos: {
+    title: 'Conteúdos',
+    subtitle: 'Peças que alimentam a Central pública.',
   },
 } as const satisfies Record<string, CampaignPageChrome | null>
 
@@ -314,6 +319,12 @@ const pathRules: PathRule[] = [
     // entry only backs the transient alias.
     match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES,
     resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.gravacoes),
+  },
+  {
+    // C211 — the content Central list. The `/<id>` ficha sets its own title
+    // through `SetCampaignPageChrome`, so it falls through to `null` here.
+    match: (pathname) => pathname === CAMPAIGN_COMMUNICATION_CONTEUDOS,
+    resolve: () => resolveCatalogEntry(campaignPageChromeCatalog.conteudos),
   },
   {
     match: (pathname) => /^\/campanha\/comunicacao\/acervo\/[^/]+$/.test(pathname),

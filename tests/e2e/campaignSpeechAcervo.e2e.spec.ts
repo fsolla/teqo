@@ -871,4 +871,255 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(html).not.toContain('A separação por falante pode estar imprecisa')
     })
   })
+
+  test.describe('content pieces (C211)', () => {
+    const createPiece = async (
+      campaign: { fixtures: CampaignE2EOwnership },
+      input: {
+        marker: string
+        status?: 'rascunho' | 'publicado'
+        processingStatus?: 'processando' | 'pronto' | 'falhou'
+        type?: 'video' | 'foto' | 'texto' | 'audio' | 'card'
+        origin?: 'arquivo' | 'instagram' | 'youtube'
+        withMedia?: boolean
+        sourceUrl?: string
+      },
+    ) => {
+      const bytes = Buffer.from(`content-piece-${input.marker}`)
+      const media =
+        input.withMedia === false
+          ? null
+          : await campaign.fixtures.payload.create({
+              collection: 'contentMedia',
+              data: { alt: `Arquivo ${input.marker}` },
+              file: {
+                data: bytes,
+                mimetype: 'video/mp4',
+                name: `${input.marker}.mp4`,
+                size: bytes.length,
+              },
+            })
+      const piece = await campaign.fixtures.payload.create({
+        collection: 'contentPiece',
+        data: {
+          title: `Peça ${input.marker}`,
+          type: input.type ?? 'video',
+          status: input.status ?? 'rascunho',
+          processingStatus: input.processingStatus ?? 'pronto',
+          origin: input.origin ?? 'arquivo',
+          ...(media ? { media: media.id } : {}),
+          ...(input.sourceUrl ? { sourceUrl: input.sourceUrl } : {}),
+        },
+        depth: 0,
+      })
+      return { piece, media, bytes }
+    }
+
+    test('the list renders the row, the states and the search', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('peca')
+      const { piece } = await createPiece(campaign, { marker, status: 'publicado' })
+      const failed = await createPiece(campaign, {
+        marker: campaign.fixtures.value('pecafalhou'),
+        processingStatus: 'falhou',
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(`/campanha/comunicacao/conteudos?q=${marker}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain('Conteúdos')
+      expect(html).toContain('Enviar peças')
+      expect(html).toContain('Adicionar por link')
+      expect(html).toContain(`Peça ${marker}`)
+      expect(html).toContain('Pronto')
+      expect(html).toContain('Publicado')
+      expect(html).toContain(`/campanha/comunicacao/conteudos/${piece.id}`)
+      expect(html).toContain('aria-current="page"')
+
+      // A failed piece offers the retry action in the list.
+      const failedResponse = await request.get(`/campanha/comunicacao/conteudos?processing=falhou`)
+      const failedHtml = rendered(await failedResponse.text())
+      expect(failedHtml).toContain(`Peça ${failed.piece.title.replace('Peça ', '')}`)
+      expect(failedHtml).toContain('Reprocessar')
+
+      const miss = await request.get('/campanha/comunicacao/conteudos?q=zzzznada')
+      expect(rendered(await miss.text())).toContain('Nenhuma peça na Central ainda')
+    })
+
+    test('the ficha renders the catalogue and moves the kill switch', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecaficha')
+      const { piece } = await createPiece(campaign, { marker })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(`/campanha/comunicacao/conteudos/${piece.id}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain(`Peça ${marker}`)
+      expect(html).toContain('Publicar')
+      expect(html).toContain('Transcrição / texto')
+      expect(html).toContain('Sem cidade')
+      expect(html).toContain(`/campanha/comunicacao/conteudos/${piece.id}/arquivo`)
+
+      const publish = await request.post(`/campanha/comunicacao/conteudos/${piece.id}/publicacao`, {
+        data: { contentPieceId: piece.id, published: true },
+      })
+      expect(publish.status()).toBe(200)
+      expect(((await publish.json()) as { piece: { status: string } }).piece.status).toBe(
+        'publicado',
+      )
+
+      const published = await campaign.fixtures.payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+      })
+      expect(published.slug).toBe(`peca-${marker.toLowerCase()}`)
+
+      const unpublished = await request.post(
+        `/campanha/comunicacao/conteudos/${piece.id}/publicacao`,
+        { data: { contentPieceId: piece.id, published: false } },
+      )
+      expect(unpublished.status()).toBe(200)
+
+      const afterUnpublish = await campaign.fixtures.payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+      })
+      // The kill switch preserves the file and the public URL.
+      expect(afterUnpublish.status).toBe('rascunho')
+      expect(afterUnpublish.slug).toBe(`peca-${marker.toLowerCase()}`)
+      expect(afterUnpublish.media).toBeTruthy()
+    })
+
+    test('the private file answers only the Central roles, with range and download', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecafile')
+      const { piece, bytes } = await createPiece(campaign, { marker })
+
+      const communicator = await campaign.fixtures.createCampaignUser('communicator')
+      const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+      const full = await communicatorRequest.get(
+        `/campanha/comunicacao/conteudos/${piece.id}/arquivo`,
+      )
+      expect(full.status()).toBe(200)
+      expect(full.headers()['content-type']).toBe('video/mp4')
+      expect(Buffer.from(await full.body())).toEqual(bytes)
+
+      const partial = await communicatorRequest.get(
+        `/campanha/comunicacao/conteudos/${piece.id}/arquivo`,
+        { headers: { Range: 'bytes=0-3' } },
+      )
+      expect(partial.status()).toBe(206)
+
+      const download = await communicatorRequest.get(
+        `/campanha/comunicacao/conteudos/${piece.id}/arquivo?download=1`,
+      )
+      expect(download.headers()['content-disposition']).toContain('attachment')
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      expect(
+        (await advisorRequest.get(`/campanha/comunicacao/conteudos/${piece.id}/arquivo`)).status(),
+      ).toBe(404)
+
+      const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+      try {
+        expect(
+          (await anonymous.get(`/campanha/comunicacao/conteudos/${piece.id}/arquivo`)).status(),
+        ).toBe(404)
+      } finally {
+        await anonymous.dispose()
+      }
+    })
+
+    test('the upload and link routes refuse cross-origin and advisor actors', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const uploadUrl = '/campanha/comunicacao/conteudos/enviar?filename=t.mp4'
+
+      expect(
+        (await request.post(uploadUrl, { headers: { Origin: 'https://evil.example' } })).status(),
+      ).toBe(403)
+      expect(
+        (
+          await request.post('/campanha/comunicacao/conteudos/link', {
+            headers: { Origin: 'https://evil.example' },
+            data: { url: 'https://youtu.be/VIDEO1' },
+          })
+        ).status(),
+      ).toBe(403)
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      expect((await advisorRequest.post(uploadUrl)).status()).toBe(403)
+
+      // The JSON route maps the domain refusal through the shared ladder: the
+      // safe message reaches the client as a 400 (same as the cut routes).
+      const deniedLink = await advisorRequest.post('/campanha/comunicacao/conteudos/link', {
+        data: { url: 'https://youtu.be/VIDEO1' },
+      })
+      expect(deniedLink.status()).toBe(400)
+      expect(((await deniedLink.json()) as { message: string }).message).toContain(
+        'não tem acesso à Central de Conteúdos',
+      )
+    })
+
+    test('the link route creates a peça-link and refuses the duplicate', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecalink')
+      const url = `https://www.instagram.com/reel/${marker}/`
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const created = await request.post('/campanha/comunicacao/conteudos/link', {
+        data: { url: `${url}?igsh=abc` },
+      })
+      expect(created.status()).toBe(200)
+      const body = (await created.json()) as { piece: { id: number; origin: string } }
+      expect(body.piece.origin).toBe('instagram')
+
+      const row = await campaign.fixtures.payload.findByID({
+        collection: 'contentPiece',
+        id: body.piece.id,
+        depth: 0,
+      })
+      expect(row.sourceUrl).toBe(url)
+
+      const duplicate = await request.post('/campanha/comunicacao/conteudos/link', {
+        data: { url },
+      })
+      expect(duplicate.status()).toBe(400)
+      expect(((await duplicate.json()) as { message: string }).message).toContain(
+        'já está na Central',
+      )
+
+      const invalid = await request.post('/campanha/comunicacao/conteudos/link', {
+        data: { url: 'https://twitter.com/x/status/1' },
+      })
+      expect(invalid.status()).toBe(400)
+      expect(((await invalid.json()) as { message: string }).message).toContain(
+        'Cole um link do Instagram ou do YouTube',
+      )
+    })
+  })
 })

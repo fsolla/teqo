@@ -54,6 +54,30 @@ export const campaignSpeechCutRetryHref = (id: number): string =>
 export const CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES =
   `${CAMPAIGN_COMMUNICATION_ACERVO}/gravacoes` as const
 
+/** C211 — internal Central de Conteúdos (list + `/<id>` ficha). */
+export const CAMPAIGN_COMMUNICATION_CONTEUDOS = '/campanha/comunicacao/conteudos' as const
+
+const campaignContentPieceDetailHref = (id: number): string =>
+  `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/${id}`
+
+/** C211 — JSON endpoints of a piece (upload/link/status/retry/publication/file). */
+export const CAMPAIGN_CONTENT_PIECE_UPLOAD_HREF =
+  `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/enviar` as const
+
+export const CAMPAIGN_CONTENT_PIECE_LINK_HREF = `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/link` as const
+
+export const CAMPAIGN_CONTENT_PIECE_STATUS_HREF =
+  `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/status` as const
+
+export const campaignContentPieceFileHref = (id: number, download = false): string =>
+  `${campaignContentPieceDetailHref(id)}/arquivo${download ? '?download=1' : ''}`
+
+export const campaignContentPieceRetryHref = (id: number): string =>
+  `${campaignContentPieceDetailHref(id)}/retry`
+
+export const campaignContentPiecePublicationHref = (id: number): string =>
+  `${campaignContentPieceDetailHref(id)}/publicacao`
+
 const campaignRecordingDetailHref = (id: number): string =>
   `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/${id}`
 

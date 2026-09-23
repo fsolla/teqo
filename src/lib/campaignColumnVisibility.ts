@@ -32,6 +32,8 @@ const CAMPAIGN_LIST_IDS = [
   // C139 — the contacts page (staff) joins the picker with the same key
   // contract; the ficha fields are the columns.
   'contatos',
+  // C211 — the internal Central de Conteúdos list.
+  'conteudos',
 ] as const
 
 export type CampaignListId = (typeof CAMPAIGN_LIST_IDS)[number]

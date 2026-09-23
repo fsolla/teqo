@@ -1,0 +1,433 @@
+import type {
+  CollectionAfterChangeHook,
+  CollectionBeforeChangeHook,
+  CollectionBeforeValidateHook,
+  CollectionConfig,
+} from 'payload'
+
+import {
+  CONTENT_MEDIA_SLUG,
+  CONTENT_PIECE_CURATED_FIELDS,
+  CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
+  CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
+  CONTENT_PIECE_ORIGINS,
+  CONTENT_PIECE_PROCESSING_STATUSES,
+  CONTENT_PIECE_STATUSES,
+  CONTENT_PIECE_STEPS,
+  CONTENT_PIECE_TITLE_MAX_LENGTH,
+  CONTENT_PIECE_TYPES,
+  contentPieceCuratedFieldLabels,
+  contentPieceOriginLabels,
+  contentPieceProcessingStatusLabels,
+  contentPieceSearchText,
+  contentPieceSlugCandidates,
+  contentPieceStatusLabels,
+  contentPieceStepLabels,
+  contentPieceTypeLabels,
+} from '@/lib/contentPiece'
+import { SPEECH_TOPICS } from '@/lib/speechFacets'
+import { payloadAdminOnly } from '@/utilities/access/shared'
+import {
+  canCreateContentPiece,
+  canReadContentPiece,
+  canSetCampaignSystemField,
+  canUpdateContentPiece,
+} from '@/utilities/campaignAccess'
+import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { revalidateContentPiecesListing } from '@/utilities/documents'
+import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
+
+/**
+ * C211 — one campaign content piece ("peça") of the internal Central: the
+ * catalogued material (uploaded file or Instagram/YouTube link) that the public
+ * Central (S27) publishes. `processingStatus`/`step`/`error` are the honest
+ * states of the transcription/cataloguing pipeline; `status` is the editorial
+ * kill switch (rascunho → publicado) and never deletes the file. `media` is the
+ * private upload, served only through the authenticated route under
+ * `/campanha`; `curatedFields` records what the assessoria edited, so the
+ * pipeline never overwrites a human decision (D6).
+ */
+
+const TYPE_OPTIONS = CONTENT_PIECE_TYPES.map((value) => ({
+  value,
+  label: contentPieceTypeLabels[value],
+}))
+const STATUS_OPTIONS = CONTENT_PIECE_STATUSES.map((value) => ({
+  value,
+  label: contentPieceStatusLabels[value],
+}))
+const PROCESSING_STATUS_OPTIONS = CONTENT_PIECE_PROCESSING_STATUSES.map((value) => ({
+  value,
+  label: contentPieceProcessingStatusLabels[value],
+}))
+const STEP_OPTIONS = CONTENT_PIECE_STEPS.map((value) => ({
+  value,
+  label: contentPieceStepLabels[value],
+}))
+const ORIGIN_OPTIONS = CONTENT_PIECE_ORIGINS.map((value) => ({
+  value,
+  label: contentPieceOriginLabels[value],
+}))
+
+/**
+ * The one seam with the public Central (S27): every write of a piece — the
+ * pipeline's cataloguing, the ficha, the kill switch — busts the listing tag
+ * the public surface caches under. A collection hook and not a per-caller line,
+ * so a new write path cannot forget it.
+ */
+const revalidateContentPieceListing: CollectionAfterChangeHook = ({ doc }) => {
+  revalidateContentPiecesListing()
+  return doc
+}
+
+/** Stamps `publishedAt` on every transition into `publicado` (create included). */
+const stampContentPiecePublishedAt: CollectionBeforeChangeHook = ({
+  data,
+  operation,
+  originalDoc,
+}) => {
+  if (
+    data.status === 'publicado' &&
+    (operation === 'create' || originalDoc?.status !== 'publicado')
+  ) {
+    data.publishedAt = new Date().toISOString()
+  }
+  return data
+}
+
+/**
+ * D7 — the public slug is generated on the FIRST transition into `publicado`,
+ * from the title in force, and never changes after that: a draft has no slug,
+ * and unpublishing preserves it (the link already shared keeps working). The
+ * probe runs under a text advisory lock so two pieces published with the same
+ * title cannot race the unique constraint; the candidates add `-2`, `-3`…
+ * inside the caller's transaction (the publish action always provides one).
+ */
+const setCanonicalContentPieceSlug: CollectionBeforeChangeHook = async ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (!data) return data
+  const enteringPublished =
+    data.status === 'publicado' && (operation === 'create' || originalDoc?.status !== 'publicado')
+  if (!enteringPublished || originalDoc?.slug) return data
+
+  const title = data.title ?? originalDoc?.title ?? ''
+  const candidates = contentPieceSlugCandidates(title)
+  await acquireTextAdvisoryLocks(req.payload, req, [`content-piece-slug:${candidates[0]}`])
+
+  // Intentional admin bypass: the slug probe must see every piece, including
+  // drafts the publishing actor cannot read.
+  const existing = await req.payload.find({
+    collection: 'contentPiece',
+    where: { slug: { in: candidates } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    select: { slug: true },
+    overrideAccess: true,
+    req,
+  })
+  const taken = new Set(existing.docs.map((doc) => doc.slug))
+  const free = candidates.find((candidate) => !taken.has(candidate))
+  if (free) data.slug = free
+  return data
+}
+
+/**
+ * Denormalized catalogue index: `cityLabel`/`region` mirror the related
+ * município (a static, read-only catalog) and `searchText` is the normalized
+ * haystack the list search matches — the same shape C199 persists on a
+ * recording. The município is only read when the relation was TOUCHED: every
+ * partial update (status, step, error, the job's heartbeats) reuses the stored
+ * `cityLabel`/`region` instead of paying a query per save.
+ */
+const deriveContentPieceCatalogIndex: CollectionBeforeValidateHook = async ({
+  data,
+  originalDoc,
+  req,
+}) => {
+  if (!data) return data
+
+  const relationTouched = data.municipality !== undefined
+  const municipalityValue = relationTouched ? data.municipality : originalDoc?.municipality
+  const municipalityId =
+    typeof municipalityValue === 'number'
+      ? municipalityValue
+      : typeof municipalityValue === 'object' && municipalityValue !== null
+        ? municipalityValue.id
+        : null
+
+  let cityLabel = originalDoc?.cityLabel ?? null
+  let region = originalDoc?.region ?? null
+  if (relationTouched) {
+    cityLabel = null
+    region = null
+    if (municipalityId !== null) {
+      const municipality = await req.payload
+        .findByID({
+          collection: 'municipality',
+          id: municipalityId,
+          depth: 0,
+          select: { name: true, region: true },
+          // Intentional admin bypass: the município catalog is read-only geography.
+          overrideAccess: true,
+          req,
+        })
+        .catch(() => null)
+      cityLabel = municipality?.name ?? null
+      region = municipality?.region ?? null
+    }
+  }
+
+  data.cityLabel = cityLabel
+  data.region = region
+  data.searchText = contentPieceSearchText({
+    title: data.title ?? originalDoc?.title,
+    description: data.description ?? originalDoc?.description,
+    transcript: data.transcript ?? originalDoc?.transcript,
+    institution: data.institution ?? originalDoc?.institution,
+    topics: data.topics ?? originalDoc?.topics,
+    cityLabel,
+  })
+  return data
+}
+
+export const ContentPiece: CollectionConfig = {
+  slug: 'contentPiece',
+  labels: {
+    singular: 'Peça',
+    plural: 'Peças',
+  },
+  admin: {
+    group: 'Comunicação',
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'type', 'processingStatus', 'status', 'pieceDate'],
+    description:
+      'Peças de campanha da Central de Conteúdos. O arquivo é privado; "Rascunho" não aparece na Central pública.',
+  },
+  access: {
+    create: canCreateContentPiece,
+    read: canReadContentPiece,
+    update: canUpdateContentPiece,
+    // C211 has no delete surface in the Central: only the Payload admin removes
+    // a row (the S27/support path), so campaign roles never lose a file by
+    // accident.
+    delete: payloadAdminOnly,
+  },
+  hooks: {
+    beforeValidate: [deriveContentPieceCatalogIndex],
+    beforeChange: [
+      setCanonicalContentPieceSlug,
+      stampContentPiecePublishedAt,
+      stampCampaignCreatedBy,
+    ],
+    afterChange: [revalidateContentPieceListing],
+  },
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Título',
+      required: true,
+      maxLength: CONTENT_PIECE_TITLE_MAX_LENGTH,
+    },
+    {
+      name: 'slug',
+      type: 'text',
+      label: 'Endereço na Central pública',
+      unique: true,
+      index: true,
+      admin: {
+        readOnly: true,
+        description:
+          'Gerado no primeiro "Publicar" a partir do título e imutável depois. Despublicar não apaga o endereço.',
+      },
+    },
+    {
+      name: 'type',
+      type: 'select',
+      label: 'Tipo',
+      required: true,
+      index: true,
+      options: TYPE_OPTIONS,
+      admin: {
+        description: 'Derivado do arquivo no envio; a assessoria pode ajustar (ex.: card).',
+      },
+    },
+    {
+      name: 'description',
+      type: 'textarea',
+      label: 'Descrição',
+      maxLength: CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
+    },
+    {
+      name: 'topics',
+      type: 'select',
+      label: 'Temas',
+      hasMany: true,
+      index: true,
+      options: SPEECH_TOPICS.map((topic) => ({ value: topic.value, label: topic.label })),
+    },
+    {
+      name: 'municipality',
+      type: 'relationship',
+      relationTo: 'municipality',
+      label: 'Cidade',
+      index: true,
+      admin: {
+        description: 'Município da campanha relacionado à peça (opcional).',
+      },
+    },
+    {
+      name: 'cityLabel',
+      type: 'text',
+      label: 'Cidade (busca)',
+      admin: {
+        readOnly: true,
+        description: 'Derivado do município relacionado.',
+      },
+    },
+    {
+      name: 'region',
+      type: 'text',
+      label: 'Região',
+      admin: {
+        readOnly: true,
+        description: 'Território de identidade derivado do município.',
+      },
+    },
+    {
+      name: 'institution',
+      type: 'text',
+      label: 'Instituição',
+      maxLength: CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
+    },
+    {
+      name: 'pieceDate',
+      type: 'date',
+      label: 'Data da peça',
+      index: true,
+    },
+    {
+      name: 'durationSeconds',
+      type: 'number',
+      label: 'Duração (s)',
+      admin: {
+        readOnly: true,
+        description: 'Medida pelo provedor de transcrição; nunca estimada.',
+      },
+    },
+    {
+      name: 'transcript',
+      type: 'textarea',
+      label: 'Transcrição / texto',
+      admin: {
+        description: 'Transcrição do áudio/vídeo ou texto extraído. Editável pela assessoria.',
+      },
+    },
+    {
+      name: 'media',
+      type: 'upload',
+      relationTo: CONTENT_MEDIA_SLUG,
+      label: 'Arquivo da peça',
+      admin: {
+        readOnly: true,
+        description: 'O arquivo privado; publicado, é o que a Central pública serve.',
+      },
+    },
+    {
+      name: 'sourceUrl',
+      type: 'text',
+      label: 'Link de origem',
+      unique: true,
+      index: true,
+      admin: {
+        readOnly: true,
+        description: 'Link canônico do Instagram/YouTube quando a peça entrou por link.',
+      },
+    },
+    {
+      name: 'origin',
+      type: 'select',
+      label: 'Origem',
+      required: true,
+      defaultValue: 'arquivo',
+      options: ORIGIN_OPTIONS,
+    },
+    {
+      name: 'status',
+      type: 'select',
+      label: 'Publicação',
+      required: true,
+      defaultValue: 'rascunho',
+      index: true,
+      options: STATUS_OPTIONS,
+      admin: {
+        description: 'Despublicar tira a peça da Central pública na hora e preserva o arquivo.',
+      },
+    },
+    {
+      name: 'publishedAt',
+      type: 'date',
+      label: 'Publicado em',
+      admin: { readOnly: true },
+    },
+    {
+      name: 'processingStatus',
+      type: 'select',
+      label: 'Processamento',
+      required: true,
+      defaultValue: 'pronto',
+      index: true,
+      options: PROCESSING_STATUS_OPTIONS,
+    },
+    {
+      name: 'step',
+      type: 'select',
+      label: 'Passo',
+      options: STEP_OPTIONS,
+      admin: {
+        readOnly: true,
+        description: 'Progresso honesto do processamento em andamento.',
+      },
+    },
+    {
+      name: 'error',
+      type: 'textarea',
+      label: 'Erro',
+      admin: {
+        readOnly: true,
+        description: 'Motivo interno da falha; nunca vai à pessoa com o detalhe cru.',
+      },
+    },
+    {
+      name: 'searchText',
+      type: 'textarea',
+      label: 'Texto normalizado (busca)',
+      admin: {
+        readOnly: true,
+        description:
+          'Título, descrição, transcrição, temas, cidade e instituição normalizados (sem acentos, minúsculas).',
+      },
+    },
+    {
+      name: 'curatedFields',
+      type: 'select',
+      label: 'Campos curados pela assessoria',
+      hasMany: true,
+      options: CONTENT_PIECE_CURATED_FIELDS.map((value) => ({
+        value,
+        label: contentPieceCuratedFieldLabels[value],
+      })),
+      admin: {
+        readOnly: true,
+        description:
+          'O que a assessoria já editou; a catalogação automática nunca sobrescreve estes campos.',
+      },
+    },
+    systemStampedActorField({ setAccess: canSetCampaignSystemField }),
+  ],
+}
