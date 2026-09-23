@@ -70,8 +70,7 @@ const paired = new Map()
 
 for (const dirName of originDirs) {
   const files = await readdir(join(originRoot, dirName))
-  const pick = (prefix) =>
-    files.filter((file) => file.toLowerCase().startsWith(prefix))
+  const pick = (prefix) => files.filter((file) => file.toLowerCase().startsWith(prefix))
   const photos = pick('fotos')
   const base = pick('base')
 
