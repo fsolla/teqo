@@ -9,7 +9,7 @@ import { isCardModelId } from '@/lib/cardModels'
 import { hasPublishedJingles } from '@/utilities/jingleReads'
 
 const intro =
-  'Escolha um dos cinco modelos, personalize com seu nome ou sua foto e baixe para compartilhar.'
+  'Escolha um dos seis modelos, personalize com seu nome ou sua foto e baixe para compartilhar.'
 
 export const metadata: Metadata = {
   title: 'Crie seu card de apoio | Jorge Solla',

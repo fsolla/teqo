@@ -17,10 +17,11 @@ const CARD_MODEL_IDS = [
   'perfil-retangular',
   'time-de-voce',
   'time-do-estadual',
+  'minha-colinha',
 ] as const
 
 export type CardModelId = (typeof CARD_MODEL_IDS)[number]
-type CardModelKind = 'name' | 'photo' | 'team'
+type CardModelKind = 'name' | 'photo' | 'team' | 'colinha'
 
 export type CardRect = {
   x: number
@@ -40,12 +41,21 @@ export type CardModel = {
   photoWindow?: CardRect
   /** Team model: the master front overlay drawn above the cutout photo. */
   overlaySrc?: string
-  /** Team model: the filled example shown before a cutout is ready. */
+  /**
+   * S31 — colinha model: the brand lockup of the top block, loaded besides the
+   * `assetSrc` (group photo) and `overlaySrc` (band art) of the composition.
+   */
+  lockupSrc?: string
+  /**
+   * Gallery tile art: the filled example shown by the team models before a
+   * cutout is ready, and the approved model art of the colinha tile.
+   */
   previewSrc?: string
   /**
-   * S30 — team model whose art is picked per state deputy: the composer swaps
-   * `assetSrc`/`overlaySrc` for the selected catalog entry (the defaults are the
-   * illustrative JULIO pair) and gates the flow on the selection.
+   * S30/S31 — model whose flow is picked per state deputy from the shared
+   * catalog: on the team model the composer swaps `assetSrc`/`overlaySrc` for
+   * the selected entry (the defaults are the illustrative JULIO pair); on the
+   * colinha it fills the estadual row. Both gate the flow on the selection.
    */
   stateDeputyPicker?: boolean
   /** Optional gallery badge (e.g. `NOVO`). */
@@ -102,10 +112,25 @@ export const CARD_MODELS: readonly CardModel[] = [
     overlaySrc: '/cards/estaduais/julio-base.webp',
     previewSrc: '/cards/modelo-time-de-voce-com-estadual.jpeg',
     stateDeputyPicker: true,
-    badge: 'NOVO',
     width: 1080,
     height: 1440,
     photoWindow: { x: 286, y: 439, width: 592, height: 577 },
+  },
+  {
+    id: 'minha-colinha',
+    kind: 'colinha',
+    label: 'Minha colinha',
+    // S31 — the top block composes the official kit (group photo + brand box +
+    // band); `previewSrc` is the exact approved model art of the gallery tile
+    // (byte-for-byte copy) and `lockupSrc` is the brand drawn in the top box.
+    assetSrc: '/cards/team-card-base.png',
+    overlaySrc: '/cards/team-card-front.png',
+    lockupSrc: '/campaign-kit/marca-negativa-completa.png',
+    previewSrc: '/cards/modelo-colinha.jpeg',
+    stateDeputyPicker: true,
+    badge: 'NOVO',
+    width: 1080,
+    height: 1920,
   },
 ]
 

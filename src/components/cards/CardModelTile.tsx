@@ -6,11 +6,12 @@ import type { CardModel } from '@/lib/cardModels'
 import { cn } from '@/lib/utils'
 
 /**
- * S13/S15 — artwork preview of one card model, shared by the home section and
- * the `/cards` gallery. The name tile reuses the empty master with a `SEU NOME`
- * preview drawn by the real composer pipeline (S14); the photo tiles show the
- * official transparent overlay above a neutral photo slot; the team tile shows
- * the filled example (`previewSrc`) with its `NOVO` badge.
+ * S13/S15/S31 — artwork preview of one card model, shared by the home section
+ * and the `/cards` gallery. The name tile reuses the empty master with a
+ * `SEU NOME` preview drawn by the real composer pipeline (S14); the photo tiles
+ * show the official transparent overlay above a neutral photo slot; the team
+ * and colinha tiles show `previewSrc` (the filled example / the approved model
+ * art) with the `NOVO` badge.
  */
 export const CardModelTile = ({
   model,
@@ -57,7 +58,7 @@ export const CardModelTile = ({
       src={model.previewSrc ?? model.assetSrc}
       alt=""
       fill
-      sizes="(min-width: 1024px) 200px, 78vw"
+      sizes="(min-width: 1024px) 167px, 78vw"
       className="object-cover"
     />
 

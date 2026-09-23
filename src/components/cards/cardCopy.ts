@@ -6,6 +6,13 @@
 export const CARD_PRIVACY_NOTE =
   'Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para nós.'
 export const CARD_PHOTO_PRIVACY_NOTE = 'Sua foto fica neste aparelho e não é enviada para nós.'
+/**
+ * S31 — the colinha has no typed name and no photo: the slip is composed from
+ * the official art plus the deputy choice, all on the device (literal of the
+ * design gate, scene 3).
+ */
+export const CARD_COLINHA_PRIVACY_NOTE =
+  'A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é solicitado.'
 
 /**
  * S17 — the tone-harmony control of the team model. Literals of the intent and
