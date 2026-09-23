@@ -4,6 +4,7 @@ import { getPayload } from 'payload'
 import type { ReactNode } from 'react'
 
 import { CampaignHomeActions } from '@/components/campaign/dashboard/CampaignHomeActions'
+import { CampaignHomeCardDownloads } from '@/components/campaign/dashboard/CampaignHomeCardDownloads'
 import { CampaignHomeLayout } from '@/components/campaign/dashboard/CampaignHomeLayout'
 import { CampaignHomeStaffChrome } from '@/components/campaign/dashboard/CampaignHomeStaffChrome'
 import { CampaignHomeSummary } from '@/components/campaign/dashboard/CampaignHomeSummary'
@@ -51,7 +52,12 @@ export default async function CampaignHomePage() {
       loadCampaignHomeSummary(payload, user),
       loadHomeSearchSuggestions(payload, user),
     ])
-    summarySlot = <CampaignHomeSummary view={summaryView} />
+    summarySlot = (
+      <>
+        <CampaignHomeSummary view={summaryView} />
+        <CampaignHomeCardDownloads view={summaryView.cardDownloads} />
+      </>
+    )
     initialSuggest = suggest
   }
 

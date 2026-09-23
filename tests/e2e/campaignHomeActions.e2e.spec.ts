@@ -457,3 +457,61 @@ test.describe('Wizard — mudar tendência (B97 / B168)', () => {
     await expect(page.getByText('Tendência política registrada.')).toBeVisible()
   })
 })
+
+test.describe('Início — contadores anônimos dos cards (S32)', () => {
+  test('staff reads the Cards block with the six models in catalog order', async ({
+    campaign,
+    page,
+  }) => {
+    const { payload } = campaign
+    const createdEventIds: number[] = []
+
+    try {
+      for (const subjectId of ['eu-sou-solla', 'minha-colinha']) {
+        const event = await payload.create({
+          collection: 'contentEvent',
+          data: { type: 'download', subjectType: 'card', subjectId },
+          overrideAccess: true,
+        })
+        createdEventIds.push(event.id)
+      }
+
+      await page.goto('/campanha')
+
+      const block = page.getByRole('region', { name: 'Cards' })
+      await expect(block).toBeVisible({ timeout: 15000 })
+      await expect(
+        block.getByText('Downloads anônimos acumulados desde o lançamento.'),
+      ).toBeVisible()
+      await expect(block.locator('dt')).toHaveText([
+        'Card com seu nome',
+        'Moldura quadrada',
+        'Moldura vertical',
+        'Time de você',
+        'Time do estadual',
+        'Minha colinha',
+      ])
+      // The counters are global per model id and the public card spec also
+      // beacons in the same database: pin the floor, never an exact number.
+      const firstValue = (await block.locator('dd').first().textContent()) ?? ''
+      expect(Number(firstValue.replace(/\D/g, '') || '0')).toBeGreaterThanOrEqual(1)
+      await expect(
+        block.getByText('Os números contam downloads, não pessoas ou visitantes únicos.'),
+      ).toBeVisible()
+    } finally {
+      for (const id of createdEventIds) {
+        await payload
+          .delete({ collection: 'contentEvent', id, overrideAccess: true })
+          .catch(() => undefined)
+      }
+    }
+  })
+
+  test('leader never sees the Cards block', async ({ campaign, context, page }) => {
+    await seedCampaignSession(context, campaign.baseURL, leaderToken)
+    await page.goto('/campanha')
+
+    await expect(page.getByLabel('Buscar na campanha')).toHaveCount(0)
+    await expect(page.getByRole('region', { name: 'Cards' })).toHaveCount(0)
+  })
+})

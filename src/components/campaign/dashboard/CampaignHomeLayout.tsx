@@ -51,7 +51,12 @@ export const CampaignHomeLayout = ({
     >
       <div className="flex h-full min-h-0 flex-col">
         {summarySlot ? (
-          <div className="min-w-0" data-slot="home-summary">
+          // The summary may outgrow the chrome on phones (S32): scroll it
+          // inside the slot instead of clipping it behind the actions dock.
+          <div
+            className="min-w-0 max-md:min-h-0 max-md:overflow-y-auto"
+            data-slot="home-summary"
+          >
             {summarySlot}
           </div>
         ) : null}

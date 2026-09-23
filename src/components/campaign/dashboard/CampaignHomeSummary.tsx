@@ -39,7 +39,10 @@ const HomeSummaryDelta = ({ delta }: { delta: number | null }) => {
 }
 
 export const CampaignHomeSummary = ({ view }: { view: CampaignHomeSummaryView }) => (
-  <section aria-label="Resumo da campanha" className="flex flex-col gap-4 pb-4 md:pb-6">
+  <section
+    aria-label="Resumo da campanha"
+    className="flex flex-col gap-4 border-b pb-4 md:pb-6"
+  >
     <div className="flex flex-col gap-1">
       <p className="text-sm text-muted-foreground">Votos estimados</p>
       <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">

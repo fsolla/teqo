@@ -299,6 +299,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/dashboard',
       'src/utilities/homeSearch',
       'src/utilities/campaignDashboardData',
+      // S32 — the pure card-download counters view model of the home block;
+      // `src/lib/card` alone only wakes the public `frontend` spec.
+      'src/lib/cardDownloadCounts',
       'src/lib/campaignHomeSearchHits',
       'src/lib/homeSearchShare',
       'src/lib/homeSearchExcludeCurrentEntity',

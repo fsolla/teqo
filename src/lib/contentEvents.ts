@@ -12,6 +12,8 @@
  * components import the same vocabulary, so a new event type is one edit.
  */
 
+import type { CardModelId } from '@/lib/cardModels'
+
 export const CONTENT_EVENT_ENDPOINT = '/api/content-events'
 
 export const CONTENT_EVENT_TYPES = [
@@ -62,18 +64,20 @@ type ContentEventBeaconBody = {
   pieceSlug: string
 }
 
-const beaconBody = ({ type, pieceSlug }: ContentEventBeaconBody): string =>
-  JSON.stringify({ type, pieceSlug })
+type CardDownloadBeaconBody = {
+  type: 'download'
+  subjectType: 'card'
+  cardModelId: CardModelId
+  stateDeputySlug?: string
+}
 
 /**
- * Sends one anonymous piece event and forgets it. `sendBeacon` survives the
+ * Sends one anonymous event body and forgets it. `sendBeacon` survives the
  * navigation a click is about to trigger (the WhatsApp tab, the download);
  * `fetch` with `keepalive` is the fallback for browsers without it. Every
  * branch is swallowed: a lost count is acceptable, a broken action is not.
  */
-export const sendContentPieceEvent = (type: ContentEventType, pieceSlug: string): void => {
-  const body = beaconBody({ type, pieceSlug })
-
+const postContentEventBody = (body: string): void => {
   try {
     if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
       const sent = navigator.sendBeacon(
@@ -96,4 +100,30 @@ export const sendContentPieceEvent = (type: ContentEventType, pieceSlug: string)
   } catch {
     // Fail-soft: the public action never depends on the count.
   }
+}
+
+/** One anonymous event of a published piece (C213). */
+export const sendContentPieceEvent = (type: ContentEventType, pieceSlug: string): void => {
+  const body: ContentEventBeaconBody = { type, pieceSlug }
+  postContentEventBody(JSON.stringify(body))
+}
+
+/**
+ * S32 — one anonymous download event of a personalized card: the model id (the
+ * public catalog key) and, on the models with a state-deputy picker, the slug
+ * of the chosen state deputy. Same transport and same fail-soft contract as the
+ * piece beacon: it never throws and never delays the download.
+ */
+export const sendCardDownloadEvent = (
+  modelId: CardModelId,
+  stateDeputySlug?: string | null,
+): void => {
+  const body: CardDownloadBeaconBody = {
+    type: 'download',
+    subjectType: 'card',
+    cardModelId: modelId,
+  }
+  if (stateDeputySlug) body.stateDeputySlug = stateDeputySlug
+
+  postContentEventBody(JSON.stringify(body))
 }

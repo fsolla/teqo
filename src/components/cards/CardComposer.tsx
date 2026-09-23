@@ -51,6 +51,7 @@ import {
   renderPhotoCard,
   renderTeamCard,
 } from '@/lib/cardRender'
+import { sendCardDownloadEvent } from '@/lib/contentEvents'
 import { getStateDeputyCard, type StateDeputyCatalogEntry } from '@/lib/stateDeputyCatalog'
 
 const primaryButtonClassName =
@@ -582,6 +583,9 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     try {
       const blob = await canvasToPngBlob(canvas)
       downloadBlob(blob, cardFileName(model.id))
+      // S32 — anonymous download count (fire-and-forget, never blocks/throws);
+      // the state-deputy slug rides along on the models that have a picker.
+      sendCardDownloadEvent(model.id, selectedDeputy?.slug ?? null)
     } catch {
       setDownloadError('Não foi possível gerar o arquivo agora. Tente de novo.')
     } finally {
