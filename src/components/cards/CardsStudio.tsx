@@ -79,7 +79,10 @@ export const CardsStudio = ({
                 event.preventDefault()
                 focusSelectedTile()
               }}
-              className="max-h-[92dvh] gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
+              // `flex flex-col` (over the kit's `grid`) constrains the composer
+              // body so its scrollable area shrinks and the CTA footer stays
+              // pinned — required by the longer state-deputy selector (S30).
+              className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
             >
               <CardComposer
                 model={selectedModel}

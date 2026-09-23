@@ -117,10 +117,11 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontend', 'frontendJingles'],
   },
   {
-    // S13 — the personalized-cards studio lives in shared cards components and
-    // pure card* modules; a future diff there must wake the frontend spec (the
+    // S13/S30 — the personalized-cards studio lives in shared cards components
+    // and pure card* modules; the state-deputy catalog (S30) feeds the picker
+    // and its committed art paths, so a diff there must wake the same spec (the
     // home section is already covered by the src/app/(frontend) prefix).
-    prefixes: ['src/components/cards', 'src/lib/card'],
+    prefixes: ['src/components/cards', 'src/lib/card', 'src/lib/stateDeputyCatalog.ts'],
     specs: ['frontend'],
   },
   {

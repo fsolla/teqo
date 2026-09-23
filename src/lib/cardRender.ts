@@ -45,6 +45,19 @@ export type CardDrawContext = {
   restore(): void
   translate(x: number, y: number): void
   rotate(angle: number): void
+  beginPath(): void
+  arc(x: number, y: number, radius: number, startAngle: number, endAngle: number): void
+  ellipse(
+    x: number,
+    y: number,
+    radiusX: number,
+    radiusY: number,
+    rotation: number,
+    startAngle: number,
+    endAngle: number,
+  ): void
+  rect(x: number, y: number, width: number, height: number): void
+  fill(): void
 }
 
 export const createCardMeasure = (
@@ -205,12 +218,54 @@ export const renderPhotoCard = (
   return clampCardPhotoTransform(args.transform, args.photoSize, args.window)
 }
 
+/** S30 — silhouette tone ported from the design gate's visitor placeholder. */
+export const CARD_VISITOR_SILHOUETTE_FILL = '#001a42'
+
+/**
+ * S30 — the pre-photo state of the state-deputy model: the visitor placeholder
+ * of the design gate drawn over the deputy art (head circle + shoulder dome),
+ * normalized on the photo window so every art uses the same ruler. The shape
+ * mirrors the design's CSS (head = 34% of the window width at the top; shoulders
+ * = full width, 72% of the height with their base 3% past the window bottom, so
+ * the front overlay covers the seam). The gate's small bottom corner radius
+ * (10%) is deliberately omitted: it falls entirely behind the front overlay.
+ */
+export const drawCardVisitorSilhouette = (ctx: CardDrawContext, window: CardRect): void => {
+  const centerX = window.x + window.width / 2
+  const headRadius = window.width * 0.17
+  const shoulderHeight = window.height * 0.72
+  const shoulderBottom = window.y + window.height * 1.03
+  const shoulderTop = shoulderBottom - shoulderHeight
+  const domeRadiusX = window.width * 0.48
+  const domeRadiusY = shoulderHeight * 0.48
+  const bodyTop = shoulderTop + domeRadiusY
+
+  ctx.fillStyle = CARD_VISITOR_SILHOUETTE_FILL
+
+  ctx.beginPath()
+  ctx.arc(centerX, window.y + headRadius, headRadius, 0, Math.PI * 2)
+  ctx.fill()
+
+  ctx.beginPath()
+  ctx.rect(window.x, bodyTop, window.width, shoulderBottom - bodyTop)
+  ctx.ellipse(centerX, bodyTop, domeRadiusX, domeRadiusY, 0, Math.PI, 0)
+  ctx.fill()
+}
+
+/** S30 — the foreground subject of a team composition. */
+export type TeamCardSubject =
+  | {
+      kind: 'photo'
+      photo: CanvasImageSource
+      photoSize: CardPhotoSize
+      transform: CardPhotoTransform
+    }
+  | { kind: 'silhouette' }
+
 export type TeamCardRenderArgs = {
   base: CanvasImageSource
   overlay: CanvasImageSource
-  photo: CanvasImageSource
-  photoSize: CardPhotoSize
-  transform: CardPhotoTransform
+  subject: TeamCardSubject
   window: CardRect
   name: string
   fontFamily: string
@@ -220,12 +275,14 @@ export type TeamCardRenderArgs = {
 
 export type TeamCardRenderResult = {
   fit: CardNameFit
-  transform: CardPhotoTransform
+  /** The clamped photo transform; `null` for the silhouette subject. */
+  transform: CardPhotoTransform | null
 }
 
 /**
- * S15 — the team card composition, in the measured order: master base → cutout
- * photo (framed by the transform) → master front overlay → `TIME DE` banner →
+ * S15/S30 — the team card composition, in the measured order: master base →
+ * foreground subject (the framed cutout photo, or the visitor silhouette of the
+ * state-deputy pre-photo state) → master front overlay → `TIME DE` banner →
  * blue name banner (only when the name fits; never cut silently). The two
  * banners are drawn by the renderer because neither master carries them.
  */
@@ -236,8 +293,14 @@ export const renderTeamCard = (
 ): TeamCardRenderResult => {
   ctx.drawImage(args.base, 0, 0, model.width, model.height)
 
-  const rect = cardPhotoDrawRect(args.transform, args.photoSize, args.window)
-  ctx.drawImage(args.photo, rect.x, rect.y, rect.width, rect.height)
+  let transform: CardPhotoTransform | null = null
+  if (args.subject.kind === 'photo') {
+    const rect = cardPhotoDrawRect(args.subject.transform, args.subject.photoSize, args.window)
+    ctx.drawImage(args.subject.photo, rect.x, rect.y, rect.width, rect.height)
+    transform = clampCardPhotoTransform(args.subject.transform, args.subject.photoSize, args.window)
+  } else {
+    drawCardVisitorSilhouette(ctx, args.window)
+  }
 
   ctx.drawImage(args.overlay, 0, 0, model.width, model.height)
 
@@ -255,8 +318,5 @@ export const renderTeamCard = (
   const fit = fitCardName(args.name, args.measure, slot)
   if (fit.ok) drawCardName(ctx, { fit, fontFamily: args.fontFamily, slot })
 
-  return {
-    fit,
-    transform: clampCardPhotoTransform(args.transform, args.photoSize, args.window),
-  }
+  return { fit, transform }
 }

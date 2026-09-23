@@ -26,7 +26,10 @@ export const CardModelTile = ({
       'relative block overflow-hidden rounded-xl border bg-(--campaign-band) transition duration-200',
       selected
         ? 'border-(--pt-red) ring-2 ring-(--pt-red)'
-        : 'border-(--campaign-line) group-hover:-translate-y-0.5 group-hover:shadow-lg',
+        : model.badge
+          ? // S30 — the gate highlights the newest model even unselected.
+            'border-2 border-(--pt-red) shadow-lg group-hover:-translate-y-0.5'
+          : 'border-(--campaign-line) group-hover:-translate-y-0.5 group-hover:shadow-lg',
     )}
     style={{ aspectRatio: `${model.width} / ${model.height}` }}
   >
@@ -54,7 +57,7 @@ export const CardModelTile = ({
       src={model.previewSrc ?? model.assetSrc}
       alt=""
       fill
-      sizes="(min-width: 1024px) 260px, 78vw"
+      sizes="(min-width: 1024px) 200px, 78vw"
       className="object-cover"
     />
 

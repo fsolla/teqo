@@ -50,6 +50,7 @@
     "build:demographics": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-demographics.mjs",
     "build:election-aggregates": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/build-election-aggregates.mjs",
     "build:geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-geometries.mjs",
+    "build:state-deputy-card-assets": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-state-deputy-card-assets.mjs",
     "build:municipality-zone-geometries": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-municipality-zone-geometries.mjs",
     "build:tse-city-codes": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/build-bahia-tse-city-codes.mjs",
     "reels:build": "node scripts/build-reel.mjs",
