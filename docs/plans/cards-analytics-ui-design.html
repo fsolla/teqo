@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — S32 · Contadores de cards</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-sidebar: var(--sidebar);
+      }
+      [data-theme='campaign'] {
+        --radius: 0.5rem;
+        --background: #fff;
+        --foreground: #1c1917;
+        --card: #fff;
+        --card-foreground: #1c1917;
+        --primary: #c51414;
+        --primary-foreground: #fff;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --border: rgb(28 25 23/12%);
+        --sidebar: #fafaf9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .board {
+        background: #efeeec;
+        background-image: radial-gradient(rgb(28 25 23/8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame {
+        box-shadow: 0 18px 52px rgb(28 25 23/10%);
+      }
+      .metric-strip {
+        display: grid;
+        overflow: hidden;
+        border-radius: 0.75rem;
+        background: var(--card);
+        box-shadow: 0 0 0 1px rgb(28 25 23/10%);
+      }
+      .metric {
+        min-width: 0;
+        padding: 0.625rem 1rem;
+      }
+      .metric-strip-mobile {
+        grid-template-columns: 1fr;
+      }
+      .metric-strip-mobile .metric {
+        display: flex;
+        min-height: 58px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+      }
+      .metric-strip-mobile .metric + .metric {
+        border-top: 1px solid var(--border);
+      }
+      @media (min-width: 640px) {
+        .metric-strip {
+          grid-template-columns: repeat(6, minmax(0, 1fr));
+        }
+        .metric + .metric {
+          border-left: 1px solid var(--border);
+        }
+      }
+      @media (max-width: 639px) {
+        .metric-strip {
+          grid-template-columns: 1fr;
+        }
+        .metric {
+          display: flex;
+          min-height: 58px;
+          align-items: center;
+          justify-content: space-between;
+          gap: 1rem;
+        }
+        .metric + .metric {
+          border-top: 1px solid var(--border);
+        }
+      }
+      .metric-strip.metric-strip-mobile {
+        grid-template-columns: 1fr;
+      }
+      .metric-strip.metric-strip-mobile .metric {
+        display: flex;
+        min-height: 58px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        border-left: 0;
+      }
+      .metric-strip.metric-strip-mobile .metric + .metric {
+        border-top: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="text-xs font-black tracking-[.12em] text-primary uppercase">Gate visual · S32</p>
+        <h1 class="mt-2 text-3xl font-semibold tracking-tight">Cards na home da campanha</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-muted-foreground">
+          Um bloco compacto no resumo que responde somente quantos downloads cada modelo recebeu.
+          Sem rota, dashboard, total, porcentagem, tendência ou leitura de pessoas.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-semibold text-stone-600">
+          <span class="rounded-full border bg-white px-3 py-2">interno · tokens shadcn</span
+          ><span class="rounded-full border bg-white px-3 py-2">contagens absolutas</span
+          ><span class="rounded-full border bg-white px-3 py-2">ordem natural do catálogo</span
+          ><span class="rounded-full border bg-white px-3 py-2">downloads anônimos</span>
+        </div>
+      </header>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-bold tracking-[.12em] text-stone-600 uppercase">
+          Cena 1 · Home interna 1280 · bloco com dados
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-muted-foreground">
+          O bloco entra depois do resumo principal, sem competir com “Votos estimados”. Os números
+          abaixo são fictícios e existem apenas para validar largura e hierarquia.
+        </p>
+        <div
+          class="frame mt-4 w-full max-w-[1280px] overflow-hidden rounded-xl border bg-background"
+        >
+          <div class="flex min-h-[620px]">
+            <aside class="w-56 shrink-0 border-r bg-sidebar p-3">
+              <div class="flex h-12 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <nav class="mt-5 space-y-1 text-sm">
+                <div
+                  class="rounded-md bg-white px-3 py-2 font-semibold text-primary ring-1 ring-foreground/10"
+                >
+                  Início
+                </div>
+                <div class="px-3 py-2 text-muted-foreground">Municípios</div>
+                <div class="px-3 py-2 text-muted-foreground">Lideranças</div>
+                <div class="px-3 py-2 text-muted-foreground">Atividades</div>
+              </nav>
+            </aside>
+            <div class="min-w-0 flex-1 p-8">
+              <div>
+                <h3 class="text-2xl font-semibold tracking-tight">Visão geral</h3>
+                <p class="mt-1 text-sm text-muted-foreground">Resumo da campanha</p>
+              </div>
+              <section
+                aria-label="Resumo da campanha"
+                class="mt-7 flex flex-col gap-4 border-b pb-6"
+              >
+                <div class="flex flex-col gap-1">
+                  <p class="text-sm text-muted-foreground">Votos estimados</p>
+                  <span
+                    class="mt-1 block h-8 w-32 rounded bg-stone-200"
+                    aria-label="Valor omitido no gate"
+                  ></span>
+                </div>
+                <div class="flex max-w-md flex-col gap-1.5">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-muted-foreground">Cobertura por lideranças</span
+                    ><span class="h-4 w-14 rounded bg-stone-200"></span>
+                  </div>
+                  <div class="h-2 rounded-full bg-muted">
+                    <div class="h-full w-2/3 rounded-full bg-primary"></div>
+                  </div>
+                </div>
+              </section>
+              <section class="mt-6" aria-labelledby="cards-heading-desktop">
+                <div class="flex items-end justify-between gap-4">
+                  <div>
+                    <h4 id="cards-heading-desktop" class="text-base font-semibold">Cards</h4>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                      Downloads anônimos acumulados desde o lançamento.
+                    </p>
+                  </div>
+                  <span
+                    class="rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground"
+                    >VALORES FICTÍCIOS DO GATE</span
+                  >
+                </div>
+                <dl class="metric-strip mt-3">
+                  <div class="metric">
+                    <dt class="text-xs font-medium leading-4 text-muted-foreground">
+                      Card com seu nome
+                    </dt>
+                    <dd class="mt-1 text-lg font-medium tracking-tight tabular-nums">123</dd>
+                  </div>
+                  <div class="metric">
+                    <dt class="text-xs font-medium leading-4 text-muted-foreground">
+                      Moldura quadrada
+                    </dt>
+                    <dd class="mt-1 text-lg font-medium tracking-tight tabular-nums">89</dd>
+                  </div>
+                  <div class="metric">
+                    <dt class="text-xs font-medium leading-4 text-muted-foreground">
+                      Moldura vertical
+                    </dt>
+                    <dd class="mt-1 text-lg font-medium tracking-tight tabular-nums">67</dd>
+                  </div>
+                  <div class="metric">
+                    <dt class="text-xs font-medium leading-4 text-muted-foreground">
+                      Time de você
+                    </dt>
+                    <dd class="mt-1 text-lg font-medium tracking-tight tabular-nums">145</dd>
+                  </div>
+                  <div class="metric">
+                    <dt class="text-xs font-medium leading-4 text-muted-foreground">
+                      Time do estadual
+                    </dt>
+                    <dd class="mt-1 text-lg font-medium tracking-tight tabular-nums">34</dd>
+                  </div>
+                  <div class="metric">
+                    <dt class="text-xs font-medium leading-4 text-muted-foreground">
+                      Minha colinha
+                    </dt>
+                    <dd class="mt-1 text-lg font-medium tracking-tight tabular-nums">76</dd>
+                  </div>
+                </dl>
+                <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                  Os números contam downloads, não pessoas ou visitantes únicos.
+                </p>
+              </section>
+              <div class="mt-8 grid grid-cols-2 gap-4">
+                <div class="h-32 rounded-xl bg-muted"></div>
+                <div class="h-32 rounded-xl bg-muted"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-bold tracking-[.12em] text-stone-600 uppercase">
+          Cena 2 · Home interna mobile 390 · bloco com dados
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs text-muted-foreground">
+          No mobile cada modelo vira uma linha compacta: rótulo à esquerda, contagem tabular à
+          direita. Não há carrossel escondendo modelos nem grid apertado.
+        </p>
+        <div
+          class="frame mt-4 w-[390px] max-w-full overflow-hidden rounded-[26px] border bg-background"
+        >
+          <div class="flex h-14 items-center justify-between border-b px-4">
+            <div class="flex items-center gap-2">
+              <div
+                class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+              >
+                S
+              </div>
+              <b class="text-sm">Visão geral</b>
+            </div>
+            <button
+              class="grid size-11 place-items-center rounded-md bg-muted"
+              aria-label="Abrir menu"
+            >
+              ☰
+            </button>
+          </div>
+          <div class="p-4">
+            <section class="flex flex-col gap-4 border-b pb-5">
+              <div>
+                <p class="text-sm text-muted-foreground">Votos estimados</p>
+                <span class="mt-2 block h-8 w-28 rounded bg-stone-200"></span>
+              </div>
+              <div>
+                <div class="flex justify-between text-sm">
+                  <span class="text-muted-foreground">Cobertura por lideranças</span
+                  ><span class="h-4 w-12 rounded bg-stone-200"></span>
+                </div>
+                <div class="mt-2 h-2 rounded-full bg-muted">
+                  <div class="h-full w-2/3 rounded-full bg-primary"></div>
+                </div>
+              </div>
+            </section>
+            <section class="mt-5">
+              <div class="flex items-center justify-between">
+                <h3 class="text-base font-semibold">Cards</h3>
+                <span
+                  class="rounded-full bg-muted px-2 py-1 text-[9px] font-semibold text-muted-foreground"
+                  >EXEMPLO</span
+                >
+              </div>
+              <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                Downloads anônimos acumulados desde o lançamento.
+              </p>
+              <dl class="metric-strip metric-strip-mobile mt-3">
+                <div class="metric">
+                  <dt class="text-xs font-medium text-muted-foreground">Card com seu nome</dt>
+                  <dd class="text-lg font-medium tracking-tight tabular-nums">123</dd>
+                </div>
+                <div class="metric">
+                  <dt class="text-xs font-medium text-muted-foreground">Moldura quadrada</dt>
+                  <dd class="text-lg font-medium tracking-tight tabular-nums">89</dd>
+                </div>
+                <div class="metric">
+                  <dt class="text-xs font-medium text-muted-foreground">Moldura vertical</dt>
+                  <dd class="text-lg font-medium tracking-tight tabular-nums">67</dd>
+                </div>
+                <div class="metric">
+                  <dt class="text-xs font-medium text-muted-foreground">Time de você</dt>
+                  <dd class="text-lg font-medium tracking-tight tabular-nums">145</dd>
+                </div>
+                <div class="metric">
+                  <dt class="text-xs font-medium text-muted-foreground">Time do estadual</dt>
+                  <dd class="text-lg font-medium tracking-tight tabular-nums">34</dd>
+                </div>
+                <div class="metric">
+                  <dt class="text-xs font-medium text-muted-foreground">Minha colinha</dt>
+                  <dd class="text-lg font-medium tracking-tight tabular-nums">76</dd>
+                </div>
+              </dl>
+              <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                Os números contam downloads, não pessoas ou visitantes únicos.
+              </p>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-bold tracking-[.12em] text-stone-600 uppercase">
+          Cenas 3–4 · Estado vazio honesto · desktop + mobile
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs text-muted-foreground">
+          Antes do primeiro evento, não se desenham seis zeros como se fossem uma comparação pronta.
+          O bloco explica o que surgirá e preserva o mesmo espaço sem gráfico ou CTA.
+        </p>
+        <div class="mt-4 flex flex-wrap items-start gap-8">
+          <div class="frame w-[820px] max-w-full rounded-xl border bg-background p-8">
+            <section>
+              <h3 class="text-base font-semibold">Cards</h3>
+              <div class="mt-3 rounded-xl bg-card px-5 py-6 ring-1 ring-foreground/10">
+                <div class="flex items-start gap-3">
+                  <div
+                    class="grid size-10 shrink-0 place-items-center rounded-full bg-muted text-muted-foreground"
+                    aria-hidden="true"
+                  >
+                    ↓
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold">Nenhum download ainda</p>
+                    <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                      Os contadores aparecem quando alguém baixar um card.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground">
+                A contagem será anônima e mostrará downloads por modelo, nunca pessoas.
+              </p>
+            </section>
+          </div>
+          <div
+            class="frame w-[390px] max-w-full overflow-hidden rounded-[26px] border bg-background"
+          >
+            <div class="flex h-14 items-center justify-between border-b px-4">
+              <b class="text-sm">Visão geral</b
+              ><button class="grid size-11 place-items-center rounded-md bg-muted">☰</button>
+            </div>
+            <div class="p-4">
+              <h3 class="text-base font-semibold">Cards</h3>
+              <div class="mt-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+                <div
+                  class="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground"
+                >
+                  ↓
+                </div>
+                <p class="mt-3 text-sm font-semibold">Nenhum download ainda</p>
+                <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                  Os contadores aparecem quando alguém baixar um card.
+                </p>
+              </div>
+              <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                A contagem será anônima e mostrará downloads por modelo, nunca pessoas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <h2 class="text-xs font-bold tracking-[.12em] text-stone-600 uppercase">
+          Anatomia aprovada do bloco
+        </h2>
+        <div class="mt-4 grid gap-4 text-sm md:grid-cols-3">
+          <div class="rounded-xl border bg-card p-4">
+            <p class="font-semibold">Só seis modelos</p>
+            <p class="mt-1 text-xs leading-5 text-muted-foreground">
+              Card com seu nome · Moldura quadrada · Moldura vertical · Time de você · Time do
+              estadual · Minha colinha.
+            </p>
+          </div>
+          <div class="rounded-xl border bg-card p-4">
+            <p class="font-semibold">Só números absolutos</p>
+            <p class="mt-1 text-xs leading-5 text-muted-foreground">
+              Sem porcentagem, total de “usos”, ranking, série, seta, gráfico ou tendência.
+            </p>
+          </div>
+          <div class="rounded-xl border bg-card p-4">
+            <p class="font-semibold">Leitura honesta</p>
+            <p class="mt-1 text-xs leading-5 text-muted-foreground">
+              “Downloads”, nunca pessoas, usuários ou visitantes únicos. Caption curta sempre
+              visível.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-stone-300 pt-8 text-xs leading-5 text-muted-foreground">
+        <p class="font-semibold text-foreground">Design tier 1 · openai/gpt-5.6-sol.</p>
+        <p class="mt-2">
+          <strong class="text-foreground">Tokens reais:</strong> <code>bg-card</code>,
+          <code>ring-foreground/10</code>, <code>text-muted-foreground</code>,
+          <code>tabular-nums</code>, raio <code>rounded-xl</code> e padding compacto
+          <code>px-4 py-2</code>.
+        </p>
+        <p class="mt-2">
+          <strong class="text-foreground">NEEDS ASSET:</strong> nenhum.
+          <strong class="text-foreground">Nota:</strong> 123, 89, 67, 145, 34 e 76 são placeholders
+          explícitos do gate, não métricas nem claims de campanha.
+        </p>
+      </aside>
+    </main>
+  </body>
+</html>
