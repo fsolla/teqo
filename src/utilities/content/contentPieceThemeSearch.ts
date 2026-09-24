@@ -111,7 +111,7 @@ export const loadContentPieceCatalogSearch = async ({
   // only while the Central has published pieces (the guard lives in the pure
   // builder): an empty Central keeps the honest empty state, never a board of
   // cards.
-  const catalogItems = contentCatalogItems(publicItems, cardCatalogItems())
+  const catalogItems = contentCatalogItems(publicItems, publishedItems.length, cardCatalogItems())
   const facets = contentPieceCatalogFacets(catalogItems)
 
   return {

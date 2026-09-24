@@ -2,6 +2,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 import { sendCardOpeningEvent } from '@/lib/contentEvents'
+import { contentPieceTypeLabels } from '@/lib/contentPiece'
 import type { CardCatalogItem } from '@/lib/contentPieceCatalog'
 import { cn } from '@/lib/utils'
 
@@ -11,8 +12,6 @@ import {
   CONTENT_PIECE_OUTLINE_BUTTON,
   CONTENT_PIECE_TAG,
 } from './contentPieceClasses'
-
-const CARD_TAG_LABEL = 'Card'
 
 /**
  * S38 — the art of a model item (artefato: cenas 01–03): the model's real file
@@ -51,7 +50,7 @@ const CardItemArt = ({ item }: { item: CardCatalogItem }) => (
     )}
 
     {item.badge ? (
-      <span className="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#184e92]">
+      <span className="absolute top-2 right-2 hidden rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#184e92] sm:block">
         {item.badge}
       </span>
     ) : null}
@@ -74,14 +73,18 @@ export const ContentCatalogCardItem = ({ item }: { item: CardCatalogItem }) => (
     className={cn(
       CONTENT_PIECE_CARD,
       'grid grid-cols-[128px_1fr] text-black no-underline sm:block',
-      item.badge ? 'border-2 border-(--pt-red)' : null,
+      item.badge ? 'border-2 border-[#e4102f]' : null,
       CONTENT_PIECE_FOCUS,
     )}
   >
     <CardItemArt item={item} />
 
     <div className="p-4">
-      <span className={CONTENT_PIECE_TAG}>{CARD_TAG_LABEL}</span>
+      <span className={CONTENT_PIECE_TAG}>
+        {contentPieceTypeLabels.card}
+        {/* Artefato (cena 02): no celular o selo vive na tag, não sobre a arte. */}
+        {item.badge ? <span className="sm:hidden"> · {item.badge}</span> : null}
+      </span>
       <h3 className="mt-2 font-[family-name:var(--font-exo2)] text-sm font-extrabold sm:text-base">
         {item.title}
       </h3>

@@ -28,7 +28,7 @@ export const ContentPieceCatalog = ({
   themeMode,
 }: {
   items: readonly ContentCatalogItem[]
-  /** S28 — the board is in the theme mode: cards state their provenance. */
+  /** S28 — the board is in the theme mode: the pieces state their provenance. */
   themeMode: boolean
 }) => {
   const [playingId, setPlayingId] = useState<number | null>(null)

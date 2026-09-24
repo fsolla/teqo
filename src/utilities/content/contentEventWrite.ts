@@ -18,8 +18,8 @@ import {
  *
  * The write is an intentional Local API admin bypass: the collection denies
  * every create through access control, and the gate is the caller's (the
- * published-slug read / the served file). No visitor identifier is ever part of
- * the row.
+ * published-slug read, the served file, or — S38 — the committed card model
+ * catalog for the card opening). No visitor identifier is ever part of the row.
  */
 
 export type ContentEventInput = {
