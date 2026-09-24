@@ -229,6 +229,18 @@ Quota: ~3,5 dias eng + tempo de máquina (download/ASR), dentro do appetite herd
 - **`scripts/lib/mediaBinaries.mjs` e `scripts/lib/webSpeeches.mjs` entraram no `SCRIPTS_SPEC_PINNED`** (invariante OPS119++ de blast radius).
 - **Smoke local:** `pnpm falas-web:import --findings … --dry-run` (plano com inválido/duplicado) e a execução real com yt-dlp ausente (falha honesta no relatório + exit 1) rodados contra o banco local do worktree. O run real com mídia é do operador (C218) — a esteira não é executada em produção por este PR.
 
+## Simplify — triage dos revisores (2026-09-24)
+
+Aplicados na sessão (não reabrir): referência órfã do `defaultRun` no `reelFfmpeg` (bug real de produção), teto de bytes no `downloadUrlToFile`, helpers `databaseTarget`/`assertWriteConfirm` no `scripts/lib/cli.mjs` usados pelos dois CLIs, predicado de completude no `src/lib/webSpeech.ts`, dono único da constante de custo de ASR (o CLI da Câmara re-exporta a do app), tipos do `recordingTranscription`, `ffmpegBinary` exportado do dono, mensagens pt-BR no schema do achado, `isComplete`/skip preservando a duração armazenada, capa antiga preservada quando a nova falha, regex de data ancorada + calendário + fuso, testes de `downloadToFile` e asserções endurecidas.
+
+| ID  | Resumo                                                                                    | Origem           | Score | Tipo           | Destino                                                                           |
+| --- | ----------------------------------------------------------------------------------------- | ---------------- | ----- | -------------- | --------------------------------------------------------------------------------- |
+| S1  | `downloadUrlToFile` como dono único do streamer (os outros 3 paths não têm teto de bytes) | simplify/reuse   | 3     | expensive_lock | defer — gatilho: quando o C217 precisar baixar mídia externa ou surgir um 4º path |
+| S2  | `mediaIdOf` duplicado (hook do `Speech` vs `speechImport`)                                | simplify/reuse   | 1     | cheap_polish   | descartar (2 linhas, idioma local)                                                |
+| S3  | `ingestWebSpeech` ainda com ~180 linhas                                                   | simplify/quality | 2     | cheap_polish   | descartar (extração feita; fluxo linear pinado por int)                           |
+| S4  | Nome do arquivo espelhado genérico (`source.mp4`)                                         | simplify/quality | 2     | cheap_polish   | defer — gatilho: C216 define o nome de download (`dispositionFilename`)           |
+| S5  | Cap de bytes ausente nos 3 paths pré-existentes de download                               | simplify/reuse   | 3     | expensive_lock | descartar deste lote (pré-existente em main, fora do escopo; S1 é o gatilho)      |
+
 ## Self-score de decision-quality
 
 **4,5/5.**
