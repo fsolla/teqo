@@ -41,10 +41,16 @@ import {
 } from '@/app/(campaign)/campanha/actions/speech'
 import {
   SPEECH_CUT_FORBIDDEN_MESSAGE,
+  SPEECH_CUT_MIRROR_MISSING_MESSAGE,
   SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
   SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE,
 } from '@/lib/schemas/speechCut'
-import { SPEECH_CUT_FAILURE_INTERRUPTED, SPEECH_CUT_FAILURE_UNAVAILABLE } from '@/lib/speechCut'
+import {
+  SPEECH_CUT_FAILURE_INTERRUPTED,
+  SPEECH_CUT_FAILURE_MIRROR_MISSING,
+  SPEECH_CUT_FAILURE_UNAVAILABLE,
+} from '@/lib/speechCut'
+import { INTERNET_SPEECH_MEDIA_SLUG } from '@/lib/webSpeech'
 import type { CampaignUser } from '@/payload-types'
 import config from '@/payload.config'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
@@ -74,6 +80,11 @@ import {
 } from '../helpers/camaraVodStub'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { speechBundleFixture } from '../helpers/speechBundleFixture'
+import {
+  createInternetSpeechMedia,
+  WEB_SPEECH_MP3_BYTES,
+  WEB_SPEECH_MP4_BYTES,
+} from '../helpers/webSpeechMediaFixture'
 
 const FAKE_FFMPEG = fileURLToPath(new URL('../fixtures/fake-ffmpeg.mjs', import.meta.url))
 
@@ -84,6 +95,7 @@ let payload: Payload
 const createdSourceKeys = new Set<string>()
 const createdCutIds = new Set<number>()
 const createdMediaIds = new Set<number>()
+const createdMirrorMediaIds = new Set<number>()
 const campaignFixtures = installCampaignFixtures({
   getPayload: () => payload,
   setPayload: (nextPayload) => {
@@ -142,8 +154,59 @@ const createCut = async (data: {
   return cut.id
 }
 
+/** C217 — one mirror artifact of a web speech (caller may reuse across cuts). */
+const createMirrorMedia = async (bytes: Buffer, filename: string): Promise<number> => {
+  const mediaId = await createInternetSpeechMedia(payload, bytes, filename)
+  createdMirrorMediaIds.add(mediaId)
+  return mediaId
+}
+
+/** C217 — a web speech bundle: no Câmara coordinates, optional private mirror. */
+const createWebSpeech = async ({
+  mirrorMedia = null,
+  ...overrides
+}: Partial<SpeechImportBundle> & { mirrorMedia?: number | null } = {}): Promise<number> => {
+  const sourceKey = `web:test:${randomUUID()}`
+  const bundle = speechBundleFixture({
+    sourceKey,
+    origin: 'web',
+    platform: 'youtube',
+    externalId: sourceKey,
+    sourceUrl: `https://www.youtube.com/watch?v=${encodeURIComponent(sourceKey)}`,
+    title: 'Fala publicada na internet',
+    channel: 'Canal do teste',
+    mirroredMedia: mirrorMedia,
+    // Câmara-only coordinates never travel on a web row.
+    legislature: null,
+    type: null,
+    phase: null,
+    eventId: null,
+    audioId: null,
+    excerptTMs: null,
+    vodPlaybackUrl: null,
+    vodDownloadUrl: null,
+    officialTextUrl: null,
+    officialTranscript: null,
+    summary: null,
+    presidingOfficer: null,
+    ...overrides,
+  })
+  createdSourceKeys.add(bundle.sourceKey)
+  await upsertSpeechBundle(payload, bundle)
+  const found = await payload.find({
+    collection: 'speech',
+    where: { sourceKey: { equals: bundle.sourceKey } },
+    depth: 0,
+    limit: 1,
+    overrideAccess: true,
+  })
+  const speech = found.docs[0]
+  if (!speech) throw new Error('web speech fixture was not created')
+  return speech.id
+}
+
 /** Asserts the job published the cut with the fake ffmpeg's copy of the source. */
-const expectPublishedWithFakeFfmpeg = async (cutId: number) => {
+const expectPublishedWithFakeFfmpeg = async (cutId: number, sourceBytes: Buffer = MP4_BYTES) => {
   const cut = await payload.findByID({
     collection: 'speechCut',
     id: cutId,
@@ -154,7 +217,9 @@ const expectPublishedWithFakeFfmpeg = async (cutId: number) => {
   const media = typeof cut.media === 'object' && cut.media !== null ? cut.media : null
   if (!media) throw new Error('media was not attached')
   createdMediaIds.add(media.id)
-  expect(readFileSync(resolve(process.cwd(), 'media', media.filename as string))).toEqual(MP4_BYTES)
+  expect(readFileSync(resolve(process.cwd(), 'media', media.filename as string))).toEqual(
+    sourceBytes,
+  )
   return { cut, media }
 }
 
@@ -239,6 +304,17 @@ describe('speech cuts (C167)', () => {
           .delete({ collection: 'speech', id: speech.id, depth: 0, overrideAccess: true })
           .catch(() => undefined)
       }
+    }
+    // The speech cascade already removes its mirror; this catches leftovers.
+    for (const mirrorId of createdMirrorMediaIds) {
+      await payload
+        .delete({
+          collection: INTERNET_SPEECH_MEDIA_SLUG,
+          id: mirrorId,
+          depth: 0,
+          overrideAccess: true,
+        })
+        .catch(() => undefined)
     }
   })
 
@@ -619,6 +695,134 @@ describe('speech cuts (C167)', () => {
         vi.unstubAllGlobals()
         rmSync(workdir, { recursive: true, force: true })
       }
+    })
+  })
+
+  // C217 — the web source: the cut reads the private mirror, never the Câmara.
+  describe('web speech cuts (C217)', () => {
+    it('publishes from the private mirror without ever touching the Câmara', async () => {
+      const mirror = await createMirrorMedia(WEB_SPEECH_MP4_BYTES, 'source.web.mp4')
+      const speech = await createWebSpeech({ mirrorMedia: mirror })
+      const cutId = await createCut({ speech, startSeconds: 43, endSeconds: 118 })
+      const fetchSpy = vi.fn(() => {
+        throw new Error('a web cut must not reach the Câmara')
+      })
+      vi.stubGlobal('fetch', fetchSpy)
+      const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+
+      try {
+        await runSpeechCutJob(payload, cutId)
+
+        const { cut, media } = await expectPublishedWithFakeFfmpeg(cutId, WEB_SPEECH_MP4_BYTES)
+        expect(cut.step).toBeNull()
+        expect(cut.publishedAt).toBeTruthy()
+        expect(media.filename).toBe(`corte-${cutId}-43-118.mp4`)
+        expect(fetchSpy).not.toHaveBeenCalled()
+      } finally {
+        restoreFfmpeg()
+        vi.unstubAllGlobals()
+      }
+    })
+
+    it('refuses a web speech without a mirror and fails the row honestly', async () => {
+      const speech = await createWebSpeech()
+      const actors = await createUsers()
+      await asActor(actors.communicator)
+
+      await expect(
+        saveSpeechCutForActor({
+          speechId: speech,
+          startSeconds: 0,
+          endSeconds: 30,
+          title: 'Corte',
+          description: 'Descrição',
+        }),
+      ).rejects.toThrow(SPEECH_CUT_MIRROR_MISSING_MESSAGE)
+
+      // A row created out-of-band still fails honestly in the job.
+      const cutId = await createCut({ speech, startSeconds: 0, endSeconds: 30 })
+      vi.stubGlobal('fetch', () => {
+        throw new Error('a web cut must not reach the Câmara')
+      })
+      const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+
+      try {
+        await runSpeechCutJob(payload, cutId)
+
+        const cut = await payload.findByID({
+          collection: 'speechCut',
+          id: cutId,
+          depth: 0,
+          overrideAccess: true,
+        })
+        expect(cut.status).toBe('failed')
+        expect(cut.error).toBe(SPEECH_CUT_FAILURE_MIRROR_MISSING)
+        expect(cut.media ?? null).toBeNull()
+        expect(cut.publishedAt ?? null).toBeNull()
+      } finally {
+        restoreFfmpeg()
+        vi.unstubAllGlobals()
+      }
+    })
+
+    it('cuts an audio mirror with the audio ffmpeg variant (no video stream)', async () => {
+      const logDir = mkdtempSync(join(tmpdir(), 'web-cut-log-'))
+      const logPath = join(logDir, 'ffmpeg-args.json')
+      const mirror = await createMirrorMedia(WEB_SPEECH_MP3_BYTES, 'source.web.mp3')
+      const speech = await createWebSpeech({ mirrorMedia: mirror, platform: 'radio' })
+      const cutId = await createCut({ speech, startSeconds: 10, endSeconds: 40 })
+      const previousLog = process.env.FAKE_FFMPEG_LOG
+      process.env.FAKE_FFMPEG_LOG = logPath
+      const restoreFfmpeg = withFfmpegPath(FAKE_FFMPEG)
+      vi.stubGlobal('fetch', () => {
+        throw new Error('a web cut must not reach the Câmara')
+      })
+
+      try {
+        await runSpeechCutJob(payload, cutId)
+
+        const args = JSON.parse(readFileSync(logPath, 'utf8')) as string[]
+        expect(args).toContain('0:a:0')
+        expect(args).not.toContain('0:v:0')
+
+        const cut = await payload.findByID({
+          collection: 'speechCut',
+          id: cutId,
+          depth: 1,
+          overrideAccess: true,
+        })
+        expect(cut.status).toBe('published')
+        const media = typeof cut.media === 'object' && cut.media !== null ? cut.media : null
+        if (!media) throw new Error('media was not attached')
+        createdMediaIds.add(media.id)
+      } finally {
+        if (previousLog === undefined) delete process.env.FAKE_FFMPEG_LOG
+        else process.env.FAKE_FFMPEG_LOG = previousLog
+        restoreFfmpeg()
+        vi.unstubAllGlobals()
+        rmSync(logDir, { recursive: true, force: true })
+      }
+    })
+
+    it('shows the web origin (platform and detail link) on the cut', async () => {
+      const mirror = await createMirrorMedia(WEB_SPEECH_MP4_BYTES, 'source.web.mp4')
+      const speech = await createWebSpeech({
+        mirrorMedia: mirror,
+        platform: 'radio',
+        title: 'Entrevista na rádio Metrópole',
+      })
+      const cutId = await createCut({ speech, startSeconds: 0, endSeconds: 30 })
+      const actors = await createUsers()
+
+      const view = await loadSpeechCutDetailPageData(payload, actors.communicator, cutId)
+
+      expect(view.origin).toEqual({
+        id: speech,
+        source: 'web',
+        label: 'Entrevista na rádio Metrópole',
+        platform: 'radio',
+        href: `/campanha/comunicacao/acervo/internet/${speech}`,
+      })
     })
   })
 })

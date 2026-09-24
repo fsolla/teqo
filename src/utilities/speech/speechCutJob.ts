@@ -2,28 +2,38 @@ import 'server-only'
 
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { extname, join } from 'node:path'
 import type { Payload } from 'payload'
 
+import { relationshipId } from '@/lib/relationship'
 import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
 import {
+  buildSpeechCutAudioFfmpegArgs,
   buildSpeechCutFallbackMetadata,
   buildSpeechCutFfmpegArgs,
   SPEECH_CUT_FAILURE_GENERATING,
   SPEECH_CUT_FAILURE_INTERRUPTED,
+  SPEECH_CUT_FAILURE_MIRROR_MISSING,
   SPEECH_CUT_FAILURE_SPEECH_GONE,
   SPEECH_CUT_FAILURE_UNAVAILABLE,
   SPEECH_CUT_FAILURE_UNPLAYABLE,
+  speechCutOriginKind,
+  speechCutSourceKind,
   type SpeechCutStep,
 } from '@/lib/speechCut'
 import { speechVodCoordinates } from '@/lib/speechVod'
-import type { SpeechCut } from '@/payload-types'
+import { INTERNET_SPEECH_MEDIA_SLUG, webSpeechMediaKind } from '@/lib/webSpeech'
+import type { InternetSpeechMedia, SpeechCut } from '@/payload-types'
 import { messageOf, runFfmpeg } from '@/utilities/media/ffmpeg'
 import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
+import {
+  downloadPrivateMediaToFile,
+  resolvePrivateMediaStaticDir,
+} from '@/utilities/privateMedia/privateMediaResponse'
 import { downloadSource } from '@/utilities/speech/speechMediaPipeline'
 import { resolveSpeechVod, SPEECH_VOD_CUT_POLICY } from '@/utilities/speech/speechVodResolver'
 
@@ -32,6 +42,11 @@ import { resolveSpeechVod, SPEECH_VOD_CUT_POLICY } from '@/utilities/speech/spee
  * ffmpeg, store the MP4 as `media` and publish the `speechCut` row. Runs after
  * the create response (`speechCutScheduler`) so no request waits on ffmpeg;
  * every failure leaves the row `failed` and nothing published.
+ *
+ * C217 — a web speech has no VOD: the job reads the private mirrored file the
+ * ingestion stored (`downloadPrivateMediaToFile`) and cuts the same exact
+ * window (audio-only mirrors get the audio ffmpeg variant). The Câmara path is
+ * unchanged.
  */
 
 /** A cut stopped mid-flight (deploy/restart) is reaped to `failed` after this. */
@@ -84,6 +99,35 @@ const createMediaSystem = (
   })
 
 /**
+ * C217 — the private mirror of a web speech. The cut's depth-1 speech keeps
+ * `mirroredMedia` as an id (the upload lives at depth 2), so the job reads the
+ * row itself — intentional admin bypass, like the other system reads above.
+ * `disableErrors` turns a row deleted mid-flight into `null`, which the job
+ * maps to its honest "mirror gone" failure instead of a raw not-found error.
+ */
+const loadMirrorMedia = async (
+  payload: Payload,
+  mirroredMedia: number | { id: number } | null | undefined,
+): Promise<InternetSpeechMedia | null> => {
+  const mediaId = relationshipId(mirroredMedia)
+  if (mediaId === null) return null
+  return payload.findByID({
+    collection: INTERNET_SPEECH_MEDIA_SLUG,
+    id: mediaId,
+    depth: 0,
+    disableErrors: true,
+    // Intentional admin bypass: the job reads the private file it owns.
+    overrideAccess: true,
+  })
+}
+
+/** Temp input extension from the stored name (sanitized; ffmpeg probes anyway). */
+const inputExtensionOf = (filename: string | null | undefined): string => {
+  const extension = extname(filename ?? '').toLowerCase()
+  return /^\.[a-z0-9]{1,5}$/.test(extension) ? extension : '.mp4'
+}
+
+/**
  * Fails the row and keeps the step it died on (the first stage is `resolving`
  * by default): the dialog maps the step and the known literals into the honest
  * message, while `error` keeps the raw detail for the admin.
@@ -123,42 +167,85 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
       await failCut(payload, cutId, SPEECH_CUT_FAILURE_SPEECH_GONE)
       return
     }
-    const coordinates = speechVodCoordinates(speech)
-    if (!coordinates) {
-      await failCut(payload, cutId, SPEECH_VOD_INELIGIBLE_MESSAGE)
+
+    const sourceKind = speechCutSourceKind(speech)
+    if (!sourceKind) {
+      await failCut(
+        payload,
+        cutId,
+        speechCutOriginKind(speech) === 'web'
+          ? SPEECH_CUT_FAILURE_MIRROR_MISSING
+          : SPEECH_VOD_INELIGIBLE_MESSAGE,
+      )
       return
     }
 
-    const resolution = await resolveSpeechVod(coordinates, {
-      policy: SPEECH_VOD_CUT_POLICY,
-      // The stored links are the Câmara's own cache: tried only when the API
-      // left no verified URL, and probed exactly like the API links.
-      cachedUrls: { playbackUrl: speech.vodPlaybackUrl, downloadUrl: speech.vodDownloadUrl },
-    })
-    if (resolution.state === 'gerando') {
-      await failCut(payload, cutId, SPEECH_CUT_FAILURE_GENERATING)
-      return
-    }
-    if (resolution.state !== 'pronto') {
-      await failCut(payload, cutId, SPEECH_CUT_FAILURE_UNAVAILABLE)
-      return
-    }
-    const sourceUrl = resolution.playbackUrl ?? resolution.downloadUrl
-    if (!sourceUrl) {
-      await failCut(payload, cutId, SPEECH_CUT_FAILURE_UNPLAYABLE)
-      return
+    // C217 — the web branch reads the private mirror; the Câmara branch keeps
+    // the C167 resolution (stored links are its own cache, probed like the API).
+    let mirror: InternetSpeechMedia | null = null
+    let sourceUrl: string | null = null
+    if (sourceKind === 'web') {
+      mirror = await loadMirrorMedia(payload, speech.mirroredMedia)
+      if (!mirror) {
+        await failCut(payload, cutId, SPEECH_CUT_FAILURE_MIRROR_MISSING)
+        return
+      }
+    } else {
+      const coordinates = speechVodCoordinates(speech)
+      if (!coordinates) {
+        await failCut(payload, cutId, SPEECH_VOD_INELIGIBLE_MESSAGE)
+        return
+      }
+
+      const resolution = await resolveSpeechVod(coordinates, {
+        policy: SPEECH_VOD_CUT_POLICY,
+        // The stored links are the Câmara's own cache: tried only when the API
+        // left no verified URL, and probed exactly like the API links.
+        cachedUrls: { playbackUrl: speech.vodPlaybackUrl, downloadUrl: speech.vodDownloadUrl },
+      })
+      if (resolution.state === 'gerando') {
+        await failCut(payload, cutId, SPEECH_CUT_FAILURE_GENERATING)
+        return
+      }
+      if (resolution.state !== 'pronto') {
+        await failCut(payload, cutId, SPEECH_CUT_FAILURE_UNAVAILABLE)
+        return
+      }
+      sourceUrl = resolution.playbackUrl ?? resolution.downloadUrl
+      if (!sourceUrl) {
+        await failCut(payload, cutId, SPEECH_CUT_FAILURE_UNPLAYABLE)
+        return
+      }
     }
 
     await markStep('cutting')
     tempDir = await mkdtemp(join(tmpdir(), 'speech-cut-'))
-    const inputPath = join(tempDir, 'source.mp4')
+    const inputPath = join(tempDir, `source${mirror ? inputExtensionOf(mirror.filename) : '.mp4'}`)
     const outputName = `corte-${cut.id}-${Math.round(cut.startSeconds)}-${Math.round(cut.endSeconds)}.mp4`
     const outputPath = join(tempDir, outputName)
     const durationSeconds = Math.max(0, Math.round(cut.endSeconds) - Math.round(cut.startSeconds))
 
-    await downloadSource(sourceUrl, inputPath)
+    if (mirror) {
+      try {
+        await downloadPrivateMediaToFile({
+          media: mirror,
+          staticDir: resolvePrivateMediaStaticDir(payload, INTERNET_SPEECH_MEDIA_SLUG),
+          destinationPath: inputPath,
+        })
+      } catch {
+        // The row exists but the stored object does not (+ any read failure):
+        // nothing to cut, and the retry can find the file again if it returns.
+        await failCut(payload, cutId, SPEECH_CUT_FAILURE_MIRROR_MISSING, 'cutting')
+        return
+      }
+    } else if (sourceUrl) {
+      await downloadSource(sourceUrl, inputPath)
+    }
+
+    // C217 — an audio-only mirror has no video stream to map.
+    const audioOnly = mirror !== null && webSpeechMediaKind(mirror.mimeType) === 'audio'
     await runFfmpeg(
-      buildSpeechCutFfmpegArgs({
+      (audioOnly ? buildSpeechCutAudioFfmpegArgs : buildSpeechCutFfmpegArgs)({
         inputPath,
         outputPath,
         startSeconds: cut.startSeconds,
@@ -173,6 +260,7 @@ export const runSpeechCutJob = async (payload: Payload, cutId: number): Promise<
       speechType: speech.type ?? null,
       dateLabel: formatSpeechDate(speech.speechAt),
       summary: speech.summary ?? null,
+      source: sourceKind,
     })
     const title = cut.title?.trim() || fallback.title
     const description = cut.description?.trim() || fallback.description

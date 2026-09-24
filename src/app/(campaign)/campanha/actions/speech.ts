@@ -6,6 +6,7 @@ import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import {
   SPEECH_CUT_FORBIDDEN_MESSAGE,
   SPEECH_CUT_INVALID_RANGE_MESSAGE,
+  SPEECH_CUT_MIRROR_MISSING_MESSAGE,
   SPEECH_CUT_NOT_FOUND_MESSAGE,
   SPEECH_CUT_PUBLISH_NOT_READY_MESSAGE,
   SPEECH_CUT_RETRY_NOT_FAILED_MESSAGE,
@@ -28,9 +29,15 @@ import {
   speechVodRequestSchema,
 } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
-import { toSpeechCutViewModel, type SpeechCutViewModel } from '@/lib/speechCut'
+import {
+  speechCutOriginKind,
+  speechCutSourceKind,
+  toSpeechCutViewModel,
+  type SpeechCutViewModel,
+} from '@/lib/speechCut'
 import { MIN_EXCERPT_SECONDS, normalizeExcerptRange } from '@/lib/speechExcerptSelection'
 import { speechVodCoordinates, type SpeechVodResolution } from '@/lib/speechVod'
+import { webSpeechPlatformLabel } from '@/lib/webSpeech'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { findSpeechCutForActor as loadSpeechCutForActor } from '@/utilities/speech/speechCutData'
@@ -99,6 +106,11 @@ const speechCutSpeechSelect = {
   eventId: true,
   audioId: true,
   excerptTMs: true,
+  // C217 — the web source: the origin vocabulary and the private mirror.
+  origin: true,
+  platform: true,
+  title: true,
+  mirroredMedia: true,
 } as const
 
 const loadSpeechForCut = async (payload: Payload, actor: CampaignUser, speechId: number) => {
@@ -149,7 +161,13 @@ const createSpeechCut = async (
 ): Promise<SpeechCutViewModel> => {
   const speech = await loadSpeechForCut(payload, actor, input.speechId)
   if (!speech) throw new Error(SPEECH_CUT_SPEECH_NOT_FOUND_MESSAGE)
-  if (!speechVodCoordinates(speech)) throw new Error(SPEECH_VOD_INELIGIBLE_MESSAGE)
+  if (!speechCutSourceKind(speech)) {
+    throw new Error(
+      speechCutOriginKind(speech) === 'web'
+        ? SPEECH_CUT_MIRROR_MISSING_MESSAGE
+        : SPEECH_VOD_INELIGIBLE_MESSAGE,
+    )
+  }
 
   const range = resolveExcerptRange(speech.durationSeconds, input.startSeconds, input.endSeconds)
 
@@ -401,6 +419,11 @@ export const suggestSpeechCutMetadataForActor = async (input: {
     speechType: speech.type ?? null,
     dateLabel: formatSpeechDate(speech.speechAt),
     summary: speech.summary ?? null,
+    // C217 — a web speech anchors the suggestion on its own title/platform;
+    // the vocabulary comes from the speech, never from the acquisition gate.
+    source: speechCutOriginKind(speech),
+    speechTitle: speech.title ?? null,
+    platformLabel: speech.platform ? webSpeechPlatformLabel(speech.platform) : null,
     segments: segments.docs.map((segment) => ({
       startSeconds: segment.startSeconds,
       endSeconds: segment.endSeconds,

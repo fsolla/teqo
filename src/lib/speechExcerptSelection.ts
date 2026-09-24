@@ -54,6 +54,14 @@ export const rangeDurationSeconds = (range: ExcerptRange): number =>
   range.endSeconds - range.startSeconds
 
 /**
+ * C217 — whether a transcript segment is inside the picked window. Shared by
+ * the Câmara and the web players so the marked phrases can never disagree
+ * (ASR timestamps are fractional; the overlap is strict on both edges).
+ */
+export const segmentInExcerpt = (segment: ExcerptSegment, range: ExcerptRange): boolean =>
+  segment.endSeconds > range.startSeconds && segment.startSeconds < range.endSeconds
+
+/**
  * C173 — the stop target of the excerpt preview: the range end once
  * `currentSeconds` reaches it (inclusive). The `<video>` `timeupdate` fires at
  * ~4 Hz and can overshoot, so the returned value is what the player clamps back

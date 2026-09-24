@@ -192,6 +192,43 @@ describe('SpeechCutDialog (C167)', () => {
     expect(screen.queryByText(/A Câmara não está entregando o vídeo desta fala agora/)).toBeNull()
   })
 
+  it('drops the Câmara copy when the source is a web speech (C217)', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.endsWith(SUGGESTION_ENDPOINT)) {
+        return jsonResponse({
+          status: 'success',
+          suggestion: { title: '', description: '', source: 'fallback' },
+        })
+      }
+      if (url.endsWith(SAVE_ENDPOINT)) {
+        return jsonResponse({ status: 'success', cut: cutView({ step: 'resolving' }) })
+      }
+      if (url.endsWith(STATUS_ENDPOINT)) {
+        return jsonResponse({
+          status: 'success',
+          cut: cutView({ status: 'failed', step: 'resolving', failureMessage: null }),
+        })
+      }
+      throw new Error(`unexpected fetch: ${url}`)
+    })
+
+    renderDialog({ speechSource: 'web', speechType: null, summary: null, dateLabel: '24/09/2026' })
+
+    // The deterministic fallback never claims the Câmara.
+    await screen.findByDisplayValue('Trecho de fala de 24/09/2026, publicado na internet.')
+    expect(screen.queryByDisplayValue(/na Câmara dos Deputados/)).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: /Cortar e publicar/ }))
+
+    await screen.findByText(
+      'Não foi possível preparar o corte desta fala agora. Tente novamente em alguns minutos.',
+      {},
+      { timeout: 4000 },
+    )
+    expect(screen.queryByText(/A Câmara não está entregando o vídeo desta fala agora/)).toBeNull()
+  })
+
   it('shows the honest failure and retries the same row (no duplicate create)', async () => {
     const retryBodies: unknown[] = []
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {

@@ -26,6 +26,7 @@ const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const FAKE_MP4 = Buffer.from('camara-corte-mp4')
 const createdCutIds: number[] = []
 const createdMediaIds: number[] = []
+const createdMirrorIds: number[] = []
 
 const createSpeech = async (
   campaign: { fixtures: CampaignE2EOwnership },
@@ -110,6 +111,55 @@ const createCut = async (
   return cutId
 }
 
+/**
+ * C217 — a web speech with its private mirror. The mirror goes through REST
+ * (admin session) so the server runs the real upload hooks; the speech itself
+ * has no revalidate hook, so it is created like `createSpeech`.
+ */
+const createWebSpeech = async (
+  campaign: { fixtures: CampaignE2EOwnership },
+  request: APIRequestContext,
+  headers: Record<string, string>,
+  input: {
+    platform?: 'youtube' | 'radio'
+    withMirror?: boolean
+    title?: string
+    channel?: string
+  } = {},
+) => {
+  let mirrorId: number | null = null
+  if (input.withMirror !== false) {
+    const mirror = await request.post(`${BASE_URL}/api/internetSpeechMedia`, {
+      headers,
+      multipart: {
+        _payload: JSON.stringify({ alt: 'Espelho de teste' }),
+        file: { name: 'source.mp4', mimeType: 'video/mp4', buffer: FAKE_MP4 },
+      },
+    })
+    expect(mirror.ok(), await mirror.text()).toBeTruthy()
+    mirrorId = ((await mirror.json()) as { doc: { id: number } }).doc.id
+    createdMirrorIds.push(mirrorId)
+  }
+
+  return campaign.fixtures.payload.create({
+    collection: 'speech',
+    data: {
+      sourceKey: campaign.fixtures.value('web-speech'),
+      origin: 'web',
+      platform: input.platform ?? 'youtube',
+      sourceUrl: 'https://www.youtube.com/watch?v=abc123',
+      title: input.title ?? 'Fala publicada na internet',
+      channel: input.channel ?? 'Canal do teste',
+      speechAt: '2026-09-20T10:00',
+      durationSeconds: 120,
+      classifiedBy: 'gazetteer',
+      searchText: 'saude publica na internet',
+      ...(mirrorId ? { mirroredMedia: mirrorId } : {}),
+    },
+    depth: 0,
+  })
+}
+
 test.afterAll(async ({ request }) => {
   const headers = await adminHeaders(request, BASE_URL).catch(() => null)
   if (!headers) return
@@ -118,6 +168,11 @@ test.afterAll(async ({ request }) => {
   }
   for (const id of createdMediaIds.splice(0)) {
     await request.delete(`${BASE_URL}/api/media/${id}`, { headers }).catch(() => undefined)
+  }
+  for (const id of createdMirrorIds.splice(0)) {
+    await request
+      .delete(`${BASE_URL}/api/internetSpeechMedia/${id}`, { headers })
+      .catch(() => undefined)
   }
 })
 
@@ -164,6 +219,62 @@ test.describe('Acervo speech cuts (C167)', () => {
     } finally {
       await anonymous.dispose()
     }
+  })
+
+  test('serves a web cut with the origin credit and no Câmara copy (C217)', async ({
+    campaign,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const speech = await createWebSpeech(campaign, request, headers, { platform: 'youtube' })
+    const title = 'Corte da fala na internet'
+    const cutId = await createCut(request, headers, {
+      speechId: speech.id,
+      status: 'published',
+      title,
+    })
+
+    const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+    try {
+      const response = await anonymous.get(`/corte/${cutId}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+
+      expect(html).toContain(title)
+      expect(html).toContain('Fala na internet')
+      expect(html).toContain('Fonte: YouTube · Canal do teste')
+      expect(html).not.toContain('Fonte: Câmara dos Deputados')
+      expect(html).not.toContain('Ver sessão no YouTube')
+      expect(html).toContain('noindex')
+    } finally {
+      await anonymous.dispose()
+    }
+  })
+
+  test('refuses a web speech without a mirror over the cut route (C217)', async ({
+    campaign,
+    campaignRequest,
+    request,
+  }) => {
+    const speech = await createWebSpeech(campaign, request, await adminHeaders(request, BASE_URL), {
+      withMirror: false,
+    })
+    const communicator = await campaign.fixtures.createCampaignUser('communicator')
+    const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+    const response = await communicatorRequest.post('/campanha/comunicacao/acervo/cortar', {
+      data: {
+        speechId: speech.id,
+        startSeconds: 0,
+        endSeconds: 30,
+        title: 'Título',
+        description: 'Descrição',
+      },
+    })
+    expect(response.status()).toBe(400)
+    expect(((await response.json()) as { message: string }).message).toContain(
+      'não tem arquivo espelhado',
+    )
   })
 
   test('answers the same not-found screen for an unpublished cut and an unknown id', async ({
@@ -315,6 +426,39 @@ test.describe('Acervo cut library (C168)', () => {
     } finally {
       await anonymous.dispose()
     }
+  })
+
+  test('shows the web origin badge and links the row to the web detail (C217)', async ({
+    campaign,
+    campaignRequest,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    const speech = await createWebSpeech(campaign, request, headers, {
+      platform: 'radio',
+      title: 'Entrevista na rádio Metrópole',
+    })
+    const cutId = await createCut(request, headers, {
+      speechId: speech.id,
+      status: 'published',
+      title: 'Corte da entrevista',
+    })
+
+    const communicator = await campaign.fixtures.createCampaignUser('communicator')
+    const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+    const list = await communicatorRequest.get('/campanha/comunicacao/acervo/cortes')
+    expect(list.status()).toBe(200)
+    const html = rendered(await list.text())
+    expect(html).toContain('Origem: Rádio')
+    expect(html).toContain('Entrevista na rádio Metrópole')
+    expect(html).toContain(`/campanha/comunicacao/acervo/internet/${speech.id}`)
+
+    const detail = await communicatorRequest.get(`/campanha/comunicacao/acervo/cortes/${cutId}`)
+    expect(detail.status()).toBe(200)
+    const detailHtml = rendered(await detail.text())
+    expect(detailHtml).toContain('Fala de origem')
+    expect(detailHtml).toContain('Ver fala na internet')
   })
 
   test('denies advisor/leader on the library page and on the edit route', async ({

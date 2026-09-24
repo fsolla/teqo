@@ -30,6 +30,44 @@ export const webSpeechPlatformLabel = (value: WebSpeechPlatform | null | undefin
   return WEB_SPEECH_PLATFORMS.find((platform) => platform.value === value)?.label ?? value
 }
 
+/**
+ * C217 — which player control the mirrored file needs: the single owner of the
+ * rule (`<audio>` for `audio/*`, `<video>` for everything else), shared by the
+ * detail view model and the cut job's ffmpeg variant.
+ */
+export const webSpeechMediaKind = (mimeType: string | null | undefined): 'video' | 'audio' =>
+  mimeType?.startsWith('audio/') ? 'audio' : 'video'
+
+/**
+ * C217 — display title of a web speech: the platform title, falling back to the
+ * row id so a card/origin line never renders empty.
+ */
+export const webSpeechDisplayTitle = ({
+  id,
+  title,
+}: {
+  id: number
+  title?: string | null
+}): string => title?.trim() || `Fala da internet #${id}`
+
+/**
+ * C217 — the credit of a cut whose origin is a web speech ("Fonte: YouTube ·
+ * Canal X"). Null when the row carries no platform: the caller omits the
+ * credit line instead of claiming a source.
+ */
+export const webSpeechCreditLabel = ({
+  platform,
+  channel,
+}: {
+  platform?: WebSpeechPlatform | null
+  channel?: string | null
+}): string | null => {
+  if (!platform) return null
+  const label = webSpeechPlatformLabel(platform)
+  const who = channel?.trim()
+  return who ? `${label} · ${who}` : label
+}
+
 /** Owner of the private upload collection slug (collection, config and S3). */
 export const INTERNET_SPEECH_MEDIA_SLUG = 'internetSpeechMedia' as const
 

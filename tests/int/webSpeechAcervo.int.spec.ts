@@ -1,10 +1,6 @@
 // @vitest-environment node
 
 import { randomUUID } from 'node:crypto'
-import { mkdtemp, rm, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
-
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
@@ -24,6 +20,11 @@ import {
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import { speechBundleFixture } from '../helpers/speechBundleFixture'
+import {
+  createInternetSpeechMedia,
+  WEB_SPEECH_MP3_BYTES,
+  WEB_SPEECH_MP4_BYTES,
+} from '../helpers/webSpeechMediaFixture'
 
 // C216 — the "Falas na internet" loaders over the real Payload boundary: the
 // list reads only web rows, the facets answer over the web catalog, the detail
@@ -34,7 +35,6 @@ import { speechBundleFixture } from '../helpers/speechBundleFixture'
 let payload: Payload
 const createdSourceKeys = new Set<string>()
 const createdMediaIds = new Set<number>()
-const tempDirs: string[] = []
 
 const campaignFixtures = installCampaignFixtures({
   getPayload: () => payload,
@@ -43,25 +43,10 @@ const campaignFixtures = installCampaignFixtures({
   },
 })
 
-// Real magic bytes so Payload derives the mime type from the upload itself (the
-// detail picks the native control from it).
-const MP4_BYTES = Buffer.from('00000018667479706d703432000000006d70343269736f6d', 'hex')
-const MP3_BYTES = Buffer.from('fffb900000000000000000000000000000000000', 'hex')
-
 const createMedia = async (bytes: Buffer, filename: string): Promise<number> => {
-  const dir = await mkdtemp(join(tmpdir(), 'web-speech-acervo-'))
-  tempDirs.push(dir)
-  const filePath = join(dir, filename)
-  await writeFile(filePath, bytes)
-  const media = await payload.create({
-    collection: INTERNET_SPEECH_MEDIA_SLUG,
-    data: { alt: `Mídia de teste ${filename}` },
-    filePath,
-    // Intentional bypass: fixtures are a trusted actor with no session.
-    overrideAccess: true,
-  })
-  createdMediaIds.add(media.id)
-  return media.id
+  const mediaId = await createInternetSpeechMedia(payload, bytes, filename)
+  createdMediaIds.add(mediaId)
+  return mediaId
 }
 
 const webBundle = (
@@ -172,7 +157,6 @@ describe('web speech acervo (C216)', () => {
         })
         .catch(() => undefined)
     }
-    for (const dir of tempDirs) await rm(dir, { recursive: true, force: true })
   })
 
   it('lists only web rows: the Câmara speech with the same marker stays invisible', async () => {
@@ -299,7 +283,7 @@ describe('web speech acervo (C216)', () => {
   })
 
   it('carries the private routes, the platform and the origin attribution in the detail', async () => {
-    const mediaId = await createMedia(MP3_BYTES, 'source.mp3')
+    const mediaId = await createMedia(WEB_SPEECH_MP3_BYTES, 'source.mp3')
     const id = await createWebSpeech({
       platform: 'radio',
       title: 'Entrevista na rádio',
@@ -325,7 +309,7 @@ describe('web speech acervo (C216)', () => {
   })
 
   it('points the cover at the private route only when a thumbnail was captured', async () => {
-    const thumbnailId = await createMedia(MP4_BYTES, 'thumb.mp4')
+    const thumbnailId = await createMedia(WEB_SPEECH_MP4_BYTES, 'thumb.mp4')
     const withCover = await createWebSpeech({ thumbnail: thumbnailId })
     const withoutCover = await createWebSpeech({})
 

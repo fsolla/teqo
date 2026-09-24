@@ -10,6 +10,9 @@ export const SPEECH_CUT_FORBIDDEN_MESSAGE = SPEECH_VOD_FORBIDDEN_MESSAGE
 /** The speech does not exist (or the actor cannot read it). */
 export const SPEECH_CUT_SPEECH_NOT_FOUND_MESSAGE = 'Fala não encontrada.'
 
+/** C217 — a web speech without the mirrored file cannot be cut (question 3). */
+export const SPEECH_CUT_MIRROR_MISSING_MESSAGE = 'Esta fala não tem arquivo espelhado para cortar.'
+
 /** The cut does not exist (or the actor cannot read it). */
 export const SPEECH_CUT_NOT_FOUND_MESSAGE = 'Corte não encontrado.'
 

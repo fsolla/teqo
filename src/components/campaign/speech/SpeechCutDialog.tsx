@@ -29,6 +29,7 @@ import {
   SPEECH_CUT_DESCRIPTION_MAX_LENGTH,
   SPEECH_CUT_TITLE_MAX_LENGTH,
   speechCutStepStates,
+  type SpeechCutSourceKind,
   type SpeechCutStep,
   type SpeechCutViewModel,
 } from '@/lib/speechCut'
@@ -50,6 +51,10 @@ type SpeechCutDialogProps = {
   dateLabel: string
   summary: string | null
   range: ExcerptRange
+  /** C217 — the speech duration positions the range track (scene 02). */
+  speechDurationSeconds?: number | null
+  /** C217 — default Câmara; `web` renames the resolving step and drops the credit. */
+  speechSource?: SpeechCutSourceKind
   onPublished: (cut: SpeechCutViewModel) => void
 }
 
@@ -77,11 +82,13 @@ export const SpeechCutDialog = ({
   dateLabel,
   summary,
   range,
+  speechDurationSeconds = null,
+  speechSource = 'camara',
   onPublished,
 }: SpeechCutDialogProps) => {
   const fallback = useMemo(
-    () => buildSpeechCutFallbackMetadata({ speechType, dateLabel, summary }),
-    [speechType, dateLabel, summary],
+    () => buildSpeechCutFallbackMetadata({ speechType, dateLabel, summary, source: speechSource }),
+    [speechType, dateLabel, summary, speechSource],
   )
 
   const [phase, setPhase] = useState<CutPhase>('form')
@@ -101,6 +108,14 @@ export const SpeechCutDialog = ({
   }, [phase])
 
   const durationSeconds = range.endSeconds - range.startSeconds
+  // The track of the window inside the whole speech (scene 02): handles at the
+  // picked edges, only when the speech duration is known.
+  const trackDuration =
+    speechDurationSeconds && speechDurationSeconds > 0 ? speechDurationSeconds : null
+  const percentOf = (seconds: number): number =>
+    trackDuration ? Math.min(100, Math.max(0, (seconds / trackDuration) * 100)) : 0
+  const startPercent = percentOf(range.startSeconds)
+  const endPercent = trackDuration ? 100 - percentOf(range.endSeconds) : 0
 
   // Opening resets the form to the deterministic fallback and asks the server
   // for the AI suggestion; the fallback is already on screen, so a slow or
@@ -212,7 +227,7 @@ export const SpeechCutDialog = ({
     }
   }
 
-  const steps = speechCutStepStates(step)
+  const steps = speechCutStepStates(step, speechSource)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -241,6 +256,40 @@ export const SpeechCutDialog = ({
                   {formatSpeechSpan(durationSeconds)} · mínimo {MIN_EXCERPT_SECONDS} s · até o fim
                   da fala
                 </span>
+              </div>
+              {trackDuration ? (
+                <div className="relative mt-4 h-2 rounded-full bg-stone-200" aria-hidden="true">
+                  <div
+                    className="absolute h-2 rounded-full bg-primary"
+                    style={{ left: `${startPercent}%`, right: `${endPercent}%` }}
+                  />
+                  <span
+                    className="absolute -top-1.5 size-5 -translate-x-1/2 rounded-full border-2 border-primary bg-white"
+                    style={{ left: `${startPercent}%` }}
+                  />
+                  <span
+                    className="absolute -top-1.5 size-5 translate-x-1/2 rounded-full border-2 border-primary bg-white"
+                    style={{ right: `${endPercent}%` }}
+                  />
+                </div>
+              ) : null}
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <label className="text-xs font-medium">
+                  Início
+                  <Input
+                    className="mt-1 font-mono"
+                    value={formatSpeechClock(range.startSeconds)}
+                    readOnly
+                  />
+                </label>
+                <label className="text-xs font-medium">
+                  Fim
+                  <Input
+                    className="mt-1 font-mono"
+                    value={formatSpeechClock(range.endSeconds)}
+                    readOnly
+                  />
+                </label>
               </div>
             </div>
 
@@ -384,7 +433,9 @@ export const SpeechCutDialog = ({
               />
               <p className="text-sm text-muted-foreground">
                 {error ??
-                  'A Câmara não está entregando o vídeo desta fala agora. Tente novamente em alguns minutos.'}
+                  (speechSource === 'web'
+                    ? 'Não foi possível preparar o corte desta fala agora. Tente novamente em alguns minutos.'
+                    : 'A Câmara não está entregando o vídeo desta fala agora. Tente novamente em alguns minutos.')}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

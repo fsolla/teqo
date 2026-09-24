@@ -18,6 +18,12 @@ import {
   type WebSpeechTranscriber,
 } from '@/utilities/speech/webSpeechIngest'
 
+import {
+  WEB_SPEECH_JPEG_BYTES as JPEG_BYTES,
+  WEB_SPEECH_MP3_BYTES as MP3_BYTES,
+  WEB_SPEECH_MP4_BYTES as MP4_BYTES,
+} from '../helpers/webSpeechMediaFixture'
+
 // C215 — the ingestion pipeline with injected seams: acquire → transcribe →
 // classify → mirror → upsert. The fakes keep it offline; the assertions pin
 // idempotency (second run only refreshes metadata), --reprocess, the mirrored
@@ -25,17 +31,6 @@ import {
 
 let payload: Payload
 const acquireCalls: string[] = []
-
-// Real magic bytes so Payload's own detection derives the mimeType (the fake
-// pipeline writes files, but the upload must behave like production).
-const MP4_BYTES = Buffer.from('00000018667479706d703432000000006d70343269736f6d', 'hex')
-const MP3_BYTES = Buffer.from('fffb900000000000000000000000000000000000', 'hex')
-// Real 2x2 JPEG: Payload runs sharp over image uploads (focal point), so the
-// fake thumbnail must decode like a real one.
-const JPEG_BYTES = Buffer.from(
-  '/9j/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABAb/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCGACsH/9k=',
-  'base64',
-)
 
 // Every key these specs may touch, in both the external-id and the URL form:
 // a failed attempt must never leak a row into the retry.

@@ -9,6 +9,7 @@ import {
   campaignInternetSpeechFileHref,
   campaignInternetSpeechHref,
 } from '@/lib/campaignPaths'
+import { relationshipId } from '@/lib/relationship'
 import { formatSpeechClock, formatSpeechDate, formatSpeechSpan } from '@/lib/speechClock'
 import type { SpeechCutSummaryViewModel } from '@/lib/speechCut'
 import type { SpeechExcerptSegment } from '@/lib/speechExcerpt'
@@ -36,7 +37,12 @@ import {
   speechCoverUrl,
   speechVodCoordinates,
 } from '@/lib/speechVod'
-import { webSpeechPlatformLabel, type WebSpeechPlatform } from '@/lib/webSpeech'
+import {
+  webSpeechDisplayTitle,
+  webSpeechMediaKind,
+  webSpeechPlatformLabel,
+  type WebSpeechPlatform,
+} from '@/lib/webSpeech'
 import type { Municipality } from '@/payload-types'
 import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechListUrl'
 
@@ -432,6 +438,8 @@ export type WebSpeechDetailViewModel = {
   platform: WebSpeechPlatformViewModel
   dateLabel: string
   durationLabel: string | null
+  /** C217 — the raw stored duration the excerpt picker/cut dialog work with. */
+  durationSeconds: number | null
   /** Who published (channel/radio/profile) — origin text, never a Contact. */
   channel: string | null
   /** Original post URL ("Abrir na origem"); null when the row has none. */
@@ -451,14 +459,8 @@ const webPlatformViewModel = (platform: WebSpeechPlatform | null | undefined) =>
   label: webSpeechPlatformLabel(platform),
 })
 
-const mediaIdOf = (value: number | { id: number } | null | undefined): number | null => {
-  if (typeof value === 'number') return value
-  if (value && typeof value === 'object' && typeof value.id === 'number') return value.id
-  return null
-}
-
 const webSpeechTitle = (speech: WebSpeechListRecord): string =>
-  speech.title?.trim() || `Fala da internet #${speech.id}`
+  webSpeechDisplayTitle({ id: speech.id, title: speech.title })
 
 const buildWebSpeechWatchHref = (
   speechId: number,
@@ -507,16 +509,14 @@ export const toWebSpeechListItemViewModel = ({
     topics: topicViewModels(speech),
     scopes: scopeViewModels(speech),
     thumbnailUrl:
-      mediaIdOf(speech.thumbnail) === null ? null : campaignInternetSpeechCoverHref(speech.id),
+      relationshipId(speech.thumbnail) === null ? null : campaignInternetSpeechCoverHref(speech.id),
     watchHref: buildWebSpeechWatchHref(speech.id, matchedSegment ?? themeMatch?.segment, q),
   }
 }
 
 /** Audio artifacts get the native audio control; everything else is video. */
-const mediaKindOf = (media: WebSpeechDetailRecord['mirroredMedia']): 'video' | 'audio' => {
-  const mimeType = media && typeof media === 'object' ? media.mimeType : null
-  return mimeType?.startsWith('audio/') ? 'audio' : 'video'
-}
+const mediaKindOf = (media: WebSpeechDetailRecord['mirroredMedia']): 'video' | 'audio' =>
+  webSpeechMediaKind(media && typeof media === 'object' ? media.mimeType : null)
 
 /**
  * Detail of one web speech: the private media routes, the origin attribution
@@ -533,7 +533,7 @@ export const toWebSpeechDetailViewModel = ({
   segments: readonly SpeechSegmentRecord[]
   query?: string
 }): WebSpeechDetailViewModel => {
-  const hasMedia = mediaIdOf(speech.mirroredMedia) !== null
+  const hasMedia = relationshipId(speech.mirroredMedia) !== null
 
   return {
     id: speech.id,
@@ -541,6 +541,7 @@ export const toWebSpeechDetailViewModel = ({
     platform: webPlatformViewModel(speech.platform),
     dateLabel: formatSpeechDate(speech.speechAt),
     durationLabel: formatSpeechDuration(speech.durationSeconds),
+    durationSeconds: speech.durationSeconds ?? null,
     channel: speech.channel ?? null,
     sourceUrl: speech.sourceUrl ?? null,
     mediaKind: mediaKindOf(speech.mirroredMedia),

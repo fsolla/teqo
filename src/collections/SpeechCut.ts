@@ -22,7 +22,9 @@ import { revalidateDocumentById } from '@/utilities/documents'
  * AI-suggested (human-editable) title/description and the unlisted public page
  * `/corte/<id>`. Media is the stored file the public page plays and downloads;
  * `status` is the kill switch (`published` → `unpublished`). Source data is the
- * Câmara VOD — keep the CC BY credit.
+ * Câmara VOD (keep the CC BY credit) or, since C217, the private mirror of a
+ * web speech (credit follows the real origin) — the credit is never the
+ * Câmara's on third-party material.
  */
 
 const STATUS_OPTIONS = SPEECH_CUT_STATUSES.map((value) => ({
@@ -46,7 +48,7 @@ export const SpeechCut: CollectionConfig = {
     useAsTitle: 'title',
     defaultColumns: ['title', 'speech', 'startSeconds', 'endSeconds', 'status', 'publishedAt'],
     description:
-      'Cortes do acervo de falas publicados em /corte/<id>. Dados e vídeos da Câmara dos Deputados (CC BY 4.0).',
+      'Cortes do acervo de falas publicados em /corte/<id>. Dados e vídeos da Câmara dos Deputados (CC BY 4.0) ou falas espelhadas da internet.',
   },
   access: {
     create: canReadSpeech,

@@ -1099,7 +1099,7 @@ export interface SpeechSegment {
   createdAt: string;
 }
 /**
- * Cortes do acervo de falas publicados em /corte/<id>. Dados e vídeos da Câmara dos Deputados (CC BY 4.0).
+ * Cortes do acervo de falas publicados em /corte/<id>. Dados e vídeos da Câmara dos Deputados (CC BY 4.0) ou falas espelhadas da internet.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "speechCut".

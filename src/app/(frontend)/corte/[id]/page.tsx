@@ -8,6 +8,7 @@ import {
 import { formatSpeechClock, formatSpeechDate } from '@/lib/speechClock'
 import { speechCutPublicPath } from '@/lib/speechCut'
 import { speechCoverUrl } from '@/lib/speechVod'
+import { webSpeechCreditLabel, webSpeechPlatformLabel } from '@/lib/webSpeech'
 import type { Media, Speech, SpeechCut } from '@/payload-types'
 import { getCachedDocumentById, isNotFoundError } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
@@ -17,7 +18,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 const MAX_DESCRIPTION_LENGTH = 200
-const CREDIT = 'Fonte: Câmara dos Deputados · CC BY 4.0'
+const CAMARA_CREDIT = 'Fonte: Câmara dos Deputados · CC BY 4.0'
 
 const parseCutId = (raw: string): number | null => {
   if (!/^\d+$/.test(raw)) return null
@@ -128,6 +129,15 @@ export default async function SpeechCutPage({ params }: { params: Promise<{ id: 
     cut.durationSeconds ?? Math.max(0, cut.endSeconds - cut.startSeconds),
   )
 
+  // C217 — the credit follows the real origin: the Câmara bytes are untouched,
+  // a web speech names its platform/channel and an unknown origin (deleted
+  // speech) claims no source at all.
+  const isWeb = speech?.origin === 'web'
+  const webCredit = isWeb
+    ? webSpeechCreditLabel({ platform: speech?.platform, channel: speech?.channel })
+    : null
+  const credit = !speech ? null : isWeb ? (webCredit ? `Fonte: ${webCredit}` : null) : CAMARA_CREDIT
+
   return (
     <>
       <SiteHeader />
@@ -150,21 +160,31 @@ export default async function SpeechCutPage({ params }: { params: Promise<{ id: 
             </h1>
 
             <p className="mt-2 text-sm text-muted-foreground">
-              {speech?.type ?? 'Fala'}
-              {speech ? <> · {formatSpeechDate(speech.speechAt)}</> : null} · {durationLabel}
-              {youtubeUrl ? (
-                <span className="hidden sm:inline">
-                  {' · '}
-                  <a
-                    href={youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline underline-offset-4"
-                  >
-                    Ver sessão no YouTube ↗
-                  </a>
-                </span>
-              ) : null}
+              {isWeb ? (
+                <>
+                  Fala na internet
+                  {speech ? <> · {formatSpeechDate(speech.speechAt)}</> : null} · {durationLabel}
+                  {speech?.platform ? <> · {webSpeechPlatformLabel(speech.platform)}</> : null}
+                </>
+              ) : (
+                <>
+                  {speech?.type ?? 'Fala'}
+                  {speech ? <> · {formatSpeechDate(speech.speechAt)}</> : null} · {durationLabel}
+                  {youtubeUrl ? (
+                    <span className="hidden sm:inline">
+                      {' · '}
+                      <a
+                        href={youtubeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-4"
+                      >
+                        Ver sessão no YouTube ↗
+                      </a>
+                    </span>
+                  ) : null}
+                </>
+              )}
             </p>
 
             <SpeechCutWhatsAppButton
@@ -214,8 +234,8 @@ export default async function SpeechCutPage({ params }: { params: Promise<{ id: 
             ) : null}
 
             <footer className="mt-8 border-t border-border pt-4 text-xs leading-5 text-muted-foreground sm:mt-10">
-              <p>{CREDIT}</p>
-              <p className="mt-1">
+              {credit ? <p>{credit}</p> : null}
+              <p className={credit ? 'mt-1' : undefined}>
                 Página não listada — o link circula, mas não é indexada nem aparece em buscas.
               </p>
             </footer>
