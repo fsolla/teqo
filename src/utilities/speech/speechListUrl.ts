@@ -5,7 +5,7 @@
  * member equals no filter); year/phase/municipality are data-driven and
  * validated structurally.
  */
-import { acervoSortIsDuration, parseAcervoSort, type AcervoSortKey } from '@/lib/acervoListSort'
+import { parseAcervoSort, type AcervoSortKey } from '@/lib/acervoListSort'
 import { ACERVO_SOURCE_INTERNET, parseAcervoSource } from '@/lib/acervoSource'
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
@@ -225,10 +225,6 @@ export const webSpeechSortOrder = (state: SpeechListState): string => {
       return '-speechAt'
   }
 }
-
-/** C216 — the duration gate of the web list, mirroring the recordings source. */
-export const webSpeechSortIsDuration = (state: SpeechListState): boolean =>
-  state.source === 'internet' && acervoSortIsDuration(state.sort)
 
 /**
  * C216 — whether the actor narrowed the list (query/mode or any facet). The

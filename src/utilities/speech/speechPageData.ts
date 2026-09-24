@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
 
 import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import { measuredVideoLagSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
-import type { CampaignUser, Speech } from '@/payload-types'
+import type { CampaignUser, InternetSpeechMedia, Speech } from '@/payload-types'
 import {
   expandSpeechSearchTheme,
   type SpeechThemeExpansionResolver,
@@ -301,7 +301,6 @@ const webSpeechListSelect = {
 
 const webSpeechDetailSelect = {
   ...webSpeechListSelect,
-  externalId: true,
   sourceUrl: true,
   channel: true,
   mirroredMedia: true,
@@ -334,10 +333,10 @@ export const loadWebSpeechAcervoPageData = async (
   expandTheme: SpeechThemeExpansionResolver = expandSpeechSearchTheme,
 ): Promise<WebSpeechAcervoPageData> => {
   const rawSearchParams = await searchParams
-  const canonicalUrl = resolveSpeechListUrl({
-    ...rawSearchParams,
-    source: 'internet',
-  })
+  // The source is forced (the page dispatches on `source=internet`): the
+  // canonical redirect always carries it and the loader is self-contained.
+  const webSourceParams = { ...rawSearchParams, source: 'internet' }
+  const canonicalUrl = resolveSpeechListUrl(webSourceParams)
   const state = canonicalUrl.state
 
   const { themeTerms, themeUnavailable } = await resolveSpeechThemeTerms({
@@ -360,10 +359,7 @@ export const loadWebSpeechAcervoPageData = async (
     overrideAccess: false,
   })
 
-  const resolvedUrl = resolveSpeechListUrl(
-    { ...rawSearchParams, source: 'internet' },
-    result.totalPages,
-  )
+  const resolvedUrl = resolveSpeechListUrl(webSourceParams, result.totalPages)
   const speeches = result.docs as WebSpeechListRecord[]
   const speechIds = speeches.map((speech) => speech.id)
 
@@ -432,27 +428,46 @@ export const loadWebSpeechDetailPageData = async (
   const speech = result.docs[0]
   if (!speech) throw new SpeechNotFoundError()
 
-  const segments = await payload.find({
-    collection: 'speechSegment',
-    where: { speech: { equals: speechId } },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    sort: 'order',
-    select: segmentSelect,
-    user,
-    overrideAccess: false,
-  })
+  const segmentsBySpeech = await loadSegmentsForSpeeches(payload, user, [speechId])
 
   return toWebSpeechDetailViewModel({
     speech: speech as WebSpeechDetailRecord,
-    segments: segments.docs.map((segment) => ({
-      startSeconds: segment.startSeconds,
-      endSeconds: segment.endSeconds,
-      text: segment.text,
-    })),
+    segments: segmentsBySpeech.get(speechId) ?? [],
     query,
   })
+}
+
+/** The two private upload relations one web speech serves through its routes. */
+export type WebSpeechMediaField = 'mirroredMedia' | 'thumbnail'
+
+/**
+ * C216 — the shared read of the two media routes (`/arquivo` and `/capa`): one
+ * `findByID` with the acervo gate and the origin filter, answering null for
+ * anything that is not a web row with that artifact. The routes keep the HTTP
+ * contract (silent 404, range, disposition) and the caller's auth gate.
+ */
+export const loadWebSpeechMediaForActor = async (
+  payload: Payload,
+  user: CampaignUser,
+  speechId: number,
+  field: WebSpeechMediaField,
+): Promise<{ title: string | null; media: InternetSpeechMedia } | null> => {
+  const speech = await payload
+    .findByID({
+      collection: 'speech',
+      id: speechId,
+      depth: 1,
+      select: { origin: true, title: true, mirroredMedia: true, thumbnail: true },
+      user,
+      overrideAccess: false,
+    })
+    .catch(() => null)
+  if (!speech || speech.origin !== 'web') return null
+
+  const media = field === 'mirroredMedia' ? speech.mirroredMedia : speech.thumbnail
+  if (!media || typeof media !== 'object') return null
+
+  return { title: speech.title ?? null, media }
 }
 
 /**

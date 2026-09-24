@@ -10,6 +10,7 @@ import {
   buildPrivateMediaResponse,
   resolvePrivateMediaStaticDir,
 } from '@/utilities/privateMedia/privateMediaResponse'
+import { loadWebSpeechMediaForActor } from '@/utilities/speech/speechPageData'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,23 +39,11 @@ export const GET = async (
   if (!Number.isInteger(speechId) || speechId <= 0) return notFound()
 
   const payload = await getPayload({ config })
-  const speech = await payload
-    .findByID({
-      collection: 'speech',
-      id: speechId,
-      depth: 1,
-      select: { origin: true, thumbnail: true },
-      user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!speech || speech.origin !== 'web') return notFound()
-
-  const thumbnail = speech.thumbnail
-  if (!thumbnail || typeof thumbnail !== 'object') return notFound()
+  const found = await loadWebSpeechMediaForActor(payload, user, speechId, 'thumbnail')
+  if (!found) return notFound()
 
   return buildPrivateMediaResponse({
-    media: thumbnail,
+    media: found.media,
     staticDir: resolvePrivateMediaStaticDir(payload, INTERNET_SPEECH_MEDIA_SLUG),
     rangeHeader: request.headers.get('range'),
     download: false,

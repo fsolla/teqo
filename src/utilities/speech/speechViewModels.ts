@@ -221,18 +221,28 @@ const pickThemeMatch = (
   return undefined
 }
 
-export const buildWatchHref = (
-  speechId: number,
+/**
+ * Shared seek/query trailer of both detail hrefs (Câmara and web): ASR
+ * timestamps are fractional seconds, so the URL carries whole seconds, and the
+ * search term rides along for the transcript highlight.
+ */
+const withSeekQuery = (
+  href: string,
   segment: SpeechSegmentRecord | undefined,
   query: string | undefined,
 ): string => {
   const params = new URLSearchParams()
-  // ASR timestamps are fractional seconds; the URL carries whole seconds.
   if (segment) params.set('t', String(Math.max(0, Math.floor(segment.startSeconds))))
   if (query) params.set('q', query)
   const queryString = params.toString()
-  return `${CAMPAIGN_COMMUNICATION_ACERVO}/${speechId}${queryString ? `?${queryString}` : ''}`
+  return queryString ? `${href}?${queryString}` : href
 }
+
+export const buildWatchHref = (
+  speechId: number,
+  segment: SpeechSegmentRecord | undefined,
+  query: string | undefined,
+): string => withSeekQuery(`${CAMPAIGN_COMMUNICATION_ACERVO}/${speechId}`, segment, query)
 
 type SpeechCuts = readonly SpeechCutSummaryViewModel[]
 
@@ -454,13 +464,7 @@ const buildWebSpeechWatchHref = (
   speechId: number,
   segment: SpeechSegmentRecord | undefined,
   query: string | undefined,
-): string => {
-  const params = new URLSearchParams()
-  if (segment) params.set('t', String(Math.max(0, Math.floor(segment.startSeconds))))
-  if (query) params.set('q', query)
-  const queryString = params.toString()
-  return `${campaignInternetSpeechHref(speechId)}${queryString ? `?${queryString}` : ''}`
-}
+): string => withSeekQuery(campaignInternetSpeechHref(speechId), segment, query)
 
 /**
  * List item of one web speech: platform chip, publication date + duration, the

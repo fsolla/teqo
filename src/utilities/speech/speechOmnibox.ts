@@ -285,6 +285,6 @@ export const clearSpeechOmnibox = (state: SpeechListState): SpeechOmniboxAction 
   kind: 'clear',
   state: {
     page: 1,
-    ...(state.source === 'internet' ? { source: 'internet' as const } : {}),
+    ...(state.source === 'internet' ? { source: 'internet' } : {}),
   },
 })

@@ -210,6 +210,19 @@ Quota: ~3–4 dias eng, dentro do appetite herdado. Se apertar, os cortes são o
 - [ ] Design: artefato estendido pelo `designer` (áudio + chips Instagram/Áudio) antes do markup e crítica final (trigger c) registrada como `Design tier` no PR; `DEGRADED` ⇒ para antes do push (em `--auto`: sem PR, Issue `blocked`).
 - [ ] Gates: `tsc --noEmit`, `pnpm lint` (0 warnings), `pnpm format:check`, `pnpm exec knip`, `pnpm check:cycles`, `pnpm test`, `pnpm build`, `pnpm test:e2e:affected`; `pnpm push`; entrada em `docs/changelog/`.
 
+## Simplify — triage dos revisores (2026-09-24)
+
+Aplicados na sessão (não reabrir): extração de `withSeekQuery` (os dois hrefs de detalhe), inline de `acervoSortIsDuration` no gate de duração (wrapper `webSpeechSortIsDuration` removido), remoção de exports sem consumidor (`AcervoSortState`, `RawAcervoSourceParams`, `TranscriptSegment`, `className` do pill, `externalId` morto no select, `as const` redundante), `loadWebSpeechMediaForActor` compartilhado pelas rotas `arquivo`/`capa`, reuso de `loadSegmentsForSpeeches` no detalhe web, hoist de `webSourceParams`, `speechHasActiveFilters` nos dois ramos da página, extração de `CamaraSource` (gatilho do S5 do C219 vencido) e `WebSpeechesSource`; e2e com extensão coerente de áudio e sem asserts-isca. Também corrigido no e2e um bug real da fronteira server→client (o sort recebia `toHref` função): o `AcervoSortSelect` escolhe o serializador pelo `source` do estado dentro do client component.
+
+| ID  | Resumo                                                                                           | Origem           | Score | Tipo           | Destino                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------ | ---------------- | ----- | -------------- | ----------------------------------------------------------------------------------------------- |
+| F1  | Gate fail-closed das rotas de mídia privada copiado em 4–5 rotas (as duas novas já compartilham) | simplify/reuse   | 4     | expensive_lock | registrar — `docs/plans/escala-dry-pos-c216.md` F1 (Issue nova `depends: [1292]`)               |
+| F2  | Scaffold de resultados repetido nos três ramos da página do acervo                               | simplify/reuse   | 3     | cheap_polish   | registrar — mesmo lote, F2                                                                      |
+| F3  | Excerpt/chips duplicados entre `SpeechResultCard` e `WebSpeechResultCard`                        | simplify/reuse   | 2     | cheap_polish   | registrar — mesmo lote, F3 (gatilho antecipado: 3º card de fala)                                |
+| D1  | `speechHasActiveFilters` × `recordingHasActiveFilters` (domínios diferentes)                     | simplify/reuse   | 2     | defer_trigger  | defer — gatilho: 3ª lista com predicado de filtros ativos ou divergência de param entre estados |
+| D2  | Bytes MP4/MP3 de fixture copiados entre os int specs de fala web (2 sites)                       | simplify/reuse   | 2     | defer_trigger  | defer — gatilho: 3º spec de fala web precisar dos bytes                                         |
+| D3  | `firstParam` idêntico em `acervoSource`/`acervoListSort` (2 linhas)                              | simplify/quality | 1     | cheap_polish   | descartar (camadas impedem dono comum; custa mais que a cópia)                                  |
+
 ## Self-score de decision-quality
 
 **4,5/5.**

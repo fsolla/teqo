@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
  * the Câmara/detail VMs of every acervo source (C200 recordings, C216 web
  * speeches) share one clickable segment without a twin.
  */
-export type TranscriptSegment = {
+type TranscriptSegment = {
   startSeconds: number
   startLabel: string
   parts: readonly SpeechHighlightPart[]

@@ -6,13 +6,10 @@
  */
 import type { Where } from 'payload'
 
+import { acervoSortIsDuration } from '@/lib/acervoListSort'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import { collapseListWhereOrBranches } from '@/utilities/campaignListUrl'
-import {
-  webSpeechSortIsDuration,
-  type SpeechDurationBucket,
-  type SpeechListState,
-} from '@/utilities/speech/speechListUrl'
+import type { SpeechDurationBucket, SpeechListState } from '@/utilities/speech/speechListUrl'
 
 const DURATION_MEDIA_MIN_SECONDS = 120
 const DURATION_LONGA_MIN_SECONDS = 300
@@ -57,10 +54,10 @@ const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
     const branch = collapseListWhereOrBranches(state.durations.map(durationBucketWhere))
     if (branch) filters.push(branch)
   }
-  // C216 — a duration order only lists rows with a measured duration (Postgres
-  // sorts NULLS FIRST on DESC, so without the gate "Duração (maior)" would open
-  // with the rows that have no duration).
-  if (webSpeechSortIsDuration(state)) filters.push({ durationSeconds: { exists: true } })
+  // C216 — a duration order (web-only: the Câmara contract has no sort) only
+  // lists rows with a measured duration; Postgres sorts NULLS FIRST on DESC, so
+  // without the gate "Duração (maior)" would open with the rows without one.
+  if (acervoSortIsDuration(state.sort)) filters.push({ durationSeconds: { exists: true } })
 
   return filters
 }
