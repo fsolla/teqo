@@ -10,6 +10,7 @@ import {
   buildPrivateMediaResponse,
   resolvePrivateMediaStaticDir,
 } from '@/utilities/privateMedia/privateMediaResponse'
+import { loadWebSpeechMediaForActor } from '@/utilities/speech/speechPageData'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,30 +41,17 @@ export const GET = async (
   if (!Number.isInteger(speechId) || speechId <= 0) return notFound()
 
   const payload = await getPayload({ config })
-  const speech = await payload
-    .findByID({
-      collection: 'speech',
-      id: speechId,
-      depth: 1,
-      select: { origin: true, title: true, mirroredMedia: true },
-      user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!speech || speech.origin !== 'web') return notFound()
+  const found = await loadWebSpeechMediaForActor(payload, user, speechId, 'mirroredMedia')
+  if (!found) return notFound()
 
-  const media = speech.mirroredMedia
-  if (!media || typeof media !== 'object') return notFound()
-
-  const url = new URL(request.url)
   return buildPrivateMediaResponse({
-    media,
+    media: found.media,
     staticDir: resolvePrivateMediaStaticDir(payload, INTERNET_SPEECH_MEDIA_SLUG),
     rangeHeader: request.headers.get('range'),
-    download: url.searchParams.get('download') === '1',
+    download: new URL(request.url).searchParams.get('download') === '1',
     dispositionFilename: webSpeechDownloadFilename({
-      title: speech.title,
-      storedFilename: media.filename,
+      title: found.title,
+      storedFilename: found.media.filename,
     }),
   })
 }

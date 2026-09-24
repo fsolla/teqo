@@ -10,7 +10,6 @@ import {
   resolveSpeechListUrl,
   serializeCanonicalSpeechListSearchParams,
   speechHasActiveFilters,
-  webSpeechSortIsDuration,
   webSpeechSortOrder,
 } from '@/utilities/speech/speechListUrl'
 
@@ -228,13 +227,6 @@ describe('web speeches source (C216)', () => {
     expect(
       webSpeechSortOrder(parseSpeechListParams({ source: 'internet', sort: 'duracao_menor' })),
     ).toBe('durationSeconds')
-
-    expect(webSpeechSortIsDuration(parseSpeechListParams({ source: 'internet' }))).toBe(false)
-    expect(
-      webSpeechSortIsDuration(parseSpeechListParams({ source: 'internet', sort: 'duracao_maior' })),
-    ).toBe(true)
-    // The gate never applies to the Câmara state.
-    expect(webSpeechSortIsDuration(parseSpeechListParams({}))).toBe(false)
   })
 
   it('tells an active filter from the source discriminator', () => {

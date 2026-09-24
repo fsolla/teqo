@@ -16,17 +16,14 @@ const PLATFORM_CLASSES: Record<WebSpeechPlatform, string> = {
 export const WebSpeechPlatformPill = ({
   platform,
   label,
-  className,
 }: {
   platform: WebSpeechPlatform | null
   label: string
-  className?: string
 }) => (
   <span
     className={cn(
       'inline-flex items-center rounded-full px-2 py-1 text-xs font-semibold',
       platform ? PLATFORM_CLASSES[platform] : 'border border-border bg-muted text-muted-foreground',
-      className,
     )}
   >
     {label}

@@ -1043,14 +1043,14 @@ test.describe('communication vertical (C154/C162)', () => {
         withThumbnail?: boolean
       },
     ) => {
+      const isAudio = input.platform === 'radio' || input.platform === 'audio'
       const media = await campaign.fixtures.payload.create({
         collection: 'internetSpeechMedia',
         data: { alt: `Mídia ${input.marker}` },
         file: {
           data: Buffer.from(`mirror-${input.marker}`),
-          mimetype:
-            input.platform === 'radio' || input.platform === 'audio' ? 'audio/mpeg' : 'video/mp4',
-          name: `${input.marker}.mp4`,
+          mimetype: isAudio ? 'audio/mpeg' : 'video/mp4',
+          name: `${input.marker}.${isAudio ? 'mp3' : 'mp4'}`,
           size: Buffer.byteLength(`mirror-${input.marker}`),
         },
       })
@@ -1113,7 +1113,7 @@ test.describe('communication vertical (C154/C162)', () => {
     }) => {
       const marker = campaign.fixtures.value('internet')
       const { speech } = await createWebSpeech(campaign, { marker, withThumbnail: true })
-      const withoutCover = await createWebSpeech(campaign, {
+      await createWebSpeech(campaign, {
         marker: `${marker}capa`,
         platform: 'radio',
         withThumbnail: false,
@@ -1166,7 +1166,6 @@ test.describe('communication vertical (C154/C162)', () => {
 
       const miss = await request.get('/campanha/comunicacao/acervo?source=internet&q=zzzznada')
       expect(rendered(await miss.text())).toContain('Nenhuma fala encontrada')
-      expect(withoutCover.speech.id).toBeGreaterThan(0)
     })
 
     test('the filters narrow, order and degrade honestly (C219 parity)', async ({
@@ -1291,7 +1290,7 @@ test.describe('communication vertical (C154/C162)', () => {
       campaignRequest,
     }) => {
       const marker = campaign.fixtures.value('internetarquivo')
-      const { speech, media, thumbnail } = await createWebSpeech(campaign, {
+      const { speech } = await createWebSpeech(campaign, {
         marker,
         title: `Fala privada ${marker}`,
         withThumbnail: true,
@@ -1356,9 +1355,6 @@ test.describe('communication vertical (C154/C162)', () => {
           )
         ).status(),
       ).toBe(404)
-
-      expect(media.id).toBeGreaterThan(0)
-      expect(thumbnail?.id).toBeGreaterThan(0)
     })
   })
 

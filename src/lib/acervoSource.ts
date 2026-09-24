@@ -8,7 +8,7 @@
  */
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 
-export type RawAcervoSourceParams = Record<string, string | string[] | undefined>
+type RawAcervoSourceParams = Record<string, string | string[] | undefined>
 
 export const ACERVO_SOURCE_PARAM = 'source'
 export const ACERVO_SOURCE_ENVIADAS = 'enviadas'

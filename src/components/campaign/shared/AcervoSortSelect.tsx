@@ -9,20 +9,16 @@ import {
 import { buildSpeechListHref, type SpeechListState } from '@/utilities/speech/speechListUrl'
 
 /**
- * C216 — the list state of one acervo source. The `source` discriminator picks
- * the canonical serializer inside this client component: a server component
- * can never hand a function prop across the boundary, so the domain modules
- * are imported here (they are client-safe pure contracts) and the page only
- * passes the serializable state and its honest hint.
- */
-export type AcervoSortState = RecordingListState | SpeechListState
-
-/**
  * C216 — the shared acervo ordering control (design scene 01): "Mais recentes"
- * (the default, never serialized) plus the two duration orders. Each source
- * passes its own state and the honest line shown while a duration order is
- * active (it only lists rows with a measured duration).
+ * (the default, never serialized) plus the two duration orders. The list state
+ * of one source carries the `source` discriminator that picks the canonical
+ * serializer here: a server component can never hand a function prop across
+ * the boundary, so the client-safe domain contracts are imported inside this
+ * component and the page passes only the serializable state and the honest
+ * line shown while a duration order is active (it lists measured rows only).
  */
+type AcervoSortState = RecordingListState | SpeechListState
+
 export const AcervoSortSelect = ({ state, hint }: { state: AcervoSortState; hint: string }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -31,10 +27,7 @@ export const AcervoSortSelect = ({ state, hint }: { state: AcervoSortState; hint
   })
 
   const change = (value: AcervoSortKey) => {
-    const sort = value === 'recentes' ? undefined : value
-    navigate(
-      state.source === 'enviadas' ? { ...state, page: 1, sort } : { ...state, page: 1, sort },
-    )
+    navigate({ ...state, page: 1, sort: value === 'recentes' ? undefined : value })
   }
 
   return (
