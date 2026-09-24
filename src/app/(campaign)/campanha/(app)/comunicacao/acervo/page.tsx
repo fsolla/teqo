@@ -217,17 +217,21 @@ const WebSpeechesSource = ({
 
   return (
     <CampaignListPendingBoundary>
-      <SpeechAcervoFilters
-        key={buildSpeechFiltersKey(data.state)}
-        state={data.state}
-        filterOptions={data.filterOptions}
-        themeUnavailable={data.themeUnavailable}
-        omniboxLabel="Buscar nas falas na internet"
-        omniboxPlaceholder="Busque por assunto, tema ou município…"
-        municipalityFacetLabel="Município citado"
-        showPhaseFacet={false}
-        filtersAriaLabel="Filtros das falas na internet"
-      />
+      {/* C216 scene 01: the desktop bar sits inside the approved panel; below
+          `md` the wrapper disappears and the shared sticky bar stays. */}
+      <div className="max-md:contents md:rounded-xl md:border md:border-border md:bg-card md:p-4 md:shadow-sm">
+        <SpeechAcervoFilters
+          key={buildSpeechFiltersKey(data.state)}
+          state={data.state}
+          filterOptions={data.filterOptions}
+          themeUnavailable={data.themeUnavailable}
+          omniboxLabel="Buscar nas falas na internet"
+          omniboxPlaceholder="Busque por assunto, tema ou município…"
+          municipalityFacetLabel="Município citado"
+          showPhaseFacet={false}
+          filtersAriaLabel="Filtros das falas na internet"
+        />
+      </div>
 
       {data.themeUnavailable ? <SpeechThemeFallbackNotice /> : null}
 
@@ -264,22 +268,21 @@ const WebSpeechesSource = ({
           <WebSpeechResultList rows={data.rows} />
         ) : (
           <CampaignListEmptyState
-            className={themeActive ? 'border-solid' : undefined}
+            className="border-solid"
+            mediaClassName="rounded-none bg-transparent"
             icon={SearchXIcon}
             title={
               themeActive
                 ? 'Nenhuma fala encontrada para este tema'
-                : data.state.q
-                  ? `Nenhuma fala encontrada para "${data.state.q}"`
-                  : hasFilters
-                    ? 'Nenhuma fala encontrada com esses filtros'
-                    : 'Nenhuma fala da internet catalogada ainda'
+                : hasFilters
+                  ? 'Nenhuma fala encontrada'
+                  : 'Nenhuma fala da internet catalogada ainda'
             }
             description={
               themeActive
                 ? 'Não encontramos uma fala que corresponda ao sentido desta busca com os filtros atuais. Não vamos preencher a lista com resultados pouco relacionados.'
                 : hasFilters
-                  ? 'Tente outro termo, remova filtros ou limpe a busca.'
+                  ? 'Não encontramos uma fala para esta busca com os filtros atuais. Tente outro termo ou remova um filtro.'
                   : 'As falas encontradas na internet aparecem aqui depois que a ingestão as catalogar.'
             }
           >
@@ -295,11 +298,11 @@ const WebSpeechesSource = ({
                   <Link href={buildAcervoSourceHref('internet')}>Limpar filtros</Link>
                 </Button>
               </div>
-            ) : (
-              <Button asChild variant="outline" className="min-h-11">
+            ) : hasFilters ? (
+              <Button asChild className="min-h-11">
                 <Link href={buildAcervoSourceHref('internet')}>Limpar busca e filtros</Link>
               </Button>
-            )}
+            ) : null}
           </CampaignListEmptyState>
         )}
 

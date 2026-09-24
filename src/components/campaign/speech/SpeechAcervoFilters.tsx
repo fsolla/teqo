@@ -168,6 +168,25 @@ export const SpeechAcervoFilters = ({
   const municipalities = (viewState.municipalities ?? []).map(String)
   const durations = viewState.durations ?? []
 
+  const municipalityFacet: SpeechFacet = {
+    id: 'speech-filter-municipality',
+    label: municipalityFacetLabel,
+    prefix: 'municipality',
+    stateKey: 'municipalities',
+    options: filterOptions.municipalities,
+    selected: municipalities,
+    labels: Object.fromEntries(municipalityLabelsById),
+  }
+  const durationFacet: SpeechFacet = {
+    id: 'speech-filter-duration',
+    label: 'Duração',
+    prefix: 'duration',
+    stateKey: 'durations',
+    options: durationOptions,
+    selected: durations,
+    labels: speechDurationLabels,
+  }
+
   const facets: SpeechFacet[] = [
     {
       id: 'speech-filter-year',
@@ -207,24 +226,11 @@ export const SpeechAcervoFilters = ({
           },
         ]
       : []),
-    {
-      id: 'speech-filter-municipality',
-      label: municipalityFacetLabel,
-      prefix: 'municipality',
-      stateKey: 'municipalities',
-      options: filterOptions.municipalities,
-      selected: municipalities,
-      labels: Object.fromEntries(municipalityLabelsById),
-    },
-    {
-      id: 'speech-filter-duration',
-      label: 'Duração',
-      prefix: 'duration',
-      stateKey: 'durations',
-      options: durationOptions,
-      selected: durations,
-      labels: speechDurationLabels,
-    },
+    // C216 — the approved web order is Ano · Tema · Alcance · Duração ·
+    // Município citado; the Câmara keeps its own (Município before Duração).
+    ...(state.source === 'internet'
+      ? [durationFacet, municipalityFacet]
+      : [municipalityFacet, durationFacet]),
   ]
 
   return (

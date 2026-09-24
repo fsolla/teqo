@@ -140,7 +140,8 @@ export const WebSpeechDetailPlayer = ({ speech, initialSeconds }: WebSpeechDetai
           ) : null}
         </div>
 
-        <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4">
+        {/* Mobile shows the attribution inline under the title (scene 05). */}
+        <div className="mt-4 rounded-lg border border-border bg-muted/40 p-4 max-md:hidden">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Origem
           </p>
@@ -154,7 +155,12 @@ export const WebSpeechDetailPlayer = ({ speech, initialSeconds }: WebSpeechDetai
       <div className="min-w-0">
         <WebSpeechPlatformPill platform={speech.platform.value} label={speech.platform.label} />
         <h1 className="mt-3 text-2xl font-semibold tracking-tight">{speech.title}</h1>
-        {metaLine ? <p className="mt-2 text-sm text-muted-foreground">{metaLine}</p> : null}
+        {metaLine ? (
+          <p className="mt-2 text-sm text-muted-foreground max-md:hidden">{metaLine}</p>
+        ) : null}
+        <p className="mt-2 text-xs leading-5 text-muted-foreground md:hidden">
+          {[speech.platform.label, speech.channel, speech.dateLabel].filter(Boolean).join(' · ')}
+        </p>
 
         {speech.segments.length > 0 ? (
           <section aria-label="Transcrição" className="mt-6">
@@ -170,6 +176,7 @@ export const WebSpeechDetailPlayer = ({ speech, initialSeconds }: WebSpeechDetai
                   <CampaignTranscriptSegmentButton
                     segment={segment}
                     active={activeStart === segment.startSeconds}
+                    variant="web"
                     onSeek={seekTo}
                   />
                 </li>
