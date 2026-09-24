@@ -16,6 +16,7 @@ import {
   contentPieceThemeMatch,
   contentPieceThemeTerms,
   filterContentPieceCatalogItems,
+  interleaveCatalogItems,
   isCardCatalogItem,
   parseContentPieceCatalogParams,
   toContentPiecePublicItem,
@@ -316,6 +317,26 @@ describe('card models as catalogue items (S38)', () => {
       true,
       true,
     ])
+  })
+
+  it('alternates pieces and models, never a block of cards', () => {
+    const label = (row: ContentCatalogItem) => (isCardCatalogItem(row) ? row.modelId : row.id)
+    const first = item({ id: 1 })
+    const second = item({ id: 2, slug: 'outra-peca' })
+
+    expect(interleaveCatalogItems([first, second], cards.slice(0, 2)).map(label)).toEqual([
+      1,
+      'eu-sou-solla',
+      2,
+      'perfil-quadrado',
+    ])
+    // The remainder of the longer side keeps its own committed order.
+    expect(interleaveCatalogItems([first], cards.slice(0, 2)).map(label)).toEqual([
+      1,
+      'eu-sou-solla',
+      'perfil-quadrado',
+    ])
+    expect(interleaveCatalogItems([first, second], []).map(label)).toEqual([1, 2])
   })
 })
 

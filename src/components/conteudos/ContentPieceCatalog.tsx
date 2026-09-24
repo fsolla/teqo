@@ -4,7 +4,9 @@ import { useState } from 'react'
 
 import {
   contentPieceMediaKind,
+  interleaveCatalogItems,
   isCardCatalogItem,
+  type CardCatalogItem,
   type ContentCatalogItem,
   type ContentPiecePublicItem,
 } from '@/lib/contentPieceCatalog'
@@ -34,17 +36,21 @@ export const ContentPieceCatalog = ({
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [sharingItem, setSharingItem] = useState<ContentPiecePublicItem | null>(null)
 
-  const largeItems: ContentCatalogItem[] = []
+  const largePieces: ContentPiecePublicItem[] = []
   const compactItems: ContentPiecePublicItem[] = []
+  const cards: CardCatalogItem[] = []
   for (const item of items) {
     if (isCardCatalogItem(item)) {
-      largeItems.push(item)
+      cards.push(item)
       continue
     }
     const kind = contentPieceMediaKind(item)
-    if (kind === null || kind === 'video' || kind === 'audio') largeItems.push(item)
+    if (kind === null || kind === 'video' || kind === 'audio') largePieces.push(item)
     else compactItems.push(item)
   }
+  // S38 — the models alternate with the full-card pieces (never a block of
+  // their own); the compact rows keep the S27 board below.
+  const largeItems = interleaveCatalogItems(largePieces, cards)
 
   const cardProps = (item: ContentPiecePublicItem) => ({
     item,
