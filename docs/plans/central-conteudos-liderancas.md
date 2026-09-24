@@ -1,4 +1,4 @@
-# S34 — Central de Conteúdos — lideranças que aparecem nas peças (propriedade e filtro)
+# S37 — Central de Conteúdos — lideranças que aparecem nas peças (propriedade e filtro)
 
 Status: rascunho
 Atualizado em: 2026-09-23
@@ -55,7 +55,7 @@ A campanha já tem a Central de Conteúdos interna (C211), onde a assessoria cat
 
 ## Dados da decisão (literais)
 
-- ID `S34`; slug `central-conteudos-liderancas` (arquivo `docs/plans/central-conteudos-liderancas.md`); tipo `feature`; Priority `P2`.
+- ID `S37`; slug `central-conteudos-liderancas` (arquivo `docs/plans/central-conteudos-liderancas.md`); tipo `feature`; Priority `P2`.
 - Faceta pública: rótulo `Lideranças` (uma só), unindo os dois recortes no mesmo filtro.
 - Recorte 1 — lideranças da campanha: os registros de `Liderança` existentes (dono atual; não criar cadastro de pessoa).
 - Recorte 2 — figuras públicas: dobradinhas/estaduais do roster público e outras personalidades, em texto curado com catálogo (molde de `Instituição`), semeado com os nomes das dobradinhas.
