@@ -155,9 +155,9 @@ const sortedOptions = (options: Map<string, string>): ContentPieceCatalogFacetOp
     .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
 
 /**
- * Facet options are derived from the published items alone: a filter that
- * cannot match anything never renders. Tipo/Tema keep the persisted enum
- * order; the label facets are alphabetical by their pt-BR label.
+ * Facet options are derived from the board items alone: a filter that cannot
+ * match anything never renders. Tipo/Tema keep the persisted enum order; the
+ * label facets are alphabetical by their pt-BR label.
  *
  * S38 — a card item feeds ONLY the `tipo` facet (`card`): the models are not
  * territorial and declare no theme, so Cidade/Região/Instituição/Tema never
@@ -275,12 +275,7 @@ export const filterContentPieceCatalogItems = (
     if (isCardCatalogItem(item)) {
       if (params.tipo && params.tipo !== 'card') return false
       if (params.cidade || params.regiao || params.tema || params.instituicao) return false
-      if (searchTerms.length === 0) return true
-
-      const haystack = normalizeForSearch(item.searchText)
-      return searchTerms.some((term) => haystack.includes(term))
-    }
-    if (
+    } else if (
       (params.tipo && item.type !== params.tipo) ||
       (params.cidade && (item.cityLabel === null || slugify(item.cityLabel) !== params.cidade)) ||
       (params.regiao &&
@@ -393,8 +388,12 @@ export type CardCatalogItem = {
 export type ContentCatalogItem = ContentPiecePublicItem | CardCatalogItem
 
 export const isCardCatalogItem = (item: ContentCatalogItem): item is CardCatalogItem =>
-  'itemKind' in item
+  'itemKind' in item && item.itemKind === 'card'
 
+/**
+ * S38 — the art of a model item. The placeholder shape mirrors the master's
+ * orientation (`perfil-quadrado` is 1000×1000, `perfil-retangular` 1000×1440).
+ */
 const cardModelArt = (model: CardModel): CardCatalogArt =>
   model.kind === 'photo'
     ? { kind: 'placeholder', shape: model.width === model.height ? 'square' : 'portrait' }
@@ -419,15 +418,18 @@ export const cardCatalogItems = (): CardCatalogItem[] =>
   }))
 
 /**
- * S38 — the items of the public board: the published pieces plus the synthetic
- * card models. The guardrail lives here: the cards only ride along a non-empty
- * Central — with nothing published, the board is the honest empty state (which
- * carries the studio path), never a grid of cards.
+ * S38 — the items of the public board: the pieces (already annotated by the
+ * theme search) plus the synthetic card models. The guardrail lives here:
+ * `publishedCount` counts published PIECES (before any filter), so the cards
+ * only ride along a non-empty Central — with nothing published, the board is
+ * the honest empty state (which carries the studio path), never a grid of
+ * cards.
  */
 export const contentCatalogItems = (
-  items: readonly ContentPiecePublicItem[],
+  pieces: readonly ContentPiecePublicItem[],
+  publishedCount: number,
   cards: readonly CardCatalogItem[],
-): ContentCatalogItem[] => (items.length > 0 ? [...items, ...cards] : [...items])
+): ContentCatalogItem[] => (publishedCount > 0 ? [...pieces, ...cards] : [...pieces])
 
 export type ContentPieceMediaKind = 'video' | 'audio' | 'image' | 'text' | 'other'
 

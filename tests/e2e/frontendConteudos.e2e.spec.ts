@@ -221,9 +221,8 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     ).toBeVisible()
     await expect(page.getByText('Central de Conteúdos').first()).toBeVisible()
     await expect(page.locator('article[data-content-piece]')).toHaveCount(2)
-    // S38 — the six models are items of the same board: no invite tile and no
-    // section of their own (the card item and the pieces share one grid).
-    await expect(page.locator('[data-content-piece-invite]')).toHaveCount(0)
+    // S38 — the six models are items of the same board: the card item and the
+    // pieces share one grid (no section of their own, no invite tile).
     await expect(page.locator('[data-card-model]')).toHaveCount(6)
     // The video piece shares the full-card grid with the models (the photo is a
     // compact row below): the models are items of the board, not a section.

@@ -305,9 +305,9 @@ describe('card models as catalogue items (S38)', () => {
   })
 
   it('appends the cards only to a non-empty Central', () => {
-    expect(contentCatalogItems([], cards)).toEqual([])
-    expect(contentCatalogItems([item()], cards)).toHaveLength(7)
-    expect(contentCatalogItems([item()], cards).map((row) => isCardCatalogItem(row))).toEqual([
+    expect(contentCatalogItems([], 0, cards)).toEqual([])
+    expect(contentCatalogItems([item()], 1, cards)).toHaveLength(7)
+    expect(contentCatalogItems([item()], 1, cards).map((row) => isCardCatalogItem(row))).toEqual([
       false,
       true,
       true,
