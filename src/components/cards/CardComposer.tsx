@@ -673,12 +673,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     </p>
   ) : null
 
-  // The drawer header defaults to centered + `shrink-0`, so a long description
-  // would overflow the popup; `text-left!` + `flex-1` port the design gate
+  // The dialog header takes the available row width so the close button
+  // sits on the right edge (S35 design gate). The drawer header defaults to
+  // centered + `shrink-0`, so `text-left!` + `flex-1` port the gate
   // (left-aligned, wrapped header) for every model in the shared composer.
   const header =
     shell === 'dialog' ? (
-      <DialogHeader className="min-w-0 text-left">
+      <DialogHeader className="min-w-0 flex-1 text-left">
         {eyebrowNode}
         <DialogTitle className="text-xl font-black tracking-[-0.01em] text-balance">
           {title}
