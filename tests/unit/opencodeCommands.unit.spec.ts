@@ -22,6 +22,7 @@ const commands = [
   'briefing-capacitacao-solla',
   'graficos-dados',
   'reels-tutoriais',
+  'catalogo-falas-web',
 ] as const
 
 describe('opencode commands couple to their skill by exact name', () => {
