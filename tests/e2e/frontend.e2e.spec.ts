@@ -1809,6 +1809,39 @@ test.describe('Cards personalizados (S14)', () => {
       'NOVO',
     )
 
+    // The tile box takes its height from the in-flow ratio spacer — not from
+    // `aspect-ratio`, which WebKit drops on relayout (WebKit #265243) and
+    // collapsed the tiles to their labels. Force the container width change
+    // first: the same relayout that triggered the production bug is what the
+    // geometry below must survive. Each visible tile must be as tall as its
+    // width times the declared ratio (the border accounts for ≤4px).
+    await page.setViewportSize({ width: 1200, height: 900 })
+    for (const model of [
+      'eu-sou-solla',
+      'perfil-quadrado',
+      'perfil-retangular',
+      'time-de-voce',
+      'time-do-estadual',
+      'minha-colinha',
+    ]) {
+      const geometry = await section
+        .locator(`[data-card-model-tile="${model}"]:visible`)
+        .first()
+        .evaluate((element) => {
+          const spacer = element.querySelector('[data-card-tile-ratio]')
+          const box = spacer?.parentElement
+          const rect = box?.getBoundingClientRect()
+          if (!rect) return null
+          return {
+            ratio: Number(spacer!.getAttribute('data-card-tile-ratio')),
+            width: rect.width,
+            height: rect.height,
+          }
+        })
+      expect(geometry).not.toBeNull()
+      expect(Math.abs(geometry!.height - geometry!.width * geometry!.ratio)).toBeLessThan(4)
+    }
+
     // S14 — the name tile reproduces the real result: `SEU NOME` drawn by the
     // composer pipeline, left-aligned with the `SOU` border (x≈213 at 1080).
     const nameTileCanvas = section.locator('[data-card-model-tile="eu-sou-solla"] canvas').first()
