@@ -53,13 +53,8 @@ export type CardModel = {
   /** Team model: the master front overlay drawn above the cutout photo. */
   overlaySrc?: string
   /**
-   * S31 — colinha model: the brand lockup of the top block, loaded besides the
-   * `assetSrc` (group photo) and `overlaySrc` (band art) of the composition.
-   */
-  lockupSrc?: string
-  /**
    * Gallery tile art: the filled example shown by the team models before a
-   * cutout is ready, and the approved model art of the colinha tile.
+   * cutout is ready.
    */
   previewSrc?: string
   /**
@@ -133,13 +128,10 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'minha-colinha',
     kind: 'colinha',
     label: 'Minha colinha',
-    // S31 — the top block composes the official kit (group photo + brand box +
-    // band); `previewSrc` is the exact approved model art of the gallery tile
-    // (byte-for-byte copy) and `lockupSrc` is the brand drawn in the top box.
-    assetSrc: '/cards/team-card-base.png',
-    overlaySrc: '/cards/team-card-front.png',
-    lockupSrc: '/campaign-kit/marca-negativa-completa.png',
-    previewSrc: '/cards/modelo-colinha.jpeg',
+    // S34 — the approved art delivered by the human is the base of the preview
+    // and the download (drawn whole at 1.2×); the only drawn element is the
+    // estadual row overlay. The gallery tile shows the same art via `assetSrc`.
+    assetSrc: '/cards/modelo-colinha.jpeg',
     stateDeputyPicker: true,
     badge: 'NOVO',
     width: 1080,

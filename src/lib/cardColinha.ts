@@ -1,204 +1,78 @@
 /**
- * S31 — the pure layout of the `Minha colinha` voting slip: the six vote rows
- * (five fixed + the state deputy picked from the S30 catalog) and the pixel
- * geometry of the approved design gate (`docs/plans/cards-colinha-ui-design.html`)
- * measured at the real 1080×1920 output. No DOM and no drawing here — the
- * renderer (`renderColinhaCard` in `cardRender.ts`) consumes these constants,
- * so the model stays unit-testable with a deterministic fake.
- *
- * The gate is the canonical source of the numbers (the human-approved model
- * `modelo-colinha.jpeg` is the conference reference and the gallery tile).
+ * S34 — the drawn overlay of the `Minha colinha` voting slip. The approved art
+ * (`public/cards/modelo-colinha.jpeg`, the byte-for-byte 900×1600 file the human
+ * delivered) is the base of the preview and the PNG; the only drawn element is
+ * the state-deputy row (2nd line of the art) — the burned label wiped by a white
+ * mask, the label redrawn at the left, the picked name at the right and one
+ * digit per printed box. The geometry is the approved design gate
+ * (`docs/plans/cards-colinha-arte-exata-ui-design.html`) measured at the real
+ * 1080×1920 output (the exact 1.2× of the art); the label size was corrected by
+ * the designer critique (c) to the art's printed cap height. No DOM and no
+ * drawing here — the renderer (`renderColinhaCard` in `cardRender.ts`) consumes
+ * these constants, so the model stays unit-testable with a deterministic fake.
  */
 
-import type { StateDeputyCatalogEntry } from './stateDeputyCatalog'
-
-export type ColinhaRow = {
-  /** Office label lines, e.g. `['DEPUTADO', 'FEDERAL']` (already uppercase). */
-  readonly officeLines: readonly string[]
-  /** Candidate display name: Title Case on the fixed rows, uppercase on the estadual. */
-  readonly candidate: string
-  /** One glyph per digit box, in reading order. */
-  readonly digits: readonly string[]
-  /** The estadual row before a deputy is picked: empty boxes + a dimmed CONFIRMA. */
-  readonly empty?: boolean
+export type ColinhaRowNameFit = {
+  readonly fontSize: number
+  readonly text: string
 }
 
-/** The five fixed choices of the slip, in the gate's order (estadual goes second). */
-export const COLINHA_FIXED_ROWS: readonly ColinhaRow[] = [
-  { officeLines: ['DEPUTADO', 'FEDERAL'], candidate: 'Jorge Solla', digits: ['1', '3', '1', '3'] },
-  { officeLines: ['SENADOR'], candidate: 'Jaques Wagner', digits: ['1', '3', '0'] },
-  { officeLines: ['SENADOR'], candidate: 'Rui Costa', digits: ['1', '3', '3'] },
-  { officeLines: ['GOVERNADOR'], candidate: 'Jerônimo', digits: ['1', '3'] },
-  { officeLines: ['PRESIDENTE'], candidate: 'Lula', digits: ['1', '3'] },
-]
-
-const COLINHA_ESTADUAL_OFFICE_LINES = ['DEPUTADO', 'ESTADUAL'] as const
-export const COLINHA_ESTADUAL_PLACEHOLDER = 'Escolha abaixo'
-const COLINHA_ESTADUAL_DIGIT_COUNT = 5
-
 /**
- * S31 — the slip typography of the approved gate (`Arial, Helvetica, sans-serif`,
- * the gate's card body face), not the site display family the rest of the
- * studio draws with. The designer's critique (c) fixed this as gate parity.
+ * S34 — the slip typography of the approved gate: the body face of the art
+ * (label at weight 400, name at 900) and the digit face (`Arial Black` first).
+ * The exact heavy face of the art is not shipped in the repo (the gate marks it
+ * NEEDS ASSET); the port proves the closest face side by side and the gate
+ * decides composition and geometry.
  */
 export const COLINHA_FONT_FAMILY = 'Arial, Helvetica, sans-serif'
+export const COLINHA_DIGIT_FONT_FAMILY = 'Arial Black, Arial, Helvetica, sans-serif'
 
-/** The vertical legal line of the left edge (literal of the intent). */
-export const COLINHA_LEGAL_TEXT =
-  'FEDERAÇÃO BRASIL DA ESPERANÇA - FE BRASIL (PT-PC DO B - PV) | CNPJ CANDIDATO: 68.430.467/0001-05'
-
-/** The green seal every row carries. */
-export const COLINHA_CONFIRM_LABEL = 'CONFIRMA'
+/** The 2nd line of the art: the office label redrawn over the white mask. */
+export const COLINHA_ESTADUAL_LABEL = 'DEPUTADO ESTADUAL'
 
 /**
- * The six rows in the gate's order: federal, the estadual (filled from the
- * catalog entry, or the empty placeholder), then the remaining four fixed rows.
+ * S34 — pixel geometry at the 1080×1920 output, measured from the approved
+ * design gate (the gate's percentages resolved against the 1080×1920 stage).
+ * The mask wipes the burned label of the art and stops at the top of the five
+ * printed boxes; `copy` is the right-aligned pair band and the name baseline is
+ * anchored on the cap top of the name.
  */
-export const colinhaVoteRows = (deputy: StateDeputyCatalogEntry | null): ColinhaRow[] => {
-  const estadual: ColinhaRow = deputy
-    ? {
-        officeLines: COLINHA_ESTADUAL_OFFICE_LINES,
-        candidate: deputy.name.toLocaleUpperCase('pt-BR'),
-        digits: [...deputy.ballotNumber],
-      }
-    : {
-        officeLines: COLINHA_ESTADUAL_OFFICE_LINES,
-        candidate: COLINHA_ESTADUAL_PLACEHOLDER,
-        digits: Array.from({ length: COLINHA_ESTADUAL_DIGIT_COUNT }, () => ''),
-        empty: true,
-      }
-
-  return [COLINHA_FIXED_ROWS[0], estadual, ...COLINHA_FIXED_ROWS.slice(1)]
-}
-
-/**
- * Pixel geometry at the 1080×1920 output, measured from the rendered gate. The
- * top composes the official assets (group photo, brand box, band); the body is
- * the measured CSS grid of the gate (`30% | 1fr | auto`, rows of 108).
- */
-export const COLINHA_LAYOUT = {
-  background: '#ffffff',
-  top: {
-    height: 710.4,
-    background: '#148fc2',
-    photoWidth: 1080,
-    photoHeight: 1440,
-    photoOffsetY: -335.62,
-    lockup: {
-      x: 32.4,
-      y: 21.29,
-      width: 529.19,
-      height: 134.97,
-      padding: 27,
-      gradientAngleDeg: 125,
-      gradientSplit: 0.52,
-      gradientFrom: '#e4102f',
-      gradientTo: '#184e92',
-      imageWidth: 1037,
-      imageHeight: 595,
-    },
-    band: {
-      y: 504.39,
-      height: 206,
-      background: '#e4102f',
-      sourceY: 1232.36,
-      imageWidth: 1080,
-      imageHeight: 1440,
-    },
-  },
-  legal: {
-    x: 7.55,
-    y: 748.79,
-    width: 15.66,
-    height: 1132.81,
-    fontSize: 15.66,
-    letterSpacing: 0.31,
-    color: '#333333',
-  },
-  body: {
-    x: 51.83,
-    y: 710.39,
-    width: 1028.17,
-    height: 1209.61,
-    paddingTop: 34.56,
-    paddingX: 35.64,
-    paddingBottom: 32.4,
-    rowGap: 34.56,
-  },
-  row: {
-    minHeight: 108,
-    officeWidthRatio: 0.3,
-    columnGap: 21.6,
-  },
-  office: {
-    fontSize: 27,
-    lineHeight: 27.54,
-    color: '#171717',
-  },
-  candidate: {
-    fontSize: 26.46,
-    minFontSize: 18,
-    color: '#e4102f',
-    gap: 9.6,
-  },
+export const COLINHA_ROW_LAYOUT = {
+  mask: { x: 264.6, y: 1073.28, width: 619.92, height: 55.68, fill: '#ffffff' },
+  copy: { left: 290.52, top: 1084.03, width: 570.24, right: 860.76 },
+  // The design gate's 2.15cqw (23.22px) sat below the art's printed labels;
+  // the designer critique (c) set 26.9px so the cap height matches the 19.2px
+  // of the fixed rows at weight 400.
+  office: { fontSize: 26.9, weight: 400, color: '#202020' },
+  name: { fontSize: 36.72, weight: 900, color: '#e4102f', letterSpacingEm: -0.04 },
+  gap: 16.2,
   digit: {
-    width: 59.39,
-    height: 73.44,
-    borderWidth: 5.94,
-    radius: 6.48,
-    fontSize: 46.44,
-    gap: 8.1,
-    borderColor: '#111111',
-    color: '#141414',
-    background: '#ffffff',
-    emptyBorderColor: '#9a9a9a',
-    emptyBackground: '#fafafa',
-  },
-  confirm: {
-    fontSize: 21.6,
-    paddingX: 21.6,
-    paddingY: 17.28,
-    background: '#009647',
-    color: '#ffffff',
-    emptyOpacity: 0.3,
+    left: 279.72,
+    step: 74.52,
+    width: 65.88,
+    height: 83.52,
+    top: 1121.28,
+    fontSize: 45.9,
+    weight: 900,
+    color: '#171717',
   },
 } as const
 
-type ColinhaCandidateFit = {
-  readonly fontSize: number
-  readonly lines: readonly string[]
-}
-
 /**
- * S31 — the candidate shrinks inside the office column down to `minFontSize`
- * (the gate's CSS would wrap freely, but the body keeps its fixed row rhythm).
- * A name still too long at the floor wraps by word into two lines: the row
- * grows to ~101 of its 108 and the six rows never reflow.
+ * S34 — the picked name shrinks on one line to fit the white mask band left of
+ * the label (`maxWidth` already discounts the label and the gap), so the pair
+ * never leaves the mask and the name is never cut nor wrapped. The gate's own
+ * CSS keeps the pair right-aligned and lets it use the whole band (the declared
+ * `copy` box is narrower than a long pair).
  */
-export const fitColinhaCandidate = (
+export const fitColinhaRowName = (
   text: string,
   measure: (text: string, fontSize: number) => { width: number },
   maxWidth: number,
-): ColinhaCandidateFit => {
-  const { fontSize: ideal, minFontSize } = COLINHA_LAYOUT.candidate
+): ColinhaRowNameFit => {
+  const ideal = COLINHA_ROW_LAYOUT.name.fontSize
   const width = measure(text, ideal).width
-  if (width <= maxWidth || width <= 0) return { fontSize: ideal, lines: [text] }
+  if (width <= maxWidth || width <= 0) return { fontSize: ideal, text }
 
-  const shrunk = Math.floor((ideal * maxWidth) / width)
-  if (shrunk >= minFontSize) return { fontSize: shrunk, lines: [text] }
-
-  const lines: string[] = []
-  let current = ''
-  for (const word of text.split(' ')) {
-    const candidate = current ? `${current} ${word}` : word
-    if (current && measure(candidate, minFontSize).width > maxWidth) {
-      lines.push(current)
-      current = word
-    } else {
-      current = candidate
-    }
-  }
-  if (current) lines.push(current)
-
-  return { fontSize: minFontSize, lines: lines.length > 1 ? lines : [text] }
+  return { fontSize: Math.floor((ideal * maxWidth) / width), text }
 }

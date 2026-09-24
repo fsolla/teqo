@@ -1,11 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  COLINHA_CONFIRM_LABEL,
-  COLINHA_ESTADUAL_PLACEHOLDER,
-  COLINHA_LAYOUT,
-  COLINHA_LEGAL_TEXT,
-} from '@/lib/cardColinha'
+import { COLINHA_ESTADUAL_LABEL, COLINHA_ROW_LAYOUT } from '@/lib/cardColinha'
 import {
   NAME_CARD_SLOT,
   TEAM_CARD_LABEL,
@@ -36,6 +31,7 @@ import { getStateDeputyCard, type StateDeputyCatalogEntry } from '@/lib/stateDep
 
 type DrawCall = { image: unknown; dx: number; dy: number; dw: number; dh: number }
 type TextCall = { text: string; x: number; y: number }
+type TextState = { align: CanvasTextAlign; fill: string; font: string; letterSpacing: string }
 type RectCall = { x: number; y: number; width: number; height: number }
 type OpCall = { op: string; args: number[] }
 
@@ -47,6 +43,7 @@ const fontSizeFrom = (font: string): number => {
 const createFakeContext = () => {
   const drawCalls: DrawCall[] = []
   const textCalls: TextCall[] = []
+  const textStates: TextState[] = []
   const rectCalls: RectCall[] = []
   const ops: OpCall[] = []
 
@@ -57,6 +54,8 @@ const createFakeContext = () => {
     fillStyle: '',
     textAlign: 'start',
     textBaseline: 'alphabetic',
+    imageSmoothingEnabled: false,
+    imageSmoothingQuality: 'low',
     drawImage: (image, dx, dy, dw, dh) => {
       drawCalls.push({ image, dx, dy, dw, dh })
     },
@@ -65,6 +64,12 @@ const createFakeContext = () => {
     },
     fillText: (text, x, y) => {
       textCalls.push({ text, x, y })
+      textStates.push({
+        align: ctx.textAlign,
+        fill: typeof ctx.fillStyle === 'string' ? ctx.fillStyle : '',
+        font: ctx.font,
+        letterSpacing: ctx.letterSpacing,
+      })
     },
     measureText: (text) => {
       const size = fontSizeFrom(ctx.font)
@@ -120,7 +125,7 @@ const createFakeContext = () => {
     },
   }
 
-  return { ctx, drawCalls, textCalls, rectCalls, ops }
+  return { ctx, drawCalls, textCalls, textStates, rectCalls, ops }
 }
 
 const nameModel = getCardModel('eu-sou-solla')!
@@ -477,19 +482,15 @@ describe('renderPhotoCard', () => {
   })
 })
 
-describe('renderColinhaCard (S31)', () => {
+describe('renderColinhaCard (S34)', () => {
   const colinhaModel = getCardModel('minha-colinha')!
-  const group = { id: 'group' } as unknown as CanvasImageSource
-  const lockup = { id: 'lockup' } as unknown as CanvasImageSource
-  const band = { id: 'band' } as unknown as CanvasImageSource
+  const art = { id: 'art' } as unknown as CanvasImageSource
   const deputy = getStateDeputyCard('julio')!
 
   const render = (chosen: StateDeputyCatalogEntry | null) => {
     const fake = createFakeContext()
     renderColinhaCard(fake.ctx, colinhaModel, {
-      group,
-      lockup,
-      band,
+      image: art,
       deputy: chosen,
       fontFamily: 'Brexter',
       measure: createCardMeasure(fake.ctx, 'Brexter', 900),
@@ -498,104 +499,89 @@ describe('renderColinhaCard (S31)', () => {
     return fake
   }
 
-  it('draws the white slip, the composed top and the legal line before the rows', () => {
-    const { ctx, drawCalls, rectCalls, textCalls, ops } = render(deputy)
+  // The fake face is conservative (0.84em per char): JULIO PINHEIRO shrinks
+  // from 36.72 to floor(36.72 × 195.83 / 431.83) = 16 to fit the mask band.
+  const nameFontSize = 16
+  const baseline = COLINHA_ROW_LAYOUT.copy.top + nameFontSize * 0.72
+  const nameWidth = 'JULIO PINHEIRO'.length * nameFontSize * 0.84
 
-    expect(rectCalls[0]).toEqual({ x: 0, y: 0, width: 1080, height: 1920 })
-    expect(drawCalls.map((call) => call.image)).toEqual([group, lockup, band])
-    expect(drawCalls[0]).toEqual({ image: group, dx: 0, dy: -335.62, dw: 1080, dh: 1440 })
-    expect(drawCalls[1]!.dx).toBeCloseTo(226.44, 1)
-    expect(drawCalls[1]!.dy).toBeCloseTo(48.29, 2)
-    expect(drawCalls[1]!.dw).toBeCloseTo(141.12, 1)
-    expect(drawCalls[1]!.dh).toBeCloseTo(80.97, 1)
-    expect(drawCalls[2]!.dy).toBeCloseTo(
-      COLINHA_LAYOUT.top.band.y - COLINHA_LAYOUT.top.band.sourceY,
+  it('draws the approved art whole at 1080×1920 with high smoothing', () => {
+    const { ctx, drawCalls, ops } = render(deputy)
+
+    expect(drawCalls).toEqual([{ image: art, dx: 0, dy: 0, dw: 1080, dh: 1920 }])
+    expect(ctx.imageSmoothingEnabled).toBe(true)
+    expect(ctx.imageSmoothingQuality).toBe('high')
+    // None of the S31 composition survives: no clip/save/gradient/roundRect.
+    expect(ops).toHaveLength(0)
+  })
+
+  it('leaves the art exactly as delivered before a pick (no text, no rect)', () => {
+    const { drawCalls, rectCalls, textCalls, ops } = render(null)
+
+    expect(drawCalls).toEqual([{ image: art, dx: 0, dy: 0, dw: 1080, dh: 1920 }])
+    expect(rectCalls).toHaveLength(0)
+    expect(textCalls).toHaveLength(0)
+    expect(ops).toHaveLength(0)
+  })
+
+  it('fills the estadual line: mask, label at the left, name at the right and five digits', () => {
+    const { ctx, rectCalls, textCalls, textStates } = render(deputy)
+
+    expect(rectCalls).toEqual([
+      {
+        x: COLINHA_ROW_LAYOUT.mask.x,
+        y: COLINHA_ROW_LAYOUT.mask.y,
+        width: COLINHA_ROW_LAYOUT.mask.width,
+        height: COLINHA_ROW_LAYOUT.mask.height,
+      },
+    ])
+    expect(textCalls.map((call) => call.text)).toEqual([
+      COLINHA_ESTADUAL_LABEL,
+      'JULIO PINHEIRO',
+      '1',
+      '3',
+      '9',
+      '9',
+      '9',
+    ])
+
+    const label = textCalls[0]!
+    expect(label.x).toBeCloseTo(
+      COLINHA_ROW_LAYOUT.copy.right - nameWidth - COLINHA_ROW_LAYOUT.gap,
       5,
     )
+    expect(label.y).toBeCloseTo(baseline, 5)
+    expect(textStates[0]).toMatchObject({
+      align: 'right',
+      fill: COLINHA_ROW_LAYOUT.office.color,
+      font: `400 ${COLINHA_ROW_LAYOUT.office.fontSize}px Brexter`,
+      letterSpacing: '0px',
+    })
 
-    // Top clip + band clip; one save/restore pair per clipped composition and the legal line.
-    expect(ops.filter((op) => op.op === 'clip')).toHaveLength(2)
-    expect(ops.filter((op) => op.op === 'save')).toHaveLength(3)
-    expect(ops.filter((op) => op.op === 'restore')).toHaveLength(3)
-    // CSS 125° gradient with the 52% hard stop: red 0→52, blue 52→100.
-    expect(ops.filter((op) => op.op === 'addColorStop').map((op) => op.args[0])).toEqual([
-      0, 0.52, 0.52, 1,
-    ])
-    expect(textCalls[0]).toEqual({ text: COLINHA_LEGAL_TEXT, x: 0, y: 0 })
+    const name = textCalls[1]!
+    expect(name.x).toBeCloseTo(COLINHA_ROW_LAYOUT.copy.right, 5)
+    expect(name.y).toBeCloseTo(baseline, 5)
+    expect(textStates[1]).toMatchObject({
+      align: 'right',
+      fill: COLINHA_ROW_LAYOUT.name.color,
+      font: `900 ${nameFontSize}px Brexter`,
+      letterSpacing: `${COLINHA_ROW_LAYOUT.name.letterSpacingEm * nameFontSize}px`,
+    })
+
+    const { digit } = COLINHA_ROW_LAYOUT
+    const centerY = digit.top + digit.height / 2
+    textCalls.slice(2).forEach((call, index) => {
+      expect(call.x).toBeCloseTo(digit.left + digit.width / 2 + index * digit.step, 5)
+      expect(call.y).toBeCloseTo(centerY, 5)
+      expect(textStates[2 + index]).toMatchObject({
+        align: 'center',
+        fill: digit.color,
+        font: `900 ${digit.fontSize}px Arial Black, Arial, Helvetica, sans-serif`,
+      })
+    })
+
+    // The tracking set for the name never leaks to the next paint.
+    expect(ctx.letterSpacing).toBe('0px')
     expect(ctx.globalAlpha).toBe(1)
-  })
-
-  it('draws the six rows with one glyph per box and the filled estadual from the catalog', () => {
-    const { ctx, textCalls, ops } = render(deputy)
-
-    const candidates = [
-      'Jorge Solla',
-      'JULIO PINHEIRO',
-      'Jaques Wagner',
-      'Rui Costa',
-      'Jerônimo',
-      'Lula',
-    ]
-    for (const candidate of candidates) {
-      expect(textCalls.some((call) => call.text === candidate)).toBe(true)
-    }
-
-    // One glyph per box, in row order: 4 + 5 + 3 + 3 + 2 + 2.
-    expect(textCalls.filter((call) => call.text.length === 1).map((call) => call.text)).toEqual([
-      '1',
-      '3',
-      '1',
-      '3',
-      '1',
-      '3',
-      '9',
-      '9',
-      '9',
-      '1',
-      '3',
-      '0',
-      '1',
-      '3',
-      '3',
-      '1',
-      '3',
-      '1',
-      '3',
-    ])
-    expect(textCalls.filter((call) => call.text === COLINHA_CONFIRM_LABEL)).toHaveLength(6)
-
-    // 19 digit boxes (border + fill pair) + 6 single-fill pills.
-    expect(ops.filter((op) => op.op === 'roundRect')).toHaveLength(19 * 2 + 6)
-
-    // First box: content x (51.83 + 35.64) + the 30% office column + the 21.6 gap.
-    const firstBox = ops.find((op) => op.op === 'roundRect')!
-    expect(firstBox.args[0]).toBeCloseTo(396.14, 1)
-    expect(firstBox.args[1]).toBeCloseTo(923.16, 1)
-    expect(ctx.globalAlpha).toBe(1)
-  })
-
-  it('draws the empty estadual row: placeholder, five empty boxes and no glyph there', () => {
-    const { textCalls, ops } = render(null)
-
-    expect(textCalls.some((call) => call.text === COLINHA_ESTADUAL_PLACEHOLDER)).toBe(true)
-    expect(textCalls.filter((call) => call.text.length === 1).map((call) => call.text)).toEqual([
-      '1',
-      '3',
-      '1',
-      '3',
-      '1',
-      '3',
-      '0',
-      '1',
-      '3',
-      '3',
-      '1',
-      '3',
-      '1',
-      '3',
-    ])
-    expect(textCalls.filter((call) => call.text === COLINHA_CONFIRM_LABEL)).toHaveLength(6)
-    // The five empty boxes are still drawn (19 boxes total) + the 6 pills.
-    expect(ops.filter((op) => op.op === 'roundRect')).toHaveLength(19 * 2 + 6)
   })
 })

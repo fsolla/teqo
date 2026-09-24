@@ -110,20 +110,19 @@ describe('card model catalog (S13/S15)', () => {
     expect(getCardModel('minha-colinha')?.photoPosition).toBeUndefined()
   })
 
-  it('pins the S31 colinha model: new kind, official top assets, picker flag and the approved tile', () => {
+  it('pins the S34 colinha model: the approved art as base, picker flag and no composed assets', () => {
     expect(getCardModel('minha-colinha')).toMatchObject({
       kind: 'colinha',
       label: 'Minha colinha',
-      assetSrc: '/cards/team-card-base.png',
-      overlaySrc: '/cards/team-card-front.png',
-      lockupSrc: '/campaign-kit/marca-negativa-completa.png',
-      previewSrc: '/cards/modelo-colinha.jpeg',
+      assetSrc: '/cards/modelo-colinha.jpeg',
       stateDeputyPicker: true,
       badge: 'NOVO',
       width: 1080,
       height: 1920,
     })
     expect(getCardModel('minha-colinha')?.photoWindow).toBeUndefined()
+    expect(getCardModel('minha-colinha')?.overlaySrc).toBeUndefined()
+    expect(getCardModel('minha-colinha')?.previewSrc).toBeUndefined()
     // The `NOVO` badge marks the newest model only (design gate scene 1).
     expect(getCardModel('time-do-estadual')?.badge).toBeUndefined()
   })

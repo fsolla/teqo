@@ -31,7 +31,7 @@ import { StateDeputySelect } from '@/components/cards/StateDeputySelect'
 import { useCardCutout } from '@/components/cards/useCardCutout'
 import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/Drawer'
-import { COLINHA_FONT_FAMILY, colinhaVoteRows } from '@/lib/cardColinha'
+import { COLINHA_ESTADUAL_LABEL, COLINHA_FONT_FAMILY } from '@/lib/cardColinha'
 import { TEAM_CARD_NAME_SLOT, type CardModel, type CardRect } from '@/lib/cardModels'
 import { fitCardName, type CardNameFit } from '@/lib/cardNameFit'
 import {
@@ -90,12 +90,12 @@ const STATE_DEPUTY_PREVIEW_WIDTH: Record<StateDeputyPreviewStage, string> = {
 }
 
 /**
- * S31 — the colinha stages of the design gate: compact while the estadual is
- * unchosen (scene 2, 145px) and the scene 3/5 stage after the pick (405px
- * desktop, 300px mobile).
+ * S31/S34 — the colinha stages of the design gate: the delivered art while the
+ * estadual is unchosen (scene 1: 236px desktop / scene 2: 248px mobile) and the
+ * scene 3/5 stage after the pick (405px desktop, 300px mobile).
  */
 const COLINHA_PREVIEW_WIDTH: Record<'idle' | 'selected', string> = {
-  idle: 'max-w-[9.0625rem]',
+  idle: 'max-w-[15.5rem] sm:max-w-[14.75rem]',
   selected: 'max-w-[18.75rem] sm:max-w-[25.3125rem]',
 }
 
@@ -194,8 +194,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [baseImage, setBaseImage] = useState<HTMLImageElement | null>(null)
   const [overlayImage, setOverlayImage] = useState<HTMLImageElement | null>(null)
-  /** S31 — the colinha brand lockup of the top box (`lockupSrc`). */
-  const [lockupImage, setLockupImage] = useState<HTMLImageElement | null>(null)
   const [previewImage, setPreviewImage] = useState<HTMLImageElement | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
   const [isDownloading, setIsDownloading] = useState(false)
@@ -228,8 +226,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const selectedDeputy = selectedDeputySlug
     ? (getStateDeputyCard(selectedDeputySlug) ?? null)
     : null
-  /** S31 — the estadual row owns the label/case of the `Linha conferida` copy. */
-  const estadualRow = colinhaVoteRows(selectedDeputy)[1]
   const deputyPairReady = selectedDeputy !== null && deputyImages?.slug === selectedDeputy.slug
   // S30 — the tone reference is the selected deputy's group art, frozen when the
   // cutout starts (switching the deputy later keeps the processed photo).
@@ -268,7 +264,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     setLoadState('loading')
     setBaseImage(null)
     setOverlayImage(null)
-    setLockupImage(null)
     setPreviewImage(null)
 
     const load = async () => {
@@ -277,22 +272,18 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         if (!fontReady) throw new Error('card-font-unavailable')
         // S30 — the dobradinha model loads its art pair per selection (below);
         // the static defaults stay unused so no illustrative JULIO art flashes
-        // before the choice. S31 — the colinha composes the top from its three
-        // official assets and never draws the tile art (`previewSrc`).
-        const [image, overlay, lockup, preview] = await Promise.all([
+        // before the choice. S34 — the colinha draws the approved art as the
+        // base and carries no `previewSrc` (the tile falls back to `assetSrc`).
+        const [image, overlay, preview] = await Promise.all([
           isStateDeputyModel ? Promise.resolve(null) : loadCardImage(model.assetSrc),
           !isStateDeputyModel && model.overlaySrc
             ? loadCardImage(model.overlaySrc)
             : Promise.resolve(null),
-          model.lockupSrc ? loadCardImage(model.lockupSrc) : Promise.resolve(null),
-          model.previewSrc && !isColinhaModel
-            ? loadCardImage(model.previewSrc)
-            : Promise.resolve(null),
+          model.previewSrc ? loadCardImage(model.previewSrc) : Promise.resolve(null),
         ])
         if (cancelled) return
         setBaseImage(image)
         setOverlayImage(overlay)
-        setLockupImage(lockup)
         setPreviewImage(preview)
         setLoadState('ready')
       } catch {
@@ -309,7 +300,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     isColinhaModel,
     model.assetSrc,
     model.overlaySrc,
-    model.lockupSrc,
     model.previewSrc,
     fontFamily,
   ])
@@ -358,15 +348,12 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     }
 
     if (isColinhaModel) {
-      // S31 — the slip: official top composition + legal + the six rows; the
-      // estadual row follows the shared selection and the fixed rows never
-      // change. No name, photo or cutout enters this flow.
-      if (!baseImage || !overlayImage || !lockupImage) return
+      // S34 — the approved art is the base; only the estadual row is drawn over
+      // it (or nothing, before a pick). No name, photo or cutout enters this flow.
+      if (!baseImage) return
       ctx.clearRect(0, 0, model.width, model.height)
       renderColinhaCard(ctx, model, {
-        group: baseImage,
-        lockup: lockupImage,
-        band: overlayImage,
+        image: baseImage,
         deputy: selectedDeputy,
         fontFamily: COLINHA_FONT_FAMILY,
         measure: createCardMeasure(ctx, COLINHA_FONT_FAMILY, 900),
@@ -467,7 +454,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   }, [
     baseImage,
     overlayImage,
-    lockupImage,
     previewImage,
     loadState,
     isNameModel,
@@ -711,6 +697,20 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
       : isTeamModel
         ? TEAM_PREVIEW_WIDTH[teamPreviewStage]
         : 'max-w-[22rem]'
+  /**
+   * S34 designer critique (c) — the filled desktop state follows the gate's
+   * scene 3 composition: the full 9:16 preview beside the controls (two-column
+   * grid, wider dialog), never clipped by the footer. The empty state keeps the
+   * compact dialog of scene 1. The `data-colinha-filled` attribute below is the
+   * contract that widens the dialog in `CardsStudio` (`has-[[...]]`).
+   */
+  const colinhaFilledDialog = isColinhaModel && shell === 'dialog' && selectedDeputy !== null
+  /**
+   * S34 — caps the colinha preview by the viewport so the whole 9:16 fits
+   * between the dialog chrome (`max-h-[92dvh]` in `CardsStudio` minus ~224px of
+   * header/footer); on tall viewports the width reaches the gate's 405px.
+   */
+  const colinhaPreviewMaxHeight = 'max-h-[calc(92dvh-14rem)]'
 
   const nameInputClassName = `mt-2 h-11 w-full rounded-lg bg-white px-3 text-base text-(--campaign-ink) focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none ${
     nameError
@@ -796,10 +796,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   // team notice leaves the viewport by the end of the scroll.
   const bodyScrollClassName = `min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-4 ${
     teamBodyNotice && shell === 'drawer' ? 'pb-14' : 'pb-5'
-  }`
+  }${colinhaFilledDialog ? ' sm:grid sm:grid-cols-[430px_1fr] sm:items-start sm:gap-8' : ''}`
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-(--background) text-(--foreground)">
+    <div
+      data-colinha-filled={colinhaFilledDialog ? 'true' : undefined}
+      className="flex min-h-0 flex-1 flex-col bg-(--background) text-(--foreground)"
+    >
       <div className="flex items-start gap-3 px-5 pt-5">
         {header}
         <button
@@ -828,7 +831,9 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         ) : null}
 
         <div
-          className={`relative mx-auto w-full ${previewWidthClassName} ${adjustable ? 'touch-none' : ''}`}
+          className={`relative mx-auto w-full ${previewWidthClassName} ${adjustable ? 'touch-none' : ''}${
+            colinhaFilledDialog ? ' sm:col-start-1 sm:row-start-1' : ''
+          }`}
           tabIndex={adjustable ? 0 : undefined}
           role={adjustable ? 'group' : undefined}
           aria-label={adjustable ? 'Ajuste da foto' : undefined}
@@ -854,7 +859,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
             model={model}
             canvasRef={canvasRef}
             className={`mx-auto block h-auto w-auto max-w-full rounded-lg border border-(--campaign-line) shadow-sm transition-opacity ${
-              isColinhaModel ? '' : 'max-h-[38dvh] '
+              isColinhaModel ? `${colinhaPreviewMaxHeight} ` : 'max-h-[38dvh] '
             }${loadState === 'loading' ? 'opacity-60' : 'opacity-100'}`}
             onPointerDown={adjustable ? handlePointerDown : undefined}
             onPointerMove={adjustable ? handlePointerMove : undefined}
@@ -886,13 +891,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
         ) : null}
 
         {step === 'compose' && isColinhaModel ? (
-          <div>
+          <div className={colinhaFilledDialog ? 'sm:col-start-2 sm:row-start-1' : undefined}>
             <StateDeputySelect selected={selectedDeputy} onSelect={handleSelectDeputy} />
             {selectedDeputy ? (
               <div className="mt-4 rounded-lg bg-white p-4 ring-1 ring-(--campaign-line)">
                 <p className="text-sm font-bold text-(--campaign-ink)">Linha conferida</p>
                 <p className="mt-1 text-sm text-(--campaign-muted)">
-                  {estadualRow.officeLines.join(' ')} · {estadualRow.candidate} ·{' '}
+                  {COLINHA_ESTADUAL_LABEL} · {selectedDeputy.name.toLocaleUpperCase('pt-BR')} ·{' '}
                   {selectedDeputy.ballotNumber}
                 </p>
               </div>
