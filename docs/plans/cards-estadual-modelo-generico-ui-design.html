@@ -1,0 +1,748 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — S40 · Arte genérica do Time do estadual</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #fff;
+        --foreground: #000;
+        --pt-red: #a21c1c;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --team-red: #e50e2f;
+        --team-yellow: #ffec01;
+        --team-blue: #0061a5;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+
+      .checker {
+        background-color: #f4f1ed;
+        background-image:
+          linear-gradient(45deg, #e6e1dc 25%, transparent 25%),
+          linear-gradient(-45deg, #e6e1dc 25%, transparent 25%),
+          linear-gradient(45deg, transparent 75%, #e6e1dc 75%),
+          linear-gradient(-45deg, transparent 75%, #e6e1dc 75%);
+        background-position:
+          0 0,
+          0 8px,
+          8px -8px,
+          -8px 0;
+        background-size: 16px 16px;
+      }
+
+      .team-card {
+        position: relative;
+        aspect-ratio: 3 / 4;
+        overflow: hidden;
+        background: #fff;
+        container-type: inline-size;
+      }
+      .team-card > img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .time-banner {
+        position: absolute;
+        z-index: 3;
+        top: 11.25%;
+        left: 50.46%;
+        display: flex;
+        width: 64.17%;
+        height: 8.2%;
+        align-items: center;
+        justify-content: center;
+        transform: translate(-50%, -50%) rotate(-3.5deg);
+        overflow: hidden;
+        background: var(--team-red);
+        color: var(--team-yellow);
+        font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+        font-size: 12cqw;
+        font-weight: 900;
+        line-height: 1;
+        white-space: nowrap;
+      }
+      .scrollbar::-webkit-scrollbar {
+        width: 8px;
+      }
+      .scrollbar::-webkit-scrollbar-thumb {
+        border-radius: 99px;
+        background: #c7c2be;
+      }
+    </style>
+  </head>
+
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="text-xs font-black tracking-[.12em] text-red-400 uppercase">Gate visual · S40</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight">Time do estadual, agora genérico</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          Uma única troca visual: a galeria e a pré-escolha passam a mostrar a arte entregue com
+          “SEU ESTADUAL” e duas silhuetas. Depois da escolha, a arte do estadual aparece sem
+          silhueta: a janela do visitante fica vazia até a foto.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · desktop</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · mobile</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >arte exata · 1080 × 1440</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >fluxo e copy preservados</span
+          >
+        </div>
+      </header>
+
+      <!-- CENA 1A: GALERIA DESKTOP -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 1A · Galeria · desktop 1280
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Os seis modelos permanecem na mesma fileira. “Time de você” cria o contraste imediato; só
+          “Minha colinha” carrega o badge NOVO.
+        </p>
+        <div
+          class="mt-4 max-w-[1280px] overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] px-10 py-12 text-black shadow-2xl"
+        >
+          <div class="mx-auto max-w-2xl text-center">
+            <p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+              Faça parte
+            </p>
+            <h3 class="mt-1 text-[28px] font-black tracking-[-.02em]">
+              Mostre que você está com Solla
+            </h3>
+            <p class="mt-1 text-sm leading-6 text-[var(--campaign-muted)]">
+              Escolha um modelo, coloque seu nome ou sua foto e baixe seu card. Compartilhe com sua
+              gente e fortaleça nossa caminhada.
+            </p>
+          </div>
+
+          <div class="mt-8 grid grid-cols-6 gap-4">
+            <button class="group flex min-w-0 flex-col text-left">
+              <span
+                class="relative block aspect-[3/4] overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-[var(--campaign-band)]"
+              >
+                <img
+                  src="../../public/cards/name-card-base.jpg"
+                  alt=""
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-auto block pt-3 text-center text-sm font-bold"
+                >Card com seu nome</span
+              >
+            </button>
+            <button class="group flex min-w-0 flex-col text-left">
+              <span
+                class="checker relative block aspect-square overflow-hidden rounded-xl border border-[var(--campaign-line)]"
+              >
+                <img
+                  src="../../public/cards/photo-square-frame.png"
+                  alt=""
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-auto block pt-3 text-center text-sm font-bold">Moldura quadrada</span>
+            </button>
+            <button class="group flex min-w-0 flex-col text-left">
+              <span
+                class="checker relative block aspect-[25/36] overflow-hidden rounded-xl border border-[var(--campaign-line)]"
+              >
+                <img
+                  src="../../public/cards/photo-portrait-frame.png"
+                  alt=""
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-auto block pt-3 text-center text-sm font-bold">Moldura vertical</span>
+            </button>
+            <button class="group flex min-w-0 flex-col text-left">
+              <span
+                class="relative block aspect-[3/4] overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-[var(--campaign-band)]"
+              >
+                <img
+                  src="../../public/cards/team-card-example.jpg"
+                  alt=""
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-auto block pt-3 text-center text-sm font-bold">Time de você</span>
+            </button>
+            <button class="group flex min-w-0 flex-col text-left" aria-label="Time do estadual">
+              <span
+                class="relative block aspect-[3/4] overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-[var(--campaign-band)]"
+              >
+                <img
+                  src="cards-estadual-dobradinha-ui-design-assets/modelo-time-de-voce-com-estadual.jpeg"
+                  alt=""
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-auto block pt-3 text-center text-sm font-bold">Time do estadual</span>
+            </button>
+            <button class="group flex min-w-0 flex-col text-left">
+              <span
+                class="relative mx-auto block aspect-[9/16] w-full overflow-hidden rounded-xl border-2 border-[var(--pt-red)] bg-white shadow-lg"
+              >
+                <img
+                  src="../../public/cards/modelo-colinha.jpeg"
+                  alt=""
+                  class="size-full object-cover"
+                />
+                <span
+                  class="absolute top-3 right-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-[var(--team-blue)] shadow"
+                  >NOVO</span
+                >
+              </span>
+              <span class="mt-auto block pt-3 text-center text-sm font-bold text-[var(--pt-red)]"
+                >Minha colinha</span
+              >
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 1B: GALERIA MOBILE -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 1B · Galeria · mobile 390
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          O trilho estático registra o momento em que “Time do estadual” entra no centro: “Time de
+          você” fica à esquerda e a colinha aparece como pista à direita.
+        </p>
+        <div
+          class="mt-4 w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] py-8 text-black shadow-2xl"
+        >
+          <div class="px-5 text-center">
+            <p class="text-[10px] font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+              Faça parte
+            </p>
+            <h3 class="mt-1 text-[22px] font-black tracking-[-.02em]">
+              Mostre que você está com Solla
+            </h3>
+            <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+              Escolha um modelo, personalize e baixe seu card para compartilhar.
+            </p>
+          </div>
+          <div class="mt-8 flex w-max translate-x-[-250px] gap-4 px-5">
+            <button class="flex w-[273px] shrink-0 flex-col opacity-70">
+              <span
+                class="block aspect-[3/4] w-full overflow-hidden rounded-xl border border-[var(--campaign-line)]"
+              >
+                <img
+                  src="../../public/cards/team-card-example.jpg"
+                  alt=""
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-3 block text-center text-sm font-bold">Time de você</span>
+            </button>
+            <button class="flex w-[273px] shrink-0 flex-col">
+              <span
+                class="block aspect-[3/4] w-full overflow-hidden rounded-xl border border-[var(--campaign-line)]"
+              >
+                <img
+                  src="cards-estadual-dobradinha-ui-design-assets/modelo-time-de-voce-com-estadual.jpeg"
+                  alt="Arte genérica Time de Fulano com duas silhuetas e a marcação Seu Estadual"
+                  class="size-full object-cover"
+                />
+              </span>
+              <span class="mt-3 block text-center text-sm font-bold">Time do estadual</span>
+            </button>
+            <button class="flex w-[273px] shrink-0 flex-col opacity-80">
+              <span
+                class="relative block aspect-[9/16] w-full overflow-hidden rounded-xl border-2 border-[var(--pt-red)] shadow-lg"
+              >
+                <img
+                  src="../../public/cards/modelo-colinha.jpeg"
+                  alt=""
+                  class="size-full object-cover"
+                />
+                <span
+                  class="absolute top-3 right-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black text-[var(--team-blue)] shadow"
+                  >NOVO</span
+                >
+              </span>
+              <span class="mt-3 block text-center text-sm font-bold text-[var(--pt-red)]"
+                >Minha colinha</span
+              >
+            </button>
+          </div>
+          <p class="mt-1 text-center text-xs font-semibold text-[var(--campaign-muted)]">
+            Deslize para ver os seis modelos
+          </p>
+          <div class="mt-1 flex items-center justify-center" aria-label="Modelo 5 de 6">
+            <span class="inline-flex size-6 items-center justify-center"
+              ><i class="size-1.5 rounded-full bg-[var(--campaign-muted)]"></i
+            ></span>
+            <span class="inline-flex size-6 items-center justify-center"
+              ><i class="size-1.5 rounded-full bg-[var(--campaign-muted)]"></i
+            ></span>
+            <span class="inline-flex size-6 items-center justify-center"
+              ><i class="size-1.5 rounded-full bg-[var(--campaign-muted)]"></i
+            ></span>
+            <span class="inline-flex size-6 items-center justify-center"
+              ><i class="size-1.5 rounded-full bg-[var(--campaign-muted)]"></i
+            ></span>
+            <span class="inline-flex size-6 items-center justify-center"
+              ><i class="h-1.5 w-6 rounded-full bg-[var(--pt-red)]"></i
+            ></span>
+            <span class="inline-flex size-6 items-center justify-center"
+              ><i class="size-1.5 rounded-full bg-[var(--campaign-muted)]"></i
+            ></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 2A: PRÉ-ESCOLHA DESKTOP -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 2A · Pré-escolha no composer · desktop 1280
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          A arte nova é o placeholder inteiro. O seletor continua aberto por padrão e o rodapé
+          mantém o CTA desabilitado.
+        </p>
+        <div
+          class="relative mt-4 flex h-[1050px] max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            class="relative z-10 flex max-h-[92%] w-[512px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+            role="dialog"
+            aria-label="Time do estadual"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div class="min-w-0 flex-1 text-left">
+                <p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                  Time do estadual
+                </p>
+                <h3 class="mt-1 text-xl font-black tracking-[-.01em]">Escolha sua dobradinha</h3>
+                <p class="mt-1 text-sm text-[var(--campaign-muted)]">
+                  Escolha seu estadual da dobradinha.
+                </p>
+              </div>
+              <button
+                class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </header>
+            <div class="scrollbar min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-full max-w-[10.75rem] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <img
+                  src="cards-estadual-dobradinha-ui-design-assets/modelo-time-de-voce-com-estadual.jpeg"
+                  alt="Arte genérica com duas silhuetas e Seu Estadual"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <p class="mt-3 text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                A silhueta marca o lugar da sua foto. O card final usa a arte do estadual escolhido.
+              </p>
+              <p class="mt-4 block text-sm font-bold">Seu estadual</p>
+              <button
+                class="mt-2 flex min-h-11 w-full items-center rounded-lg border border-[var(--field-border)] bg-white px-3 text-left text-sm text-[var(--campaign-muted)]"
+              >
+                <span>Escolha um nome</span><span class="ml-auto">⌄</span>
+              </button>
+              <div
+                class="mt-2 overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-white shadow-xl"
+              >
+                <div class="border-b border-[var(--campaign-line)] p-3">
+                  <div
+                    class="flex min-h-11 items-center gap-2 rounded-lg border border-[var(--field-border)] px-3"
+                  >
+                    <span class="text-[var(--campaign-muted)]">⌕</span
+                    ><input
+                      class="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                      placeholder="Buscar por nome"
+                    />
+                  </div>
+                  <p class="mt-2 text-[11px] text-[var(--campaign-muted)]">
+                    53 estaduais · use ↑ ↓ e Enter para escolher
+                  </p>
+                </div>
+                <div class="scrollbar max-h-40 overflow-y-auto p-1.5 text-sm" role="listbox">
+                  <button
+                    class="flex min-h-11 w-full items-center rounded-md bg-stone-100 px-3 text-left"
+                  >
+                    Julio Pinheiro
+                  </button>
+                  <div class="flex min-h-11 items-center px-3">
+                    <span class="h-3 w-28 rounded bg-stone-200"></span>
+                  </div>
+                  <div class="flex min-h-11 items-center px-3">
+                    <span class="h-3 w-36 rounded bg-stone-200"></span>
+                  </div>
+                  <div class="flex min-h-11 items-center px-3">
+                    <span class="h-3 w-24 rounded bg-stone-200"></span>
+                  </div>
+                </div>
+              </div>
+              <label class="mt-5 block text-sm font-bold">Seu nome</label>
+              <input
+                class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] bg-white px-3 text-base"
+                placeholder="Como você é chamado"
+              />
+              <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                Vai aparecer em caixa alta depois de “TIME DE”. Use um nome curto e conhecido.
+              </p>
+              <p
+                class="mt-4 rounded-lg bg-[var(--campaign-cream)] p-3 text-xs leading-5 text-[var(--campaign-muted)]"
+              >
+                <b class="block text-[var(--campaign-ink)]">Escolha um estadual para continuar.</b>
+                A prévia e o download usam a arte oficial da dobradinha escolhida.
+              </p>
+            </div>
+            <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="inline-flex min-h-11 flex-1 items-center justify-center rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="inline-flex min-h-11 flex-1 cursor-not-allowed items-center justify-center rounded-lg bg-[var(--pt-red)] px-5 text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 2B: PRÉ-ESCOLHA MOBILE -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 2B · Pré-escolha no composer · mobile 390
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Drawer em tela cheia, corpo rolável e CTA fixo. A cena deixa visíveis a arte, o notice e o
+          bloqueio de continuidade.
+        </p>
+        <div
+          class="relative mt-4 h-[900px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/50"></div>
+          <article class="absolute inset-0 flex flex-col bg-white">
+            <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+            <header class="flex items-start gap-3 px-5 pt-4">
+              <div class="min-w-0 flex-1 text-left">
+                <p class="text-[10px] font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                  Time do estadual
+                </p>
+                <h3 class="mt-1 text-lg font-black tracking-[-.01em]">Escolha sua dobradinha</h3>
+                <p class="mt-1 text-sm text-[var(--campaign-muted)]">
+                  Escolha seu estadual da dobradinha.
+                </p>
+              </div>
+              <button
+                class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </header>
+            <div class="scrollbar min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-full max-w-[10.75rem] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <img
+                  src="cards-estadual-dobradinha-ui-design-assets/modelo-time-de-voce-com-estadual.jpeg"
+                  alt="Arte genérica com duas silhuetas e Seu Estadual"
+                  class="block aspect-[3/4] w-full object-cover"
+                />
+              </div>
+              <p class="mt-3 text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                A silhueta marca o lugar da sua foto. O card final usa a arte do estadual escolhido.
+              </p>
+              <p class="mt-4 text-sm font-bold">Seu estadual</p>
+              <button
+                class="mt-2 flex min-h-11 w-full items-center rounded-lg border border-[var(--field-border)] px-3 text-left text-sm text-[var(--campaign-muted)]"
+              >
+                <span>Escolha um nome</span><span class="ml-auto">⌄</span>
+              </button>
+              <div
+                class="mt-2 overflow-hidden rounded-xl border border-[var(--campaign-line)] bg-white shadow-xl"
+              >
+                <div class="border-b border-[var(--campaign-line)] p-3">
+                  <div
+                    class="flex min-h-11 items-center gap-2 rounded-lg border border-[var(--field-border)] px-3"
+                  >
+                    <span class="text-[var(--campaign-muted)]">⌕</span
+                    ><input
+                      class="min-w-0 flex-1 text-sm outline-none"
+                      placeholder="Buscar por nome"
+                    />
+                  </div>
+                  <p class="mt-2 text-[11px] text-[var(--campaign-muted)]">
+                    53 estaduais · use ↑ ↓ e Enter para escolher
+                  </p>
+                </div>
+                <div class="max-h-14 overflow-hidden p-1.5 text-sm">
+                  <div class="flex min-h-11 items-center rounded-md bg-stone-100 px-3">
+                    Julio Pinheiro
+                  </div>
+                </div>
+              </div>
+              <label class="mt-5 block text-sm font-bold">Seu nome</label>
+              <input
+                class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] px-3"
+                placeholder="Como você é chamado"
+              />
+              <p
+                class="mt-4 rounded-lg bg-[var(--campaign-cream)] p-3 text-xs leading-5 text-[var(--campaign-muted)]"
+              >
+                <b class="block text-black">Escolha um estadual para continuar.</b>A prévia e o
+                download usam a arte oficial da dobradinha escolhida.
+              </p>
+            </div>
+            <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="min-h-11 flex-1 rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar
+              </button>
+              <button
+                disabled
+                class="min-h-11 flex-1 cursor-not-allowed rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 3A: PÓS-ESCOLHA DESKTOP -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 3A · Continuidade pós-escolha, sem foto · desktop 1280
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          Decisão do gate: JULIO preenche o lugar do estadual e a janela do visitante fica vazia,
+          sem silhueta, até a foto ser adicionada.
+        </p>
+        <div
+          class="relative mt-4 flex min-h-[760px] max-w-[1280px] items-center justify-center overflow-hidden rounded-xl border border-zinc-700 bg-[var(--campaign-cream)] p-8 text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/45"></div>
+          <article
+            class="relative z-10 flex max-h-[92%] w-[512px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+            role="dialog"
+          >
+            <header class="flex items-start gap-3 px-5 pt-5">
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                  Estadual escolhido
+                </p>
+                <h3 class="mt-1 text-xl font-black">Agora coloque seu nome</h3>
+              </div>
+              <button
+                class="inline-flex size-11 items-center justify-center text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-full max-w-[14.375rem] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <div class="team-card">
+                  <img src="../../public/cards/estaduais/julio-fotos.webp" alt="" />
+                  <img class="z-[2]" src="../../public/cards/estaduais/julio-base.webp" alt="" />
+                  <span class="time-banner">TIME DE</span>
+                </div>
+              </div>
+              <p class="mt-4 text-sm font-bold">Seu estadual</p>
+              <button
+                class="mt-2 flex min-h-11 w-full items-center rounded-lg border border-[var(--field-border)] px-3 text-left text-sm font-bold"
+              >
+                <span>Julio Pinheiro</span
+                ><span class="ml-auto text-xs font-normal text-[var(--campaign-muted)]"
+                  >13999 · Trocar⌄</span
+                >
+              </button>
+              <label class="mt-5 block text-sm font-bold">Seu nome</label>
+              <input
+                class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] px-3"
+                placeholder="Como você é chamado"
+              />
+              <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                Vai aparecer em caixa alta depois de “TIME DE”. Use um nome curto e conhecido.
+              </p>
+              <div
+                class="mt-5 rounded-lg border border-[var(--campaign-line)] bg-[var(--campaign-surface)] p-4"
+              >
+                <p class="text-sm font-bold">Sua foto de busto</p>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  Para um recorte melhor, escolha uma foto nítida, de frente e com fundo simples.
+                </p>
+                <button
+                  class="mt-3 min-h-11 w-full rounded-lg border-2 border-[var(--campaign-line)] bg-white px-5 text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Escolher foto
+                </button>
+              </div>
+            </div>
+            <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="min-h-11 flex-1 rounded-lg border-2 border-[var(--campaign-line)] text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar</button
+              ><button
+                disabled
+                class="min-h-11 flex-1 rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 3B: PÓS-ESCOLHA MOBILE -->
+      <section class="mt-14">
+        <h2 class="text-xs font-black tracking-[.12em] text-zinc-500 uppercase">
+          Cena 3B · Continuidade pós-escolha, sem foto · mobile 390
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          A mesma transição no drawer: as duas silhuetas da arte genérica viram JULIO com a janela
+          vazia para a pessoa, sem silhueta, até a foto ser adicionada.
+        </p>
+        <div
+          class="relative mt-4 h-[844px] w-[390px] max-w-full overflow-hidden rounded-[22px] border border-zinc-700 bg-[var(--campaign-cream)] text-black shadow-2xl"
+        >
+          <div class="absolute inset-0 bg-black/50"></div>
+          <article class="absolute inset-0 flex flex-col bg-white">
+            <div class="mx-auto mt-2 h-1.5 w-10 rounded-full bg-stone-300"></div>
+            <header class="flex items-start gap-3 px-5 pt-4">
+              <div class="min-w-0 flex-1">
+                <p class="text-[10px] font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                  Estadual escolhido
+                </p>
+                <h3 class="mt-1 text-lg font-black">Agora coloque seu nome</h3>
+              </div>
+              <button
+                class="inline-flex size-11 items-center justify-center text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
+            </header>
+            <div class="scrollbar min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5">
+              <div
+                class="mx-auto w-full max-w-[12.8125rem] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow-sm"
+              >
+                <div class="team-card">
+                  <img src="../../public/cards/estaduais/julio-fotos.webp" alt="" /><img
+                    class="z-[2]"
+                    src="../../public/cards/estaduais/julio-base.webp"
+                    alt=""
+                  /><span class="time-banner">TIME DE</span>
+                </div>
+              </div>
+              <p class="mt-4 text-sm font-bold">Seu estadual</p>
+              <button
+                class="mt-2 flex min-h-11 w-full items-center rounded-lg border border-[var(--field-border)] px-3 text-left text-sm font-bold"
+              >
+                <span>Julio Pinheiro</span
+                ><span class="ml-auto text-xs font-normal text-[var(--campaign-muted)]"
+                  >13999 · Trocar⌄</span
+                >
+              </button>
+              <label class="mt-5 block text-sm font-bold">Seu nome</label>
+              <input
+                class="mt-2 h-11 w-full rounded-lg border border-[var(--field-border)] px-3"
+                placeholder="Como você é chamado"
+              />
+              <p class="mt-2 text-xs leading-5 text-[var(--campaign-muted)]">
+                Vai aparecer em caixa alta depois de “TIME DE”. Use um nome curto e conhecido.
+              </p>
+              <div
+                class="mt-5 rounded-lg border border-[var(--campaign-line)] bg-[var(--campaign-surface)] p-4"
+              >
+                <p class="text-sm font-bold">Sua foto de busto</p>
+                <p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">
+                  Para um recorte melhor, escolha uma foto nítida, de frente e com fundo simples.
+                </p>
+                <button
+                  class="mt-3 min-h-11 w-full rounded-lg border-2 border-[var(--campaign-line)] bg-white text-sm font-extrabold text-[var(--pt-red)]"
+                >
+                  Escolher foto
+                </button>
+              </div>
+            </div>
+            <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button
+                class="min-h-11 flex-1 rounded-lg border-2 border-[var(--campaign-line)] text-sm font-extrabold text-[var(--pt-red)]"
+              >
+                Cancelar</button
+              ><button
+                disabled
+                class="min-h-11 flex-1 rounded-lg bg-[var(--pt-red)] text-sm font-extrabold text-white opacity-50"
+              >
+                Criar meu card
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p class="font-bold text-zinc-300">Design tier 1 · openai/gpt-5.6-sol.</p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Arte exata:</strong> tile e placeholder usam
+          <code
+            >cards-estadual-dobradinha-ui-design-assets/modelo-time-de-voce-com-estadual.jpeg</code
+          >
+          sem recorte, recomposição ou recoloração.
+        </p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Continuidade:</strong> o estado pós-escolha compõe os
+          arquivos reais de JULIO e mantém a janela do visitante vazia até a foto, conforme decisão
+          do gate. Fluxo, seletor, notice e CTAs permanecem como estão.
+        </p>
+        <p class="mt-2">
+          <strong class="text-emerald-400">NEEDS ASSET: nenhum.</strong> Todos os ativos necessários
+          estão presentes no repositório.
+        </p>
+      </aside>
+    </main>
+  </body>
+</html>
