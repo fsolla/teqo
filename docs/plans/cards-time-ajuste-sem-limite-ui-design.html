@@ -19,174 +19,517 @@
         --team-blue: #0061a5;
         --gate: #0f766e;
       }
-      * { box-sizing: border-box; }
-      body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
-      button, input { font: inherit; }
-      button:focus-visible, input:focus-visible, [tabindex]:focus-visible {
-        outline: 2px solid var(--pt-red); outline-offset: 2px;
+      * {
+        box-sizing: border-box;
       }
-      .stage-shadow { box-shadow: 0 26px 80px rgb(0 0 0 / 32%); }
+      body {
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 2px solid var(--pt-red);
+        outline-offset: 2px;
+      }
+      .stage-shadow {
+        box-shadow: 0 26px 80px rgb(0 0 0 / 32%);
+      }
       .team-card {
-        position: relative; aspect-ratio: 3 / 4; overflow: hidden; background: #0b8fc3;
+        position: relative;
+        aspect-ratio: 3 / 4;
+        overflow: hidden;
+        background: #0b8fc3;
       }
-      .team-card > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-      .team-photo { z-index: 1; }
-      .team-overlay { z-index: 4; }
+      .team-card > img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .team-photo {
+        z-index: 1;
+      }
+      .team-overlay {
+        z-index: 4;
+      }
       .silhouette {
-        position: absolute; z-index: 2; top: var(--y, 29%); left: var(--x, 54%);
-        width: 36%; height: 45%; transform: translate(-50%, -10%); color: #061d40;
+        position: absolute;
+        z-index: 2;
+        top: var(--y, 29%);
+        left: var(--x, 54%);
+        width: 36%;
+        height: 45%;
+        transform: translate(-50%, -10%);
+        color: #061d40;
         filter: drop-shadow(0 2px 2px rgb(0 0 0 / 18%));
       }
       .silhouette::before {
-        content: ''; position: absolute; top: 0; left: 50%; width: 36%; aspect-ratio: .82;
-        transform: translateX(-50%); border-radius: 48% 48% 45% 45%; background: currentColor;
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 36%;
+        aspect-ratio: 0.82;
+        transform: translateX(-50%);
+        border-radius: 48% 48% 45% 45%;
+        background: currentColor;
       }
       .silhouette::after {
-        content: ''; position: absolute; right: 0; bottom: 0; left: 0; height: 77%;
-        border-radius: 49% 49% 8% 8% / 30% 30% 6% 6%; background: currentColor;
+        content: '';
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        height: 77%;
+        border-radius: 49% 49% 8% 8% / 30% 30% 6% 6%;
+        background: currentColor;
       }
       .drag-badge {
-        position: absolute; right: 8px; bottom: 8px; z-index: 8; border-radius: 4px;
-        background: rgb(0 0 0 / 72%); padding: 4px 7px; color: #fff; font-size: 9px; font-weight: 700;
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        z-index: 8;
+        border-radius: 4px;
+        background: rgb(0 0 0 / 72%);
+        padding: 4px 7px;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 700;
       }
       .gate-vector {
-        position: absolute; z-index: 9; border-top: 2px dashed rgb(15 118 110 / 90%);
-        transform-origin: left center; pointer-events: none;
+        position: absolute;
+        z-index: 9;
+        border-top: 2px dashed rgb(15 118 110 / 90%);
+        transform-origin: left center;
+        pointer-events: none;
       }
       .gate-vector::after {
-        content: ''; position: absolute; top: -5px; right: -1px; width: 8px; height: 8px;
-        border-top: 2px solid var(--gate); border-right: 2px solid var(--gate); transform: rotate(45deg);
+        content: '';
+        position: absolute;
+        top: -5px;
+        right: -1px;
+        width: 8px;
+        height: 8px;
+        border-top: 2px solid var(--gate);
+        border-right: 2px solid var(--gate);
+        transform: rotate(45deg);
       }
       .control-button {
-        display: inline-flex; width: 44px; height: 44px; flex: none; align-items: center;
-        justify-content: center; border: 1px solid var(--campaign-line); border-radius: 8px;
-        background: #fff; color: var(--campaign-ink); font-size: 17px;
+        display: inline-flex;
+        width: 44px;
+        height: 44px;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--campaign-line);
+        border-radius: 8px;
+        background: #fff;
+        color: var(--campaign-ink);
+        font-size: 17px;
       }
       .range {
-        appearance: none; height: 4px; min-width: 0; border-radius: 999px;
+        appearance: none;
+        height: 4px;
+        min-width: 0;
+        border-radius: 999px;
         background: linear-gradient(90deg, var(--pt-red) 0 46%, #d6d3d1 46% 100%);
       }
       .range::-webkit-slider-thumb {
-        appearance: none; width: 20px; height: 20px; border: 3px solid #fff; border-radius: 999px;
-        background: var(--pt-red); box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
+        appearance: none;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #fff;
+        border-radius: 999px;
+        background: var(--pt-red);
+        box-shadow: 0 0 0 1px rgb(0 0 0 / 18%);
       }
-      .primary, .secondary {
-        display: inline-flex; min-height: 44px; flex: 1; align-items: center; justify-content: center;
-        border-radius: 8px; padding: 0 20px; font-size: 14px; font-weight: 800;
+      .primary,
+      .secondary {
+        display: inline-flex;
+        min-height: 44px;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 0 20px;
+        font-size: 14px;
+        font-weight: 800;
       }
-      .primary { border: 0; background: var(--pt-red); color: #fff; }
-      .secondary { border: 2px solid var(--campaign-line); background: #fff; color: var(--pt-red); }
-      .switch { position: relative; width: 44px; height: 26px; flex: none; border-radius: 999px; background: var(--pt-red); }
+      .primary {
+        border: 0;
+        background: var(--pt-red);
+        color: #fff;
+      }
+      .secondary {
+        border: 2px solid var(--campaign-line);
+        background: #fff;
+        color: var(--pt-red);
+      }
+      .switch {
+        position: relative;
+        width: 44px;
+        height: 26px;
+        flex: none;
+        border-radius: 999px;
+        background: var(--pt-red);
+      }
       .switch::after {
-        content: ''; position: absolute; top: 3px; left: 21px; width: 20px; height: 20px;
-        border-radius: 999px; background: #fff; box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 21px;
+        width: 20px;
+        height: 20px;
+        border-radius: 999px;
+        background: #fff;
+        box-shadow: 0 1px 2px rgb(0 0 0 / 25%);
       }
     </style>
   </head>
   <body class="bg-zinc-950 text-zinc-100 antialiased">
-    <div class="border-b border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-center text-[11px] font-black tracking-[.14em] text-emerald-300 uppercase">
+    <div
+      class="border-b border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-center text-[11px] font-black tracking-[.14em] text-emerald-300 uppercase"
+    >
       Design tier: openai/gpt-5.6-sol · frontier · gate humano obrigatório
     </div>
     <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
       <header class="max-w-4xl">
-        <p class="text-xs font-black tracking-[.12em] text-red-400 uppercase">Gate visual · S33 · decisão revisada em 24/09/2026</p>
-        <h1 class="mt-2 text-3xl font-black tracking-tight">A foto vai a qualquer ponto — inclusive para fora</h1>
+        <p class="text-xs font-black tracking-[.12em] text-red-400 uppercase">
+          Gate visual · S33 · decisão revisada em 24/09/2026
+        </p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight">
+          A foto vai a qualquer ponto — inclusive para fora
+        </h1>
         <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
-          O enquadramento automático S15 continua sendo o ponto de partida. Depois dele, arrastar, setas e teclado deixam a posição livre nos dois eixos. A pessoa pode esconder parte ou toda a própria foto e revelar a arte do time ao fundo; para voltar, arrasta de volta na mesma área ativa.
+          O enquadramento automático S15 continua sendo o ponto de partida. Depois dele, arrastar,
+          setas e teclado deixam a posição livre nos dois eixos. A pessoa pode esconder parte ou
+          toda a própria foto e revelar a arte do time ao fundo; para voltar, arrasta de volta na
+          mesma área ativa.
         </p>
         <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
-          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">1280px · dialog</span>
-          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">390px · drawer</span>
-          <span class="rounded-full border border-emerald-700 bg-emerald-950 px-3 py-2 text-emerald-200">X + Y: sem limite</span>
-          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">Zoom [1,4] · inalterado</span>
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >1280px · dialog</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >390px · drawer</span
+          >
+          <span
+            class="rounded-full border border-emerald-700 bg-emerald-950 px-3 py-2 text-emerald-200"
+            >X + Y: sem limite</span
+          >
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2"
+            >Zoom [1,4] · inalterado</span
+          >
         </div>
       </header>
 
       <section class="mt-14">
-        <p class="text-[11px] font-black tracking-[.12em] text-sky-300 uppercase">Cena 01 · desktop 1280 × 800</p>
+        <p class="text-[11px] font-black tracking-[.12em] text-sky-300 uppercase">
+          Cena 01 · desktop 1280 × 800
+        </p>
         <h2 class="mt-1 text-xl font-black">Dialog de ajuste · do limite atual à posição livre</h2>
-        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">Setas tracejadas, rótulos e silhueta são anotações do gate. O compositor não ganha controles nem copy.</p>
-        <div class="stage-shadow relative mx-auto mt-5 h-[800px] w-[1280px] max-w-full overflow-hidden rounded-2xl bg-[var(--campaign-cream)] text-black">
+        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">
+          Setas tracejadas, rótulos e silhueta são anotações do gate. O compositor não ganha
+          controles nem copy.
+        </p>
+        <div
+          class="stage-shadow relative mx-auto mt-5 h-[800px] w-[1280px] max-w-full overflow-hidden rounded-2xl bg-[var(--campaign-cream)] text-black"
+        >
           <div class="absolute inset-0 bg-black/58"></div>
-          <article role="dialog" aria-label="Time do estadual" class="absolute top-1/2 left-1/2 flex max-h-[744px] w-[760px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+          <article
+            role="dialog"
+            aria-label="Time do estadual"
+            class="absolute top-1/2 left-1/2 flex max-h-[744px] w-[760px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white shadow-2xl"
+          >
             <header class="flex shrink-0 items-start gap-3 px-5 pt-5">
-              <div class="min-w-0 flex-1"><p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Time do estadual</p><h3 class="mt-1 text-xl font-black">Confira seu card</h3></div>
-              <button aria-label="Fechar" class="inline-flex size-11 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]">×</button>
+              <div class="min-w-0 flex-1">
+                <p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                  Time do estadual
+                </p>
+                <h3 class="mt-1 text-xl font-black">Confira seu card</h3>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="inline-flex size-11 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]"
+              >
+                ×
+              </button>
             </header>
             <div class="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5">
-              <p class="mx-auto mb-4 max-w-[620px] text-sm leading-5 text-[var(--campaign-muted)]">O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.</p>
+              <p class="mx-auto mb-4 max-w-[620px] text-sm leading-5 text-[var(--campaign-muted)]">
+                O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+              </p>
               <div class="grid grid-cols-2 gap-5">
                 <figure class="m-0 rounded-xl bg-stone-50 p-3 ring-1 ring-black/10">
-                  <div class="flex items-center justify-between gap-2"><figcaption class="text-[11px] font-black tracking-wide text-stone-600 uppercase">Hoje · gesto para cedo</figcaption><span class="rounded-full bg-stone-200 px-2 py-1 text-[10px] font-black text-stone-600">±33px típico</span></div>
-                  <div class="relative mx-auto mt-3 w-[210px] overflow-hidden rounded-lg border border-black/10 shadow-sm" tabindex="0">
-                    <div class="team-card"><img class="team-photo" src="../../public/cards/estaduais/julio-fotos.webp" alt="Arte do time de Julio Pinheiro" /><span class="silhouette" style="--x:57%;--y:29%"></span><img class="team-overlay" src="../../public/cards/estaduais/julio-base.webp" alt="Faixas da arte de Julio Pinheiro" /></div><span class="drag-badge">Arraste para ajustar</span>
+                  <div class="flex items-center justify-between gap-2">
+                    <figcaption
+                      class="text-[11px] font-black tracking-wide text-stone-600 uppercase"
+                    >
+                      Hoje · gesto para cedo
+                    </figcaption>
+                    <span
+                      class="rounded-full bg-stone-200 px-2 py-1 text-[10px] font-black text-stone-600"
+                      >±33px típico</span
+                    >
                   </div>
-                  <p class="mt-2 text-center text-[11px] leading-4 text-stone-600">O arquivo transparente trava enquanto a pessoa ainda aparece perto do centro.</p>
+                  <div
+                    class="relative mx-auto mt-3 w-[210px] overflow-hidden rounded-lg border border-black/10 shadow-sm"
+                    tabindex="0"
+                  >
+                    <div class="team-card">
+                      <img
+                        class="team-photo"
+                        src="../../public/cards/estaduais/julio-fotos.webp"
+                        alt="Arte do time de Julio Pinheiro"
+                      /><span class="silhouette" style="--x: 57%; --y: 29%"></span
+                      ><img
+                        class="team-overlay"
+                        src="../../public/cards/estaduais/julio-base.webp"
+                        alt="Faixas da arte de Julio Pinheiro"
+                      />
+                    </div>
+                    <span class="drag-badge">Arraste para ajustar</span>
+                  </div>
+                  <p class="mt-2 text-center text-[11px] leading-4 text-stone-600">
+                    O arquivo transparente trava enquanto a pessoa ainda aparece perto do centro.
+                  </p>
                 </figure>
                 <figure class="m-0 rounded-xl bg-teal-50 p-3 ring-2 ring-teal-700">
-                  <div class="flex items-center justify-between gap-2"><figcaption class="text-[11px] font-black tracking-wide text-teal-900 uppercase">Novo · além do quadro</figcaption><span class="rounded-full bg-teal-700 px-2 py-1 text-[10px] font-black text-white">X + Y livres</span></div>
-                  <div class="relative mx-auto mt-3 w-[210px] overflow-hidden rounded-lg border border-teal-700/30 shadow-sm" tabindex="0">
-                    <div class="team-card"><img class="team-photo" src="../../public/cards/estaduais/julio-fotos.webp" alt="Arte do time revelada ao fundo" /><span class="silhouette" style="--x:110%;--y:-16%"></span><img class="team-overlay" src="../../public/cards/estaduais/julio-base.webp" alt="Faixas da arte de Julio Pinheiro" /><span class="gate-vector top-[31%] left-[49%] w-[48%] -rotate-[36deg]"></span></div><span class="drag-badge">Arraste para ajustar</span>
+                  <div class="flex items-center justify-between gap-2">
+                    <figcaption
+                      class="text-[11px] font-black tracking-wide text-teal-900 uppercase"
+                    >
+                      Novo · além do quadro
+                    </figcaption>
+                    <span
+                      class="rounded-full bg-teal-700 px-2 py-1 text-[10px] font-black text-white"
+                      >X + Y livres</span
+                    >
                   </div>
-                  <p class="mt-2 text-center text-[11px] leading-4 text-teal-900/75">A pessoa já saiu quase toda pelo alto e pela direita. A arte de trás reaparece.</p>
+                  <div
+                    class="relative mx-auto mt-3 w-[210px] overflow-hidden rounded-lg border border-teal-700/30 shadow-sm"
+                    tabindex="0"
+                  >
+                    <div class="team-card">
+                      <img
+                        class="team-photo"
+                        src="../../public/cards/estaduais/julio-fotos.webp"
+                        alt="Arte do time revelada ao fundo"
+                      /><span class="silhouette" style="--x: 110%; --y: -16%"></span
+                      ><img
+                        class="team-overlay"
+                        src="../../public/cards/estaduais/julio-base.webp"
+                        alt="Faixas da arte de Julio Pinheiro"
+                      /><span
+                        class="gate-vector top-[31%] left-[49%] w-[48%] -rotate-[36deg]"
+                      ></span>
+                    </div>
+                    <span class="drag-badge">Arraste para ajustar</span>
+                  </div>
+                  <p class="mt-2 text-center text-[11px] leading-4 text-teal-900/75">
+                    A pessoa já saiu quase toda pelo alto e pela direita. A arte de trás reaparece.
+                  </p>
                 </figure>
               </div>
               <div class="mx-auto mt-5 max-w-[620px]">
-                <div class="flex items-center gap-3"><label class="text-sm font-bold">Zoom</label><button class="control-button" aria-label="Diminuir zoom">−</button><input class="range h-11 flex-1" type="range" value="46" aria-label="Zoom" /><button class="control-button" aria-label="Aumentar zoom">+</button></div>
-                <p class="mt-4 text-sm font-bold">Ajuste fino</p><div class="mt-2 grid grid-cols-4 gap-2"><button class="control-button w-full" aria-label="Mover foto para a esquerda">←</button><button class="control-button w-full" aria-label="Mover foto para cima">↑</button><button class="control-button w-full" aria-label="Mover foto para baixo">↓</button><button class="control-button w-full" aria-label="Mover foto para a direita">→</button></div>
+                <div class="flex items-center gap-3">
+                  <label class="text-sm font-bold">Zoom</label
+                  ><button class="control-button" aria-label="Diminuir zoom">−</button
+                  ><input
+                    class="range h-11 flex-1"
+                    type="range"
+                    value="46"
+                    aria-label="Zoom"
+                  /><button class="control-button" aria-label="Aumentar zoom">+</button>
+                </div>
+                <p class="mt-4 text-sm font-bold">Ajuste fino</p>
+                <div class="mt-2 grid grid-cols-4 gap-2">
+                  <button class="control-button w-full" aria-label="Mover foto para a esquerda">
+                    ←</button
+                  ><button class="control-button w-full" aria-label="Mover foto para cima">↑</button
+                  ><button class="control-button w-full" aria-label="Mover foto para baixo">
+                    ↓</button
+                  ><button class="control-button w-full" aria-label="Mover foto para a direita">
+                    →
+                  </button>
+                </div>
               </div>
             </div>
-            <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4"><button class="secondary">Cancelar</button><button class="primary">Criar meu card</button></footer>
+            <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+              <button class="secondary">Cancelar</button
+              ><button class="primary">Criar meu card</button>
+            </footer>
           </article>
         </div>
       </section>
 
       <section class="mt-14">
-        <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">Cena 02 · mobile 390 × 844</p>
+        <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">
+          Cena 02 · mobile 390 × 844
+        </p>
         <h2 class="mt-1 text-xl font-black">Drawer · foto totalmente fora, área ainda ativa</h2>
-        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">A prévia mostra a escolha extrema permitida: só a arte do time fica visível. O quadro inteiro continua sendo a área de arrasto para trazer a foto de volta.</p>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">
+          A prévia mostra a escolha extrema permitida: só a arte do time fica visível. O quadro
+          inteiro continua sendo a área de arrasto para trazer a foto de volta.
+        </p>
         <div class="mt-5 grid items-start gap-6 lg:grid-cols-[390px_1fr]">
-          <div class="stage-shadow relative mx-auto h-[844px] w-[390px] max-w-full overflow-hidden rounded-[24px] bg-[var(--campaign-cream)] text-black lg:mx-0">
+          <div
+            class="stage-shadow relative mx-auto h-[844px] w-[390px] max-w-full overflow-hidden rounded-[24px] bg-[var(--campaign-cream)] text-black lg:mx-0"
+          >
             <div class="absolute inset-0 bg-black/50"></div>
-            <article role="dialog" class="absolute inset-0 flex flex-col overflow-hidden rounded-t-xl bg-white">
-              <div class="flex h-3 shrink-0 items-end justify-center"><span class="h-1 w-24 rounded-full bg-[var(--campaign-band)]"></span></div>
-              <header class="flex shrink-0 items-start gap-3 px-5 pt-5"><div class="min-w-0 flex-1"><p class="text-[10px] font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Time do estadual</p><h3 class="mt-1 text-lg font-black">Confira seu card</h3></div><button aria-label="Fechar" class="inline-flex size-11 items-center justify-center text-2xl text-[var(--campaign-muted)]">×</button></header>
+            <article
+              role="dialog"
+              class="absolute inset-0 flex flex-col overflow-hidden rounded-t-xl bg-white"
+            >
+              <div class="flex h-3 shrink-0 items-end justify-center">
+                <span class="h-1 w-24 rounded-full bg-[var(--campaign-band)]"></span>
+              </div>
+              <header class="flex shrink-0 items-start gap-3 px-5 pt-5">
+                <div class="min-w-0 flex-1">
+                  <p class="text-[10px] font-black tracking-[.1em] text-[var(--pt-red)] uppercase">
+                    Time do estadual
+                  </p>
+                  <h3 class="mt-1 text-lg font-black">Confira seu card</h3>
+                </div>
+                <button
+                  aria-label="Fechar"
+                  class="inline-flex size-11 items-center justify-center text-2xl text-[var(--campaign-muted)]"
+                >
+                  ×
+                </button>
+              </header>
               <div class="min-h-0 flex-1 overflow-hidden px-5 pt-3 pb-4">
-                <p class="mb-3 text-sm leading-5 text-[var(--campaign-muted)]">O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.</p>
-                <figure class="m-0"><div class="relative mx-auto w-[184px] overflow-hidden rounded-lg border-2 border-teal-700 shadow-sm" tabindex="0" aria-label="Ajuste da foto"><div class="team-card"><img class="team-photo" src="../../public/cards/estaduais/julio-fotos.webp" alt="Arte do time visível porque a foto do visitante está fora do quadro" /><span class="silhouette" style="--x:-75%;--y:118%"></span><img class="team-overlay" src="../../public/cards/estaduais/julio-base.webp" alt="Faixas da arte de Julio Pinheiro" /></div><span class="drag-badge">Arraste para ajustar</span></div><figcaption class="mt-1.5 text-center text-[9px] font-black text-teal-800 uppercase">Foto fora do quadro · arrasto segue ativo</figcaption></figure>
-                <div class="mt-4 flex items-center gap-3"><label class="text-sm font-bold">Zoom</label><button class="control-button">−</button><input class="range h-11 flex-1" type="range" value="46" aria-label="Zoom" /><button class="control-button">+</button></div>
-                <p class="mt-3 text-sm font-bold">Ajuste fino</p><div class="mt-2 grid grid-cols-4 gap-2"><button class="control-button w-full">←</button><button class="control-button w-full">↑</button><button class="control-button w-full">↓</button><button class="control-button w-full">→</button></div>
-                <button role="switch" aria-checked="true" class="mt-3 flex min-h-11 w-full items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3 text-left"><span class="switch mt-1.5"></span><span><span class="block text-sm font-bold">Harmonizar cores</span><span class="block text-xs leading-5 text-[var(--campaign-muted)]">Ajusta o brilho e as cores da sua foto para combinar com as fotos do card.</span></span></button>
+                <p class="mb-3 text-sm leading-5 text-[var(--campaign-muted)]">
+                  O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.
+                </p>
+                <figure class="m-0">
+                  <div
+                    class="relative mx-auto w-[184px] overflow-hidden rounded-lg border-2 border-teal-700 shadow-sm"
+                    tabindex="0"
+                    aria-label="Ajuste da foto"
+                  >
+                    <div class="team-card">
+                      <img
+                        class="team-photo"
+                        src="../../public/cards/estaduais/julio-fotos.webp"
+                        alt="Arte do time visível porque a foto do visitante está fora do quadro"
+                      /><span class="silhouette" style="--x: -75%; --y: 118%"></span
+                      ><img
+                        class="team-overlay"
+                        src="../../public/cards/estaduais/julio-base.webp"
+                        alt="Faixas da arte de Julio Pinheiro"
+                      />
+                    </div>
+                    <span class="drag-badge">Arraste para ajustar</span>
+                  </div>
+                  <figcaption
+                    class="mt-1.5 text-center text-[9px] font-black text-teal-800 uppercase"
+                  >
+                    Foto fora do quadro · arrasto segue ativo
+                  </figcaption>
+                </figure>
+                <div class="mt-4 flex items-center gap-3">
+                  <label class="text-sm font-bold">Zoom</label
+                  ><button class="control-button">−</button
+                  ><input
+                    class="range h-11 flex-1"
+                    type="range"
+                    value="46"
+                    aria-label="Zoom"
+                  /><button class="control-button">+</button>
+                </div>
+                <p class="mt-3 text-sm font-bold">Ajuste fino</p>
+                <div class="mt-2 grid grid-cols-4 gap-2">
+                  <button class="control-button w-full">←</button
+                  ><button class="control-button w-full">↑</button
+                  ><button class="control-button w-full">↓</button
+                  ><button class="control-button w-full">→</button>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked="true"
+                  class="mt-3 flex min-h-11 w-full items-start gap-3 rounded-lg border border-[var(--campaign-line)] bg-white p-3 text-left"
+                >
+                  <span class="switch mt-1.5"></span
+                  ><span
+                    ><span class="block text-sm font-bold">Harmonizar cores</span
+                    ><span class="block text-xs leading-5 text-[var(--campaign-muted)]"
+                      >Ajusta o brilho e as cores da sua foto para combinar com as fotos do
+                      card.</span
+                    ></span
+                  >
+                </button>
                 <button class="secondary mt-3 w-full">Trocar foto</button>
               </div>
-              <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4"><button class="secondary">Cancelar</button><button class="primary">Criar meu card</button></footer>
+              <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4">
+                <button class="secondary">Cancelar</button
+                ><button class="primary">Criar meu card</button>
+              </footer>
             </article>
           </div>
           <aside class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5">
-            <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">Leitura do gesto</p>
+            <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">
+              Leitura do gesto
+            </p>
             <ul class="mt-3 space-y-3 text-sm leading-6 text-zinc-300">
               <li><strong class="text-white">Hoje:</strong> o gesto para cedo (±33px típico).</li>
-              <li><strong class="text-white">Novo:</strong> sem limite — posição livre nos dois eixos, inclusive fora do quadro.</li>
-              <li><strong class="text-white">Voltar:</strong> arrastar na prévia, que continua ativa mesmo sem a pessoa visível.</li>
-              <li><strong class="text-white">Ponto de partida:</strong> enquadramento automático S15, aplicado como hoje.</li>
+              <li>
+                <strong class="text-white">Novo:</strong> sem limite — posição livre nos dois eixos,
+                inclusive fora do quadro.
+              </li>
+              <li>
+                <strong class="text-white">Voltar:</strong> arrastar na prévia, que continua ativa
+                mesmo sem a pessoa visível.
+              </li>
+              <li>
+                <strong class="text-white">Ponto de partida:</strong> enquadramento automático S15,
+                aplicado como hoje.
+              </li>
             </ul>
           </aside>
         </div>
       </section>
 
       <section class="mt-14 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <p class="text-[11px] font-black tracking-[.12em] text-amber-300 uppercase">Anotação do gate · não portar para a tela</p>
+        <p class="text-[11px] font-black tracking-[.12em] text-amber-300 uppercase">
+          Anotação do gate · não portar para a tela
+        </p>
         <h2 class="mt-1 text-xl font-black">O que muda — e o que não muda</h2>
         <div class="mt-5 grid gap-4 md:grid-cols-2">
-          <article class="rounded-xl border border-emerald-700 bg-emerald-950/40 p-5"><p class="text-xs font-black tracking-wide text-emerald-300 uppercase">Posição</p><p class="mt-2 text-sm leading-6 text-zinc-200">Sem clamp em X ou Y. Pode passar da janela, ficar parcialmente fora ou desaparecer por completo do quadro.</p></article>
-          <article class="rounded-xl border border-zinc-700 bg-zinc-950/50 p-5"><p class="text-xs font-black tracking-wide text-zinc-300 uppercase">Todo o resto</p><p class="mt-2 text-sm leading-6 text-zinc-300">S15 como início; zoom na faixa [1,4]; mesmos controles, copy e área de arrasto; nenhuma telemetria.</p></article>
+          <article class="rounded-xl border border-emerald-700 bg-emerald-950/40 p-5">
+            <p class="text-xs font-black tracking-wide text-emerald-300 uppercase">Posição</p>
+            <p class="mt-2 text-sm leading-6 text-zinc-200">
+              Sem clamp em X ou Y. Pode passar da janela, ficar parcialmente fora ou desaparecer por
+              completo do quadro.
+            </p>
+          </article>
+          <article class="rounded-xl border border-zinc-700 bg-zinc-950/50 p-5">
+            <p class="text-xs font-black tracking-wide text-zinc-300 uppercase">Todo o resto</p>
+            <p class="mt-2 text-sm leading-6 text-zinc-300">
+              S15 como início; zoom na faixa [1,4]; mesmos controles, copy e área de arrasto;
+              nenhuma telemetria.
+            </p>
+          </article>
         </div>
       </section>
 
       <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
-        <p><strong class="text-zinc-300">Ativos:</strong> arte real de JULIO em <code>../../public/cards/estaduais/julio-fotos.webp</code> + <code>julio-base.webp</code>. A silhueta abstrata representa o recorte do visitante.</p>
+        <p>
+          <strong class="text-zinc-300">Ativos:</strong> arte real de JULIO em
+          <code>../../public/cards/estaduais/julio-fotos.webp</code> + <code>julio-base.webp</code>.
+          A silhueta abstrata representa o recorte do visitante.
+        </p>
         <p class="mt-2"><strong class="text-zinc-300">NEEDS ASSET:</strong> nenhum.</p>
-        <p class="mt-2"><strong class="text-zinc-300">Sem novidade de interface:</strong> anotações verdes existem só neste gate; não há controle, copy ou telemetria novos.</p>
+        <p class="mt-2">
+          <strong class="text-zinc-300">Sem novidade de interface:</strong> anotações verdes existem
+          só neste gate; não há controle, copy ou telemetria novos.
+        </p>
       </aside>
     </main>
   </body>
