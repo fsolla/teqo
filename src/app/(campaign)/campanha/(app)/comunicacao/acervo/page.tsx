@@ -3,6 +3,7 @@ import { ScissorsIcon, SearchIcon, SearchXIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
+import type { ReactNode } from 'react'
 
 import { RecordingAcervoFilters } from '@/components/campaign/recording/RecordingAcervoFilters'
 import { RecordingResultList } from '@/components/campaign/recording/RecordingResultList'
@@ -89,6 +90,50 @@ const AcervoHeader = ({ source }: { source: AcervoSource }) => (
   </div>
 )
 
+/**
+ * C216 — the results heading every source repeats: the theme ladder (exact
+ * term / theme / idle) and the hint line of `mode=tema`. The caller owns the
+ * right side (`controls`: the Câmara leaves the retry button bare, the other
+ * two wrap it with their sort select) and whether the row renders at all.
+ */
+const AcervoResultsHeading = ({
+  themeMode,
+  themeActive,
+  themeUnavailable,
+  idleTitle,
+  subject,
+  controls,
+}: {
+  themeMode: boolean
+  themeActive: boolean
+  themeUnavailable: boolean
+  idleTitle: string
+  subject: 'fala' | 'gravação'
+  controls: ReactNode
+}) => (
+  <div className="flex flex-wrap items-end justify-between gap-3">
+    <div>
+      <h2 className="text-sm font-semibold">
+        {themeUnavailable
+          ? 'Resultados por termo exato'
+          : themeActive
+            ? 'Resultados por tema'
+            : idleTitle}
+      </h2>
+      {themeMode ? (
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {themeUnavailable
+            ? 'Comportamento atual do acervo.'
+            : themeActive
+              ? `Confira o indício em cada ${subject} antes de abrir.`
+              : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
+        </p>
+      ) : null}
+    </div>
+    {controls}
+  </div>
+)
+
 const RecordingsSource = ({
   data,
 }: {
@@ -114,33 +159,22 @@ const RecordingsSource = ({
       />
 
       <CampaignListResults>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold">
-              {data.themeUnavailable
-                ? 'Resultados por termo exato'
-                : themeActive
-                  ? 'Resultados por tema'
-                  : 'Gravações encontradas'}
-            </h2>
-            {themeMode ? (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {data.themeUnavailable
-                  ? 'Comportamento atual do acervo.'
-                  : themeActive
-                    ? 'Confira o indício em cada gravação antes de abrir.'
-                    : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap items-end gap-2">
-            {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
-            <AcervoSortSelect
-              state={data.state}
-              hint="Gravações sem duração aparecem apenas em Mais recentes."
-            />
-          </div>
-        </div>
+        <AcervoResultsHeading
+          themeMode={themeMode}
+          themeActive={themeActive}
+          themeUnavailable={data.themeUnavailable}
+          idleTitle="Gravações encontradas"
+          subject="gravação"
+          controls={
+            <div className="flex flex-wrap items-end gap-2">
+              {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
+              <AcervoSortSelect
+                state={data.state}
+                hint="Gravações sem duração aparecem apenas em Mais recentes."
+              />
+            </div>
+          }
+        />
 
         {data.rows.length > 0 ? (
           <RecordingResultList rows={data.rows} />
@@ -236,33 +270,22 @@ const WebSpeechesSource = ({
       {data.themeUnavailable ? <SpeechThemeFallbackNotice /> : null}
 
       <CampaignListResults>
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <div>
-            <h2 className="text-sm font-semibold">
-              {data.themeUnavailable
-                ? 'Resultados por termo exato'
-                : themeActive
-                  ? 'Resultados por tema'
-                  : 'Resultados encontrados'}
-            </h2>
-            {themeMode ? (
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {data.themeUnavailable
-                  ? 'Comportamento atual do acervo.'
-                  : themeActive
-                    ? 'Confira o indício em cada fala antes de abrir.'
-                    : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex flex-wrap items-end gap-2">
-            {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
-            <AcervoSortSelect
-              state={data.state}
-              hint="Falas sem duração aparecem apenas em Mais recentes."
-            />
-          </div>
-        </div>
+        <AcervoResultsHeading
+          themeMode={themeMode}
+          themeActive={themeActive}
+          themeUnavailable={data.themeUnavailable}
+          idleTitle="Resultados encontrados"
+          subject="fala"
+          controls={
+            <div className="flex flex-wrap items-end gap-2">
+              {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
+              <AcervoSortSelect
+                state={data.state}
+                hint="Falas sem duração aparecem apenas em Mais recentes."
+              />
+            </div>
+          }
+        />
 
         {data.rows.length > 0 ? (
           <WebSpeechResultList rows={data.rows} />
@@ -343,25 +366,14 @@ const CamaraSource = ({ data }: { data: Awaited<ReturnType<typeof loadSpeechAcer
 
       <CampaignListResults>
         {themeMode ? (
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold">
-                {data.themeUnavailable
-                  ? 'Resultados por termo exato'
-                  : themeActive
-                    ? 'Resultados por tema'
-                    : 'Resultados'}
-              </h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {data.themeUnavailable
-                  ? 'Comportamento atual do acervo.'
-                  : themeActive
-                    ? 'Confira o indício em cada fala antes de abrir.'
-                    : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
-              </p>
-            </div>
-            {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
-          </div>
+          <AcervoResultsHeading
+            themeMode={themeMode}
+            themeActive={themeActive}
+            themeUnavailable={data.themeUnavailable}
+            idleTitle="Resultados"
+            subject="fala"
+            controls={data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
+          />
         ) : null}
 
         {data.rows.length > 0 ? (
