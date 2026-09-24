@@ -20,8 +20,9 @@ type PrivateMediaCollectionSlug = 'contentPiece' | 'recording' | 'reel' | 'speec
  * for EVERY denial (the route maps it to its silent 404, so the response never
  * leaks which artifacts exist). The caller injects only what is its own: the
  * collection, the optional `select`, the eligibility predicate (`isServable`,
- * mandatory so a new route cannot silently skip its kill switch) and the media
- * field picker (`artifactOf`).
+ * mandatory so every new route has to declare its own eligibility — explicitly
+ * `() => true` when the domain has no kill switch) and the media field picker
+ * (`artifactOf`).
  *
  * The HTTP contract (range, disposition, 404) stays in the route — this helper
  * never builds a response.

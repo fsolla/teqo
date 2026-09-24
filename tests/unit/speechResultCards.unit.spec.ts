@@ -112,6 +112,7 @@ describe('speech result cards excerpt', () => {
     )
 
     expect(html).not.toContain('um trecho sobre')
+    expect(html).not.toContain('text-sm leading-relaxed')
   })
 
   it('wraps the theme provenance excerpt in quotes', () => {
@@ -122,6 +123,8 @@ describe('speech result cards excerpt', () => {
     expect(html).toContain('Por que apareceu')
     expect(html).toContain('“')
     expect(html).toContain('”')
+    // The provenance replaces the common excerpt — they never coexist (C192).
+    expect(html).not.toContain('text-sm leading-relaxed')
   })
 
   it('keeps the web card own excerpt classes', () => {
@@ -147,7 +150,25 @@ describe('speech result cards chips', () => {
   it('sums only the groups the web card has', () => {
     const html = renderWithAppRouter(createElement(WebSpeechResultCard, { speech: webSpeech() }))
 
+    expect(html).toContain('Saúde')
+    expect(html).toContain('Bahia')
+    expect(html).not.toContain('Esporte')
+    expect(html).not.toContain('Internacional')
     expect(html).toContain('+2')
     expect(html).not.toContain('sus')
+  })
+
+  it('omits the +N badge when every chip fits', () => {
+    const html = renderWithAppRouter(
+      createElement(SpeechResultCard, {
+        speech: speech({
+          topics: [{ value: 'saude', label: 'Saúde' }],
+          scopes: [{ value: 'bahia', label: 'Bahia' }],
+          keywords: [],
+        }),
+      }),
+    )
+
+    expect(html).not.toMatch(/\+\d/)
   })
 })
