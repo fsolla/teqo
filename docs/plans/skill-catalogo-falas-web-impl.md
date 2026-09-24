@@ -62,20 +62,28 @@ Formato (pinado pelo spec):
   "pending": [
     {
       "sourceKey": "web:youtube:abc123",
-      "finding": { "platform": "youtube", "url": "https://www.youtube.com/watch?v=abc123", "publishedAt": "2026-09-12" },
+      "finding": {
+        "platform": "youtube",
+        "url": "https://www.youtube.com/watch?v=abc123",
+        "publishedAt": "2026-09-12",
+      },
       "reason": "download: HTTP 403",
       "attempts": 1,
-      "addedAt": "2026-09-24T18:07:12.000Z"
-    }
+      "addedAt": "2026-09-24T18:07:12.000Z",
+    },
   ],
   "review": [
     {
       "sourceKey": "web:instagram:xyz",
-      "finding": { "platform": "instagram", "url": "https://www.instagram.com/reel/xyz/", "publishedAt": "2026-09-10" },
+      "finding": {
+        "platform": "instagram",
+        "url": "https://www.instagram.com/reel/xyz/",
+        "publishedAt": "2026-09-10",
+      },
       "reason": "não confirmado como fala do titular (compilado de terceiro)",
-      "flaggedAt": "2026-09-24T18:07:12.000Z"
-    }
-  ]
+      "flaggedAt": "2026-09-24T18:07:12.000Z",
+    },
+  ],
 }
 ```
 
@@ -93,15 +101,35 @@ Contrato do artefato `data/falas-web/discovery-<stamp>.json` (stamp no mesmo sha
 ```jsonc
 {
   "generatedAt": "2026-09-24T18:00:00.000Z",
-  "window": { "from": "2026-09-01T00:00:00.000Z", "to": "2026-09-24T18:00:00.000Z", "initial": false },
+  "window": {
+    "from": "2026-09-01T00:00:00.000Z",
+    "to": "2026-09-24T18:00:00.000Z",
+    "initial": false,
+  },
   "queries": ["\"Jorge Solla\" after:2026-09-01", "site:youtube.com \"Jorge Solla\"", "..."],
   "findings": [
-    { "platform": "youtube", "url": "https://www.youtube.com/watch?v=abc123", "externalId": "abc123", "publishedAt": "2026-09-12", "title": "…", "channel": "…" }
+    {
+      "platform": "youtube",
+      "url": "https://www.youtube.com/watch?v=abc123",
+      "externalId": "abc123",
+      "publishedAt": "2026-09-12",
+      "title": "…",
+      "channel": "…",
+    },
   ],
   "review": [
-    { "finding": { "platform": "instagram", "url": "https://www.instagram.com/p/xyz/", "publishedAt": "2026-09-10" }, "reason": "…" }
+    {
+      "finding": {
+        "platform": "instagram",
+        "url": "https://www.instagram.com/p/xyz/",
+        "publishedAt": "2026-09-10",
+      },
+      "reason": "…",
+    },
   ],
-  "notes": ["limites declarados: rádio sem arquivo direto não virou finding; Instagram fora da janela descartado"]
+  "notes": [
+    "limites declarados: rádio sem arquivo direto não virou finding; Instagram fora da janela descartado",
+  ],
 }
 ```
 
@@ -255,14 +283,13 @@ Perde 0,5 porque duas pontas são declaradamente probabilísticas/externas em ve
 
 Dois revisores em paralelo (estrutural + qualidade). **17 achados corrigidos na sessão** (não reabrir): `invalid`/`duplicates` não podem virar `review` (o C215 só reporta duplicata; a skill para, não avança o watermark e relata os ofensores), fronteira de escrita da curadoria (dúvida vai para `review` do estado; o artefato segue com um escritor só), ler o artefato do disco sem pedir o corpo ao subagente, ciclo explícito de `pending` (`sourceKey` opcional vindo do `plannedEntries`; cauda de `--limit` não vira pending), `--limit` igual no dry-run e no import, exceção do lote vazio no recibo, regras de preenchimento do recibo por modo (`aprovar`/`descartar`/exit 1), recuperação da cauda órfã no Troubleshooting, numeração de `aprovar`/`descartar`, `descartar` com o motivo do item, `to = agora` no despacho da descoberta, `lastStateAt` no lugar de `lastSuccessfulAt`, pinos do envelope do lote (`{ generatedAt, findings }`/`batch-<stamp>.json`), do watermark (`lastRunAt` = `window.to`), do dry-run obrigatório e da **negação** de `FALAS_WEB_IMPORT_CONFIRM`.
 
-| ID  | Resumo                                                            | Origem            | Score | Tipo         | Destino                                                        |
-| --- | ----------------------------------------------------------------- | ----------------- | ----- | ------------ | -------------------------------------------------------------- |
-| S1  | Pinso fracos de prosa (`gitignored`, `Exit 0/1`)                  | simplify estrutural | 1   | cheap_polish | descartar (contratos reais têm regex próprio)                  |
-| S2  | `mediaUrl` de rádio/áudio repetido em 3 camadas                   | simplify estrutural | 1   | cheap_polish | descartar (redundância intencional de prompt; spec pina no agente) |
-| S3  | Spec re-pina coupling comando↔skill                               | simplify estrutural | 1   | cheap_polish | descartar (precedente dos specs por skill)                     |
-| Q1  | Pinos literais de markdown sensíveis a edição de prosa            | simplify qualidade  | 1   | cheap_polish | descartar (deliberado, como nos precedentes)                   |
-| Q2  | "revisar" (modo) vs `review` (bucket)                             | simplify qualidade  | 1   | cheap_polish | descartar (argumento pt-BR, chave JSON em inglês)              |
-| Q3  | Título do agente em minúscula                                     | simplify qualidade  | 1   | cheap_polish | corrigido na sessão                                            |
+| ID  | Resumo                                                 | Origem              | Score | Tipo         | Destino                                                            |
+| --- | ------------------------------------------------------ | ------------------- | ----- | ------------ | ------------------------------------------------------------------ |
+| S1  | Pinso fracos de prosa (`gitignored`, `Exit 0/1`)       | simplify estrutural | 1     | cheap_polish | descartar (contratos reais têm regex próprio)                      |
+| S2  | `mediaUrl` de rádio/áudio repetido em 3 camadas        | simplify estrutural | 1     | cheap_polish | descartar (redundância intencional de prompt; spec pina no agente) |
+| S3  | Spec re-pina coupling comando↔skill                    | simplify estrutural | 1     | cheap_polish | descartar (precedente dos specs por skill)                         |
+| Q1  | Pinos literais de markdown sensíveis a edição de prosa | simplify qualidade  | 1     | cheap_polish | descartar (deliberado, como nos precedentes)                       |
+| Q2  | "revisar" (modo) vs `review` (bucket)                  | simplify qualidade  | 1     | cheap_polish | descartar (argumento pt-BR, chave JSON em inglês)                  |
+| Q3  | Título do agente em minúscula                          | simplify qualidade  | 1     | cheap_polish | corrigido na sessão                                                |
 
 Veredito do modo autônomo (`--auto`): **0 Issues registradas** — nenhum resto alcança o piso (score ≥3 / expensive_lock ≥4); os descartes são polimento de prosa/spec deliberado. Fechamento: 23 achados → 17 corrigidos na sessão, 6 descartados.
-

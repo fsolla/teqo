@@ -80,17 +80,13 @@ describe('curation, watermark and retry', () => {
       /não é ingerido até confirmação/,
     )
     expect(skill, 'curation demotes to the state review list').toMatch(/não inclua\s+no lote/)
-    expect(skill, 'approval does not move the watermark').toMatch(
-      /`lastRunAt` \*\*não\*\* muda/,
-    )
+    expect(skill, 'approval does not move the watermark').toMatch(/`lastRunAt` \*\*não\*\* muda/)
   })
 
   it('pins the watermark semantics and the pending retry', () => {
     expect(skill).toContain('Exit 0')
     expect(skill).toContain('Exit 1')
-    expect(skill, 'exit 1 must not advance the window').toMatch(
-      /`lastRunAt` \*\*não\*\* avança/,
-    )
+    expect(skill, 'exit 1 must not advance the window').toMatch(/`lastRunAt` \*\*não\*\* avança/)
     expect(skill, 'retries carry the attempt count').toContain('attempts')
     expect(skill, 'pending is retried first').toMatch(/vão primeiro no próximo lote/)
     expect(skill, 'the --limit tail stays in the batch').toMatch(/restam M−N achados no lote/)
