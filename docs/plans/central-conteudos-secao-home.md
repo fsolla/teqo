@@ -1,4 +1,4 @@
-# S36 — Home — seção divulgando a Central de Conteúdos
+# S39 — Home — seção divulgando a Central de Conteúdos
 
 Status: rascunho
 Atualizado em: 2026-09-23
@@ -57,7 +57,7 @@ Esta seção **supersede a decisão D7 do S27** ("Descoberta (rodapé + selo; se
 
 ## Dados da decisão (literais)
 
-- Item `S36`; slug `central-conteudos-secao-home`; tipo `feature`; Priority `P1`; Impeccable `C`.
+- Item `S39`; slug `central-conteudos-secao-home`; tipo `feature`; Priority `P1`; Impeccable `C`.
 - Condição da seção: **sem peça publicada → a seção inteira não aparece** (mesma condição do link "Conteúdos" no rodapé, hoje via `hasPublishedContentPieces`).
 - CTA principal: `Ver todas as peças` → `/conteudos`.
 - Conteúdo: **até 3 peças publicadas**, na ordem de seleção **município do visitante → região → mais recentes**; sem localização/fora da Bahia → mais recentes.
@@ -108,7 +108,7 @@ Esta seção **supersede a decisão D7 do S27** ("Descoberta (rodapé + selo; se
 
 ## Referências
 
-- GitHub Issue: a registrar para o S36 (`pnpm agent:register`).
+- GitHub Issue: #1305.
 - Design UI (gate): `docs/plans/central-conteudos-secao-home-ui-design.html`.
 - `docs/plans/central-conteudos-publica.md` (S27) e `central-conteudos-publica-impl.md` (D7 superseded); `central-conteudos-publica-ui-design.html`.
 - `src/app/(frontend)/(home)/page.tsx`, `src/components/jingles/JingleHomeSection.tsx`, `src/app/(frontend)/(home)/CampaignCardsSection.tsx`, `src/utilities/content/contentPieceReads.ts`, `src/components/CampaignFooter.tsx`, `src/components/CampaignContentSection.tsx`

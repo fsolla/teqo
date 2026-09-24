@@ -1,4 +1,4 @@
-# S33 — Central de Conteúdos — logo do header no tamanho da marca
+# S36 — Central de Conteúdos — logo do header no tamanho da marca
 
 Status: rascunho
 Atualizado em: 2026-09-23

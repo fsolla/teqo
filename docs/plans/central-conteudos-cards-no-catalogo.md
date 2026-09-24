@@ -1,4 +1,4 @@
-# S35 — Central de Conteúdos — cards personalizáveis como itens do catálogo
+# S38 — Central de Conteúdos — cards personalizáveis como itens do catálogo
 
 Status: rascunho
 Atualizado em: 2026-09-23
