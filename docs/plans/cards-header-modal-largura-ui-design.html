@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design S35 · Header do modal na largura do card</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #fff;
+        --foreground: #000;
+        --pt-red: #a21c1c;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000;
+        --campaign-muted: #6c615e;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --gate: #0f766e;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
+      button { font: inherit; }
+      button:focus-visible { outline: 2px solid var(--pt-red); outline-offset: 2px; }
+      .stage-shadow { box-shadow: 0 26px 80px rgb(0 0 0 / 32%); }
+      .primary, .secondary {
+        display: inline-flex; min-height: 44px; flex: 1; align-items: center; justify-content: center;
+        border-radius: 8px; padding: 0 16px; font-size: 14px; font-weight: 800;
+      }
+      .primary { border: 0; background: var(--pt-red); color: white; }
+      .secondary { border: 2px solid var(--campaign-line); background: white; color: var(--pt-red); }
+      .measure-line { position: absolute; height: 2px; background: var(--gate); pointer-events: none; }
+      .measure-line::before, .measure-line::after {
+        content: ''; position: absolute; top: -4px; width: 2px; height: 10px; background: var(--gate);
+      }
+      .measure-line::before { left: 0; } .measure-line::after { right: 0; }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div class="border-b border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-center text-[11px] font-black tracking-[.14em] text-emerald-300 uppercase">
+      Design tier: openai/gpt-5.6-sol · frontier · gate humano obrigatório
+    </div>
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="text-xs font-black tracking-[.12em] text-red-400 uppercase">Gate visual · S35</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight">O header volta a pertencer ao modal inteiro</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">
+          Correção de fidelidade: no dialog desktop, a coluna de título ocupa toda a largura disponível e o × encosta na borda direita do conteúdo. Copy, tipografia, hierarquia, prévia e ações permanecem exatamente no idioma já aprovado.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300">
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">1280px · antes × depois</span>
+          <span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">390px · referência inalterada</span>
+          <span class="rounded-full border border-emerald-700 bg-emerald-950 px-3 py-2 text-emerald-200">Paridade com o gate aprovado</span>
+        </div>
+      </header>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-sky-300 uppercase">Cena 01 · desktop 1280 × 800</p>
+        <h2 class="mt-1 text-xl font-black">Mesmo modal, mesma prévia — só a largura do header muda</h2>
+        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">Contornos e medidas verdes são anotações do gate; não entram na interface.</p>
+        <div class="stage-shadow relative mx-auto mt-5 h-[800px] w-[1280px] max-w-full overflow-hidden rounded-2xl bg-[var(--campaign-cream)] text-black">
+          <div class="absolute inset-0 bg-black/58"></div>
+          <div class="absolute inset-x-10 top-1/2 grid -translate-y-1/2 grid-cols-2 gap-8">
+            <div>
+              <div class="mb-3 flex items-center justify-between"><p class="text-[11px] font-black tracking-[.12em] text-red-200 uppercase">Antes · cluster estreito à esquerda</p><span class="rounded-full bg-red-950/80 px-3 py-1 text-[10px] font-black text-red-200">Quebrado</span></div>
+              <article role="dialog" aria-label="Minha colinha antes" class="relative mx-auto flex h-[672px] w-[512px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+                <header class="relative flex shrink-0 items-start gap-3 px-5 pt-5">
+                  <div class="w-[228px] shrink-0 rounded-sm outline-2 outline-dashed outline-red-600/70"><p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Minha colinha</p><h3 class="mt-1 text-xl font-black tracking-[-.01em]">Pronta para levar com você</h3><p class="mt-1 text-sm leading-5 text-[var(--campaign-muted)]">Confira o estadual escolhido. As demais escolhas já vêm preenchidas no modelo oficial.</p></div>
+                  <button aria-label="Fechar" class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]">×</button>
+                  <span class="absolute top-[74px] right-5 rounded bg-red-100 px-2 py-1 text-[9px] font-black text-red-800">vazio sem função</span>
+                </header>
+                <div class="min-h-0 flex-1 overflow-hidden px-5 pt-4 pb-5">
+                  <img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Modelo real da colinha" class="mx-auto block h-[390px] w-auto rounded-lg border border-[var(--campaign-line)] object-cover shadow-sm" />
+                  <button class="mt-4 flex h-11 w-full items-center rounded-lg border border-[var(--field-border)] bg-white px-3 text-left text-sm font-bold"><span>Julio Pinheiro</span><span class="ml-auto text-xs text-[var(--campaign-muted)]">13999 · Trocar</span></button>
+                </div>
+                <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4"><button class="secondary">Cancelar</button><button class="primary">Baixar minha colinha</button></footer>
+              </article>
+            </div>
+            <div>
+              <div class="mb-3 flex items-center justify-between"><p class="text-[11px] font-black tracking-[.12em] text-emerald-200 uppercase">Depois · header de ponta a ponta</p><span class="rounded-full bg-emerald-900 px-3 py-1 text-[10px] font-black text-emerald-100">Alvo aprovado</span></div>
+              <article role="dialog" aria-label="Minha colinha depois" class="relative mx-auto flex h-[672px] w-[512px] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+                <header class="relative flex w-full shrink-0 items-start gap-3 px-5 pt-5 outline-2 outline-offset-[-2px] outline-dashed outline-teal-700/70">
+                  <div class="min-w-0 flex-1"><p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Minha colinha</p><h3 class="mt-1 text-xl font-black tracking-[-.01em]">Pronta para levar com você</h3><p class="mt-1 max-w-[390px] text-sm leading-5 text-[var(--campaign-muted)]">Confira o estadual escolhido. As demais escolhas já vêm preenchidas no modelo oficial.</p></div>
+                  <button aria-label="Fechar" class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]">×</button>
+                  <span class="measure-line right-5 bottom-[-10px] left-5"></span>
+                  <span class="absolute right-1 bottom-[-29px] rounded bg-teal-100 px-2 py-1 text-[9px] font-black text-teal-900">largura útil completa</span>
+                </header>
+                <div class="min-h-0 flex-1 overflow-hidden px-5 pt-4 pb-5">
+                  <img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Modelo real da colinha" class="mx-auto block h-[390px] w-auto rounded-lg border border-[var(--campaign-line)] object-cover shadow-sm" />
+                  <button class="mt-4 flex h-11 w-full items-center rounded-lg border border-[var(--field-border)] bg-white px-3 text-left text-sm font-bold"><span>Julio Pinheiro</span><span class="ml-auto text-xs text-[var(--campaign-muted)]">13999 · Trocar</span></button>
+                </div>
+                <footer class="flex shrink-0 gap-3 border-t border-[var(--campaign-line)] px-5 py-4"><button class="secondary">Cancelar</button><button class="primary">Baixar minha colinha</button></footer>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">Cena 02 · mobile 390 × 844</p>
+        <h2 class="mt-1 text-xl font-black">Drawer · referência já correta, sem mudança</h2>
+        <p class="mt-1 max-w-3xl text-xs leading-5 text-zinc-500">No celular, título e fechar já ocupam as extremidades do drawer. Esta cena documenta paridade, não propõe ajuste.</p>
+        <div class="mt-5 grid items-start gap-6 lg:grid-cols-[390px_1fr]">
+          <div class="stage-shadow relative mx-auto h-[844px] w-[390px] max-w-full overflow-hidden rounded-[24px] bg-[var(--campaign-cream)] text-black lg:mx-0">
+            <div class="absolute inset-0 bg-black/50"></div>
+            <article role="dialog" aria-label="Minha colinha no celular" class="absolute inset-0 flex flex-col overflow-hidden rounded-t-xl bg-white">
+              <div class="flex h-3 shrink-0 items-end justify-center"><span class="h-1 w-24 rounded-full bg-[var(--campaign-band)]"></span></div>
+              <header class="flex w-full shrink-0 items-start gap-3 px-5 pt-5">
+                <div class="min-w-0 flex-1"><p class="text-[10px] font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Minha colinha</p><h3 class="mt-1 text-lg font-black tracking-[-.01em]">Pronta para baixar</h3></div>
+                <button aria-label="Fechar" class="inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-2xl text-[var(--campaign-muted)]">×</button>
+              </header>
+              <div class="min-h-0 flex-1 overflow-hidden px-5 pt-3 pb-4"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Modelo real da colinha" class="mx-auto block h-[600px] w-auto max-w-full rounded-lg border border-[var(--campaign-line)] object-cover shadow-sm" /></div>
+              <footer class="shrink-0 border-t border-[var(--campaign-line)] px-5 py-4"><button class="primary w-full">Baixar minha colinha</button></footer>
+            </article>
+          </div>
+          <aside class="rounded-2xl border border-emerald-400/30 bg-emerald-400/10 p-5">
+            <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">Regra de paridade</p>
+            <ul class="mt-3 space-y-3 text-sm leading-6 text-zinc-300">
+              <li><strong class="text-white">Esquerda:</strong> eyebrow e título reais, sem alterar tamanho, peso ou quebra.</li>
+              <li><strong class="text-white">Direita:</strong> × no alvo de 44px junto à borda útil.</li>
+              <li><strong class="text-white">Mobile:</strong> drawer já correto; nenhuma mudança visível.</li>
+              <li><strong class="text-white">Escopo:</strong> sem copy, tipografia, hierarquia ou controle novos.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section class="mt-14 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <p class="text-[11px] font-black tracking-[.12em] text-amber-300 uppercase">Anotação do gate · não portar para a tela</p>
+        <h2 class="mt-1 text-xl font-black">Alvo literal</h2>
+        <p class="mt-3 max-w-4xl text-sm leading-6 text-zinc-300">O bloco de texto permanece à esquerda e usa o espaço necessário; o × permanece isolado no extremo direito. O eixo visual do header coincide com a largura do conteúdo e do card abaixo — exatamente como nos dialogs aprovados de “Time de você”, “Time do estadual” e “Minha colinha”.</p>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p><strong class="text-zinc-300">Ativo real:</strong> <code>cards-colinha-ui-design-assets/modelo-colinha.jpeg</code>, reutilizado sem recomposição para manter idêntica a comparação.</p>
+        <p class="mt-2"><strong class="text-zinc-300">NEEDS ASSET:</strong> nenhum.</p>
+        <p class="mt-2"><strong class="text-zinc-300">Paridade, não redesign:</strong> o contorno verde e as medidas existem só neste gate; copy, tipografia e hierarquia são as já aprovadas.</p>
+      </aside>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design S34 · Colinha com a arte exata</title>
+    <style type="text/tailwindcss">
+      :root {
+        --background: #fff; --foreground: #000; --pt-red: #a21c1c; --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607; --campaign-cream: #fff8f2; --campaign-ink: #000;
+        --campaign-muted: #6c615e; --campaign-band: #ebe9e9; --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%); --brand-red: #e4102f; --brand-blue: #184e92;
+        --confirm: #009647;
+      }
+      * { box-sizing: border-box; }
+      body { margin: 0; font-family: Arial, Helvetica, sans-serif; }
+      button, input { font: inherit; }
+      button:focus-visible, input:focus-visible { outline: 2px solid var(--pt-red); outline-offset: 2px; }
+      .stage-shadow { box-shadow: 0 26px 80px rgb(0 0 0 / 32%); }
+      .colinha {
+        position: relative; aspect-ratio: 9 / 16; overflow: hidden; background: #fff;
+        container-type: inline-size;
+      }
+      .colinha > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+      .state-mask {
+        position: absolute; z-index: 2; top: 55.9%; left: 24.5%; width: 57.4%; height: 2.9%;
+        background: #fff;
+      }
+      .state-copy {
+        position: absolute; z-index: 3; top: 56.46%; left: 26.9%; width: 52.8%; display: flex;
+        align-items: baseline; justify-content: flex-end; gap: 1.5cqw; white-space: nowrap;
+        font-family: Arial, Helvetica, sans-serif; line-height: 1;
+      }
+      .state-office { font-size: 2.15cqw; font-weight: 400; color: #202020; }
+      .state-name { font-size: 3.4cqw; font-weight: 900; letter-spacing: -0.04em; color: #e4102f; }
+      .state-name-b {
+        position: absolute; z-index: 3; top: 56.46%; right: 56.5%; max-width: 31%;
+        overflow: hidden; white-space: nowrap; text-align: right; font-family: Arial, Helvetica, sans-serif;
+        font-size: 3.1cqw; line-height: 1; font-weight: 900; letter-spacing: -0.04em; color: #e4102f;
+      }
+      .digit-overlay {
+        position: absolute; z-index: 3; top: 58.4%; display: grid; width: 6.1%; height: 4.35%;
+        place-items: center; font-family: Arial Black, Arial, Helvetica, sans-serif; font-size: 4.25cqw;
+        line-height: 1; font-weight: 900; color: #171717;
+      }
+      .d1 { left: 25.9%; } .d2 { left: 32.8%; } .d3 { left: 39.7%; } .d4 { left: 46.6%; } .d5 { left: 53.5%; }
+      .primary, .secondary {
+        display: inline-flex; min-height: 44px; flex: 1; align-items: center; justify-content: center;
+        border-radius: 8px; padding: 0 20px; font-size: 14px; font-weight: 800;
+      }
+      .primary { border: 0; background: var(--pt-red); color: #fff; }
+      .primary:disabled { cursor: not-allowed; opacity: .5; }
+      .secondary { border: 2px solid var(--campaign-line); background: #fff; color: var(--pt-red); }
+      .select {
+        display: flex; min-height: 44px; width: 100%; align-items: center; border: 1px solid var(--field-border);
+        border-radius: 8px; background: #fff; padding: 0 12px; text-align: left; font-size: 14px;
+      }
+      .line-crop { position: relative; height: 150px; overflow: hidden; background: #fff; }
+      .line-crop > img, .line-crop > .colinha { position: absolute; left: 0; width: 620px; max-width: none; }
+    </style>
+  </head>
+  <body class="bg-zinc-950 text-zinc-100 antialiased">
+    <div class="border-b border-emerald-400/40 bg-emerald-400/10 px-4 py-2 text-center text-[11px] font-black tracking-[.14em] text-emerald-300 uppercase">Design tier: openai/gpt-5.6-sol · frontier · gate humano obrigatório</div>
+    <main class="mx-auto max-w-[1440px] px-4 py-10 sm:px-6 lg:px-10">
+      <header class="max-w-4xl">
+        <p class="text-xs font-black tracking-[.12em] text-red-400 uppercase">Gate visual · S34</p>
+        <h1 class="mt-2 text-3xl font-black tracking-tight">A colinha é a arte entregue — não uma recriação</h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-zinc-400">A imagem 900×1600 permanece inteira e intocada. Sem estadual, ela aparece exatamente como foi entregue. Com JULIO PINHEIRO 13999, somente a segunda linha recebe nome e dígitos. O gate escolhe entre A e B.</p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-zinc-300"><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">arte exata · 900×1600</span><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">saída · 1080×1920</span><span class="rounded-full border border-zinc-700 bg-zinc-900 px-3 py-2">desktop 1280 + mobile 390</span><span class="rounded-full border border-amber-500/40 bg-amber-400/10 px-3 py-2 text-amber-300">NEEDS ASSET (fonte)</span></div>
+      </header>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-sky-300 uppercase">Cena 01 · desktop 1280 × 850 · vazio</p>
+        <h2 class="mt-1 text-xl font-black">A arte como está · CTA desabilitado</h2>
+        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">Caixas vazias e o selo CONFIRMA pleno já pertencem ao JPEG. Nenhum pixel é acrescentado no estado vazio.</p>
+        <div class="stage-shadow relative mt-5 mx-auto h-[850px] w-[1280px] max-w-full overflow-hidden rounded-2xl bg-[var(--campaign-cream)] text-black"><div class="absolute inset-0 bg-black/48"></div>
+          <article role="dialog" class="absolute top-1/2 left-1/2 flex max-h-[800px] w-[512px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+            <header class="flex items-start gap-3 px-5 pt-5"><div class="min-w-0 flex-1"><p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Minha colinha</p><h3 class="mt-1 text-xl font-black">Escolha seu estadual</h3><p class="mt-1 text-sm text-[var(--campaign-muted)]">A linha de deputado estadual será preenchida na hora.</p></div><button aria-label="Fechar" class="size-11 text-2xl text-[var(--campaign-muted)]">×</button></header>
+            <div class="min-h-0 flex-1 overflow-y-auto px-5 pt-4 pb-5"><div class="mx-auto w-[236px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow"><div class="colinha"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Colinha oficial com a linha de deputado estadual vazia" /></div></div><label class="mt-4 block text-sm font-bold">Seu estadual</label><button class="select mt-2"><span class="text-stone-500">Escolha um nome</span><span class="ml-auto">⌄</span></button><p class="mt-4 rounded-lg bg-[var(--campaign-cream)] p-3 text-xs leading-5 text-[var(--campaign-muted)]"><strong class="block text-black">Escolha um estadual para baixar.</strong>A linha vazia será preenchida com o nome e os cinco dígitos.</p><p class="mt-3 text-xs leading-5 text-[var(--campaign-muted)]">A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é solicitado.</p></div>
+            <footer class="flex gap-3 border-t border-[var(--campaign-line)] px-5 py-4"><button class="secondary">Cancelar</button><button class="primary" disabled>Baixar minha colinha</button></footer>
+          </article>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-emerald-300 uppercase">Cena 02 · mobile 390 × 844 · vazio</p>
+        <h2 class="mt-1 text-xl font-black">Drawer · arte inteira, sem preenchimento</h2>
+        <div class="stage-shadow relative mt-5 h-[844px] w-[390px] max-w-full overflow-hidden rounded-[24px] bg-[var(--campaign-cream)] text-black"><div class="absolute inset-0 bg-black/50"></div>
+          <article class="absolute inset-0 flex flex-col overflow-hidden rounded-t-xl bg-white"><div class="flex h-3 shrink-0 items-end justify-center"><span class="h-1 w-24 rounded-full bg-[var(--campaign-band)]"></span></div><header class="flex shrink-0 items-start gap-3 px-5 pt-5"><div class="min-w-0 flex-1"><p class="text-[10px] font-black text-[var(--pt-red)] uppercase">Minha colinha</p><h3 class="mt-1 text-lg font-black">Escolha seu estadual</h3></div><button class="size-11 text-2xl text-[var(--campaign-muted)]">×</button></header>
+            <div class="min-h-0 flex-1 overflow-hidden px-5 pt-3 pb-4"><div class="mx-auto w-[248px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow"><div class="colinha"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Colinha oficial vazia" /></div></div><label class="mt-3 block text-sm font-bold">Seu estadual</label><button class="select mt-2"><span class="text-stone-500">Escolha um nome</span><span class="ml-auto">⌄</span></button><p class="mt-3 rounded-lg bg-[var(--campaign-cream)] p-3 text-xs leading-5 text-[var(--campaign-muted)]"><strong class="block text-black">Escolha um estadual para baixar.</strong>A linha vazia será preenchida com o nome e os cinco dígitos.</p></div>
+            <footer class="border-t border-[var(--campaign-line)] px-5 py-4"><button class="primary w-full" disabled>Baixar minha colinha</button></footer>
+          </article>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-red-300 uppercase">Cena 03 · opção A recomendada · desktop 1280</p>
+        <h2 class="mt-1 text-xl font-black">Linha no mesmo idioma visual das linhas fixas</h2>
+        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">A base continua sendo o JPEG. Na faixa branca da segunda linha, o rótulo é reposto à esquerda e JULIO PINHEIRO entra à direita; os cinco dígitos pousam nas caixas existentes.</p>
+        <div class="stage-shadow mt-5 grid max-w-[1280px] gap-8 rounded-2xl bg-[var(--campaign-cream)] p-8 text-black lg:grid-cols-[430px_1fr]">
+          <div class="mx-auto w-[405px] max-w-full overflow-hidden rounded-xl border border-black/10 shadow-2xl"><div class="colinha"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Colinha oficial preenchida com Julio Pinheiro 13999" /><span class="state-mask"></span><span class="state-copy"><span class="state-office">DEPUTADO ESTADUAL</span><span class="state-name">JULIO PINHEIRO</span></span><span class="digit-overlay d1">1</span><span class="digit-overlay d2">3</span><span class="digit-overlay d3">9</span><span class="digit-overlay d4">9</span><span class="digit-overlay d5">9</span></div></div>
+          <div class="flex flex-col justify-center"><p class="text-xs font-black tracking-[.1em] text-[var(--pt-red)] uppercase">Minha colinha · opção A</p><h3 class="mt-1 text-2xl font-black">Pronta para levar com você</h3><p class="mt-2 max-w-lg text-sm leading-6 text-[var(--campaign-muted)]">Confira o estadual escolhido. As demais escolhas já vêm preenchidas na imagem oficial — sem retexto, sem novo topo e sem novos selos.</p><button class="select mt-5 max-w-md font-bold"><span>Julio Pinheiro</span><span class="ml-auto text-xs text-[var(--campaign-muted)]">13999 · Trocar</span></button><div class="mt-5 max-w-md rounded-lg bg-white p-4 ring-1 ring-[var(--campaign-line)]"><p class="text-sm font-bold">Linha conferida</p><p class="mt-1 text-sm text-[var(--campaign-muted)]">DEPUTADO ESTADUAL · JULIO PINHEIRO · 13999</p></div><button class="primary mt-5 max-w-md">Baixar minha colinha</button><p class="mt-3 max-w-md text-xs leading-5 text-[var(--campaign-muted)]">A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é solicitado.</p></div>
+        </div>
+      </section>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-red-300 uppercase">Cena 04 · opção A · mobile 390 × 844</p>
+        <h2 class="mt-1 text-xl font-black">Preenchida e pronta para baixar</h2>
+        <div class="stage-shadow relative mt-5 h-[844px] w-[390px] max-w-full overflow-hidden rounded-[24px] bg-[var(--campaign-cream)] text-black"><div class="absolute inset-0 bg-black/50"></div><article class="absolute inset-0 flex flex-col overflow-hidden bg-white"><div class="flex h-3 shrink-0 items-end justify-center"><span class="h-1 w-24 rounded-full bg-[var(--campaign-band)]"></span></div><header class="flex shrink-0 items-start gap-3 px-5 pt-5"><div class="min-w-0 flex-1"><p class="text-[10px] font-black text-[var(--pt-red)] uppercase">Minha colinha</p><h3 class="mt-1 text-lg font-black">Pronta para baixar</h3></div><button class="size-11 text-2xl text-[var(--campaign-muted)]">×</button></header><div class="min-h-0 flex-1 overflow-y-auto px-5 pt-3 pb-4"><div class="mx-auto w-[300px] overflow-hidden rounded-lg border border-[var(--campaign-line)] shadow"><div class="colinha"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Colinha oficial preenchida com Julio Pinheiro 13999" /><span class="state-mask"></span><span class="state-copy"><span class="state-office">DEPUTADO ESTADUAL</span><span class="state-name">JULIO PINHEIRO</span></span><span class="digit-overlay d1">1</span><span class="digit-overlay d2">3</span><span class="digit-overlay d3">9</span><span class="digit-overlay d4">9</span><span class="digit-overlay d5">9</span></div></div><button class="select mt-4 font-bold"><span>Julio Pinheiro</span><span class="ml-auto text-xs text-[var(--campaign-muted)]">13999 · Trocar</span></button><div class="mt-3 rounded-lg bg-white p-3 ring-1 ring-[var(--campaign-line)]"><p class="text-sm font-bold">Linha conferida</p><p class="mt-1 text-xs text-[var(--campaign-muted)]">DEPUTADO ESTADUAL · JULIO PINHEIRO · 13999</p></div></div><footer class="border-t border-[var(--campaign-line)] px-5 py-4"><button class="primary w-full">Baixar minha colinha</button></footer></article></div>
+      </section>
+
+      <section class="mt-14">
+        <p class="text-[11px] font-black tracking-[.12em] text-amber-300 uppercase">Cena 05 · escolha do gate · A × B</p>
+        <h2 class="mt-1 text-xl font-black">Duas leituras para a única linha nova</h2>
+        <p class="mt-1 max-w-4xl text-xs leading-5 text-zinc-500">Recomendação: A. A variante B conserva o rótulo original, mas força a leitura “JULIO PINHEIRO DEPUTADO ESTADUAL”.</p>
+        <div class="mt-5 grid gap-6 lg:grid-cols-2">
+          <article class="rounded-2xl border-2 border-emerald-500 bg-white p-5 text-black shadow-xl"><div class="flex items-start justify-between gap-3"><div><p class="text-[11px] font-black text-emerald-800 uppercase">Opção A · recomendada</p><h3 class="mt-1 text-lg font-black">Rótulo à esquerda + nome à direita</h3></div><span class="rounded-full bg-emerald-700 px-3 py-1 text-[10px] font-black text-white">RECOMENDADA</span></div><div class="mx-auto mt-5 w-[360px] max-w-full overflow-hidden rounded-lg border"><div class="colinha"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Opção A" /><span class="state-mask"></span><span class="state-copy"><span class="state-office">DEPUTADO ESTADUAL</span><span class="state-name">JULIO PINHEIRO</span></span><span class="digit-overlay d1">1</span><span class="digit-overlay d2">3</span><span class="digit-overlay d3">9</span><span class="digit-overlay d4">9</span><span class="digit-overlay d5">9</span></div></div><p class="mt-4 text-sm leading-6 text-[var(--campaign-muted)]">Repete a sintaxe de “DEPUTADO FEDERAL Jorge Solla” e das demais linhas: cargo primeiro, nome em vermelho depois.</p></article>
+          <article class="rounded-2xl border border-zinc-700 bg-white p-5 text-black shadow-xl"><div><p class="text-[11px] font-black text-stone-500 uppercase">Variante B · secundária</p><h3 class="mt-1 text-lg font-black">Nome no vão à esquerda do rótulo original</h3></div><div class="mx-auto mt-5 w-[360px] max-w-full overflow-hidden rounded-lg border"><div class="colinha"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Variante B" /><span class="state-name-b">JULIO PINHEIRO</span><span class="digit-overlay d1">1</span><span class="digit-overlay d2">3</span><span class="digit-overlay d3">9</span><span class="digit-overlay d4">9</span><span class="digit-overlay d5">9</span></div></div><p class="mt-4 text-sm leading-6 text-[var(--campaign-muted)]">Preserva cada pixel do rótulo já impresso, porém inverte a ordem visual e aperta o nome.</p></article>
+        </div>
+      </section>
+
+      <section class="mt-14 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+        <p class="text-[11px] font-black tracking-[.12em] text-sky-300 uppercase">Cena 06 · detalhe tipográfico · conferência</p>
+        <h2 class="mt-1 text-xl font-black">Linha fixa da arte × linha preenchida</h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-zinc-400">O alvo é equivalência de cor, peso, tamanho e linha de base — não uma aproximação “parecida”. A face pesada exata não está disponível no navegador deste artefato.</p>
+        <div class="mt-6 grid gap-5 lg:grid-cols-2">
+          <figure class="m-0 min-w-0 rounded-xl bg-white p-4 text-black"><figcaption class="mb-3 text-[11px] font-black tracking-wide text-stone-500 uppercase">Referência fixa · pixels do JPEG</figcaption><div class="line-crop rounded-lg border"><img style="top:-520px" src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Linha fixa Deputado Federal Jorge Solla" /></div><p class="mt-3 text-xs text-stone-500">DEPUTADO FEDERAL · Jorge Solla · 1313</p></figure>
+          <figure class="m-0 min-w-0 rounded-xl border-2 border-amber-500 bg-white p-4 text-black"><figcaption class="mb-3 flex items-center justify-between gap-2 text-[11px] font-black tracking-wide text-amber-800 uppercase"><span>Alvo novo · opção A</span><span class="rounded-full bg-amber-100 px-2 py-1">NEEDS ASSET (fonte)</span></figcaption><div class="line-crop rounded-lg border"><div class="colinha" style="top:-590px"><img src="cards-colinha-ui-design-assets/modelo-colinha.jpeg" alt="Linha preenchida Deputado Estadual Julio Pinheiro" /><span class="state-mask"></span><span class="state-copy"><span class="state-office">DEPUTADO ESTADUAL</span><span class="state-name">JULIO PINHEIRO</span></span><span class="digit-overlay d1">1</span><span class="digit-overlay d2">3</span><span class="digit-overlay d3">9</span><span class="digit-overlay d4">9</span><span class="digit-overlay d5">9</span></div></div><p class="mt-3 text-xs text-stone-500">DEPUTADO ESTADUAL · JULIO PINHEIRO · 13999</p></figure>
+        </div>
+      </section>
+
+      <aside class="mt-14 border-t border-zinc-800 pt-8 text-xs leading-5 text-zinc-500">
+        <p><strong class="text-zinc-300">Base única:</strong> <code>cards-colinha-ui-design-assets/modelo-colinha.jpeg</code>, o JPEG 900×1600 entregue e aprovado. Topo, linhas fixas, linha legal, caixas e selos vêm somente dele.</p>
+        <p class="mt-2"><strong class="text-amber-300">NEEDS ASSET (fonte):</strong> a face pesada exata usada nos nomes e dígitos da arte não existe no navegador do artefato. O port deve provar a equivalência lado a lado; este gate decide composição e geometria.</p>
+        <p class="mt-2"><strong class="text-zinc-300">Decisão humana:</strong> A (recomendada) redesenha apenas a faixa branca do rótulo da segunda linha; B mantém o rótulo impresso e põe o nome à esquerda. Nada além dessa linha muda.</p>
+      </aside>
+    </main>
+  </body>
+</html>
