@@ -2,10 +2,11 @@
 
 Status: rascunho
 Atualizado em: 2026-09-24
-Issue: (a registrar)
+Issue: #1313
 Priority: P3
 Impeccable: B — ajuste de encaixe do shell de filtros existente (não é fluxo novo)
 Appetite: ~2h eng (fill-in)
+Design UI: docs/plans/omnibox-limpar-mobile-ui-design.html
 
 ## Intenção
 

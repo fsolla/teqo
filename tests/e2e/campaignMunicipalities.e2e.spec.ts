@@ -1041,6 +1041,80 @@ test.describe('Municípios — filtro e cards sem moldura no celular (B184)', ()
     await expect(field).toHaveCSS('border-top-width', '1px')
     await expect(page.getByRole('button', { name: 'Limpar', exact: true })).toBeVisible()
   })
+
+  /**
+   * C221 (2026-09-24): the shared chassis must keep the clear X on the field's
+   * own line when the search chip is long. At 390 the field content is ~342px,
+   * so chip + the fixed 8rem input + the 36px X no longer share one wrapping
+   * row: pre-fix the field grew to 74px here (the measured RED) and, for chips
+   * in the ~166–208px window, the X lands ALONE at the left (the reported
+   * shot). The long query makes the wrap deterministic on any font metric (the
+   * chip truncates at `max-w-full` and the fixed input can never share that
+   * line), so the height/centering RED does not depend on a calibrated chip
+   * width; the right-edge assertion pins the fix's anchoring — pre-fix, with
+   * this query, the X can also land at the right of the second row.
+   */
+  test('chip de busca longo não empurra o X de limpar para uma linha órfã (C221)', async ({
+    campaign,
+    page,
+  }) => {
+    const longQuery = 'município muito distante da capital com nome bem comprido'
+    await page.goto(`${campaign.baseURL}/campanha/municipios?q=${encodeURIComponent(longQuery)}`)
+    // C106 — dynamic pages stream a transient hidden `#S:*` copy of the shell.
+    await waitForStreamSettled(page)
+
+    const omniboxInput = page.getByRole('combobox', { name: 'Filtrar municípios' })
+    const field = omniboxInput.locator('..')
+    await expect(page.getByRole('button', { name: `Remover Busca: ${longQuery}` })).toBeVisible()
+    const clearX = page.getByRole('button', { name: 'Limpar', exact: true })
+    await expect(clearX).toBeVisible()
+
+    // The field stays one dense line (B196: the bar is 44–48px; the field
+    // itself ~40px). The wrapped X pushed it to 74px in the measured RED.
+    await expect
+      .poll(async () => (await field.boundingBox())!.height, { timeout: 30_000 })
+      .toBeLessThanOrEqual(48)
+
+    // The X is anchored to the field's right edge and centered on the field —
+    // pre-fix, once the field wraps, it leaves both invariants (alone at the
+    // left in the ~166–208px chip window, or on the second row beside the
+    // grown input).
+    const geometry = async () => {
+      const fieldBox = (await field.boundingBox())!
+      const xBox = (await clearX.boundingBox())!
+      return {
+        rightInset: fieldBox.x + fieldBox.width - (xBox.x + xBox.width),
+        centerOffset: Math.abs(xBox.y + xBox.height / 2 - (fieldBox.y + fieldBox.height / 2)),
+      }
+    }
+    await expect
+      .poll(async () => (await geometry()).rightInset, { timeout: 30_000 })
+      .toBeLessThanOrEqual(16)
+    await expect
+      .poll(async () => (await geometry()).centerOffset, { timeout: 30_000 })
+      .toBeLessThanOrEqual(4)
+
+    // The lane is reserved, not improvised: the input's right edge stops
+    // before the X (the artifact's scene 02 — "a reserva final é fixa, não um
+    // espaçador no fluxo"), so typed text never runs under the clear button.
+    await expect
+      .poll(
+        async () => {
+          const inputBox = (await omniboxInput.boundingBox())!
+          const xBox = (await clearX.boundingBox())!
+          return inputBox.x + inputBox.width <= xBox.x
+        },
+        { timeout: 30_000 },
+      )
+      .toBe(true)
+
+    // Desktop keeps the framed field and the text "Limpar" — the mobile
+    // anchoring never leaks over `md`.
+    await page.setViewportSize({ width: 1280, height: 900 })
+    await expect(page.getByText('Filtrar municípios', { exact: true })).toBeVisible()
+    await expect(field).toHaveCSS('border-top-width', '1px')
+    await expect(page.getByRole('button', { name: 'Limpar', exact: true })).toBeVisible()
+  })
 })
 
 /**
