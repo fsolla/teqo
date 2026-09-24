@@ -19,7 +19,8 @@ type TranscriptSegment = {
  * C200 — the clickable transcript line shared by the plain C199 list, the
  * grouped C200 blocks and the C216 web detail: seeks the player to the segment
  * and renders the search highlight. `variant` keeps the approved
- * paddings/sizes without a twin.
+ * paddings/sizes without a twin — the web artifact marks the active segment
+ * with the red left border while the recordings keep the neutral fill.
  */
 export const CampaignTranscriptSegmentButton = ({
   segment,
@@ -29,7 +30,7 @@ export const CampaignTranscriptSegmentButton = ({
 }: {
   segment: TranscriptSegment
   active: boolean
-  variant?: 'plain' | 'grouped'
+  variant?: 'plain' | 'grouped' | 'web'
   onSeek: (seconds: number) => void
 }) => (
   <button
@@ -39,7 +40,7 @@ export const CampaignTranscriptSegmentButton = ({
     className={cn(
       'grid w-full grid-cols-[3.25rem_1fr] gap-3 text-left transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
       variant === 'grouped' ? 'px-3 py-2.5' : 'rounded-lg px-2 py-1.5',
-      active && 'bg-muted',
+      active && (variant === 'web' ? 'border-l-2 border-primary bg-primary/[0.08]' : 'bg-muted'),
     )}
   >
     <span

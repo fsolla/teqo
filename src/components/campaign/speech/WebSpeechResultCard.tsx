@@ -1,4 +1,4 @@
-import { VideoIcon } from 'lucide-react'
+import { PlayIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
@@ -51,6 +51,11 @@ export const WebSpeechResultCard = ({ speech }: { speech: WebSpeechListItemViewM
         <span className="pointer-events-none absolute left-2 top-2 rounded bg-black/65 px-2 py-1 text-[11px] text-white">
           {speech.platform.label}
         </span>
+        {thumbnailUrl ? (
+          <span className="pointer-events-none absolute inset-0 grid place-items-center">
+            <PlayIcon className="size-6 text-white drop-shadow" aria-hidden="true" />
+          </span>
+        ) : null}
       </div>
 
       <div className="min-w-0">

@@ -223,6 +223,10 @@ Aplicados na sessão (não reabrir): extração de `withSeekQuery` (os dois href
 | D2  | Bytes MP4/MP3 de fixture copiados entre os int specs de fala web (2 sites)                       | simplify/reuse   | 2     | defer_trigger  | defer — gatilho: 3º spec de fala web precisar dos bytes                                         |
 | D3  | `firstParam` idêntico em `acervoSource`/`acervoListSort` (2 linhas)                              | simplify/quality | 1     | cheap_polish   | descartar (camadas impedem dono comum; custa mais que a cópia)                                  |
 
+## Crítica final do designer (trigger c, 2026-09-24)
+
+`certificado (tier primário — openai/gpt-5.6-sol)`. A primeira crítica encontrou 5 bloqueantes mecânicos (painel desktop da barra, ordem das facetas da web, atribuição inline no mobile, marcador ativo do segmento, vazio da cena 04) + 1 não-bloqueante (play overlay na capa); todos aplicados e reconfirmados sem bloqueante novo. O mobile do omnibox segue o B184 do shell (barra sticky sem borda) — a cena 03 do artefato foi corrigida pelo próprio designer para refletir o shell, sem fork. O play overlay e a variante `web` do segmento (`border-l-2 border-primary`) são o delta visual desta entrega na superfície compartilhada.
+
 ## Self-score de decision-quality
 
 **4,5/5.**
