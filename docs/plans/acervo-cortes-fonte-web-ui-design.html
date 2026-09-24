@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C217 · Cortes de falas na internet</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-destructive: var(--destructive);
+        --radius-md: 0.375rem;
+        --radius-lg: 0.5rem;
+        --radius-xl: 0.75rem;
+      }
+      [data-theme='campaign'] {
+        --background: #fff;
+        --foreground: #1c1917;
+        --card: #fff;
+        --primary: #c51414;
+        --primary-foreground: #fff;
+        --secondary: #f5f5f4;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --border: rgb(28 25 23 / 12%);
+        --input: #d6d3d1;
+        --destructive: #b42318;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      .grid-bg {
+        background-image: radial-gradient(rgb(28 25 23 / 8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame {
+        box-shadow: 0 18px 54px rgb(28 25 23 / 10%);
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.8rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+      }
+      .btn-p {
+        background: #c51414;
+        color: #fff;
+      }
+      .btn-o {
+        border: 1px solid #d6d3d1;
+        background: #fff;
+      }
+      .btn-g {
+        background: transparent;
+      }
+      .ico {
+        width: 1rem;
+        height: 1rem;
+        stroke-width: 2;
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.2rem 0.55rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+      }
+      .field {
+        width: 100%;
+        min-height: 2.75rem;
+        border: 1px solid #d6d3d1;
+        border-radius: 0.5rem;
+        background: #fff;
+        padding: 0.65rem 0.75rem;
+        font-size: 0.875rem;
+      }
+      .step {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 0.5rem;
+        padding: 0.7rem;
+      }
+      .seg {
+        display: grid;
+        grid-template-columns: 3rem 1fr;
+        gap: 0.75rem;
+        width: 100%;
+        border-radius: 0.5rem;
+        padding: 0.5rem;
+        text-align: left;
+      }
+      .selected {
+        border-left: 2px solid #c51414;
+        background: rgb(197 20 20 / 8%);
+      }
+    </style>
+  </head>
+  <body class="grid-bg min-h-screen bg-[#efeeec] text-foreground antialiased">
+    <svg class="absolute size-0 overflow-hidden" aria-hidden="true">
+      <symbol id="play" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m6 4 14 8-14 8z" />
+      </symbol>
+      <symbol id="cut" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="6" cy="7" r="3" />
+        <circle cx="6" cy="17" r="3" />
+        <path d="m8.7 8.3 12.6 6.4M8.7 15.7 21.3 9.3" />
+      </symbol>
+      <symbol id="download" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" />
+      </symbol>
+      <symbol id="copy" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </symbol>
+      <symbol id="share" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="18" cy="5" r="3" />
+        <circle cx="6" cy="12" r="3" />
+        <circle cx="18" cy="19" r="3" />
+        <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4" />
+      </symbol>
+      <symbol id="check" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <path d="m5 12 4 4L19 6" />
+      </symbol>
+      <symbol id="alert" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4m0 4h.01" />
+      </symbol>
+    </svg>
+    <main class="mx-auto flex max-w-[1440px] flex-col gap-14 px-4 py-10 md:px-8">
+      <header class="max-w-3xl">
+        <div class="flex gap-2">
+          <span class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-white"
+            >C217 · gate hi-fi</span
+          ><span class="rounded-full border border-border bg-white px-2.5 py-1 text-xs"
+            >Campanha · Comunicação</span
+          >
+        </div>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">
+          Da fala web ao corte compartilhável
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          O mesmo gesto de corte da Câmara, agora sobre o arquivo espelhado — sem criar outro
+          editor.
+        </p>
+      </header>
+
+      <section aria-labelledby="a">
+        <p class="text-xs font-semibold text-primary">CENA 01</p>
+        <h2 id="a" class="mt-1 text-xl font-semibold">
+          Desktop · detalhe com “Cortar trecho” em destaque
+        </h2>
+        <div class="frame mt-4 rounded-xl border border-border bg-white p-8">
+          <div class="mx-auto max-w-5xl">
+            <a class="text-sm text-muted-foreground">← Falas na internet</a>
+            <div class="mt-5 grid gap-7 lg:grid-cols-[1.2fr_.8fr]">
+              <div>
+                <div
+                  class="relative grid aspect-video place-items-center rounded-xl bg-stone-950 text-white"
+                >
+                  <button class="grid size-16 place-items-center rounded-full bg-white text-black">
+                    <svg class="size-7"><use href="#play" /></svg></button
+                  ><span class="absolute left-4 top-4 rounded bg-black/60 px-2 py-1 text-xs"
+                    >Arquivo espelhado · YouTube</span
+                  >
+                  <div class="absolute inset-x-4 bottom-4 h-1 rounded bg-white/30">
+                    <div class="h-full w-[34%] bg-primary"></div>
+                  </div>
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <button class="btn btn-p">
+                    <svg class="ico"><use href="#cut" /></svg>Cortar trecho</button
+                  ><button class="btn btn-o">
+                    <svg class="ico"><use href="#download" /></svg>Baixar</button
+                  ><button class="btn btn-g">Abrir na origem ↗</button>
+                </div>
+                <p class="mt-2 text-xs text-muted-foreground">
+                  Selecione na transcrição ou ajuste início e fim na janela de corte.
+                </p>
+              </div>
+              <div>
+                <span class="badge bg-red-50 text-primary">YouTube</span>
+                <h3 class="mt-3 text-2xl font-semibold">Título da fala publicada na internet</h3>
+                <p class="mt-2 text-sm text-muted-foreground">Canal/autor · dd/mm/aaaa · —:—</p>
+                <p class="mt-6 text-xs uppercase tracking-wide text-muted-foreground">
+                  Transcrição · clique nas frases
+                </p>
+                <button class="seg mt-2">
+                  <span class="text-xs text-muted-foreground">00:28</span
+                  ><span class="text-sm">Segmento anterior da fala transcrita.</span></button
+                ><button class="seg selected">
+                  <span class="text-xs text-primary">00:42</span
+                  ><span class="text-sm"
+                    >Trecho selecionado para virar um corte baixável e compartilhável.</span
+                  ></button
+                ><button class="seg selected">
+                  <span class="text-xs text-primary">00:56</span
+                  ><span class="text-sm">A seleção continua até o fim desta frase.</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="b">
+        <p class="text-xs font-semibold text-primary">CENA 02</p>
+        <h2 id="b" class="mt-1 text-xl font-semibold">Diálogo existente · mínimo 5 s, sem teto</h2>
+        <div
+          class="frame relative mt-4 min-h-[720px] overflow-hidden rounded-xl border border-border bg-stone-900/40 p-6"
+        >
+          <div class="absolute inset-0 bg-white/45 backdrop-blur-[2px]"></div>
+          <div
+            role="dialog"
+            aria-modal="true"
+            class="relative mx-auto mt-8 max-w-lg rounded-xl border border-border bg-white p-6 shadow-2xl"
+          >
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-lg font-semibold">Cortar vídeo</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  O arquivo sai com o trecho exato — nada antes, nada depois.
+                </p>
+              </div>
+              <button class="text-muted-foreground">×</button>
+            </div>
+            <div class="mt-5 rounded-lg border border-border bg-muted/40 p-3">
+              <div class="flex items-center justify-between gap-3">
+                <span class="font-mono text-sm">00:42 → 01:08</span
+                ><span class="text-xs text-muted-foreground"
+                  >26 s · mínimo 5 s · até o fim da fala</span
+                >
+              </div>
+              <div class="relative mt-4 h-2 rounded-full bg-stone-200">
+                <div class="absolute left-[22%] right-[38%] h-2 rounded-full bg-primary"></div>
+                <span
+                  class="absolute left-[22%] -top-1.5 size-5 -translate-x-1/2 rounded-full border-2 border-primary bg-white"
+                ></span
+                ><span
+                  class="absolute right-[38%] -top-1.5 size-5 translate-x-1/2 rounded-full border-2 border-primary bg-white"
+                ></span>
+              </div>
+              <div class="mt-3 grid grid-cols-2 gap-3">
+                <label class="text-xs font-medium"
+                  >Início<input class="field mt-1 font-mono" value="00:42" readonly /></label
+                ><label class="text-xs font-medium"
+                  >Fim<input class="field mt-1 font-mono" value="01:08" readonly
+                /></label>
+              </div>
+            </div>
+            <label class="mt-4 block text-sm font-medium"
+              >Título<input class="field mt-1.5" value="Título do corte" readonly /></label
+            ><label class="mt-4 block text-sm font-medium"
+              >Descrição<textarea class="field mt-1.5 min-h-24 resize-none" readonly>
+Resumo editável do trecho selecionado.</textarea
+              >
+            </label>
+            <p class="mt-3 rounded-lg border border-border px-3 py-2 text-xs text-muted-foreground">
+              Título e descrição podem ser editados antes de publicar.
+            </p>
+            <div class="mt-5 flex justify-end gap-2">
+              <button class="btn btn-o">Cancelar</button
+              ><button class="btn btn-p">
+                <svg class="ico"><use href="#cut" /></svg>Cortar e publicar
+              </button>
+            </div>
+            <p class="mt-3 text-xs text-muted-foreground">
+              Nada é publicado antes de confirmar. O corte ganha um link /corte/&lt;id&gt;.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="c">
+        <p class="text-xs font-semibold text-primary">CENA 03</p>
+        <h2 id="c" class="mt-1 text-xl font-semibold">
+          Estados estáticos · Processando → Pronto · Falhou
+        </h2>
+        <div class="mt-4 grid gap-4 lg:grid-cols-3">
+          <article class="frame rounded-xl border border-border bg-white p-5">
+            <span class="badge bg-amber-100 text-amber-800">Processando</span>
+            <h3 class="mt-3 font-semibold">Preparando o corte…</h3>
+            <ol class="mt-4 space-y-2">
+              <li class="step">
+                <svg class="ico text-green-700"><use href="#check" /></svg
+                ><span class="text-sm">Arquivo localizado</span
+                ><span class="ml-auto text-xs text-muted-foreground">Concluído</span>
+              </li>
+              <li class="step border-primary/40 bg-primary/5">
+                <span
+                  class="size-4 animate-spin rounded-full border-2 border-stone-300 border-t-primary"
+                ></span
+                ><span class="text-sm">Recortando vídeo</span
+                ><span class="ml-auto text-xs">Em andamento</span>
+              </li>
+              <li class="step text-muted-foreground">
+                <span class="size-2 rounded-full bg-stone-300"></span
+                ><span class="text-sm">Publicando arquivo</span
+                ><span class="ml-auto text-xs">Na fila</span>
+              </li>
+            </ol>
+            <p class="mt-4 border-t pt-3 text-xs text-muted-foreground">
+              Nada fica no ar pela metade.
+            </p>
+          </article>
+          <article class="frame rounded-xl border border-border bg-white p-5">
+            <span class="badge bg-green-100 text-green-800">Pronto</span>
+            <h3 class="mt-3 font-semibold">Seu corte está pronto</h3>
+            <p class="mt-2 text-sm text-muted-foreground">
+              O arquivo já está na biblioteca e o link compartilhável está disponível.
+            </p>
+            <div class="mt-5 flex flex-col gap-2">
+              <button class="btn btn-p">
+                <svg class="ico"><use href="#copy" /></svg>Copiar link</button
+              ><button class="btn btn-o">
+                <svg class="ico"><use href="#download" /></svg>Baixar
+              </button>
+            </div>
+          </article>
+          <article class="frame rounded-xl border border-destructive/30 bg-white p-5">
+            <span class="badge bg-red-100 text-red-800">Falhou</span>
+            <div class="mt-3 flex gap-3">
+              <svg class="size-5 shrink-0 text-destructive"><use href="#alert" /></svg>
+              <div>
+                <h3 class="font-semibold">Não foi possível cortar o trecho</h3>
+                <p class="mt-2 text-sm leading-6 text-muted-foreground">
+                  Nada foi publicado. O mesmo trecho continua selecionado e tentar de novo não cria
+                  duplicata.
+                </p>
+              </div>
+            </div>
+            <button class="btn btn-p mt-5">Tentar novamente</button
+            ><button class="btn btn-o mt-2">Voltar ao acervo</button>
+          </article>
+        </div>
+      </section>
+
+      <section aria-labelledby="d">
+        <p class="text-xs font-semibold text-primary">CENA 04</p>
+        <h2 id="d" class="mt-1 text-xl font-semibold">Biblioteca · origem web visível</h2>
+        <div class="frame mt-4 rounded-xl border border-border bg-white p-8">
+          <div class="mx-auto max-w-4xl">
+            <div class="flex items-end justify-between">
+              <div>
+                <h3 class="text-xl font-semibold">Biblioteca de cortes</h3>
+                <p class="mt-1 text-sm text-muted-foreground">
+                  Cortes prontos e em processamento no mesmo lugar.
+                </p>
+              </div>
+              <button class="btn btn-o">Voltar ao acervo</button>
+            </div>
+            <article class="mt-6 rounded-xl border border-border p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span class="badge bg-green-100 text-green-800">Pronto</span
+                ><span class="badge border border-red-200 bg-red-50 text-primary"
+                  >Origem: YouTube</span
+                ><span class="text-xs text-muted-foreground">Criado em dd/mm/aaaa</span>
+              </div>
+              <h4 class="mt-3 text-sm font-semibold">Título do corte da fala web</h4>
+              <p class="mt-1.5 text-xs text-muted-foreground">Título da fala de origem · 00:26</p>
+              <p class="mt-3 text-sm text-foreground/90">Descrição breve e editável do corte.</p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <button class="btn btn-p">
+                  <svg class="ico"><use href="#copy" /></svg>Copiar link</button
+                ><button class="btn btn-o">
+                  <svg class="ico"><use href="#download" /></svg>Baixar</button
+                ><button class="btn btn-o">
+                  <svg class="ico"><use href="#share" /></svg>WhatsApp</button
+                ><button class="btn btn-g ml-auto">Editar</button>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="e">
+        <p class="text-xs font-semibold text-primary">CENA 05</p>
+        <h2 id="e" class="mt-1 text-xl font-semibold">
+          Página /corte/&lt;id&gt; · unlisted e noindex
+        </h2>
+        <div class="frame mt-4 overflow-hidden rounded-xl border border-border bg-white">
+          <header class="flex h-16 items-center border-b border-border px-8">
+            <img
+              src="../../public/campaign-kit/marca-positiva-completa.png"
+              alt="Jorge Solla 1313 — Mais Saúde, Mais Futuro"
+              class="h-10 w-auto object-contain"
+            />
+          </header>
+          <main class="mx-auto max-w-4xl px-8 py-10">
+            <div
+              class="relative grid aspect-video place-items-center rounded-xl bg-stone-950 text-white"
+            >
+              <button class="grid size-16 place-items-center rounded-full bg-white text-black">
+                <svg class="size-7"><use href="#play" /></svg>
+              </button>
+            </div>
+            <div class="mx-auto max-w-3xl pt-7">
+              <h3 class="text-3xl font-bold tracking-tight">Título do corte compartilhável</h3>
+              <p class="mt-2 text-sm text-muted-foreground">
+                Fala na internet · dd/mm/aaaa · 00:26 · YouTube
+              </p>
+              <p class="mt-5 max-w-[68ch] leading-7">
+                Descrição do trecho, revisada pela assessoria antes da publicação.
+              </p>
+              <div class="mt-7 flex flex-wrap gap-2">
+                <button class="btn btn-p">
+                  <svg class="ico"><use href="#share" /></svg>Compartilhar no WhatsApp</button
+                ><button class="btn btn-o">
+                  <svg class="ico"><use href="#copy" /></svg>Copiar link</button
+                ><button class="btn btn-o">
+                  <svg class="ico"><use href="#download" /></svg>Baixar arquivo (MP4)
+                </button>
+              </div>
+              <footer
+                class="mt-10 border-t border-border pt-4 text-xs leading-5 text-muted-foreground"
+              >
+                <p>Fonte: YouTube · Canal/autor da publicação</p>
+                <p class="mt-1">
+                  Página não listada — o link circula, mas não é indexada nem aparece em buscas.
+                </p>
+              </footer>
+            </div>
+          </main>
+        </div>
+      </section>
+
+      <section aria-labelledby="f">
+        <p class="text-xs font-semibold text-primary">CENA 06</p>
+        <h2 id="f" class="mt-1 text-xl font-semibold">
+          Mobile ~390 · detalhe e card da biblioteca
+        </h2>
+        <div class="mt-4 flex flex-wrap gap-8">
+          <div class="frame w-[390px] overflow-hidden rounded-[28px] border border-border bg-white">
+            <header class="flex h-14 items-center border-b px-4 text-sm font-semibold">
+              ← Detalhe da fala
+            </header>
+            <div class="p-4">
+              <div
+                class="relative grid aspect-video place-items-center rounded-lg bg-stone-950 text-white"
+              >
+                <svg class="size-8"><use href="#play" /></svg
+                ><span class="absolute left-3 top-3 rounded bg-black/60 px-2 py-1 text-[11px]"
+                  >YouTube · espelhado</span
+                >
+              </div>
+              <button class="btn btn-p mt-3 w-full">
+                <svg class="ico"><use href="#cut" /></svg>Cortar trecho
+              </button>
+              <div class="mt-5">
+                <h3 class="text-xl font-semibold">Título da fala publicada</h3>
+                <p class="mt-1 text-xs text-muted-foreground">Canal/autor · dd/mm/aaaa</p>
+              </div>
+              <p class="mt-6 text-xs uppercase text-muted-foreground">
+                Transcrição · toque para selecionar
+              </p>
+              <button class="seg selected mt-2">
+                <span class="text-xs text-primary">00:42</span
+                ><span class="text-sm leading-6">Trecho selecionado para corte.</span></button
+              ><button class="seg selected">
+                <span class="text-xs text-primary">00:56</span
+                ><span class="text-sm leading-6">Continuação da seleção.</span>
+              </button>
+            </div>
+          </div>
+          <div class="frame w-[390px] overflow-hidden rounded-[28px] border border-border bg-white">
+            <header class="flex h-14 items-center border-b px-4">
+              <p class="text-sm font-semibold">Biblioteca de cortes</p>
+            </header>
+            <div class="p-4">
+              <article class="rounded-xl border border-border p-4">
+                <div class="flex flex-wrap gap-2">
+                  <span class="badge bg-green-100 text-green-800">Pronto</span
+                  ><span class="badge border border-red-200 bg-red-50 text-primary">YouTube</span>
+                </div>
+                <h3 class="mt-3 text-sm font-semibold">Título do corte da fala web</h3>
+                <p class="mt-1 text-xs text-muted-foreground">Fala de origem · 00:26</p>
+                <button class="btn btn-p mt-4 w-full">
+                  <svg class="ico"><use href="#copy" /></svg>Copiar link
+                </button>
+                <div class="mt-2 grid grid-cols-2 gap-2">
+                  <button class="btn btn-o">
+                    <svg class="ico"><use href="#download" /></svg>Baixar</button
+                  ><button class="btn btn-o">
+                    <svg class="ico"><use href="#share" /></svg>WhatsApp
+                  </button>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
