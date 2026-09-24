@@ -10,6 +10,7 @@ import {
   CONTENT_PIECE_CURATED_FIELDS,
   CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
   CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
+  CONTENT_PIECE_LINK_FAILURE_REASONS,
   CONTENT_PIECE_ORIGINS,
   CONTENT_PIECE_PROCESSING_STATUSES,
   CONTENT_PIECE_STATUSES,
@@ -17,6 +18,7 @@ import {
   CONTENT_PIECE_TITLE_MAX_LENGTH,
   CONTENT_PIECE_TYPES,
   contentPieceCuratedFieldLabels,
+  contentPieceLinkFailureReasonLabels,
   contentPieceOriginLabels,
   contentPieceProcessingStatusLabels,
   contentPieceSearchText,
@@ -67,6 +69,10 @@ const STEP_OPTIONS = CONTENT_PIECE_STEPS.map((value) => ({
 const ORIGIN_OPTIONS = CONTENT_PIECE_ORIGINS.map((value) => ({
   value,
   label: contentPieceOriginLabels[value],
+}))
+const LINK_FAILURE_REASON_OPTIONS = CONTENT_PIECE_LINK_FAILURE_REASONS.map((value) => ({
+  value,
+  label: contentPieceLinkFailureReasonLabels[value],
 }))
 
 /**
@@ -401,6 +407,17 @@ export const ContentPiece: CollectionConfig = {
       admin: {
         readOnly: true,
         description: 'Motivo interno da falha; nunca vai à pessoa com o detalhe cru.',
+      },
+    },
+    {
+      name: 'linkFailureReason',
+      type: 'select',
+      label: 'Motivo da peça-link',
+      options: LINK_FAILURE_REASON_OPTIONS,
+      admin: {
+        readOnly: true,
+        description:
+          'Por que uma peça do Instagram ficou só como link; preenchido pelo processamento.',
       },
     },
     {

@@ -335,6 +335,36 @@ export const contentPieceSearchText = (input: ContentPieceSearchInput): string =
       .join(' '),
   )
 
+/**
+ * C220 — why a piece added by link stayed a peça-link. Closed vocabulary in
+ * product language (the UI only maps the label), persisted by the pipeline on
+ * a `pronto` row: a peça-link is a legitimate outcome, never a failure. The
+ * labels are the gate's verbatim literals.
+ */
+export const CONTENT_PIECE_LINK_FAILURE_REASONS = [
+  'nao-encontrado',
+  'carrossel',
+  'indisponivel',
+  'sem-credencial',
+] as const
+
+export type ContentPieceLinkFailureReason = (typeof CONTENT_PIECE_LINK_FAILURE_REASONS)[number]
+
+export const contentPieceLinkFailureReasonLabels: Record<ContentPieceLinkFailureReason, string> = {
+  'nao-encontrado': 'Link não encontrado entre as mídias recentes do perfil',
+  carrossel: 'Carrossel: sem arquivo único para baixar',
+  indisponivel: 'Instagram indisponível no momento',
+  'sem-credencial': 'Sem credencial do Instagram configurada',
+}
+
+export const isContentPieceLinkFailureReason = (
+  value: unknown,
+): value is ContentPieceLinkFailureReason =>
+  CONTENT_PIECE_LINK_FAILURE_REASONS.includes(value as ContentPieceLinkFailureReason)
+
+/** The honest name of a piece that circulates only by its platform link. */
+export const CONTENT_PIECE_LINK_LABEL = 'Peça-link'
+
 type ContentPieceInstagramLink = {
   origin: 'instagram'
   canonicalUrl: string
@@ -354,8 +384,10 @@ const INSTAGRAM_KINDS = ['p', 'reel', 'reels', 'tv']
 /**
  * Normalizes an Instagram or YouTube link into its canonical form, dropping
  * tracking parameters and hash. The shortcode/video id is the identity, so two
- * pastes of the same post collapse into one `sourceUrl` (unique in the DB).
- * Returns null for any other host — the piece only accepts the two platforms.
+ * pastes of the same post collapse into one `sourceUrl` (unique in the DB) —
+ * including the profile-prefixed spelling the browser copies from the grid
+ * (`/<profile>/reel/<shortcode>/`). Returns null for any other host — the
+ * piece only accepts the two platforms.
  */
 export const parseContentPieceLink = (raw: string | null | undefined): ContentPieceLink | null => {
   const trimmed = (raw ?? '').trim()
@@ -373,7 +405,13 @@ export const parseContentPieceLink = (raw: string | null | undefined): ContentPi
   const segments = url.pathname.split('/').filter(Boolean)
 
   if (host === 'instagram.com') {
-    const [kind, shortcode] = segments
+    // Two accepted spellings: the canonical `/<kind>/<shortcode>/` and the one
+    // the browser copies from the profile, `/<profile>/<kind>/<shortcode>/`.
+    const [first, second, third] = segments
+    const prefixed = segments.length === 3
+    if (prefixed && (first ?? '').toLowerCase() === 'stories') return null
+    const kind = prefixed ? second : first
+    const shortcode = prefixed ? third : second
     if (!kind || !shortcode || !INSTAGRAM_KINDS.includes(kind.toLowerCase())) return null
     const safeShortcode = shortcode.replace(/[^A-Za-z0-9_-]/g, '')
     if (!safeShortcode) return null
@@ -434,6 +472,8 @@ export type ContentPieceViewModel = {
   pieceDateLabel: string | null
   publishedAtLabel: string | null
   failureMessage: string | null
+  linkFailureReason: ContentPieceLinkFailureReason | null
+  linkFailureReasonLabel: string | null
   canRetry: boolean
   isPublished: boolean
   hasFile: boolean
@@ -457,6 +497,7 @@ type ContentPieceViewRecord = {
   pieceDate?: string | null
   publishedAt?: string | null
   error?: string | null
+  linkFailureReason?: string | null
   media?: number | { id: number } | null
 }
 
@@ -495,6 +536,9 @@ export const toContentPieceViewModel = (record: ContentPieceViewRecord): Content
   const status = normalizedStatus(record.status)
   const origin = normalizedOrigin(record.origin)
   const hasFile = mediaIdOf(record.media) !== null
+  const linkFailureReason = isContentPieceLinkFailureReason(record.linkFailureReason)
+    ? record.linkFailureReason
+    : null
 
   return {
     id: record.id,
@@ -515,6 +559,10 @@ export const toContentPieceViewModel = (record: ContentPieceViewRecord): Content
     pieceDateLabel: dateLabelOf(record.pieceDate),
     publishedAtLabel: dateLabelOf(record.publishedAt),
     failureMessage: contentPieceFailureMessage({ error: record.error, step }),
+    linkFailureReason,
+    linkFailureReasonLabel: linkFailureReason
+      ? contentPieceLinkFailureReasonLabels[linkFailureReason]
+      : null,
     canRetry: canRetryContentPiece(processingStatus),
     isPublished: status === 'publicado',
     hasFile,

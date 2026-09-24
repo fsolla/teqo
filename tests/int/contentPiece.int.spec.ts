@@ -1,5 +1,8 @@
 // @vitest-environment node
 
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import type { Payload } from 'payload'
@@ -49,6 +52,11 @@ import {
   reapStaleContentPiece,
   runContentPieceJob,
 } from '@/utilities/content/contentPieceJob'
+import {
+  CONTENT_PIECE_LINK_INSTAGRAM_WINDOW,
+  ContentPieceMediaTooLargeError,
+  resolveContentPieceSource,
+} from '@/utilities/content/contentPieceLink'
 import { loadContentPieceListPageData } from '@/utilities/content/contentPiecePageData'
 import {
   getPublishedContentPieceBySlug,
@@ -60,6 +68,7 @@ import {
   attachContentPieceMedia,
   receiveContentPieceUpload,
 } from '@/utilities/content/contentPieceUpload'
+import type { InstagramPost } from '@/utilities/socialFeed/instagramFeed'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -200,6 +209,48 @@ const catalogStub = async () => ({
   topics: ['saude'] as SpeechTopic[],
   source: 'ai' as const,
 })
+
+const instagramPost = (overrides: Partial<InstagramPost> = {}): InstagramPost => ({
+  id: 'media-1',
+  caption: 'Legenda oficial',
+  mediaType: 'REEL',
+  permalink: 'https://www.instagram.com/reel/ABC123/',
+  mediaUrl: 'https://cdn.example/reel.mp4',
+  timestamp: '2026-09-01T10:00:00+00:00',
+  ...overrides,
+})
+
+/**
+ * C220 — the resolver reads the global for credentials; saving it triggers the
+ * Instagram sync hook, so the tests stub `fetch` to keep the hook off the
+ * network (the hook swallows the failure).
+ */
+const setInstagramSettings = async (configured: boolean): Promise<void> => {
+  const fetchSpy = vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'))
+  try {
+    await payload.updateGlobal({
+      slug: 'social-feed-settings',
+      data: {
+        enabled: true,
+        instagramEnabled: configured,
+        instagramAccessToken: configured ? 'test-token' : '',
+        instagramUserId: configured ? '17841400000000000' : '',
+      },
+      overrideAccess: true,
+    })
+  } finally {
+    fetchSpy.mockRestore()
+  }
+}
+
+const withTempDir = async <T>(run: (tempDir: string) => Promise<T>): Promise<T> => {
+  const tempDir = await mkdtemp(join(tmpdir(), 'content-piece-link-'))
+  try {
+    return await run(tempDir)
+  } finally {
+    await rm(tempDir, { recursive: true, force: true })
+  }
+}
 
 describe('content pieces (C211)', () => {
   let communicator: CampaignUser
@@ -741,6 +792,343 @@ describe('content pieces (C211)', () => {
     })
     expect(resolved.processingStatus).toBe('pronto')
     expect(resolved.media).toBeNull()
+    // YouTube is link-only by design: no reason to explain (C220).
+    expect(resolved.linkFailureReason).toBeNull()
+  })
+
+  describe('C220 — link resolution and the honest peça-link reason', () => {
+    const pieceInput = (piece: {
+      id: number
+      title: string
+      origin: string
+      sourceUrl?: string | null
+    }) => ({
+      id: piece.id,
+      title: piece.title,
+      origin: piece.origin,
+      sourceUrl: piece.sourceUrl,
+      media: null,
+    })
+
+    it('resolves by shortcode, downloads the media and reports no reason', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        title: 'Reel do perfil',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/depjorgesolla/reel/ABC123/',
+      })
+      let receivedMaxResults: number | null = null
+
+      const resolution = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async (args) => {
+            receivedMaxResults = args.maxResults
+            return { username: 'depjorgesolla', posts: [instagramPost()] }
+          },
+          fetchImpl: async () => new Response(Buffer.from('reel-bytes'), { status: 200 }),
+        }),
+      )
+
+      // The declared window is what the resolver asks the feed for (C220 D2).
+      expect(receivedMaxResults).toBe(CONTENT_PIECE_LINK_INSTAGRAM_WINDOW)
+      expect(resolution.linkFailureReason).toBeNull()
+      expect(resolution.suggestedType).toBe('video')
+      expect(resolution.media).toBeTruthy()
+      if (resolution.media) createdMediaIds.add(resolution.media.id)
+
+      const row = await payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(row.media).toBe(resolution.media?.id)
+    })
+
+    it('reports nao-encontrado when the post is not in the window', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/FORA1/',
+      })
+
+      const resolution = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => ({ username: 'depjorgesolla', posts: [instagramPost()] }),
+          fetchImpl: async () => new Response(null, { status: 200 }),
+        }),
+      )
+
+      expect(resolution.media).toBeNull()
+      expect(resolution.linkFailureReason).toBe('nao-encontrado')
+    })
+
+    it('reports carrossel for a carousel and indisponivel for a post without a file', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/CARROSSEL1/',
+      })
+
+      const carousel = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => ({
+            username: 'depjorgesolla',
+            posts: [
+              instagramPost({
+                permalink: 'https://www.instagram.com/reel/CARROSSEL1/',
+                mediaType: 'CAROUSEL_ALBUM',
+                mediaUrl: null,
+              }),
+            ],
+          }),
+          fetchImpl: async () => new Response(null, { status: 200 }),
+        }),
+      )
+      expect(carousel.linkFailureReason).toBe('carrossel')
+
+      const noFile = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => ({
+            username: 'depjorgesolla',
+            posts: [
+              instagramPost({
+                permalink: 'https://www.instagram.com/reel/CARROSSEL1/',
+                mediaType: 'IMAGE',
+                mediaUrl: null,
+              }),
+            ],
+          }),
+          fetchImpl: async () => new Response(null, { status: 200 }),
+        }),
+      )
+      expect(noFile.linkFailureReason).toBe('indisponivel')
+    })
+
+    it('reports indisponivel when the feed or the download fails', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/INDISPONIVEL1/',
+      })
+
+      const feedDown = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => {
+            throw new Error('API down')
+          },
+          fetchImpl: async () => new Response(null, { status: 200 }),
+        }),
+      )
+      expect(feedDown.linkFailureReason).toBe('indisponivel')
+
+      const downloadDown = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => ({
+            username: 'depjorgesolla',
+            posts: [instagramPost({ permalink: 'https://www.instagram.com/reel/INDISPONIVEL1/' })],
+          }),
+          fetchImpl: async () => new Response('nope', { status: 500 }),
+        }),
+      )
+      expect(downloadDown.linkFailureReason).toBe('indisponivel')
+    })
+
+    it('reports sem-credencial without the configured credential', async () => {
+      await setInstagramSettings(false)
+      const { piece } = await createPiece({
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/SEMCREDENCIAL1/',
+      })
+
+      const resolution = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => {
+            throw new Error('must not be called')
+          },
+          fetchImpl: async () => new Response(null, { status: 200 }),
+        }),
+      )
+
+      expect(resolution.linkFailureReason).toBe('sem-credencial')
+    })
+
+    it('keeps our 4 GB ceiling as a failure and maps a broken stream to indisponivel', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/TETO1/',
+      })
+      const matchingFeed = async () => ({
+        username: 'depjorgesolla',
+        posts: [instagramPost({ permalink: 'https://www.instagram.com/reel/TETO1/' })],
+      })
+
+      const streamError = (error: Error) =>
+        new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.error(error)
+            },
+          }),
+          { status: 200 },
+        )
+
+      await expect(
+        withTempDir((tempDir) =>
+          resolveContentPieceSource({
+            payload,
+            piece: pieceInput(piece),
+            tempDir,
+            loadFeed: matchingFeed,
+            fetchImpl: async () => streamError(new ContentPieceMediaTooLargeError()),
+          }),
+        ),
+      ).rejects.toBeInstanceOf(ContentPieceMediaTooLargeError)
+
+      const broken = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: matchingFeed,
+          fetchImpl: async () => streamError(new Error('socket reset')),
+        }),
+      )
+      expect(broken.linkFailureReason).toBe('indisponivel')
+    })
+
+    it('persists the reason from the job and clears it on attach and retry', async () => {
+      const { piece } = await createPiece({
+        title: 'Peça com motivo',
+        type: 'foto',
+        processingStatus: 'processando',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/MOTIVO1/',
+      })
+
+      await runContentPieceJob(payload, piece.id, {
+        catalog: catalogStub,
+        resolveSource: async () => ({
+          media: null,
+          localPath: null,
+          caption: null,
+          linkFailureReason: 'carrossel',
+        }),
+      })
+
+      const row = await payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(row.processingStatus).toBe('pronto')
+      expect(row.linkFailureReason).toBe('carrossel')
+      expect(row.error).toBeNull()
+
+      // Attaching the original clears the reason (the file is the resolution).
+      getCampaignUserMock.mockResolvedValue(communicator)
+      const bytes = Buffer.from('original-bytes')
+      await attachContentPieceMedia({
+        payload,
+        actor: communicator,
+        piece: { id: piece.id, title: piece.title, type: 'foto', media: null },
+        filename: 'original.jpg',
+        body: new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(bytes)
+            controller.close()
+          },
+        }),
+        contentLength: bytes.length,
+        startJob: () => undefined,
+      })
+
+      const attached = await payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(attached.linkFailureReason).toBeNull()
+      expect(attached.media).toBeTruthy()
+      if (typeof attached.media === 'number') createdMediaIds.add(attached.media)
+
+      // A retry on a failed piece also clears a stale reason.
+      await payload.update({
+        collection: 'contentPiece',
+        id: piece.id,
+        data: {
+          processingStatus: 'falhou',
+          step: 'extraindo',
+          error: 'boom',
+          linkFailureReason: 'indisponivel',
+        },
+        overrideAccess: true,
+      })
+      const retried = await retryContentPieceForActor({ contentPieceId: piece.id })
+      expect(retried.processingStatus).toBe('processando')
+      expect(retried.linkFailureReason).toBeNull()
+    })
+
+    it('keeps the reason null when the resolution brings the media', async () => {
+      const { piece } = await createPiece({
+        type: 'foto',
+        processingStatus: 'processando',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/MEDIA1/',
+      })
+      const media = await createMedia('resolvida.mp4')
+
+      await runContentPieceJob(payload, piece.id, {
+        catalog: catalogStub,
+        resolveSource: async () => ({
+          media,
+          localPath: null,
+          caption: 'Legenda',
+          linkFailureReason: null,
+        }),
+      })
+
+      const row = await payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(row.processingStatus).toBe('pronto')
+      expect(row.linkFailureReason).toBeNull()
+    })
   })
 
   it('refuses a duplicate link and an invalid one', async () => {

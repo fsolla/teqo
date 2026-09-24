@@ -278,6 +278,7 @@ export const attachContentPieceMedia = async ({
           processingStatus: processing ? 'processando' : 'pronto',
           ...(processing ? { step: 'extraindo' } : {}),
           error: null,
+          linkFailureReason: null,
         },
         depth: 0,
         user: actor,

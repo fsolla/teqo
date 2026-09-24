@@ -278,6 +278,7 @@ export const runContentPieceJob = async (
         processingStatus: 'pronto',
         step: null,
         error: null,
+        linkFailureReason: source.linkFailureReason,
         ...(durationSeconds !== null ? { durationSeconds } : {}),
       }
 

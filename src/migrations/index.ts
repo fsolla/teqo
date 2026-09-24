@@ -83,6 +83,7 @@ import * as migration_20260923_054145_add_share_link_announcement from './202609
 import * as migration_20260923_172437_add_content_events from './20260923_172437_add_content_events';
 import * as migration_20260923_190414_add_content_event_variant from './20260923_190414_add_content_event_variant';
 import * as migration_20260924_042028_add_web_speech_origin from './20260924_042028_add_web_speech_origin';
+import * as migration_20260924_045625_add_content_piece_link_failure_reason from './20260924_045625_add_content_piece_link_failure_reason';
 
 export const migrations = [
   {
@@ -509,5 +510,10 @@ export const migrations = [
     up: migration_20260924_042028_add_web_speech_origin.up,
     down: migration_20260924_042028_add_web_speech_origin.down,
     name: '20260924_042028_add_web_speech_origin'
+  },
+  {
+    up: migration_20260924_045625_add_content_piece_link_failure_reason.up,
+    down: migration_20260924_045625_add_content_piece_link_failure_reason.down,
+    name: '20260924_045625_add_content_piece_link_failure_reason'
   },
 ];

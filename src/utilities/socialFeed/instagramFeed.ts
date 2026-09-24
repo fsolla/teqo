@@ -7,6 +7,7 @@ import type { Payload } from 'payload'
 
 const INSTAGRAM_API_BASE_URL = process.env.INSTAGRAM_API_BASE_URL ?? 'https://graph.instagram.com'
 
+/** Page ceiling of one `/media` call: `maxResults` beyond it walks cursors. */
 export const INSTAGRAM_MAX_RESULTS_CAP = 50
 
 type InstagramMediaType = 'IMAGE' | 'VIDEO' | 'REEL' | 'CAROUSEL_ALBUM'
@@ -138,14 +139,39 @@ export const pickInstagramThumbnail = (item: {
 }
 
 /**
- * Parses a `/media` response into posts. Throws on a protocol-level violation
- * (no `data` array); individual malformed items are skipped, but an item
- * without an id, a timestamp or a permalink is dropped — it could not be
- * placed in the recency merge nor opened on the platform. A null caption is
- * kept: captionless posts (e.g. grid mosaics) still show with a fallback
- * title so the assessoria can exclude them item by item.
+ * Hard ceiling of pages one feed load may walk (defensive): the Graph API
+ * returns `limit` items per page, so a 500-media window needs 10 — 20 covers
+ * it with room, and a pathological API that always answers a cursor cannot
+ * loop forever.
  */
-export const parseInstagramMediaResponse = (json: unknown): InstagramPost[] => {
+const INSTAGRAM_MAX_MEDIA_PAGES = 20
+
+export type InstagramMediaPage = {
+  posts: InstagramPost[]
+  /** Cursor of the next page; undefined when the API did not offer one. */
+  nextCursor?: string
+}
+
+const nextCursorFrom = (json: unknown): string | undefined => {
+  const paging = (json as { paging?: unknown }).paging
+  if (!paging || typeof paging !== 'object') return undefined
+  const cursors = (paging as { cursors?: unknown }).cursors
+  if (!cursors || typeof cursors !== 'object') return undefined
+  const after = (cursors as { after?: unknown }).after
+  return typeof after === 'string' && after ? after : undefined
+}
+
+/**
+ * Parses one `/media` page into posts plus the cursor of the next page. Throws
+ * on a protocol-level violation (no `data` array); individual malformed items
+ * are skipped, but an item without an id, a timestamp or a permalink is
+ * dropped — it could not be placed in the recency merge nor opened on the
+ * platform. A null caption is kept: captionless posts (e.g. grid mosaics)
+ * still show with a fallback title so the assessoria can exclude them item by
+ * item. Only the cursor is read from `paging`; `paging.next` (which carries
+ * the access token in its URL) is deliberately ignored.
+ */
+export const parseInstagramMediaPage = (json: unknown): InstagramMediaPage => {
   if (!json || typeof json !== 'object') {
     throw new Error('Resposta de mídia do Instagram inválida')
   }
@@ -181,8 +207,12 @@ export const parseInstagramMediaResponse = (json: unknown): InstagramPost[] => {
       thumbnailUrl: pickInstagramThumbnail(rawItem),
     })
   }
-  return posts
+  return { posts, nextCursor: nextCursorFrom(json) }
 }
+
+/** Posts of one `/media` page — the one-page convenience for non-paginating readers. */
+export const parseInstagramMediaResponse = (json: unknown): InstagramPost[] =>
+  parseInstagramMediaPage(json).posts
 
 /**
  * Keeps only the posts whose ids are not excluded, in API order (newest
@@ -200,11 +230,15 @@ const jsonFrom = async (response: Response): Promise<unknown> => response.json()
 /**
  * Fetches the username and the latest media of a Business/Creator profile:
  * `GET /{userId}` for the username, then `GET /{userId}/media` for the posts
- * (permalink, caption, thumbnail, timestamp). On any failure it attempts one
- * token refresh (`refresh_access_token` — only mints/refreshes Instagram
- * Login tokens; page tokens from Facebook Login error out and the caller
- * falls back to the snapshot) and retries once. Throws when the retry also
- * fails so the cached wrapper can fail closed.
+ * (permalink, caption, thumbnail, timestamp). `maxResults` is the TOTAL window
+ * of posts: up to `INSTAGRAM_MAX_RESULTS_CAP` per page, walking the
+ * `paging.cursors.after` cursor while the window is not filled — so a caller
+ * asking for 50 makes exactly one call (the board's contract is untouched) and
+ * a deeper window is an explicit opt-in. On any failure it attempts one token
+ * refresh (`refresh_access_token` — only mints/refreshes Instagram Login
+ * tokens; page tokens from Facebook Login error out and the caller falls back
+ * to the snapshot) and retries once. Throws when the retry also fails so the
+ * cached wrapper can fail closed.
  */
 export const loadInstagramFeed = async ({
   accessToken,
@@ -223,17 +257,30 @@ export const loadInstagramFeed = async ({
     const userJson = (await jsonFrom(userResponse)) as { username?: unknown }
     const username = typeof userJson.username === 'string' ? userJson.username : null
 
-    const mediaParams = new URLSearchParams({
-      fields: MEDIA_FIELDS,
-      limit: String(Math.min(Math.max(maxResults, 1), INSTAGRAM_MAX_RESULTS_CAP)),
-      access_token: token,
-    })
-    const mediaResponse = await fetchImpl(`${baseUrl}/${userId}/media?${mediaParams}`, { signal })
-    if (!mediaResponse.ok) {
-      throw await apiErrorFrom(mediaResponse)
+    const pageSize = Math.min(Math.max(maxResults, 1), INSTAGRAM_MAX_RESULTS_CAP)
+    const posts: InstagramPost[] = []
+    let after: string | undefined
+    for (let page = 0; page < INSTAGRAM_MAX_MEDIA_PAGES; page += 1) {
+      const mediaParams = new URLSearchParams({
+        fields: MEDIA_FIELDS,
+        limit: String(pageSize),
+        access_token: token,
+      })
+      if (after) mediaParams.set('after', after)
+      const mediaResponse = await fetchImpl(`${baseUrl}/${userId}/media?${mediaParams}`, {
+        signal,
+      })
+      if (!mediaResponse.ok) {
+        throw await apiErrorFrom(mediaResponse)
+      }
+
+      const parsed = parseInstagramMediaPage(await jsonFrom(mediaResponse))
+      posts.push(...parsed.posts)
+      if (posts.length >= maxResults || !parsed.nextCursor) break
+      after = parsed.nextCursor
     }
 
-    return { username, posts: parseInstagramMediaResponse(await jsonFrom(mediaResponse)) }
+    return { username, posts: posts.slice(0, maxResults) }
   }
 
   try {

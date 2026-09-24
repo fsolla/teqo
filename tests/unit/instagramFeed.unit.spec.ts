@@ -5,6 +5,7 @@ import {
   INSTAGRAM_MAX_RESULTS_CAP,
   eligibleInstagramPosts,
   loadInstagramFeed,
+  parseInstagramMediaPage,
   parseInstagramMediaResponse,
   pickInstagramThumbnail,
 } from '@/utilities/socialFeed/instagramFeed'
@@ -156,6 +157,35 @@ describe('parseInstagramMediaResponse', () => {
   })
 })
 
+describe('parseInstagramMediaPage', () => {
+  it('reads the after cursor and ignores paging.next (it carries the token)', () => {
+    const page = parseInstagramMediaPage({
+      data: [MEDIA_ITEM('post1')],
+      paging: {
+        cursors: { before: 'before-cursor', after: 'next-cursor' },
+        next: 'https://graph.instagram.com/me/media?access_token=secret&after=next-cursor',
+      },
+    })
+
+    expect(page.posts.map((post) => post.id)).toEqual(['post1'])
+    expect(page.nextCursor).toBe('next-cursor')
+  })
+
+  it('reads a missing or malformed cursor as undefined', () => {
+    expect(parseInstagramMediaPage({ data: [] }).nextCursor).toBeUndefined()
+    expect(parseInstagramMediaPage({ data: [], paging: {} }).nextCursor).toBeUndefined()
+    expect(
+      parseInstagramMediaPage({ data: [], paging: { cursors: {} } }).nextCursor,
+    ).toBeUndefined()
+    expect(
+      parseInstagramMediaPage({ data: [], paging: { cursors: { after: '' } } }).nextCursor,
+    ).toBeUndefined()
+    expect(
+      parseInstagramMediaPage({ data: [], paging: { cursors: { after: 42 } } }).nextCursor,
+    ).toBeUndefined()
+  })
+})
+
 describe('eligibleInstagramPosts', () => {
   const posts: InstagramPost[] = [
     {
@@ -257,6 +287,87 @@ describe('loadInstagramFeed', () => {
     calls.length = 0
     await loadInstagramFeed({ ...args, maxResults: 0 })
     expect(calls[1]).toContain('limit=1')
+  })
+
+  it('makes exactly one media call when the window fits one page (board contract)', async () => {
+    calls.length = 0
+    const result = await loadInstagramFeed({
+      ...args,
+      maxResults: INSTAGRAM_MAX_RESULTS_CAP,
+      fetchImpl: async (input) => {
+        calls.push(input)
+        if (input.includes('/media')) {
+          return fakeResponse({
+            data: Array.from({ length: INSTAGRAM_MAX_RESULTS_CAP }, (_, index) =>
+              MEDIA_ITEM(`post${index}`),
+            ),
+            paging: { cursors: { after: 'cursor-1' } },
+          })
+        }
+        return fakeResponse({ username: 'depjorgesolla' })
+      },
+    })
+
+    expect(result.posts).toHaveLength(INSTAGRAM_MAX_RESULTS_CAP)
+    expect(calls.filter((call) => call.includes('/media'))).toHaveLength(1)
+  })
+
+  it('walks the cursor while the window is not filled', async () => {
+    calls.length = 0
+    const result = await loadInstagramFeed({
+      ...args,
+      maxResults: 3,
+      fetchImpl: async (input) => {
+        calls.push(input)
+        if (input.includes('/media')) {
+          if (input.includes('after=cursor-1')) {
+            return fakeResponse({ data: [MEDIA_ITEM('post3')] })
+          }
+          return fakeResponse({
+            data: [MEDIA_ITEM('post1'), MEDIA_ITEM('post2')],
+            paging: { cursors: { after: 'cursor-1' } },
+          })
+        }
+        return fakeResponse({ username: 'depjorgesolla' })
+      },
+    })
+
+    expect(result.posts.map((post) => post.id)).toEqual(['post1', 'post2', 'post3'])
+    const mediaCalls = calls.filter((call) => call.includes('/media'))
+    expect(mediaCalls).toHaveLength(2)
+    expect(mediaCalls[1]).toContain('after=cursor-1')
+    expect(mediaCalls[1]).toContain('limit=3')
+  })
+
+  it('refreshes once and refetches the whole window when a later page fails', async () => {
+    calls.length = 0
+    let mediaCalls = 0
+    const result = await loadInstagramFeed({
+      ...args,
+      maxResults: 3,
+      fetchImpl: async (input) => {
+        calls.push(input)
+        if (input.includes('/refresh_access_token')) {
+          return fakeResponse({ access_token: 'refreshed-token' })
+        }
+        if (input.includes('/media')) {
+          mediaCalls += 1
+          if (mediaCalls === 2) return fakeResponse({ error: { message: 'boom' } }, false)
+          if (input.includes('after=cursor-1')) {
+            return fakeResponse({ data: [MEDIA_ITEM('post2')] })
+          }
+          return fakeResponse({
+            data: [MEDIA_ITEM('post1')],
+            paging: { cursors: { after: 'cursor-1' } },
+          })
+        }
+        return fakeResponse({ username: 'depjorgesolla' })
+      },
+    })
+
+    expect(result.refreshedAccessToken).toBe('refreshed-token')
+    expect(result.posts.map((post) => post.id)).toEqual(['post1', 'post2'])
+    expect(calls.filter((call) => call.includes('/refresh_access_token'))).toHaveLength(1)
   })
 
   it('refreshes the token once and retries when the media call fails', async () => {

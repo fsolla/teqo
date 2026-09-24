@@ -1299,6 +1299,10 @@ export interface ContentPiece {
    */
   error?: string | null;
   /**
+   * Por que uma peça do Instagram ficou só como link; preenchido pelo processamento.
+   */
+  linkFailureReason?: ('nao-encontrado' | 'carrossel' | 'indisponivel' | 'sem-credencial') | null;
+  /**
    * Título, descrição, transcrição, temas, cidade e instituição normalizados (sem acentos, minúsculas).
    */
   searchText?: string | null;
@@ -2824,6 +2828,7 @@ export interface ContentPieceSelect<T extends boolean = true> {
   processingStatus?: T;
   step?: T;
   error?: T;
+  linkFailureReason?: T;
   searchText?: T;
   curatedFields?: T;
   createdBy?: T;

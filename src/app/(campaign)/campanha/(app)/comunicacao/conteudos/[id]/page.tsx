@@ -18,7 +18,11 @@ import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageC
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
 import { CAMPAIGN_COMMUNICATION_CONTEUDOS } from '@/lib/campaignPaths'
-import { contentPieceOriginLabels, contentPieceTopicLabel } from '@/lib/contentPiece'
+import {
+  CONTENT_PIECE_LINK_LABEL,
+  contentPieceOriginLabels,
+  contentPieceTopicLabel,
+} from '@/lib/contentPiece'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   ContentPieceNotFoundError,
@@ -57,6 +61,38 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
     loadContentPieceFormOptions(payload),
   ])
   const { piece } = data
+
+  // C220 — while the official extraction runs, the ficha shows the three
+  // designed steps (scene 1): the link arrived, the official media is being
+  // looked up (or was found), and the cataloguing follows.
+  const mediaStepDone = piece.step !== null && piece.step !== 'extraindo'
+  const processingSteps =
+    piece.origin === 'instagram' && piece.processingStatus === 'processando' && !piece.hasFile
+      ? [
+          {
+            label: '1. Link recebido',
+            stateLabel: 'Concluído',
+            className: 'rounded-lg border border-green-200 bg-green-50 p-3',
+            stateClassName: 'text-green-800',
+          },
+          {
+            label: '2. Mídia oficial',
+            stateLabel: mediaStepDone ? 'Concluído' : 'Em andamento',
+            className: mediaStepDone
+              ? 'rounded-lg border border-green-200 bg-green-50 p-3'
+              : 'rounded-lg border border-amber-200 bg-amber-50 p-3',
+            stateClassName: mediaStepDone ? 'text-green-800' : 'text-amber-900',
+          },
+          {
+            label: '3. Catalogação',
+            stateLabel: mediaStepDone ? 'Em andamento' : 'Aguardando',
+            className: mediaStepDone
+              ? 'rounded-lg border border-amber-200 bg-amber-50 p-3'
+              : 'rounded-lg border bg-muted p-3 text-muted-foreground',
+            stateClassName: mediaStepDone ? 'text-amber-900' : '',
+          },
+        ]
+      : null
 
   return (
     <CampaignPageShell aria-label="Peça da Central de Conteúdos">
@@ -117,7 +153,11 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
               />
             ) : (
               <div className="grid aspect-video place-items-center p-4 text-center text-xs font-semibold text-muted-foreground">
-                {piece.origin === 'arquivo' ? 'Sem arquivo' : 'Peça-link'}
+                {piece.origin === 'arquivo'
+                  ? 'Sem arquivo'
+                  : piece.processingStatus === 'processando'
+                    ? 'Buscando a mídia no perfil oficial…'
+                    : CONTENT_PIECE_LINK_LABEL}
               </div>
             )}
           </div>
@@ -162,7 +202,20 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
             ) : null}
           </dl>
 
-          {!piece.hasFile ? (
+          {!piece.hasFile && piece.linkFailureReasonLabel ? (
+            <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-4">
+              <p className="text-xs font-semibold text-amber-950">
+                Por que o arquivo não foi baixado
+              </p>
+              <p className="mt-2 text-sm font-medium text-amber-950">
+                {piece.linkFailureReasonLabel}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-amber-900">
+                A peça continua disponível pelo link.
+              </p>
+              <ContentPieceAttachFileButton contentPieceId={piece.id} className="mt-3" />
+            </div>
+          ) : !piece.hasFile && piece.processingStatus !== 'processando' ? (
             <div className="mt-5 rounded-lg bg-muted p-3">
               <p className="text-xs leading-5 text-muted-foreground">
                 Sem mídia oficial para extrair. A peça circula pelo link; se quiser arquivar o
@@ -181,18 +234,53 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
               <ContentPieceRetryButton contentPieceId={piece.id} className="mt-2" />
             </div>
           ) : piece.processingStatus === 'processando' ? (
-            <div className="mt-5 rounded-lg bg-muted p-3">
-              <p className="text-xs leading-5 text-muted-foreground">
-                {piece.step === 'transcrevendo'
-                  ? 'Transcrevendo e catalogando…'
-                  : 'Preparando a peça…'}{' '}
-                A ficha fica disponível para revisão assim que terminar.
-              </p>
-            </div>
+            piece.origin === 'instagram' && !piece.hasFile ? (
+              <div className="mt-5 rounded-lg bg-muted p-3">
+                <div className="h-2 overflow-hidden rounded-full bg-background">
+                  <div className="h-full w-1/2 animate-pulse rounded-full bg-primary motion-reduce:animate-none" />
+                </div>
+                <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                  Procurando a publicação no perfil oficial…
+                </p>
+              </div>
+            ) : (
+              <div className="mt-5 rounded-lg bg-muted p-3">
+                <p className="text-xs leading-5 text-muted-foreground">
+                  {piece.step === 'transcrevendo'
+                    ? 'Transcrevendo e catalogando…'
+                    : 'Preparando a peça…'}{' '}
+                  A ficha fica disponível para revisão assim que terminar.
+                </p>
+              </div>
+            )
           ) : null}
         </div>
 
         <div>
+          {processingSteps ? (
+            // The detailed tracker is the desktop scene; mobile keeps the
+            // compact progress box in the media column (design scene 3).
+            <div className="mb-6 hidden rounded-xl border p-5 md:block">
+              <p className="text-sm font-semibold">Processamento da peça</p>
+              <ol className="mt-4 grid grid-cols-3 gap-3 text-xs">
+                {processingSteps.map((step) => (
+                  <li key={step.label} className={step.className}>
+                    <b>{step.label}</b>
+                    <p className={`mt-1 ${step.stateClassName}`}>{step.stateLabel}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ) : piece.origin !== 'arquivo' && piece.processingStatus === 'pronto' && piece.hasFile ? (
+            <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
+              <p className="text-sm font-semibold text-green-900">
+                {piece.transcript ? 'Arquivo e transcrição prontos' : 'Arquivo pronto'}
+              </p>
+              <p className="mt-1 text-xs leading-5 text-green-900/80">
+                A ficha foi catalogada. Revise os campos antes de publicar.
+              </p>
+            </div>
+          ) : null}
           <ContentPieceCirculationPanel
             circulation={piece.circulation}
             isPublished={piece.isPublished}
