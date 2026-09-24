@@ -1,5 +1,9 @@
 import type { PolygonalFeature } from '../../src/lib/bahiaGeometriesTypes.js'
-import { polygonRingsOf } from '../../src/lib/municipalityProximity.js'
+import {
+  featureContainsPoint,
+  polygonRingsOf,
+  type GeoPoint,
+} from '../../src/lib/municipalityProximity.js'
 
 export type FeatureBounds = {
   west: number
@@ -20,4 +24,26 @@ export const featureBounds = (feature: PolygonalFeature): FeatureBounds => {
     south: Math.min(...latitudes),
     north: Math.max(...latitudes),
   }
+}
+
+/**
+ * A real interior point of the feature: a centroid can fall outside a concave
+ * município, so scan a coarse grid inside the bounding box (shared by the B14
+ * geo spec and the S39 home sample spec).
+ */
+export const interiorPointOf = (feature: PolygonalFeature): GeoPoint => {
+  const { west, east, south, north } = featureBounds(feature)
+  const steps = 24
+
+  for (let row = 1; row < steps; row += 1) {
+    for (let column = 1; column < steps; column += 1) {
+      const point = {
+        lng: west + ((east - west) * column) / steps,
+        lat: south + ((north - south) * row) / steps,
+      }
+      if (featureContainsPoint(feature, point)) return point
+    }
+  }
+
+  throw new Error('No interior point found in the feature bounding box.')
 }

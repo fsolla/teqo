@@ -1162,3 +1162,9 @@ body,
 .campaign-sound-title {
   font-size: clamp(34px, calc(1.7vw + 18px), 40px);
 }
+
+/* S39 — home "Central de Conteúdos": 30px mobile → 36px desktop (cenas 01/02),
+   above the shared 22–24px token without touching it. */
+.campaign-content-pieces-title {
+  font-size: clamp(30px, calc(0.94vw + 24px), 36px);
+}

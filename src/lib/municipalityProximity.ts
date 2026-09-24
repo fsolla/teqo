@@ -190,7 +190,7 @@ export const featureCentroid = (feature: PolygonalFeature): GeoPoint => {
  * not by this scan's order: the mesh is TopoJSON-derived, so neighbours share
  * numerically identical arcs and never overlap.
  */
-const findContainingFeature = <F extends PolygonalFeature>(
+export const findContainingFeature = <F extends PolygonalFeature>(
   features: readonly F[],
   point: GeoPoint,
 ): F | undefined => features.find((feature) => featureContainsPoint(feature, point))

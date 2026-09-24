@@ -119,10 +119,6 @@
         text-transform: uppercase;
         color: #a21c1c;
       }
-      .skeleton {
-        background: linear-gradient(100deg, #eee 20%, #ddd 38%, #eee 56%);
-        background-size: 220% 100%;
-      }
     </style>
   </head>
   <body class="board min-h-screen text-black antialiased">
@@ -183,7 +179,9 @@
                     <div class="flex flex-wrap gap-1">
                       <span class="tag">Foto</span><span class="tag local">Do seu município</span>
                     </div>
-                    <h3 class="mt-2 font-extrabold">Título da peça local</h3>
+                    <h3 class="mt-2 font-extrabold">
+                      <a href="#detalhe-da-peca">Título da peça local</a>
+                    </h3>
                     <p class="mt-1 text-xs text-[#6c615e]">Seu município · Tema</p>
                     <a class="mt-4 inline-block text-xs font-bold text-[#a21c1c]"
                       >Ver esta peça →</a
@@ -205,7 +203,9 @@
                     <div class="flex flex-wrap gap-1">
                       <span class="tag">Vídeo</span><span class="tag local">Da sua região</span>
                     </div>
-                    <h3 class="mt-2 font-extrabold">Título da peça regional</h3>
+                    <h3 class="mt-2 font-extrabold">
+                      <a href="#detalhe-da-peca">Título da peça regional</a>
+                    </h3>
                     <p class="mt-1 text-xs text-[#6c615e]">Sua região · sem autoplay</p>
                     <a class="mt-4 inline-block text-xs font-bold text-[#a21c1c]"
                       >Ver esta peça →</a
@@ -224,7 +224,9 @@
                     <div class="flex flex-wrap gap-1">
                       <span class="tag">Áudio</span><span class="tag">Mais recente</span>
                     </div>
-                    <h3 class="mt-2 font-extrabold">Mensagem recente para compartilhar</h3>
+                    <h3 class="mt-2 font-extrabold">
+                      <a href="#detalhe-da-peca">Mensagem recente para compartilhar</a>
+                    </h3>
                     <p class="mt-1 text-xs text-[#6c615e]">Completa a seleção local</p>
                     <a class="mt-4 inline-block text-xs font-bold text-[#a21c1c]"
                       >Ver esta peça →</a
@@ -277,15 +279,20 @@
             </div>
             <div class="relative mt-6 space-y-4">
               <article class="preview grid grid-cols-[124px_1fr]">
-                <div class="asset min-h-36">NEEDS ASSET<br />FOTO REAL</div>
+                <div class="asset aspect-video self-start">NEEDS ASSET<br />FOTO REAL</div>
                 <div class="p-4 text-left">
-                  <span class="tag local">Do seu município</span>
-                  <h3 class="mt-2 text-sm font-extrabold">Título da peça local</h3>
-                  <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a>
+                  <div class="flex flex-wrap gap-1">
+                    <span class="tag">Foto</span><span class="tag local">Do seu município</span>
+                  </div>
+                  <h3 class="mt-2 text-sm font-extrabold">
+                    <a href="#detalhe-da-peca">Título da peça local</a>
+                  </h3>
+                  <p class="mt-1 text-[11px] text-[#6c615e]">Meta da peça</p>
+                  <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver esta peça →</a>
                 </div>
               </article>
               <article class="preview grid grid-cols-[124px_1fr]">
-                <div class="asset relative min-h-36">
+                <div class="asset relative aspect-video self-start">
                   <span>NEEDS ASSET<br />POSTER REAL</span
                   ><span
                     class="absolute grid size-10 place-items-center rounded-full bg-[#ffe607] text-black"
@@ -293,18 +300,27 @@
                   >
                 </div>
                 <div class="p-4 text-left">
-                  <span class="tag local">Da sua região</span>
-                  <h3 class="mt-2 text-sm font-extrabold">Título da peça regional</h3>
-                  <p class="mt-1 text-[11px] text-[#6c615e]">Só carrega no toque</p>
-                  <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a>
+                  <div class="flex flex-wrap gap-1">
+                    <span class="tag">Vídeo</span><span class="tag local">Da sua região</span>
+                  </div>
+                  <h3 class="mt-2 text-sm font-extrabold">
+                    <a href="#detalhe-da-peca">Título da peça regional</a>
+                  </h3>
+                  <p class="mt-1 text-[11px] text-[#6c615e]">Meta da peça</p>
+                  <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver esta peça →</a>
                 </div>
               </article>
               <article class="preview grid grid-cols-[124px_1fr]">
-                <div class="asset min-h-36">NEEDS ASSET<br />CAPA REAL</div>
+                <div class="asset aspect-video self-start">NEEDS ASSET<br />CAPA REAL</div>
                 <div class="p-4 text-left">
-                  <span class="tag">Mais recente</span>
-                  <h3 class="mt-2 text-sm font-extrabold">Mensagem recente</h3>
-                  <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a>
+                  <div class="flex flex-wrap gap-1">
+                    <span class="tag">Áudio</span><span class="tag">Mais recente</span>
+                  </div>
+                  <h3 class="mt-2 text-sm font-extrabold">
+                    <a href="#detalhe-da-peca">Mensagem recente</a>
+                  </h3>
+                  <p class="mt-1 text-[11px] text-[#6c615e]">Meta da peça</p>
+                  <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver esta peça →</a>
                 </div>
               </article>
             </div>
@@ -404,36 +420,39 @@
       <section>
         <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
           <span>CENA 04</span>
-          <h2>Resolução da localização · transitória, não bloqueia e termina em recentes</h2>
+          <h2>Recentes já no HTML → troca silenciosa para o território quando houver match</h2>
         </div>
         <div class="grid gap-6 lg:grid-cols-3">
           <article class="frame rounded-xl bg-white p-6">
             <span class="rounded-full bg-[#fff3c4] px-2 py-1 text-[10px] font-black text-[#6b5100]"
-              >INSTANTE INICIAL</span
+              >HTML INICIAL · CONTEÚDO ÚTIL</span
             >
             <h3 class="display mt-3 text-xl font-black">Peça voto pra Solla 1313</h3>
             <p class="mt-2 text-sm leading-5 text-[#6c615e]">
-              A home já está utilizável. Só esta amostra define a melhor seleção.
+              A seção nasce completa com as peças recentes. Sem JavaScript ou em conexão ruim, este
+              já é o estado final utilizável.
             </p>
-            <div class="mt-5 grid grid-cols-3 gap-2">
-              <div class="skeleton aspect-video rounded-lg"></div>
-              <div class="skeleton aspect-video rounded-lg"></div>
-              <div class="skeleton aspect-video rounded-lg"></div>
+            <span class="tag mt-4">Seleção recente</span>
+            <div class="mt-4 grid grid-cols-3 gap-2">
+              <div class="asset aspect-video rounded-lg">PREVIEW</div>
+              <div class="asset aspect-video rounded-lg">PREVIEW</div>
+              <div class="asset aspect-video rounded-lg">PREVIEW</div>
             </div>
             <p class="mt-4 text-xs font-bold text-[#6c615e]">
-              Sem modal, sem overlay e sem prompt automático.
+              Sem skeleton, modal, overlay ou prompt automático.
             </p>
           </article>
           <article class="frame rounded-xl bg-white p-6">
             <span class="rounded-full bg-green-100 px-2 py-1 text-[10px] font-black text-green-800"
-              >LOCALIZAÇÃO ACESSÍVEL</span
+              >MATCH LOCAL ENCONTRADO</span
             >
             <h3 class="display mt-3 text-xl font-black">Seleção do seu território</h3>
             <p class="mt-2 text-sm leading-5 text-[#6c615e]">
-              GPS já acessível; senão, recorte aproximado por IP. A interface entrega o mesmo
-              resultado: município → região → recentes.
+              Com a permissão já concedida ou após o toque em “Usar minha localização”, a amostra
+              troca em silêncio: município → região → recentes.
             </p>
-            <div class="mt-5 flex gap-2">
+            <span class="tag local mt-4">⌖ Para seu município</span>
+            <div class="mt-3 flex gap-2">
               <span class="tag local">Do seu município</span
               ><span class="tag local">Da sua região</span>
             </div>
@@ -443,16 +462,20 @@
           </article>
           <article class="frame rounded-xl bg-white p-6">
             <span class="rounded-full bg-[#eef4fb] px-2 py-1 text-[10px] font-black text-[#184e92]"
-              >SEM SINAL ÚTIL</span
+              >SEM MATCH LOCAL</span
             >
-            <h3 class="display mt-3 text-xl font-black">Seleção recente</h3>
+            <h3 class="display mt-3 text-xl font-black">Recentes permanecem</h3>
             <p class="mt-2 text-sm leading-5 text-[#6c615e]">
-              A espera termina e as peças recentes aparecem. Nenhum erro é mostrado.
+              Sem sinal, fora da Bahia ou sem permissão, nada some nem espera: a seleção recente que
+              já estava visível permanece.
             </p>
-            <div class="mt-5 h-24 rounded-lg border bg-[#f9faff] p-3 text-xs text-[#6c615e]">
-              Preview recente disponível
+            <div class="mt-5 rounded-lg border bg-[#f9faff] p-3">
+              <span class="tag">Seleção recente</span>
+              <p class="mt-2 text-xs text-[#6c615e]">Preview recente continua disponível</p>
             </div>
-            <p class="mt-4 text-xs font-bold text-[#184e92]">Nunca há spinner eterno.</p>
+            <p class="mt-4 text-xs font-bold text-[#184e92]">
+              Sem erro e sem troca enganosa da tag.
+            </p>
           </article>
         </div>
       </section>
@@ -473,13 +496,19 @@
                   <p class="mt-3 max-w-lg text-base leading-6 text-[#6c615e]">
                     Uma peça oficial já está pronta para você compartilhar.
                   </p>
+                  <span class="tag mt-3">Seleção recente</span>
                   <a class="cta mt-6" href="/conteudos">Ver todas as peças →</a>
                 </div>
                 <article class="preview">
                   <div class="asset aspect-video">NEEDS ASSET · PREVIEW REAL</div>
                   <div class="p-4">
-                    <span class="tag">Foto</span>
-                    <h3 class="mt-2 font-extrabold">Título da única peça publicada</h3>
+                    <div class="flex flex-wrap gap-1">
+                      <span class="tag">Foto</span><span class="tag">Mais recente</span>
+                    </div>
+                    <h3 class="mt-2 font-extrabold">
+                      <a href="#detalhe-da-peca">Título da única peça publicada</a>
+                    </h3>
+                    <p class="mt-1 text-xs text-[#6c615e]">Meta da peça</p>
                     <a class="mt-3 inline-block text-xs font-bold text-[#a21c1c]"
                       >Ver esta peça →</a
                     >
@@ -499,12 +528,18 @@
                 <p class="mt-3 text-sm leading-5 text-[#6c615e]">
                   Uma peça oficial já está pronta.
                 </p>
-                <article class="preview mt-6 text-left">
-                  <div class="asset aspect-video">NEEDS ASSET · PREVIEW REAL</div>
+                <span class="tag mt-3">Seleção recente</span>
+                <article class="preview mt-6 grid grid-cols-[124px_1fr] text-left">
+                  <div class="asset aspect-video self-start">NEEDS ASSET<br />PREVIEW REAL</div>
                   <div class="p-4">
-                    <span class="tag">Foto</span>
-                    <h3 class="mt-2 font-extrabold">Título da única peça publicada</h3>
-                    <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a>
+                    <div class="flex flex-wrap gap-1">
+                      <span class="tag">Foto</span><span class="tag">Mais recente</span>
+                    </div>
+                    <h3 class="mt-2 text-sm font-extrabold">
+                      <a href="#detalhe-da-peca">Título da única peça publicada</a>
+                    </h3>
+                    <p class="mt-1 text-[11px] text-[#6c615e]">Meta da peça</p>
+                    <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver esta peça →</a>
                   </div>
                 </article>
                 <a class="cta mt-6 w-full" href="/conteudos">Ver todas as peças →</a>

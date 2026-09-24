@@ -2,6 +2,23 @@ import { contentPieceMediaKind, type ContentPiecePublicItem } from '@/lib/conten
 import { cn } from '@/lib/utils'
 
 /**
+ * The media states read this subset of the public item, so the S39 home
+ * projection (leaner, no search haystack) renders through the same component.
+ */
+type ContentPieceMediaItem = Pick<
+  ContentPiecePublicItem,
+  | 'isLink'
+  | 'file'
+  | 'type'
+  | 'origin'
+  | 'originLabel'
+  | 'title'
+  | 'excerpt'
+  | 'durationLabel'
+  | 'typeLabel'
+>
+
+/**
  * S27 — the piece asset (artefato: cenas 01/02/03/07): a photo previews, a
  * text shows its opening, a video/audio only mounts the media element after
  * the voter taps play (`preload="none"`, nothing is fetched before the
@@ -41,7 +58,7 @@ export const ContentPieceMedia = ({
   variant = 'card',
   className,
 }: {
-  item: ContentPiecePublicItem
+  item: ContentPieceMediaItem
   playing: boolean
   onToggle: () => void
   onEnded: () => void

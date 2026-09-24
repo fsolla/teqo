@@ -2,7 +2,10 @@ import { randomUUID } from 'node:crypto'
 
 import type { APIRequestContext, Page } from '@playwright/test'
 
+import { loadMunicipalityGeometryModule } from '../../src/lib/bahiaGeometries.js'
+import { getMunicipalityCatalogEntry } from '../../src/lib/municipalityCatalog.js'
 import { adminHeaders } from '../helpers/adminApi'
+import { interiorPointOf } from '../helpers/featureBounds'
 import { seedTestUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
 
@@ -76,6 +79,8 @@ const createPiece = async (
     withMedia?: boolean
     origin?: 'arquivo' | 'instagram' | 'youtube'
     sourceUrl?: string
+    /** S39 — the home sample resolves the município name from this relation. */
+    municipality?: number
   },
 ): Promise<{ id: number; slug: string }> => {
   const mediaKind = data.type === 'video' || data.type === 'foto' ? data.type : 'texto'
@@ -100,6 +105,7 @@ const createPiece = async (
       origin: data.origin ?? 'arquivo',
       ...(media ? { media } : {}),
       ...(data.sourceUrl ? { sourceUrl: data.sourceUrl } : {}),
+      ...(data.municipality ? { municipality: data.municipality } : {}),
     },
   })
   expect(response.ok(), await response.text()).toBeTruthy()
@@ -147,6 +153,28 @@ const mediaRequests = (page: Page) => {
  */
 const waitForSettledPage = async (page: Page) => {
   await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
+}
+
+/**
+ * S39 — the home is ISR and the section is gated by the same listing tag as the
+ * catalogue; poll the server HTML until the kill switch converged (the
+ * navigation that follows always lands on the fresh page).
+ */
+const waitForHomeSection = async (
+  request: APIRequestContext,
+  expected: 'present' | 'absent',
+  attempts = 12,
+) => {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    const response = await request.get(`${BASE_URL}/`).catch(() => undefined)
+    if (response?.ok()) {
+      const html = await response.text()
+      const present = html.includes('data-home-section="content-pieces"')
+      if ((expected === 'present') === present) return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1_000))
+  }
+  throw new Error(`A seção da Central não convergiu para "${expected}" em ${attempts}s.`)
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -512,5 +540,89 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await waitForSettledPage(page)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(page.getByRole('link', { name: 'Conteúdos' })).toBeVisible()
+  })
+
+  test('shows the Central sample on the home and hides it with the kill switch', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryPiece(request, headers)
+    await createPiece(request, headers, { title: `Peça da home ${uniqueMarker()}`, type: 'foto' })
+    await createPiece(request, headers, { title: `Vídeo da home ${uniqueMarker()}`, type: 'video' })
+
+    await waitForHomeSection(request, 'present')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`/?e2e=${Date.now()}`)
+    const section = page.locator('[data-home-section="content-pieces"]')
+    await expect(section).toBeVisible()
+    // S39 — the sample sits between the cards and the newsletter (the home spec
+    // keeps this pin agnostic because the section is conditional).
+    const order = await page
+      .locator('[data-home-section]')
+      .evaluateAll((sections) => sections.map((s) => s.getAttribute('data-home-section')))
+    expect(order.indexOf('cards')).toBeLessThan(order.indexOf('content-pieces'))
+    expect(order.indexOf('content-pieces')).toBeLessThan(order.indexOf('newsletter'))
+    await expect(section.getByRole('heading', { name: 'Peça voto pra Solla 1313' })).toBeVisible()
+    await expect(section.getByRole('link', { name: /Ver todas as peças/ })).toHaveAttribute(
+      'href',
+      '/conteudos',
+    )
+    await expect(section.locator('article[data-content-piece]')).toHaveCount(2)
+    // Nothing plays on its own: the video mounts no media element before the tap.
+    await expect(section.locator('video, audio')).toHaveCount(0)
+    // Cena 02 — the sample never overflows the phone.
+    const overflow = await page.evaluate(() => {
+      const container = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+      return container ? container.scrollWidth - container.clientWidth : 0
+    })
+    expect(overflow).toBeLessThanOrEqual(1)
+
+    await unpublishEveryPiece(request, headers)
+    await waitForHomeSection(request, 'absent')
+    await page.goto(`/?e2e=${Date.now()}`)
+    await expect(page.locator('[data-home-section="content-pieces"]')).toHaveCount(0)
+  })
+
+  test('samples the visitor município on the home when the permission is granted', async ({
+    page,
+    request,
+    context,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryPiece(request, headers)
+
+    const entry = getMunicipalityCatalogEntry('feira-de-santana')
+    if (!entry || entry.kind !== 'municipio') throw new Error('Catálogo sem Feira de Santana.')
+    const geometry = await loadMunicipalityGeometryModule()
+    const feature = geometry.features.find(
+      (candidate) => candidate.properties.codarea === entry.ibgeCode,
+    )
+    if (!feature) throw new Error('Malha municipal sem Feira de Santana.')
+    const point = interiorPointOf(feature)
+
+    const listed = await request.get(
+      `${BASE_URL}/api/municipality?where[slug][equals]=${entry.slug}&limit=1&depth=0`,
+      { headers },
+    )
+    expect(listed.ok(), await listed.text()).toBeTruthy()
+    const { docs } = (await listed.json()) as { docs: { id: number }[] }
+    const municipality = docs[0]
+    if (!municipality) throw new Error('Município não semeado no banco de teste.')
+
+    const title = `Peça de Feira de Santana ${uniqueMarker()}`
+    await createPiece(request, headers, { title, type: 'foto', municipality: municipality.id })
+    await waitForHomeSection(request, 'present')
+
+    await context.grantPermissions(['geolocation'])
+    await context.setGeolocation({ latitude: point.lat, longitude: point.lng })
+
+    await page.goto(`/?e2e=${Date.now()}`)
+    const section = page.locator('[data-home-section="content-pieces"]')
+    await expect(section.locator('[data-sample-tag="municipality"]')).toBeVisible()
+    // Exact: the sr-only live region announces "Peças do seu município".
+    await expect(section.getByText('Do seu município', { exact: true })).toBeVisible()
+    await expect(section.getByRole('link', { name: title })).toBeVisible()
   })
 })

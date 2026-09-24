@@ -18,6 +18,9 @@ export const CONTENT_PIECE_ACTIVE_CHIP = cn(
 export const CONTENT_PIECE_TAG =
   'inline-flex rounded-full bg-[#eef4fb] px-2 py-1 text-[11px] font-extrabold text-[#184e92]'
 
+/** S39 — the provenance tag of a piece sampled from the visitor's territory. */
+export const CONTENT_PIECE_LOCAL_TAG = cn(CONTENT_PIECE_TAG, 'bg-[#fff3c4] text-[#6b5100]')
+
 /** S28 — the neutral badge of a theme-mode result that only matched the query. */
 export const CONTENT_PIECE_EXACT_TAG =
   'inline-flex rounded-full border border-black/12 bg-white px-2 py-1 text-[11px] font-extrabold text-[#514945]'

@@ -5,9 +5,10 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
+import { ContentPieceHomeSection } from '@/components/conteudos/ContentPieceHomeSection'
 import { JingleHomeSection } from '@/components/jingles/JingleHomeSection'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
-import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
+import { getPublishedContentPieceItems } from '@/utilities/content/contentPieceReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
 import type { ReactNode } from 'react'
 import { CampaignCardsSection } from './CampaignCardsSection'
@@ -120,8 +121,9 @@ export default async function HomePage() {
   // S21/S22 — one cached listing (`unstable_cache` tag `jingles`) serves the
   // home sound section and the footer's discovery flag, keeping the home static.
   const jingles = await getPublishedJingleItems()
-  // S27 — the Central's discovery flag (cached under the `contentPieces` tag).
-  const showConteudos = await hasPublishedContentPieces()
+  // S27/S39 — one cached listing (tag `contentPieces`) feeds both the discovery
+  // flag of the footer and the home sample; zero pieces hides both (fail-closed).
+  const contentPieces = await getPublishedContentPieceItems()
   const homeJingles = jingles.slice(0, 3)
 
   return (
@@ -247,10 +249,11 @@ export default async function HomePage() {
         <CampaignStorySection />
         <JingleHomeSection jingles={homeJingles} showAll={jingles.length > homeJingles.length} />
         <CampaignCardsSection />
+        {contentPieces.length > 0 ? <ContentPieceHomeSection items={contentPieces} /> : null}
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
-      <CampaignFooter showJingles={jingles.length > 0} showConteudos={showConteudos} />
+      <CampaignFooter showJingles={jingles.length > 0} showConteudos={contentPieces.length > 0} />
     </>
   )
 }

@@ -4,6 +4,7 @@ import { contentPieceMediaKind, type ContentPiecePublicItem } from '@/lib/conten
 import { cn } from '@/lib/utils'
 
 import { ContentPieceDownloadLink, ContentPieceShareButton } from './ContentPieceActions'
+import { ContentPieceCardMeta, ContentPieceCardTitle } from './ContentPieceCardParts'
 import { ContentPieceMedia } from './ContentPieceMedia'
 import {
   CONTENT_PIECE_CARD,
@@ -82,20 +83,6 @@ const CardThemeEvidence = ({ item }: { item: ContentPiecePublicItem }) => {
   )
 }
 
-const CardTitle = ({ item, className }: { item: ContentPiecePublicItem; className?: string }) => (
-  <h3 className={cn('mt-2 font-[family-name:var(--font-exo2)] font-extrabold', className)}>
-    <Link
-      href={item.publicPath}
-      className="rounded-sm text-black underline-offset-4 hover:underline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-red)"
-    >
-      {item.title}
-    </Link>
-  </h3>
-)
-
-const CardMeta = ({ item }: { item: ContentPiecePublicItem }) =>
-  item.metaLabel ? <p className="mt-1 text-xs text-(--campaign-muted)">{item.metaLabel}</p> : null
-
 /**
  * S27/S28 — one catalogue card (artefato: cenas 01/02/05–07): video/audio/card
  * and link pieces take the full card with the asset on top; a photo/text is the
@@ -130,8 +117,8 @@ export const ContentPieceCard = ({
         />
         <div className="min-w-0 flex-1">
           <CardTag item={item} themeMode={themeMode} />
-          <CardTitle item={item} className="text-sm" />
-          <CardMeta item={item} />
+          <ContentPieceCardTitle item={item} className="text-sm" />
+          <ContentPieceCardMeta item={item} />
           <CardThemeEvidence item={item} />
           <div className="mt-3 flex flex-wrap gap-2">
             <ContentPieceDownloadLink item={item} className="min-h-9 px-3" />
@@ -157,8 +144,8 @@ export const ContentPieceCard = ({
       />
       <div className="p-4">
         <CardTag item={item} themeMode={themeMode} />
-        <CardTitle item={item} className="text-base" />
-        <CardMeta item={item} />
+        <ContentPieceCardTitle item={item} className="text-base" />
+        <ContentPieceCardMeta item={item} />
         <CardThemeEvidence item={item} />
         <div className={cn('mt-4 grid gap-2', item.file ? 'grid-cols-2' : 'grid-cols-1')}>
           <ContentPieceDownloadLink item={item} />

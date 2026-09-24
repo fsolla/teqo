@@ -2,6 +2,18 @@ import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import HomePage from '@/app/(frontend)/(home)/page'
+import { toContentPiecePublicItem, type ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
+
+const pieceItem = toContentPiecePublicItem({
+  id: 1,
+  slug: 'peca-da-home',
+  title: 'Peça da home',
+  type: 'foto',
+  status: 'publicado',
+  origin: 'arquivo',
+  media: { id: 2, filename: 'peca.png', mimeType: 'image/png' },
+})
+if (!pieceItem) throw new Error('fixture should be public')
 
 type MockImageProps = React.ImgHTMLAttributes<HTMLImageElement> & {
   fill?: boolean
@@ -43,11 +55,13 @@ vi.mock('@/utilities/jingleReads', () => ({
   getPublishedJingleItems: async () => [],
 }))
 
-// S27 — the same for the Central de Conteúdos discovery flag (cached read of
-// the content pieces listing); the real listing/kill-switch behavior is
-// e2e-covered (frontendConteudos.e2e.spec.ts).
+// S27/S39 — the same for the Central de Conteúdos listing (cached read that
+// feeds the discovery flag and the home sample); the real kill-switch behavior
+// is e2e-covered (frontendConteudos.e2e.spec.ts).
+const contentPieces = vi.hoisted(() => ({ items: [] as ContentPiecePublicItem[] }))
+
 vi.mock('@/utilities/content/contentPieceReads', () => ({
-  hasPublishedContentPieces: async () => false,
+  getPublishedContentPieceItems: async () => contentPieces.items,
 }))
 
 // S14 — the card section renders the client studio island (next/font local
@@ -61,7 +75,10 @@ vi.mock('@/components/cards/CardsStudio', () => ({
   CardsStudio: () => null,
 }))
 
-afterEach(cleanup)
+afterEach(() => {
+  contentPieces.items = []
+  cleanup()
+})
 
 describe('Campaign home', () => {
   it('monta as seis seções previstas e o rodapé eleitoral', async () => {
@@ -100,5 +117,24 @@ describe('Campaign home', () => {
     for (const title of expectedTitles) {
       expect(screen.getAllByText(title)).toHaveLength(2)
     }
+  })
+
+  it('mostra a seção da Central com peça publicada e a esconde sem nenhuma (fail-closed)', async () => {
+    contentPieces.items = [pieceItem]
+    render(await HomePage())
+
+    expect(screen.getByRole('heading', { name: 'Peça voto pra Solla 1313' })).toBeTruthy()
+    // The single-piece layout renders one CTA per viewport (split desktop +
+    // stacked mobile); both hand off to the Central.
+    const ctas = screen.getAllByRole('link', { name: /Ver todas as peças/ })
+    expect(ctas.length).toBeGreaterThan(0)
+    for (const cta of ctas) expect(cta.getAttribute('href')).toBe('/conteudos')
+
+    cleanup()
+    contentPieces.items = []
+    render(await HomePage())
+
+    expect(screen.queryByRole('heading', { name: 'Peça voto pra Solla 1313' })).toBeNull()
+    expect(screen.queryByRole('link', { name: /Ver todas as peças/ })).toBeNull()
   })
 })
