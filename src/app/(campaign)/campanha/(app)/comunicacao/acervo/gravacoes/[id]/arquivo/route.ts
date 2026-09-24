@@ -2,11 +2,13 @@ import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
-import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import { PRIVATE_MEDIA_CACHE_CONTROL } from '@/lib/privateMedia'
 import { canServeRecordingMedia, isRecordingStatus, RECORDING_MEDIA_SLUG } from '@/lib/recording'
-import { getCampaignUser } from '@/utilities/campaignAuth'
-import { buildPrivateMediaResponse } from '@/utilities/privateMedia/privateMediaResponse'
+import { loadPrivateMediaForActor } from '@/utilities/privateMedia/privateMediaGate'
+import {
+  buildPrivateMediaResponse,
+  resolvePrivateMediaStaticDir,
+} from '@/utilities/privateMedia/privateMediaResponse'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,39 +31,22 @@ export const GET = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> => {
-  const user = await getCampaignUser()
-  if (!user || !canReadCommunicationCatalog(user.role)) return notFound()
-
   const { id } = await params
-  const recordingId = Number(id)
-  if (!Number.isInteger(recordingId) || recordingId <= 0) return notFound()
-
   const payload = await getPayload({ config })
-  const recording = await payload
-    .findByID({
-      collection: 'recording',
-      id: recordingId,
-      depth: 1,
-      select: { status: true, media: true },
-      user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!recording || !isRecordingStatus(recording.status)) return notFound()
-  if (!canServeRecordingMedia(recording.status)) return notFound()
-
-  const media = recording.media
-  if (!media || typeof media !== 'object') return notFound()
-
-  const upload = payload.collections[RECORDING_MEDIA_SLUG].config.upload
-  const staticDir =
-    upload && typeof upload === 'object' && upload.staticDir
-      ? upload.staticDir
-      : RECORDING_MEDIA_SLUG
+  const found = await loadPrivateMediaForActor({
+    payload,
+    collection: 'recording',
+    id: Number(id),
+    select: { status: true, media: true },
+    isServable: (recording) =>
+      isRecordingStatus(recording.status) && canServeRecordingMedia(recording.status),
+    artifactOf: (recording) => recording.media,
+  })
+  if (!found) return notFound()
 
   return buildPrivateMediaResponse({
-    media,
-    staticDir,
+    media: found.media,
+    staticDir: resolvePrivateMediaStaticDir(payload, RECORDING_MEDIA_SLUG),
     rangeHeader: request.headers.get('range'),
     download: new URL(request.url).searchParams.get('download') === '1',
   })

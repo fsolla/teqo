@@ -4,7 +4,7 @@ import type { Payload } from 'payload'
 
 import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import { measuredVideoLagSeconds, parseYoutubeVideoId } from '@/lib/speechVod'
-import type { CampaignUser, InternetSpeechMedia, Speech } from '@/payload-types'
+import type { CampaignUser, Speech } from '@/payload-types'
 import {
   expandSpeechSearchTheme,
   type SpeechThemeExpansionResolver,
@@ -435,39 +435,6 @@ export const loadWebSpeechDetailPageData = async (
     segments: segmentsBySpeech.get(speechId) ?? [],
     query,
   })
-}
-
-/** The two private upload relations one web speech serves through its routes. */
-export type WebSpeechMediaField = 'mirroredMedia' | 'thumbnail'
-
-/**
- * C216 — the shared read of the two media routes (`/arquivo` and `/capa`): one
- * `findByID` with the acervo gate and the origin filter, answering null for
- * anything that is not a web row with that artifact. The routes keep the HTTP
- * contract (silent 404, range, disposition) and the caller's auth gate.
- */
-export const loadWebSpeechMediaForActor = async (
-  payload: Payload,
-  user: CampaignUser,
-  speechId: number,
-  field: WebSpeechMediaField,
-): Promise<{ title: string | null; media: InternetSpeechMedia } | null> => {
-  const speech = await payload
-    .findByID({
-      collection: 'speech',
-      id: speechId,
-      depth: 1,
-      select: { origin: true, title: true, mirroredMedia: true, thumbnail: true },
-      user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!speech || speech.origin !== 'web') return null
-
-  const media = field === 'mirroredMedia' ? speech.mirroredMedia : speech.thumbnail
-  if (!media || typeof media !== 'object') return null
-
-  return { title: speech.title ?? null, media }
 }
 
 /**
