@@ -891,3 +891,29 @@ describe('no conflict markers in committed files', () => {
     )
   })
 })
+
+describe('card studio geometry comes from the ratio spacer', () => {
+  // WebKit #265243: `aspect-ratio` on a flex item loses its height on relayout
+  // (fixed only in WebKit main, 2026-05). The model tiles are flex children, and
+  // the 2026-09-24 production bug collapsed all six to their labels on
+  // Orion/Safari. The studio derives its box ratios from `CardModelTile`'s
+  // in-flow spacer (percentage padding) — the inline property and the
+  // `aspect-*` utilities must not come back here.
+  const studioRoot = resolve(repoRoot, 'src/components/cards')
+  const fragilePatterns = [/\baspectRatio\s*:/, /\baspect-(?:\[|square|video|auto)\b/] as const
+
+  it('keeps aspect-ratio out of the card studio components', () => {
+    const offenders: string[] = []
+
+    for (const file of walkSourceFiles(studioRoot, ['.tsx'])) {
+      const lines = readFileSync(file, 'utf8').split('\n')
+      for (const [index, line] of lines.entries()) {
+        if (fragilePatterns.some((pattern) => pattern.test(line))) {
+          offenders.push(`${repoPath(file)}:${index + 1}`)
+        }
+      }
+    }
+
+    expect(offenders, 'use the in-flow ratio spacer (CardModelTile) — WebKit #265243').toEqual([])
+  })
+})
