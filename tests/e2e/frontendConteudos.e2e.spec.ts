@@ -225,8 +225,11 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     // section of their own (the card item and the pieces share one grid).
     await expect(page.locator('[data-content-piece-invite]')).toHaveCount(0)
     await expect(page.locator('[data-card-model]')).toHaveCount(6)
+    // The video piece shares the full-card grid with the models (the photo is a
+    // compact row below): the models are items of the board, not a section.
     const board = page.locator('[data-card-model]').first().locator('xpath=..')
-    await expect(board.locator('article[data-content-piece]')).toHaveCount(2)
+    await expect(board.locator('article[data-content-piece]')).toHaveCount(1)
+    await expect(board.locator('[data-card-model]')).toHaveCount(6)
     await expect(page.locator('[data-card-model="time-de-voce"]')).toHaveAttribute(
       'href',
       '/cards?model=time-de-voce',
@@ -357,6 +360,8 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     // The item routes to the studio with the model chosen and counts the opening
     // through the anonymous beacon (never a piece event).
+    await page.goto('/conteudos?tipo=card')
+    await waitForSettledPage(page)
     const openingBeacon = page.waitForRequest((candidate) => {
       if (!candidate.url().includes('/api/content-events')) return false
       try {
