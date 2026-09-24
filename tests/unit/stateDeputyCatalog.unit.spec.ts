@@ -38,6 +38,9 @@ const APPROVED_EXAMPLE_SRC = fileURLToPath(
   ),
 )
 
+/** S40 — the generic art delivered by the campaign (SEU ESTADUAL + two silhouettes). */
+const APPROVED_EXAMPLE_SHA256 = '1f5dc8212662697149f0acac5701e8de58c53a86f5af316535736dccb7a53c7b'
+
 describe('State-deputy card catalog (S30 — 53 dobradinhas)', () => {
   it('has the 53 delivered deputies with unique slugs, names and ballot numbers', () => {
     expect(stateDeputyCatalog).toHaveLength(53)
@@ -73,12 +76,13 @@ describe('State-deputy card catalog (S30 — 53 dobradinhas)', () => {
   })
 
   it('uses the exact approved example file for the gallery tile', () => {
-    const approved = readFileSync(APPROVED_EXAMPLE_SRC)
-    const shipped = readFileSync(publicFile('/cards/modelo-time-de-voce-com-estadual.jpeg'))
+    const approved = createHash('sha256').update(readFileSync(APPROVED_EXAMPLE_SRC)).digest('hex')
+    const shipped = createHash('sha256')
+      .update(readFileSync(publicFile('/cards/modelo-time-de-voce-com-estadual.jpeg')))
+      .digest('hex')
 
-    expect(createHash('sha256').update(shipped).digest('hex')).toBe(
-      createHash('sha256').update(approved).digest('hex'),
-    )
+    expect(approved).toBe(APPROVED_EXAMPLE_SHA256)
+    expect(shipped).toBe(APPROVED_EXAMPLE_SHA256)
   })
 
   it('matches the frozen identity snapshot (slug/name/number/assets are the public contract)', () => {
