@@ -2230,16 +2230,17 @@ test.describe('Cards personalizados (S15 — enquadramento automático)', () => 
 
 /**
  * S30 — the state-deputy model reuses the S15 cutout stub; the new surfaces are
- * the picker (search + ↑↓/Enter), the visitor silhouette that marks the photo
- * slot and the art swap that must keep the typed name and the processed photo.
+ * the picker (search + ↑↓/Enter), the empty photo window after the pick (S40
+ * removed the drawn silhouette) and the art swap that must keep the typed name
+ * and the processed photo.
  */
 test.describe('Cards personalizados (S30 — Time do estadual)', () => {
   /**
    * Window probes at 1080×1440: x=582 is the photo window center (286 + 592/2),
-   * y=540 the silhouette head center (439 + 0.17·592) and y=727 the window
-   * center where the stub cutout lands.
+   * y=540 a point inside the window top and y=727 the window center where the
+   * stub cutout lands.
    */
-  const windowCenterPixel = (canvas: Locator, x: number, y: number) =>
+  const windowPixel = (canvas: Locator, x: number, y: number) =>
     canvas.evaluate(
       (element, point) => {
         const node = element as HTMLCanvasElement
@@ -2248,7 +2249,7 @@ test.describe('Cards personalizados (S30 — Time do estadual)', () => {
       { x, y },
     )
 
-  test('picks a deputy, draws the silhouette, cuts the photo and downloads the PNG', async ({
+  test('picks a deputy, keeps the window empty, cuts the photo and downloads the PNG', async ({
     page,
   }) => {
     await setCutoutStub(page, 'ok')
@@ -2271,9 +2272,10 @@ test.describe('Cards personalizados (S30 — Time do estadual)', () => {
     await expect(trigger).toContainText('13999')
     await expect(dialog.getByRole('button', { name: 'Escolher foto' })).toBeVisible()
 
-    // The visitor silhouette (#001a42) marks the photo window head.
+    // S40 — no drawn silhouette: the chosen art (julio-fotos) shows through the
+    // empty photo window until the visitor photo lands.
     const canvas = dialog.locator('canvas')
-    await expect.poll(() => windowCenterPixel(canvas, 582, 540)).toEqual([0, 26, 66, 255])
+    await expect.poll(() => windowPixel(canvas, 582, 540)).toEqual([239, 223, 196, 255])
 
     await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
     await expect(primary).toBeDisabled()
@@ -2320,7 +2322,7 @@ test.describe('Cards personalizados (S30 — Time do estadual)', () => {
     // The cutout landed: harmony OFF samples the stub fixture at the window center.
     const canvas = dialog.locator('canvas')
     await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
-    await expect.poll(() => windowCenterPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
+    await expect.poll(() => windowPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
 
     // Swap the deputy through the trigger; the new one confirms on it.
     await dialog.getByRole('button', { name: /Seu estadual/ }).click()
@@ -2334,7 +2336,7 @@ test.describe('Cards personalizados (S30 — Time do estadual)', () => {
     // Name and cutout survive the swap: still ready, CTA enabled, photo pixel intact.
     await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
     await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
-    await expect.poll(() => windowCenterPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
+    await expect.poll(() => windowPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
   })
 
   test('a name that cannot fit fails closed on the estadual model', async ({ page }) => {

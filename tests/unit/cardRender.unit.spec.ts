@@ -16,10 +16,8 @@ import {
   type CardPhotoSize,
 } from '@/lib/cardPhotoTransform'
 import {
-  CARD_VISITOR_SILHOUETTE_FILL,
   createCardMeasure,
   drawCardName,
-  drawCardVisitorSilhouette,
   renderColinhaCard,
   renderNameCard,
   renderPhotoCard,
@@ -233,7 +231,7 @@ describe('renderTeamCard', () => {
     const result = renderTeamCard(fake.ctx, teamModel, {
       base,
       overlay,
-      subject: { kind: 'photo', photo, photoSize, transform },
+      subject: { photo, photoSize, transform },
       window,
       name,
       fontFamily: 'Brexter',
@@ -305,7 +303,7 @@ describe('renderTeamCard', () => {
     const clamped = renderTeamCard(fake.ctx, teamModel, {
       base: { id: 'base' } as unknown as CanvasImageSource,
       overlay: { id: 'overlay' } as unknown as CanvasImageSource,
-      subject: { kind: 'photo', photo, photoSize, transform: outOfBounds },
+      subject: { photo, photoSize, transform: outOfBounds },
       window,
       name: 'Maria',
       fontFamily: 'Brexter',
@@ -317,14 +315,14 @@ describe('renderTeamCard', () => {
     expect(fake.drawCalls[1]).toMatchObject({ dx: 10_000, dy: -10_000 })
   })
 
-  it('draws the visitor silhouette instead of the photo when no cutout is ready (S30)', () => {
+  it('leaves the window empty instead of drawing a subject when no photo is ready (S40)', () => {
     const fake = createFakeContext()
     const base = { id: 'base' } as unknown as CanvasImageSource
     const overlay = { id: 'overlay' } as unknown as CanvasImageSource
     const result = renderTeamCard(fake.ctx, teamModel, {
       base,
       overlay,
-      subject: { kind: 'silhouette' },
+      subject: null,
       window,
       name: 'Maria',
       fontFamily: 'Brexter',
@@ -333,42 +331,11 @@ describe('renderTeamCard', () => {
 
     expect(result.transform).toBeNull()
     expect(result.fit).toMatchObject({ ok: true, lines: ['MARIA'] })
+    // Base + overlay only: nothing is drawn inside the photo window.
     expect(fake.drawCalls.map((call) => call.image)).toEqual([base, overlay])
-    // Head circle + shoulder dome (rect + upper-half ellipse), both filled.
-    expect(fake.ops.filter((op) => op.op === 'fill')).toHaveLength(2)
-  })
-})
-
-describe('drawCardVisitorSilhouette (S30)', () => {
-  const window = teamModel.photoWindow!
-
-  it('normalizes the head and shoulders on the photo window', () => {
-    const { ctx, ops } = createFakeContext()
-
-    drawCardVisitorSilhouette(ctx, window)
-
-    const shoulderHeight = window.height * 0.72
-    const shoulderBottom = window.y + window.height * 1.03
-    const bodyTop = shoulderBottom - shoulderHeight + shoulderHeight * 0.48
-    const rect = ops.find((op) => op.op === 'rect')!
-    const ellipse = ops.find((op) => op.op === 'ellipse')!
-
-    expect(rect.args).toEqual([window.x, bodyTop, window.width, shoulderBottom - bodyTop])
-    expect(ellipse.args).toEqual([
-      window.x + window.width / 2,
-      bodyTop,
-      window.width * 0.48,
-      shoulderHeight * 0.48,
-      0,
-      Math.PI,
-      0,
-    ])
-    // The shoulders never grow wider than the window they sit in.
-    expect(window.x + window.width / 2 - ellipse.args[2]!).toBeGreaterThanOrEqual(window.x)
-    expect(window.x + window.width / 2 + ellipse.args[2]!).toBeLessThanOrEqual(
-      window.x + window.width,
-    )
-    expect(ctx.fillStyle).toBe(CARD_VISITOR_SILHOUETTE_FILL)
+    expect(
+      fake.ops.filter((op) => ['beginPath', 'arc', 'ellipse', 'rect', 'fill'].includes(op.op)),
+    ).toEqual([])
   })
 })
 

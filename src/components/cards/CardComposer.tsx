@@ -388,7 +388,6 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
           base: artBase,
           overlay: artOverlay,
           subject: {
-            kind: 'photo',
             photo: harmonyEnabled && teamReady.harmonized ? teamReady.harmonized : teamReady.canvas,
             photoSize: { width: teamReady.width, height: teamReady.height },
             transform: effectiveTransform,
@@ -406,13 +405,14 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
       }
 
       if (isStateDeputyModel) {
-        // Chosen but no photo yet: the visitor silhouette marks the photo slot.
+        // Chosen but no photo yet: the art shows as-is — the window stays empty
+        // until the visitor photo lands (no drawn placeholder).
         if (!photoWindow) return
         setNameFit(
           renderTeamCard(ctx, model, {
             base: artBase,
             overlay: artOverlay,
-            subject: { kind: 'silhouette' },
+            subject: null,
             window: photoWindow,
             name,
             fontFamily,

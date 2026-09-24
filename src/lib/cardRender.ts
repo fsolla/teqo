@@ -140,7 +140,7 @@ export const resolveCardBannerWidth = (
  */
 const drawCardBanner = (ctx: CardDrawContext, args: CardBannerDrawArgs): void => {
   const { banner } = args
-  const width = args.width ?? banner.width
+  const width = args.width
 
   ctx.save()
   ctx.translate(banner.centerX, banner.centerY)
@@ -233,54 +233,18 @@ export const renderPhotoCard = (
   return clampCardPhotoTransform(args.transform, args.photoSize, args.window)
 }
 
-/** S30 — silhouette tone ported from the design gate's visitor placeholder. */
-export const CARD_VISITOR_SILHOUETTE_FILL = '#001a42'
-
-/**
- * S30 — the pre-photo state of the state-deputy model: the visitor placeholder
- * of the design gate drawn over the deputy art (head circle + shoulder dome),
- * normalized on the photo window so every art uses the same ruler. The shape
- * mirrors the design's CSS (head = 34% of the window width at the top; shoulders
- * = full width, 72% of the height with their base 3% past the window bottom, so
- * the front overlay covers the seam). The gate's small bottom corner radius
- * (10%) is deliberately omitted: it falls entirely behind the front overlay.
- */
-export const drawCardVisitorSilhouette = (ctx: CardDrawContext, window: CardRect): void => {
-  const centerX = window.x + window.width / 2
-  const headRadius = window.width * 0.17
-  const shoulderHeight = window.height * 0.72
-  const shoulderBottom = window.y + window.height * 1.03
-  const shoulderTop = shoulderBottom - shoulderHeight
-  const domeRadiusX = window.width * 0.48
-  const domeRadiusY = shoulderHeight * 0.48
-  const bodyTop = shoulderTop + domeRadiusY
-
-  ctx.fillStyle = CARD_VISITOR_SILHOUETTE_FILL
-
-  ctx.beginPath()
-  ctx.arc(centerX, window.y + headRadius, headRadius, 0, Math.PI * 2)
-  ctx.fill()
-
-  ctx.beginPath()
-  ctx.rect(window.x, bodyTop, window.width, shoulderBottom - bodyTop)
-  ctx.ellipse(centerX, bodyTop, domeRadiusX, domeRadiusY, 0, Math.PI, 0)
-  ctx.fill()
-}
-
 /** S30 — the foreground subject of a team composition. */
-type TeamCardSubject =
-  | {
-      kind: 'photo'
-      photo: CanvasImageSource
-      photoSize: CardPhotoSize
-      transform: CardPhotoTransform
-    }
-  | { kind: 'silhouette' }
+type TeamCardSubject = {
+  photo: CanvasImageSource
+  photoSize: CardPhotoSize
+  transform: CardPhotoTransform
+}
 
 export type TeamCardRenderArgs = {
   base: CanvasImageSource
   overlay: CanvasImageSource
-  subject: TeamCardSubject
+  /** `null` leaves the window empty: the chosen art shows exactly as delivered. */
+  subject: TeamCardSubject | null
   window: CardRect
   name: string
   fontFamily: string
@@ -293,17 +257,17 @@ export type TeamCardRenderResult = {
   /**
    * The normalized photo transform (zoom always in range; S33 — the offsets
    * follow the model's `photoPosition`, so a `free` model keeps them as sent);
-   * `null` for the silhouette subject.
+   * `null` when there is no photo subject.
    */
   transform: CardPhotoTransform | null
 }
 
 /**
  * S15/S30 — the team card composition, in the measured order: master base →
- * foreground subject (the framed cutout photo, or the visitor silhouette of the
- * state-deputy pre-photo state) → master front overlay → `TIME DE` banner →
- * blue name banner (only when the name fits; never cut silently). The two
- * banners are drawn by the renderer because neither master carries them.
+ * foreground subject (the framed cutout photo; `null` skips it and the window
+ * stays empty) → master front overlay → `TIME DE` banner → blue name banner
+ * (only when the name fits; never cut silently). The two banners are drawn by
+ * the renderer because neither master carries them.
  */
 export const renderTeamCard = (
   ctx: CardDrawContext,
@@ -313,7 +277,7 @@ export const renderTeamCard = (
   ctx.drawImage(args.base, 0, 0, model.width, model.height)
 
   let transform: CardPhotoTransform | null = null
-  if (args.subject.kind === 'photo') {
+  if (args.subject) {
     // S33 — the drawing and the returned transform follow the same policy read
     // from the model: a `free` team model never re-clamps the visitor position
     // (that would snap the photo back on the next paint).
@@ -331,8 +295,6 @@ export const renderTeamCard = (
       args.window,
       options,
     )
-  } else {
-    drawCardVisitorSilhouette(ctx, args.window)
   }
 
   ctx.drawImage(args.overlay, 0, 0, model.width, model.height)
