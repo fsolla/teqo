@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   buildContentPieceCatalogHref,
+  cardCatalogItems,
+  contentCatalogItems,
   contentPieceCatalogActiveFilters,
   contentPieceCatalogFacets,
   contentPieceDownloadFilename,
@@ -14,8 +16,11 @@ import {
   contentPieceThemeMatch,
   contentPieceThemeTerms,
   filterContentPieceCatalogItems,
+  isCardCatalogItem,
   parseContentPieceCatalogParams,
   toContentPiecePublicItem,
+  type CardCatalogItem,
+  type ContentCatalogItem,
   type ContentPiecePublicItem,
   type ContentPiecePublicSource,
 } from '@/lib/contentPieceCatalog'
@@ -43,6 +48,12 @@ const item = (patch: Partial<ContentPiecePublicSource> = {}): ContentPiecePublic
   if (!resolved) throw new Error('fixture should be public')
   return resolved
 }
+
+const pieceRows = (rows: readonly ContentCatalogItem[]): ContentPiecePublicItem[] =>
+  rows.filter((row): row is ContentPiecePublicItem => !isCardCatalogItem(row))
+
+const cardRows = (rows: readonly ContentCatalogItem[]): CardCatalogItem[] =>
+  rows.filter((row): row is CardCatalogItem => isCardCatalogItem(row))
 
 describe('content piece catalog params', () => {
   it('parses one valid value per facet and drops unknown values', () => {
@@ -185,7 +196,9 @@ describe('content piece catalog filtering', () => {
   ]
 
   const idsFor = (raw: Record<string, string>) =>
-    filterContentPieceCatalogItems(items, parseContentPieceCatalogParams(raw)).map((row) => row.id)
+    pieceRows(filterContentPieceCatalogItems(items, parseContentPieceCatalogParams(raw))).map(
+      (row) => row.id,
+    )
 
   it('combines facets and the accent-insensitive term', () => {
     expect(idsFor({})).toEqual([1, 2, 3])
@@ -200,9 +213,9 @@ describe('content piece catalog filtering', () => {
 
   it('ORs the literal query with the expanded theme terms, facets still AND', () => {
     const idsForTerms = (raw: Record<string, string>, terms: string[]) =>
-      filterContentPieceCatalogItems(items, parseContentPieceCatalogParams(raw), terms).map(
-        (row) => row.id,
-      )
+      pieceRows(
+        filterContentPieceCatalogItems(items, parseContentPieceCatalogParams(raw), terms),
+      ).map((row) => row.id)
 
     // No terms is byte-identical to the literal search.
     expect(idsForTerms({ q: 'escala' }, [])).toEqual([1])
@@ -212,6 +225,97 @@ describe('content piece catalog filtering', () => {
     // Facets keep narrowing the OR result.
     expect(idsForTerms({ q: 'zzz', tipo: 'video' }, ['card'])).toEqual([])
     expect(idsForTerms({ q: 'zzz' }, ['ESCALA'])).toEqual([1])
+  })
+
+  it('mixes the card items into the same facet and order (S38)', () => {
+    const rows = filterContentPieceCatalogItems(
+      [...items, ...cardCatalogItems()],
+      parseContentPieceCatalogParams({ tipo: 'card' }),
+    )
+
+    expect(rows.map((row) => (isCardCatalogItem(row) ? row.modelId : row.slug))).toEqual([
+      'card-feira',
+      ...cardCatalogItems().map((card) => card.modelId),
+    ])
+    expect(contentPieceCatalogFacets([...items, ...cardCatalogItems()]).tipo).toEqual([
+      { value: 'video', label: 'Vídeo' },
+      { value: 'card', label: 'Card' },
+    ])
+  })
+})
+
+describe('card models as catalogue items (S38)', () => {
+  const cards = cardCatalogItems()
+  const modelIdsFor = (raw: Record<string, string>) =>
+    cardRows(filterContentPieceCatalogItems(cards, parseContentPieceCatalogParams(raw))).map(
+      (card) => card.modelId,
+    )
+
+  it('builds one item per model with the studio deep link and the model copy', () => {
+    expect(cards.map((card) => card.modelId)).toEqual([
+      'eu-sou-solla',
+      'perfil-quadrado',
+      'perfil-retangular',
+      'time-de-voce',
+      'time-do-estadual',
+      'minha-colinha',
+    ])
+    expect(cards.every((card) => card.href === `/cards?model=${card.modelId}`)).toBe(true)
+    expect(cards.find((card) => card.modelId === 'minha-colinha')?.badge).toBe('NOVO')
+    expect(cards.every((card) => card.badge === null || card.modelId === 'minha-colinha')).toBe(
+      true,
+    )
+  })
+
+  it('carries the real art, or the neutral placeholder of the photo models', () => {
+    const artOf = (modelId: string) => cards.find((card) => card.modelId === modelId)?.art
+
+    expect(artOf('time-de-voce')).toEqual({ kind: 'image', src: '/cards/team-card-example.jpg' })
+    expect(artOf('eu-sou-solla')).toEqual({ kind: 'image', src: '/cards/name-card-base.jpg' })
+    expect(artOf('perfil-quadrado')).toEqual({ kind: 'placeholder', shape: 'square' })
+    expect(artOf('perfil-retangular')).toEqual({ kind: 'placeholder', shape: 'portrait' })
+  })
+
+  it('finds the models by nickname, by name and by description', () => {
+    expect(modelIdsFor({ q: 'santinho' })).toEqual(['time-de-voce', 'minha-colinha'])
+    expect(modelIdsFor({ q: 'foto de perfil' })).toEqual(['perfil-quadrado', 'perfil-retangular'])
+    expect(modelIdsFor({ q: 'colinha' })).toEqual(['minha-colinha'])
+    expect(modelIdsFor({ q: 'estadual' })).toEqual(['time-do-estadual'])
+    expect(modelIdsFor({ q: 'Moldura quadrada' })).toEqual(['perfil-quadrado'])
+    expect(modelIdsFor({ q: 'cola de votação' })).toEqual(['minha-colinha'])
+  })
+
+  it('matches the Tipo facet only as card and never a geographic/theme facet', () => {
+    expect(modelIdsFor({ tipo: 'card' })).toHaveLength(6)
+    expect(modelIdsFor({ tipo: 'video' })).toEqual([])
+    expect(modelIdsFor({ cidade: 'salvador' })).toEqual([])
+    expect(modelIdsFor({ regiao: 'metropolitano-de-salvador' })).toEqual([])
+    expect(modelIdsFor({ instituicao: 'camara-dos-deputados' })).toEqual([])
+    expect(modelIdsFor({ tema: 'saude' })).toEqual([])
+  })
+
+  it('feeds only the Tipo facet, never the geographic ones', () => {
+    const facets = contentPieceCatalogFacets(cards)
+
+    expect(facets.tipo).toEqual([{ value: 'card', label: 'Card' }])
+    expect(facets.cidade).toEqual([])
+    expect(facets.regiao).toEqual([])
+    expect(facets.instituicao).toEqual([])
+    expect(facets.tema).toEqual([])
+  })
+
+  it('appends the cards only to a non-empty Central', () => {
+    expect(contentCatalogItems([], cards)).toEqual([])
+    expect(contentCatalogItems([item()], cards)).toHaveLength(7)
+    expect(contentCatalogItems([item()], cards).map((row) => isCardCatalogItem(row))).toEqual([
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ])
   })
 })
 

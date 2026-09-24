@@ -23,6 +23,43 @@ describe('card model catalog (S13/S15)', () => {
     expect(new Set(CARD_MODELS.map((model) => model.id)).size).toBe(CARD_MODELS.length)
   })
 
+  it('pins the S38 catalogue copy: description and search nicknames per model', () => {
+    expect(
+      CARD_MODELS.map((model) => ({
+        id: model.id,
+        description: model.description,
+        aliases: [...model.aliases],
+      })),
+    ).toEqual([
+      { id: 'eu-sou-solla', description: 'Coloque seu nome no card oficial.', aliases: ['nome'] },
+      {
+        id: 'perfil-quadrado',
+        description: 'Foto de perfil quadrada.',
+        aliases: ['foto de perfil'],
+      },
+      {
+        id: 'perfil-retangular',
+        description: 'Foto vertical para stories.',
+        aliases: ['foto de perfil'],
+      },
+      {
+        id: 'time-de-voce',
+        description: 'Entre para o time com sua foto.',
+        aliases: ['santinho'],
+      },
+      {
+        id: 'time-do-estadual',
+        description: 'Escolha o estadual e personalize.',
+        aliases: ['estadual'],
+      },
+      {
+        id: 'minha-colinha',
+        description: 'Monte sua cola de votação.',
+        aliases: ['santinho', 'colinha'],
+      },
+    ])
+  })
+
   it('serves every master from the local /cards asset folder', () => {
     for (const model of CARD_MODELS) {
       expect(model.assetSrc.startsWith('/cards/')).toBe(true)

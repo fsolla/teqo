@@ -39,6 +39,11 @@ import {
 import { GET as getPublicPieceMedia } from '@/app/(frontend)/conteudos/[slug]/midia/route'
 import type { ContentPieceCuratedField } from '@/lib/contentPiece'
 import {
+  isCardCatalogItem,
+  type ContentCatalogItem,
+  type ContentPiecePublicItem,
+} from '@/lib/contentPieceCatalog'
+import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
@@ -251,6 +256,13 @@ const withTempDir = async <T>(run: (tempDir: string) => Promise<T>): Promise<T> 
     await rm(tempDir, { recursive: true, force: true })
   }
 }
+
+/**
+ * S38 — the loader returns pieces plus the synthetic card items; the piece
+ * assertions narrow here (the card side has no id/themeMatch by contract).
+ */
+const pieceRows = (rows: readonly ContentCatalogItem[]): ContentPiecePublicItem[] =>
+  rows.filter((row): row is ContentPiecePublicItem => !isCardCatalogItem(row))
 
 describe('content pieces (C211)', () => {
   let communicator: CampaignUser
@@ -1345,7 +1357,7 @@ describe('content pieces (C211)', () => {
     expect(expansionCalls).toEqual(['defesa do SUS'])
     expect(data.themeUnavailable).toBe(false)
     expect(data.themeApplied).toBe(true)
-    const item = data.items.find((row) => row.id === match.piece.id)
+    const item = pieceRows(data.items).find((row) => row.id === match.piece.id)
     expect(item?.themeMatch?.term).toBe(term)
     expect(item?.themeMatch?.evidence?.quoted).toBe(true)
     expect(item?.themeMatch?.evidence?.parts.some((part) => part.highlighted)).toBe(true)
@@ -1363,7 +1375,7 @@ describe('content pieces (C211)', () => {
 
     expect(data.themeUnavailable).toBe(true)
     expect(data.themeApplied).toBe(false)
-    const item = data.items.find((row) => row.id === match.piece.id)
+    const item = pieceRows(data.items).find((row) => row.id === match.piece.id)
     expect(item).toBeTruthy()
     expect(item?.themeMatch).toBeNull()
   })
@@ -1380,8 +1392,8 @@ describe('content pieces (C211)', () => {
 
     expect(data.themeUnavailable).toBe(false)
     expect(data.themeApplied).toBe(false)
-    expect(data.items.map((row) => row.id)).toEqual([match.piece.id])
-    expect(data.items.every((row) => row.themeMatch === null)).toBe(true)
+    expect(pieceRows(data.items).map((row) => row.id)).toEqual([match.piece.id])
+    expect(pieceRows(data.items).every((row) => row.themeMatch === null)).toBe(true)
   })
 
   it('never expands without navigation signals (S28)', async () => {
@@ -1419,7 +1431,7 @@ describe('content pieces (C211)', () => {
     expect(called).toBe(false)
     expect(data.params.mode).toBeNull()
     expect(data.themeUnavailable).toBe(false)
-    expect(data.items.map((row) => row.id)).toEqual([match.piece.id])
+    expect(pieceRows(data.items).map((row) => row.id)).toEqual([match.piece.id])
   })
 
   it('never surfaces a draft in the theme search (S28)', async () => {
@@ -1441,8 +1453,51 @@ describe('content pieces (C211)', () => {
       expandTheme: async () => ({ terms: [term] }),
     })
 
-    const ids = data.items.map((row) => row.id)
+    const ids = pieceRows(data.items).map((row) => row.id)
     expect(ids).toContain(published.piece.id)
     expect(ids).not.toContain(draft.piece.id)
+  })
+
+  it('appends the six card items to a non-empty Central (S38)', async () => {
+    const marker = `cards-${Date.now()}`
+    const match = await createPiece({ title: `Peça ${marker}`, status: 'publicado' })
+
+    const data = await loadContentPieceCatalogSearch({ rawSearchParams: {} })
+
+    // `publishedCount` still counts pieces only: with no filters the board is
+    // every published piece plus the six cards — never cards alone.
+    const pieces = pieceRows(data.items)
+    expect(data.publishedCount).toBe(pieces.length)
+    expect(pieces.map((row) => row.id)).toContain(match.piece.id)
+    const cards = data.items.filter(isCardCatalogItem)
+    expect(cards.map((card) => card.modelId)).toEqual([
+      'eu-sou-solla',
+      'perfil-quadrado',
+      'perfil-retangular',
+      'time-de-voce',
+      'time-do-estadual',
+      'minha-colinha',
+    ])
+    expect(cards.every((card) => card.href.startsWith('/cards?model='))).toBe(true)
+    expect(data.facets.tipo).toContainEqual({ value: 'card', label: 'Card' })
+  })
+
+  it('finds the card models by nickname and keeps them out of the geographic facets (S38)', async () => {
+    const marker = `cards-busca-${Date.now()}`
+    await createPiece({ title: `Peça ${marker}`, status: 'publicado' })
+
+    const santinho = await loadContentPieceCatalogSearch({ rawSearchParams: { q: 'santinho' } })
+    expect(santinho.items.filter(isCardCatalogItem).map((card) => card.modelId)).toEqual([
+      'time-de-voce',
+      'minha-colinha',
+    ])
+
+    const geo = await loadContentPieceCatalogSearch({
+      rawSearchParams: { q: 'santinho', cidade: 'salvador' },
+    })
+    expect(geo.items.filter(isCardCatalogItem)).toEqual([])
+
+    const byType = await loadContentPieceCatalogSearch({ rawSearchParams: { tipo: 'card' } })
+    expect(byType.items.filter(isCardCatalogItem)).toHaveLength(6)
   })
 })

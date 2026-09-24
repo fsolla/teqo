@@ -159,9 +159,11 @@ export const E2E_AFFECTED_MANIFEST = [
     // on-demand play, the private-media public route, the vote share sheet and
     // the kill-switch contract over the C211 listing tag. C213 adds the
     // anonymous beacon endpoint, its vocabulary and the event collection the
-    // public page (and the public download) write to.
-    // S39 — the home sample is wired only by the home page and the pure
-    // selection module; the section components live under `components/conteudos`.
+    // public page (and the public download) write to. S38 adds the card models
+    // as catalogue items (the copy/aliases live in the model catalog) and the
+    // card-opening variant of the beacon schema. S39 adds the home sample,
+    // wired by the home page and the pure selection module (the section
+    // components live under `components/conteudos`).
     prefixes: [
       'src/app/(frontend)/conteudos',
       'src/app/(frontend)/(home)',
@@ -171,6 +173,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/contentPieceHomeSelection.ts',
       'src/lib/contentPieceShare',
       'src/lib/contentEvents.ts',
+      'src/lib/cardModels.ts',
+      'src/lib/schemas/contentEvent.ts',
       'src/utilities/content/contentPieceReads.ts',
       // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
       'src/utilities/ogImageReads.ts',

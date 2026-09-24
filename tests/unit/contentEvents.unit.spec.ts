@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   CONTENT_EVENT_ENDPOINT,
   sendCardDownloadEvent,
+  sendCardOpeningEvent,
   sendContentPieceEvent,
 } from '@/lib/contentEvents'
 
@@ -144,5 +145,36 @@ describe('sendCardDownloadEvent', () => {
 
     vi.stubGlobal('fetch', undefined)
     expect(() => sendCardDownloadEvent('time-do-estadual', 'julio')).not.toThrow()
+  })
+})
+
+describe('sendCardOpeningEvent (S38)', () => {
+  it('carries the model id only, as the opening of a card', async () => {
+    const sendBeacon = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('navigator', { sendBeacon })
+
+    sendCardOpeningEvent('time-de-voce')
+
+    expect(sendBeacon).toHaveBeenCalledTimes(1)
+    const [endpoint, blob] = sendBeacon.mock.calls[0]!
+    expect(endpoint).toBe(CONTENT_EVENT_ENDPOINT)
+    await expect((blob as Blob).text()).resolves.toBe(
+      JSON.stringify({ type: 'abertura', subjectType: 'card', cardModelId: 'time-de-voce' }),
+    )
+  })
+
+  it('never throws when the beacon and the fetch both fail', async () => {
+    vi.stubGlobal('navigator', {
+      sendBeacon: vi.fn().mockImplementation(() => {
+        throw new Error('beacon exploded')
+      }),
+    })
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')))
+
+    expect(() => sendCardOpeningEvent('minha-colinha')).not.toThrow()
+    await Promise.resolve()
+
+    vi.stubGlobal('fetch', undefined)
+    expect(() => sendCardOpeningEvent('minha-colinha')).not.toThrow()
   })
 })

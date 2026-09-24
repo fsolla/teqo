@@ -27,7 +27,7 @@ export type ContentEventType = (typeof CONTENT_EVENT_TYPES)[number]
 
 /** Admin/REST labels only — the public surfaces own their own copy. */
 export const contentEventTypeLabels: Record<ContentEventType, string> = {
-  abertura: 'Abertura da peça',
+  abertura: 'Abertura',
   download: 'Download',
   compartilhar_whatsapp: 'Clique em compartilhar (WhatsApp)',
   compartilhar_link: 'Clique em compartilhar (link)',
@@ -124,6 +124,28 @@ export const sendCardDownloadEvent = (
     cardModelId: modelId,
   }
   if (stateDeputySlug) body.stateDeputySlug = stateDeputySlug
+
+  postContentEventBody(JSON.stringify(body))
+}
+
+type CardOpeningBeaconBody = {
+  type: 'abertura'
+  subjectType: 'card'
+  cardModelId: CardModelId
+}
+
+/**
+ * S38 — one anonymous opening event of a card model: the visitor clicked the
+ * catalogue item and was routed to the studio with the model chosen. Same
+ * transport and same fail-soft contract as the piece beacon: it never throws
+ * and never delays the navigation.
+ */
+export const sendCardOpeningEvent = (modelId: CardModelId): void => {
+  const body: CardOpeningBeaconBody = {
+    type: 'abertura',
+    subjectType: 'card',
+    cardModelId: modelId,
+  }
 
   postContentEventBody(JSON.stringify(body))
 }
