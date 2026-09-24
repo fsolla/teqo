@@ -75,6 +75,10 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // route and the vote share sheet are new contracts over the C211
       // collection (curated only).
       'frontendConteudos',
+      // C219 — deliberate: the recordings acervo gained its own search/facet
+      // contract and the migration makes every PR of this delivery high-risk
+      // (curated only).
+      'campaignSpeechAcervo',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

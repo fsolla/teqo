@@ -32,6 +32,7 @@ import {
   labelRecordingSpeakerForActor,
   retryRecordingForActor,
 } from '@/app/(campaign)/campanha/actions/recording'
+import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import { RECORDING_MAX_BYTES } from '@/lib/recording'
 import {
   RECORDING_FORBIDDEN_MESSAGE,
@@ -41,6 +42,7 @@ import { normalizeForSearch } from '@/lib/speechSearch'
 import type { CampaignUser, RecordingMedia } from '@/payload-types'
 import config from '@/payload.config'
 import { hookFilledCreateData } from '@/utilities/hookFilledData'
+import { classifyRecordingFacets } from '@/utilities/recordings/recordingClassification'
 import {
   reapStaleRecording,
   RECORDING_STALE_MS,
@@ -100,6 +102,12 @@ const createRecording = async ({
   segments = [],
   speakerLabels,
   withMedia = true,
+  recordedAt,
+  durationSeconds,
+  topics,
+  scopes,
+  classifiedBy,
+  mentionedMunicipalities,
 }: {
   status?: 'uploading' | 'processing' | 'ready' | 'failed'
   title?: string
@@ -111,6 +119,12 @@ const createRecording = async ({
   }[]
   speakerLabels?: { speakerKey: string; label: string }[]
   withMedia?: boolean
+  recordedAt?: string
+  durationSeconds?: number
+  topics?: ('saude' | 'cultura' | 'educacao')[]
+  scopes?: ('bahia' | 'brasil' | 'internacional')[]
+  classifiedBy?: 'gazetteer' | 'llm' | 'manual'
+  mentionedMunicipalities?: number[]
 } = {}) => {
   const media = withMedia ? await createMedia(`${title}.mp4`) : null
   const recording = await payload.create({
@@ -120,6 +134,12 @@ const createRecording = async ({
       status,
       ...(media ? { media: media.id } : {}),
       ...(speakerLabels ? { speakerLabels } : {}),
+      ...(recordedAt ? { recordedAt } : {}),
+      ...(durationSeconds !== undefined ? { durationSeconds } : {}),
+      ...(topics ? { topics } : {}),
+      ...(scopes ? { scopes } : {}),
+      ...(classifiedBy ? { classifiedBy } : {}),
+      ...(mentionedMunicipalities ? { mentionedMunicipalities } : {}),
     },
     overrideAccess: true,
   })
@@ -431,6 +451,201 @@ describe('uploaded recordings (C199)', () => {
     expect(segments.docs[0]?.searchText).toBe('bom dia a todas')
   })
 
+  it('classifies the transcript with the injected classifier and derives the year', async () => {
+    const fixtures = campaignFixtures()
+    const municipality = await fixtures.getMunicipality()
+    const catalogEntry = getMunicipalityCatalogEntry(municipality.slug)
+    expect(catalogEntry).toBeDefined()
+
+    const { recording } = await createRecording({
+      status: 'processing',
+      title: 'Plenária sobre saúde',
+    })
+    await payload.update({
+      collection: 'recording',
+      id: recording.id,
+      data: { recordedAt: '2024-03-10T12:00:00.000Z' },
+      overrideAccess: true,
+    })
+
+    const restore = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+    try {
+      await runRecordingJob(
+        payload,
+        recording.id,
+        async () => ({
+          ok: true,
+          segments: [{ start: 1, end: 4, text: 'Falamos sobre a saúde no município' }],
+          durationSeconds: 120,
+        }),
+        null,
+        async (input) => {
+          expect(input.transcript).toContain('saúde no município')
+          return {
+            facets: {
+              topics: ['saude'],
+              scopes: ['bahia'],
+              municipalities: [catalogEntry!],
+              people: [],
+              programs: [],
+              projects: [],
+              classifiedBy: 'llm',
+            },
+            llm: { used: true, totalTokens: 42, estimatedCostUsd: 0.001, error: null },
+          }
+        },
+      )
+    } finally {
+      restore()
+    }
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(updated.status).toBe('ready')
+    expect(updated.year).toBe(2024)
+    expect(updated.topics).toEqual(['saude'])
+    expect(updated.scopes).toEqual(['bahia'])
+    expect(updated.classifiedBy).toBe('llm')
+    expect(updated.mentionedMunicipalities).toEqual([municipality.id])
+  })
+
+  it('never overwrites a manual facet curation with the job result', async () => {
+    const { recording } = await createRecording({
+      status: 'processing',
+      title: 'Curadoria manual',
+    })
+    await payload.update({
+      collection: 'recording',
+      id: recording.id,
+      data: { topics: ['cultura'], scopes: ['brasil'], classifiedBy: 'manual' },
+      overrideAccess: true,
+    })
+
+    const restore = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+    try {
+      await runRecordingJob(
+        payload,
+        recording.id,
+        async () => ({
+          ok: true,
+          segments: [{ start: 1, end: 4, text: 'Falamos sobre saúde' }],
+          durationSeconds: 120,
+        }),
+        null,
+        async () => ({
+          facets: {
+            topics: ['saude'],
+            scopes: ['bahia'],
+            municipalities: [],
+            people: [],
+            programs: [],
+            projects: [],
+            classifiedBy: 'llm',
+          },
+          llm: { used: true, totalTokens: 10, estimatedCostUsd: 0, error: null },
+        }),
+      )
+    } finally {
+      restore()
+    }
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(updated.status).toBe('ready')
+    expect(updated.topics).toEqual(['cultura'])
+    expect(updated.scopes).toEqual(['brasil'])
+    expect(updated.classifiedBy).toBe('manual')
+  })
+
+  it('lets an authenticated actor overwrite a manual curation (the escape hatch)', async () => {
+    const { recording } = await createRecording({
+      status: 'ready',
+      title: 'Curadoria corrigida no admin',
+      topics: ['cultura'],
+      scopes: ['brasil'],
+      classifiedBy: 'manual',
+    })
+
+    const updated = await payload.update({
+      collection: 'recording',
+      id: recording.id,
+      data: { topics: ['saude'], scopes: ['bahia'], classifiedBy: 'llm' },
+      user: communicator,
+      overrideAccess: false,
+    })
+
+    expect(updated.topics).toEqual(['saude'])
+    expect(updated.scopes).toEqual(['bahia'])
+    expect(updated.classifiedBy).toBe('llm')
+  })
+
+  it('keeps the transcript and claims no provenance when the classifier throws', async () => {
+    const { recording } = await createRecording({
+      status: 'processing',
+      title: 'Classificador fora do ar',
+    })
+
+    const restore = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+    try {
+      await runRecordingJob(
+        payload,
+        recording.id,
+        async () => ({
+          ok: true,
+          segments: [{ start: 1, end: 4, text: 'Bom dia a todas' }],
+          durationSeconds: 120,
+        }),
+        null,
+        async () => {
+          throw new Error('classificador fora do ar')
+        },
+      )
+    } finally {
+      restore()
+    }
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(updated.status).toBe('ready')
+    // The fake ffmpeg emits two chunks and the injected transcriber repeats the
+    // answer for both, exactly like the end-to-end job test above.
+    expect(updated.searchText).toBe('bom dia a todas bom dia a todas')
+    expect(updated.classifiedBy).toBeNull()
+    expect(updated.topics ?? []).toEqual([])
+  })
+
+  it('resolves the gazetteer municipality without the LLM key (degraded provenance)', async () => {
+    const fixtures = campaignFixtures()
+    const municipality = await fixtures.getMunicipality()
+    const catalogEntry = getMunicipalityCatalogEntry(municipality.slug)
+    expect(catalogEntry).toBeDefined()
+
+    const restore = withEnv('DEEPINFRA_API_KEY', undefined)
+    try {
+      const classification = await classifyRecordingFacets({
+        payload,
+        transcript: `Falamos em ${catalogEntry!.city} sobre saúde e educação`,
+      })
+      expect(classification?.classifiedBy).toBe('gazetteer')
+      expect(classification?.topics).toEqual(expect.arrayContaining(['saude', 'educacao']))
+      expect(classification?.mentionedMunicipalities).toContain(municipality.id)
+    } finally {
+      restore()
+    }
+  })
+
   it('marks a provider failure as failed, preserves the file and retries', async () => {
     const { recording } = await createRecording({ status: 'processing', title: 'Debate' })
 
@@ -602,6 +817,123 @@ describe('uploaded recordings (C199)', () => {
 
     const options = await loadRecordingFilterOptions(payload, communicator)
     expect(options.people).toContain(`Dep. ${marker}`)
+  })
+
+  it('filters by the C219 facets and lists their options', async () => {
+    const fixtures = campaignFixtures()
+    const municipality = await fixtures.getMunicipality()
+    const marker = `facetas${Date.now().toString(36)}`
+
+    const { recording: health } = await createRecording({
+      title: `Plenária de saúde ${marker}`,
+      recordedAt: '2025-05-04T10:00:00.000Z',
+      durationSeconds: 90,
+      topics: ['saude'],
+      scopes: ['bahia'],
+      classifiedBy: 'llm',
+      mentionedMunicipalities: [municipality.id],
+      segments: [{ startSeconds: 0, endSeconds: 5, text: `Saúde em pauta ${marker}` }],
+    })
+    const { recording: culture } = await createRecording({
+      title: `Debate de cultura ${marker}`,
+      recordedAt: '2023-01-01T10:00:00.000Z',
+      durationSeconds: 400,
+      topics: ['cultura'],
+      segments: [{ startSeconds: 0, endSeconds: 5, text: `Cultura em pauta ${marker}` }],
+    })
+    const { recording: noDuration } = await createRecording({
+      title: `Material sem duração ${marker}`,
+      segments: [{ startSeconds: 0, endSeconds: 5, text: `Ainda processando ${marker}` }],
+    })
+
+    const load = (extra: Record<string, string>) =>
+      loadRecordingsPageData(payload, communicator, {
+        source: 'enviadas',
+        q: marker,
+        ...extra,
+      })
+
+    expect((await load({ year: '2025' })).rows.map((row) => row.id)).toEqual([health.id])
+    expect((await load({ topic: 'saude' })).rows.map((row) => row.id)).toEqual([health.id])
+    expect((await load({ scope: 'bahia' })).rows.map((row) => row.id)).toEqual([health.id])
+    expect(
+      (await load({ municipality: String(municipality.id) })).rows.map((row) => row.id),
+    ).toEqual([health.id])
+    expect((await load({ duration: 'curta' })).rows.map((row) => row.id)).toEqual([health.id])
+    expect((await load({ duration: 'longa' })).rows.map((row) => row.id)).toEqual([culture.id])
+    expect((await load({ duration: 'sem_duracao' })).rows.map((row) => row.id)).toEqual([
+      noDuration.id,
+    ])
+
+    const options = await loadRecordingFilterOptions(payload, communicator)
+    expect(options.years).toContain(2025)
+    expect(options.municipalities.map((option) => option.value)).toContain(String(municipality.id))
+  })
+
+  it('orders by duration only over rows with a measured duration', async () => {
+    const marker = `ordem${Date.now().toString(36)}`
+    const { recording: short } = await createRecording({
+      title: `Curta ${marker}`,
+      durationSeconds: 60,
+      segments: [{ startSeconds: 0, endSeconds: 5, text: `Trecho ${marker}` }],
+    })
+    const { recording: long } = await createRecording({
+      title: `Longa ${marker}`,
+      durationSeconds: 900,
+      segments: [{ startSeconds: 0, endSeconds: 5, text: `Trecho ${marker}` }],
+    })
+    await createRecording({
+      title: `Sem duração ${marker}`,
+      segments: [{ startSeconds: 0, endSeconds: 5, text: `Trecho ${marker}` }],
+    })
+
+    const load = (sort?: string) =>
+      loadRecordingsPageData(payload, communicator, {
+        source: 'enviadas',
+        q: marker,
+        ...(sort ? { sort } : {}),
+      })
+
+    expect((await load('duracao_maior')).rows.map((row) => row.id)).toEqual([long.id, short.id])
+    expect((await load('duracao_menor')).rows.map((row) => row.id)).toEqual([short.id, long.id])
+    // The default order keeps every row (the gate only applies to duration orders).
+    expect((await load()).rows.length).toBe(3)
+  })
+
+  it('searches by theme with the injected expansion and degrades honestly', async () => {
+    const marker = `tema${Date.now().toString(36)}`
+    const { recording } = await createRecording({
+      title: `Merenda ${marker}`,
+      segments: [
+        { startSeconds: 0, endSeconds: 6, text: `Falamos de alimentação escolar ${marker}.` },
+      ],
+    })
+
+    const expanded = await loadRecordingsPageData(
+      payload,
+      communicator,
+      { source: 'enviadas', q: 'merenda escolar', mode: 'tema' },
+      async (theme) => {
+        expect(theme).toBe('merenda escolar')
+        return { terms: ['alimentacao escolar'] }
+      },
+    )
+    expect(expanded.themeApplied).toBe(true)
+    expect(expanded.themeUnavailable).toBe(false)
+    const row = expanded.rows.find((item) => item.id === recording.id)
+    expect(row).toBeDefined()
+    expect(row?.excerpt?.parts.some((part) => part.highlighted)).toBe(true)
+
+    const degraded = await loadRecordingsPageData(
+      payload,
+      communicator,
+      { source: 'enviadas', q: 'merenda escolar', mode: 'tema' },
+      async () => null,
+    )
+    expect(degraded.themeApplied).toBe(false)
+    expect(degraded.themeUnavailable).toBe(true)
+    // Honest fallback: the literal phrase does not occur, so the row is out.
+    expect(degraded.rows.map((item) => item.id)).not.toContain(recording.id)
   })
 
   it('labels one cluster through the action and rebuilds the facet names', async () => {

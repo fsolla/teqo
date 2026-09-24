@@ -18,6 +18,21 @@ export type CampaignListOmniboxSuggestion = {
   keywords?: readonly string[]
 }
 
+/**
+ * The trigger text of a facet chip: the dimension alone when nothing is
+ * selected, "Ano: 2026" for one value and "Tema: 3" for several — one spelling
+ * for every acervo filter bar (C154/C219).
+ */
+export const selectedFilterTriggerLabel = (
+  base: string,
+  values: readonly string[],
+  labels?: Readonly<Record<string, string>>,
+): string => {
+  if (values.length === 0) return base
+  if (values.length === 1) return `${base}: ${labels?.[values[0]!] ?? values[0]}`
+  return `${base}: ${values.length}`
+}
+
 const omniboxQueryMatches = (
   haystack: string,
   needle: string,

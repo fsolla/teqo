@@ -1358,7 +1358,7 @@ export interface ContentEvent {
   createdAt: string;
 }
 /**
- * Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura.
+ * Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura. Tema, alcance e municípios citados são classificados automaticamente pelo início da transcrição e podem ser corrigidos aqui (a correção vira proveniência "Manual").
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "recording".
@@ -1370,6 +1370,10 @@ export interface Recording {
    * Data em que a gravação foi feita (opcional).
    */
   recordedAt?: string | null;
+  /**
+   * Derivado da data da gravação.
+   */
+  year?: number | null;
   status: 'uploading' | 'processing' | 'ready' | 'failed';
   /**
    * Progresso honesto da transcrição em andamento.
@@ -1387,6 +1391,34 @@ export interface Recording {
    * Concatenação normalizada dos segmentos (sem acentos, minúsculas).
    */
   searchText?: string | null;
+  topics?:
+    | (
+        | 'saude'
+        | 'educacao'
+        | 'cultura'
+        | 'esporte'
+        | 'seguranca-publica'
+        | 'meio-ambiente'
+        | 'economia-trabalho'
+        | 'direitos-humanos'
+        | 'infraestrutura'
+        | 'ciencia-tecnologia'
+        | 'politica-instituicoes'
+        | 'agricultura'
+        | 'habitacao-cidades'
+        | 'comunicacao-midia'
+        | 'igualdade-racial'
+        | 'mulheres-genero'
+        | 'juventude'
+        | 'pessoa-deficiencia'
+      )[]
+    | null;
+  scopes?: ('bahia' | 'brasil' | 'internacional')[] | null;
+  /**
+   * Automática e auditável: Gazetteer (léxico), LLM (refinamento validado) ou Manual (correção humana).
+   */
+  classifiedBy?: ('gazetteer' | 'llm' | 'manual') | null;
+  mentionedMunicipalities?: (number | Municipality)[] | null;
   /**
    * Rótulos humanos por agrupamento acústico (chave → nome). Identificação sempre humana; o acervo nunca sugere ou infere pessoas.
    */
@@ -2867,11 +2899,16 @@ export interface ContentEventSelect<T extends boolean = true> {
 export interface RecordingSelect<T extends boolean = true> {
   title?: T;
   recordedAt?: T;
+  year?: T;
   status?: T;
   step?: T;
   media?: T;
   durationSeconds?: T;
   searchText?: T;
+  topics?: T;
+  scopes?: T;
+  classifiedBy?: T;
+  mentionedMunicipalities?: T;
   speakerLabels?:
     | T
     | {

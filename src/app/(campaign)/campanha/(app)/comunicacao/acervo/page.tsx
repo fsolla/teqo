@@ -5,9 +5,11 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { AcervoSourceToggle } from '@/components/campaign/recording/AcervoSourceToggle'
-import { RecordingPersonFilter } from '@/components/campaign/recording/RecordingPersonFilter'
+import { RecordingAcervoFilters } from '@/components/campaign/recording/RecordingAcervoFilters'
 import { RecordingResultList } from '@/components/campaign/recording/RecordingResultList'
+import { RecordingSortSelect } from '@/components/campaign/recording/RecordingSortSelect'
 import { RecordingStatusRefresher } from '@/components/campaign/recording/RecordingStatusRefresher'
+import { RecordingThemeFallbackNotice } from '@/components/campaign/recording/RecordingThemeFallbackNotice'
 import { RecordingUploadDialog } from '@/components/campaign/recording/RecordingUploadDialog'
 import { CampaignListEmptyState } from '@/components/campaign/shared/CampaignListEmptyState'
 import { CampaignListFooter } from '@/components/campaign/shared/CampaignListFooter'
@@ -15,21 +17,22 @@ import {
   CampaignListPendingBoundary,
   CampaignListResults,
 } from '@/components/campaign/shared/CampaignListPending'
-import { CampaignSearchInput } from '@/components/campaign/shared/CampaignSearchInput'
+import { CampaignThemeRetryButton } from '@/components/campaign/shared/CampaignThemeRetryButton'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { SpeechAcervoFilters } from '@/components/campaign/speech/SpeechAcervoFilters'
 import { SpeechRefineSearchButton } from '@/components/campaign/speech/SpeechRefineSearchButton'
 import { SpeechResultList } from '@/components/campaign/speech/SpeechResultList'
 import { SpeechThemeFallbackNotice } from '@/components/campaign/speech/SpeechThemeFallbackNotice'
-import { SpeechThemeRetryButton } from '@/components/campaign/speech/SpeechThemeRetryButton'
 import { Button } from '@/components/ui/button'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
 import { CAMPAIGN_COMMUNICATION_ACERVO, CAMPAIGN_COMMUNICATION_CORTES } from '@/lib/campaignPaths'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
 import {
   buildAcervoSourceHref,
+  buildRecordingFiltersKey,
   buildRecordingListHref,
   parseAcervoSource,
+  recordingHasActiveFilters,
 } from '@/utilities/recordings/recordingListUrl'
 import { loadRecordingsPageData } from '@/utilities/recordings/recordingPageData'
 import { buildSpeechFiltersKey, buildSpeechListHref } from '@/utilities/speech/speechListUrl'
@@ -78,80 +81,93 @@ const AcervoHeader = ({ source }: { source: 'camara' | 'enviadas' }) => (
   </div>
 )
 
-const RecordingsSearchForm = ({
-  query,
-  people,
-}: {
-  query?: string
-  people?: readonly string[]
-}) => (
-  <form method="get" action={CAMPAIGN_COMMUNICATION_ACERVO} className="flex flex-col gap-1.5">
-    <input type="hidden" name="source" value="enviadas" />
-    {/* The "Pessoa" facet survives a new textual search. */}
-    {(people ?? []).map((person) => (
-      <input key={person} type="hidden" name="person" value={person} />
-    ))}
-    {/* The shared input owns the accessible label; this is its visible twin. */}
-    <p className="text-sm font-medium">Buscar nas gravações enviadas</p>
-    <CampaignSearchInput
-      id="recording-search"
-      name="q"
-      label="Buscar nas gravações enviadas"
-      defaultValue={query}
-      placeholder="Busque por palavra ou trecho da transcrição…"
-    />
-    <button type="submit" className="sr-only">
-      Buscar
-    </button>
-  </form>
-)
-
 const RecordingsSource = ({
   data,
 }: {
   data: Awaited<ReturnType<typeof loadRecordingsPageData>>
 }) => {
-  const hasSearch = Boolean(data.state.q)
-  const hasPeople = (data.state.people?.length ?? 0) > 0
-  const hasFilters = hasSearch || hasPeople
+  const hasFilters = recordingHasActiveFilters(data.state)
+  const themeMode = data.state.mode === 'tema'
+  const themeActive = themeMode && data.themeApplied && !data.themeUnavailable
 
   return (
     <CampaignListPendingBoundary>
-      <RecordingsSearchForm query={data.state.q} people={data.state.people} />
+      <RecordingAcervoFilters
+        key={buildRecordingFiltersKey(data.state)}
+        state={data.state}
+        filterOptions={data.filterOptions}
+        themeUnavailable={data.themeUnavailable}
+      />
 
-      <RecordingPersonFilter state={data.state} options={data.filterOptions.people} />
+      {data.themeUnavailable ? <RecordingThemeFallbackNotice /> : null}
 
       <RecordingStatusRefresher
         recordings={data.rows.map((row) => ({ id: row.id, status: row.status }))}
       />
 
       <CampaignListResults>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold">
+              {data.themeUnavailable
+                ? 'Resultados por termo exato'
+                : themeActive
+                  ? 'Resultados por tema'
+                  : 'Gravações encontradas'}
+            </h2>
+            {themeMode ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {data.themeUnavailable
+                  ? 'Comportamento atual do acervo.'
+                  : themeActive
+                    ? 'Confira o indício em cada gravação antes de abrir.'
+                    : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-wrap items-end gap-2">
+            {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
+            <RecordingSortSelect state={data.state} />
+          </div>
+        </div>
+
         {data.rows.length > 0 ? (
           <RecordingResultList rows={data.rows} />
         ) : (
           <CampaignListEmptyState
-            className="border-solid"
+            className={themeActive ? 'border-solid' : undefined}
             icon={hasFilters ? SearchIcon : VideoIcon}
             title={
-              hasSearch
-                ? `Nenhuma gravação encontrada para "${data.state.q}"`
-                : hasPeople
-                  ? 'Nenhuma gravação encontrada com esse filtro'
-                  : 'Nenhuma gravação enviada ainda'
+              themeActive
+                ? 'Nenhuma gravação encontrada para este tema'
+                : data.state.q
+                  ? `Nenhuma gravação encontrada para "${data.state.q}"`
+                  : hasFilters
+                    ? 'Nenhuma gravação encontrada com esses filtros'
+                    : 'Nenhuma gravação enviada ainda'
             }
             description={
-              hasSearch
-                ? 'Tente outro termo ou limpe a busca para ver todas as gravações enviadas.'
-                : hasPeople
+              themeActive
+                ? 'Não encontramos uma gravação que corresponda ao sentido desta busca com os filtros atuais. Não vamos preencher a lista com resultados pouco relacionados.'
+                : hasFilters
                   ? 'Tente outro termo, remova filtros ou limpe a busca.'
                   : 'Envie um arquivo de vídeo para acompanhar a transcrição e pesquisar o conteúdo no acervo.'
             }
           >
-            {hasFilters ? (
+            {themeActive ? (
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Button asChild className="min-h-11">
+                  <Link href={buildAcervoSourceHref('enviadas')}>Limpar filtros</Link>
+                </Button>
+                <Button asChild variant="outline" className="min-h-11">
+                  <Link href={buildRecordingListHref({ ...data.state, mode: undefined }, 1)}>
+                    Trocar para termo exato
+                  </Link>
+                </Button>
+              </div>
+            ) : hasFilters ? (
               <Button asChild variant="outline" className="min-h-11">
-                <Link href={buildAcervoSourceHref('enviadas')}>
-                  {hasPeople ? 'Limpar filtros' : 'Limpar busca'}
-                </Link>
+                <Link href={buildAcervoSourceHref('enviadas')}>Limpar filtros</Link>
               </Button>
             ) : (
               <RecordingUploadDialog triggerLabel="Enviar gravação" />
@@ -233,7 +249,7 @@ export default async function SpeechAcervoPage({ searchParams }: SpeechAcervoPag
                       : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
                 </p>
               </div>
-              {data.themeUnavailable ? <SpeechThemeRetryButton /> : null}
+              {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
             </div>
           ) : null}
 

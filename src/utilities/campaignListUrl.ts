@@ -82,6 +82,21 @@ export const strictDecimalInteger = (value: string | undefined): number | undefi
   return Number.isSafeInteger(number) ? number : undefined
 }
 
+/**
+ * Structural validation of the data-driven year facet (both acervo sources):
+ * a plausible calendar year, not a closed enum.
+ */
+export const parseYearValues = (raw: string | string[] | undefined): number[] =>
+  allParamValues(raw)
+    .map((token) => strictDecimalInteger(token))
+    .filter((year): year is number => year !== undefined && year >= 1900 && year <= 2100)
+
+/** Structural validation of a municipality-id facet (positive safe integer). */
+export const parseMunicipalityValues = (raw: string | string[] | undefined): number[] =>
+  allParamValues(raw)
+    .map((token) => strictDecimalInteger(token))
+    .filter((id): id is number => id !== undefined && id > 0)
+
 export const inspectRawListParams = (
   params: RawSearchParams,
   paramNameSet: ReadonlySet<string>,

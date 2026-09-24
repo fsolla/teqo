@@ -90,6 +90,7 @@
     "camara:pilot": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm\" node scripts/pilot-camara-speeches.mjs",
     "camara:import": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/import-camara-speeches.mjs",
     "falas-web:import": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/import-web-speeches.mjs",
+    "recordings:classify": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/backfill-recording-facets.mjs",
     "typecheck": "tsc --noEmit",
     "typecheck:tsc6": "tsc6 --noEmit",
     "prepare": "husky",

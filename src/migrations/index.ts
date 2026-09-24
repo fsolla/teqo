@@ -82,6 +82,7 @@ import * as migration_20260923_032714_add_content_piece from './20260923_032714_
 import * as migration_20260923_054145_add_share_link_announcement from './20260923_054145_add_share_link_announcement';
 import * as migration_20260923_172437_add_content_events from './20260923_172437_add_content_events';
 import * as migration_20260923_190414_add_content_event_variant from './20260923_190414_add_content_event_variant';
+import * as migration_20260924_040210_add_recording_facets from './20260924_040210_add_recording_facets';
 import * as migration_20260924_042028_add_web_speech_origin from './20260924_042028_add_web_speech_origin';
 
 export const migrations = [
@@ -504,6 +505,11 @@ export const migrations = [
     up: migration_20260923_190414_add_content_event_variant.up,
     down: migration_20260923_190414_add_content_event_variant.down,
     name: '20260923_190414_add_content_event_variant',
+  },
+  {
+    up: migration_20260924_040210_add_recording_facets.up,
+    down: migration_20260924_040210_add_recording_facets.down,
+    name: '20260924_040210_add_recording_facets'
   },
   {
     up: migration_20260924_042028_add_web_speech_origin.up,

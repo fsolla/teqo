@@ -39,6 +39,12 @@ import {
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
 import { downloadPrivateMediaToFile } from '@/utilities/privateMedia/privateMediaResponse'
+import {
+  classifyRecordingFacets,
+  recordingFacetWriteData,
+  type RecordingFacetClassifier,
+} from '@/utilities/recordings/recordingClassification'
+import { classifySpeech } from '@/utilities/speech/speechClassifier'
 
 /**
  * C199 — the transcription job: download the private recording, extract/split
@@ -128,6 +134,7 @@ export const runRecordingJob = async (
   recordingId: number,
   transcribe: ChunkTranscriber = deepInfraTranscribeSegments,
   diarize: SpeakerDiarizer | null = configuredSpeakerDiarizer(),
+  classify: RecordingFacetClassifier = classifySpeech,
 ): Promise<void> => {
   let tempDir: string | null = null
   let currentStep: RecordingStep = 'extracting'
@@ -237,6 +244,15 @@ export const runRecordingJob = async (
       }
     }
 
+    // C219 — facet classification runs OUTSIDE the save transaction (the LLM
+    // may take a minute) and never fails the recording: a null result keeps the
+    // transcript with no facets and no provenance claim.
+    const classification = await classifyRecordingFacets({
+      payload,
+      transcript: keyedSegments.map((segment) => segment.text).join(' '),
+      classify,
+    })
+
     await markStep('saving')
     await withPayloadTransaction(payload, async ({ req }) => {
       // Fresh reads inside the transaction: the labels a curator wrote while
@@ -310,6 +326,7 @@ export const runRecordingJob = async (
           searchText: recordingSearchText(segments),
           speakerLabels: labels,
           speakerLabelsDropped: dropped,
+          ...(classification ? recordingFacetWriteData(classification) : {}),
         },
         req,
       )

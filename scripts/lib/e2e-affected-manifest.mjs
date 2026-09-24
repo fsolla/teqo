@@ -47,6 +47,10 @@ export const E2E_CURATED_SPECS = [
   // and the vote share sheet are new contracts over the C211 collection
   // (curated only).
   'frontendConteudos',
+  // C219 — deliberate: the recordings acervo gained its own search/facet
+  // contract and the migration makes every PR of this delivery high-risk
+  // (curated only).
+  'campaignSpeechAcervo',
 ]
 
 /**
@@ -443,6 +447,10 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/reels',
       // C199 — the uploaded recordings source and its private media owner.
       'src/components/campaign/recording',
+      // C219 — the recording collection owns the facet/provenance hooks the
+      // recordings list filters on (the PR is high-risk anyway; the entry keeps
+      // the mapping honest for the curated/local paths).
+      'src/collections/Recording.ts',
       // C211 — the Central de Conteúdos surfaces.
       'src/components/campaign/content',
       'src/utilities/speech',

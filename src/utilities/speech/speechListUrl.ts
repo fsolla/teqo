@@ -19,6 +19,8 @@ import {
   firstValue,
   normalizedText,
   parseExhaustiveEnumParam,
+  parseMunicipalityValues,
+  parseYearValues,
   resolveListUrl,
   strictDecimalInteger,
   type RawSearchParams,
@@ -94,16 +96,6 @@ const speechTopicSet = new Set<string>(SPEECH_TOPICS.map(({ value }) => value))
 const speechScopeSet = new Set<string>(SPEECH_SCOPES.map(({ value }) => value))
 const speechDurationSet = new Set<string>(SPEECH_DURATION_BUCKETS.map(({ value }) => value))
 const MAX_PHASE_LENGTH = 80
-
-const parseYearValues = (raw: string | string[] | undefined): number[] =>
-  allParamValues(raw)
-    .map((token) => strictDecimalInteger(token))
-    .filter((year): year is number => year !== undefined && year >= 1900 && year <= 2100)
-
-const parseMunicipalityValues = (raw: string | string[] | undefined): number[] =>
-  allParamValues(raw)
-    .map((token) => strictDecimalInteger(token))
-    .filter((id): id is number => id !== undefined && id > 0)
 
 /** Only `tema` is meaningful; anything else (and `termo`) means the default. */
 const parseSpeechSearchMode = (raw: string | string[] | undefined): SpeechSearchMode | undefined =>

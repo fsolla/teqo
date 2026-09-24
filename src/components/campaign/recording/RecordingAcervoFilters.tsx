@@ -15,34 +15,36 @@ import { useCampaignListFilterNavigation } from '@/components/campaign/shared/us
 import { selectedFilterTriggerLabel } from '@/lib/campaignListOmnibox'
 import { SPEECH_SCOPES, SPEECH_TOPICS } from '@/lib/speechFacets'
 import {
-  buildSpeechListHref,
+  buildRecordingListHref,
+  toggleRecordingPerson,
+  type RecordingFilterOptions,
+  type RecordingListState,
+} from '@/utilities/recordings/recordingListUrl'
+import {
+  applyRecordingOmniboxSuggestion,
+  applyRecordingSearchMode,
+  buildRecordingOmniboxChips,
+  buildRecordingOmniboxSuggestionSeeds,
+  clearRecordingOmnibox,
+  filterRecordingOmniboxSuggestions,
+  removeRecordingOmniboxChip,
+  type RecordingOmniboxAction,
+} from '@/utilities/recordings/recordingOmnibox'
+import {
   SPEECH_DURATION_BUCKETS,
   speechDurationLabels,
   speechScopeLabels,
   speechTopicLabels,
-  type SpeechFilterOptions,
-  type SpeechListState,
   type SpeechSearchMode,
 } from '@/utilities/speech/speechListUrl'
-import {
-  applySpeechOmniboxSuggestion,
-  applySpeechSearchMode,
-  buildSpeechOmniboxChips,
-  buildSpeechOmniboxSuggestionSeeds,
-  clearSpeechOmnibox,
-  filterSpeechOmniboxSuggestions,
-  removeSpeechOmniboxChip,
-  SPEECH_OMNIBOX_ID,
-  type SpeechOmniboxAction,
-} from '@/utilities/speech/speechOmnibox'
 
 const topicOptions = SPEECH_TOPICS.map(({ value, label }) => ({ value, label }))
 const scopeOptions = SPEECH_SCOPES.map(({ value, label }) => ({ value, label }))
 const durationOptions = SPEECH_DURATION_BUCKETS.map(({ value, label }) => ({ value, label }))
 
-type FacetKey = 'years' | 'topics' | 'scopes' | 'phases' | 'municipalities' | 'durations'
+type FacetKey = 'years' | 'topics' | 'scopes' | 'municipalities' | 'durations' | 'people'
 
-type SpeechFacet = {
+type RecordingFacet = {
   id: string
   label: string
   /** Prefix of the omnibox suggestion id (`${prefix}:${value}`). */
@@ -53,19 +55,27 @@ type SpeechFacet = {
   labels?: Readonly<Record<string, string>>
 }
 
-export const SpeechAcervoFilters = ({
+/**
+ * C219 — the filter bar of "Gravações enviadas": same gestures as the Câmara
+ * acervo (search by term or theme, year, topic, scope, cited municipality,
+ * duration) plus the exclusive "Pessoa" facet. The mechanics (omnibox, chips,
+ * facet popovers, pending boundary) are the shared shells; this component only
+ * assembles the recordings facets. Ported from the approved hi-fi design
+ * (`docs/plans/acervo-paridade-busca-filtros-ui-design.html`, scenes 01/02).
+ */
+export const RecordingAcervoFilters = ({
   state,
   filterOptions,
   themeUnavailable = false,
 }: {
-  state: SpeechListState
-  filterOptions: SpeechFilterOptions
-  /** C192 — the theme expansion is down; the selector reflects the fallback. */
+  state: RecordingListState
+  filterOptions: RecordingFilterOptions
+  /** C219 — the theme expansion is down; the selector reflects the fallback. */
   themeUnavailable?: boolean
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
-    toHref: (next) => buildSpeechListHref(next, 1),
+    toHref: (next) => buildRecordingListHref(next, 1),
   })
   const [query, setQuery] = useState('')
   const [viewState, setOptimisticState] = useOptimistic(state)
@@ -83,26 +93,26 @@ export const SpeechAcervoFilters = ({
   }, [filterOptions.municipalities])
 
   const chips = useMemo(
-    () => buildSpeechOmniboxChips({ state: viewState, municipalityLabelsById }),
+    () => buildRecordingOmniboxChips({ state: viewState, municipalityLabelsById }),
     [viewState, municipalityLabelsById],
   )
 
   const suggestionSeeds = useMemo(
     () =>
-      buildSpeechOmniboxSuggestionSeeds({
+      buildRecordingOmniboxSuggestionSeeds({
         years: filterOptions.years,
-        phases: filterOptions.phases,
         municipalityOptions: filterOptions.municipalities,
+        personOptions: filterOptions.people,
       }),
     [filterOptions],
   )
 
   const suggestions = useMemo(
-    () => filterSpeechOmniboxSuggestions(suggestionSeeds, query),
+    () => filterRecordingOmniboxSuggestions(suggestionSeeds, query),
     [suggestionSeeds, query],
   )
 
-  const runAction = (action: SpeechOmniboxAction) => {
+  const runAction = (action: RecordingOmniboxAction) => {
     if (action.kind === 'clear') {
       setQuery('')
       navigate(action.state)
@@ -112,7 +122,7 @@ export const SpeechAcervoFilters = ({
   }
 
   const runMode = (mode: SpeechSearchMode) => {
-    const next = applySpeechSearchMode({ state: viewState, mode }).state
+    const next = applyRecordingSearchMode({ state: viewState, mode }).state
     setOptimisticState(next)
     navigate(next)
   }
@@ -123,35 +133,50 @@ export const SpeechAcervoFilters = ({
     selected: readonly string[],
   ): CampaignHeaderFilterRow[] =>
     options.map((option) => {
-      const next = applySpeechOmniboxSuggestion({
+      const next = applyRecordingOmniboxSuggestion({
         state: viewState,
         suggestionId: `${prefix}:${option.value}`,
       }).state
       return {
         value: option.value,
         label: option.label,
-        href: buildSpeechListHref(next, 1),
+        href: buildRecordingListHref(next, 1),
         selected: selected.includes(option.value),
         checkbox: true,
         onChoose: () => setOptimisticState(next),
       }
     })
 
+  const personRows = (): CampaignHeaderFilterRow[] =>
+    filterOptions.people.map((person) => {
+      const next = toggleRecordingPerson(viewState, person)
+      return {
+        value: person,
+        label: person,
+        href: buildRecordingListHref(next, 1),
+        selected: (viewState.people ?? []).some(
+          (selected) => selected.toLocaleLowerCase('pt-BR') === person.toLocaleLowerCase('pt-BR'),
+        ),
+        checkbox: true,
+        onChoose: () => setOptimisticState(next),
+      }
+    })
+
   const clearFacet = (facet: FacetKey) => {
-    const next: SpeechListState = { ...viewState, page: 1, [facet]: undefined }
-    return { href: buildSpeechListHref(next, 1), onChoose: () => setOptimisticState(next) }
+    const next: RecordingListState = { ...viewState, page: 1, [facet]: undefined }
+    return { href: buildRecordingListHref(next, 1), onChoose: () => setOptimisticState(next) }
   }
 
   const years = (viewState.years ?? []).map(String)
   const topics = viewState.topics ?? []
   const scopes = viewState.scopes ?? []
-  const phases = viewState.phases ?? []
   const municipalities = (viewState.municipalities ?? []).map(String)
   const durations = viewState.durations ?? []
+  const people = viewState.people ?? []
 
-  const facets: SpeechFacet[] = [
+  const facets: RecordingFacet[] = [
     {
-      id: 'speech-filter-year',
+      id: 'recording-filter-year',
       label: 'Ano',
       prefix: 'year',
       stateKey: 'years',
@@ -159,7 +184,7 @@ export const SpeechAcervoFilters = ({
       selected: years,
     },
     {
-      id: 'speech-filter-topic',
+      id: 'recording-filter-topic',
       label: 'Tema',
       prefix: 'topic',
       stateKey: 'topics',
@@ -168,7 +193,7 @@ export const SpeechAcervoFilters = ({
       labels: speechTopicLabels,
     },
     {
-      id: 'speech-filter-scope',
+      id: 'recording-filter-scope',
       label: 'Alcance',
       prefix: 'scope',
       stateKey: 'scopes',
@@ -177,16 +202,8 @@ export const SpeechAcervoFilters = ({
       labels: speechScopeLabels,
     },
     {
-      id: 'speech-filter-phase',
-      label: 'Fase',
-      prefix: 'phase',
-      stateKey: 'phases',
-      options: filterOptions.phases.map((phase) => ({ value: phase, label: phase })),
-      selected: phases,
-    },
-    {
-      id: 'speech-filter-municipality',
-      label: 'Município',
+      id: 'recording-filter-municipality',
+      label: 'Município citado',
       prefix: 'municipality',
       stateKey: 'municipalities',
       options: filterOptions.municipalities,
@@ -194,7 +211,7 @@ export const SpeechAcervoFilters = ({
       labels: Object.fromEntries(municipalityLabelsById),
     },
     {
-      id: 'speech-filter-duration',
+      id: 'recording-filter-duration',
       label: 'Duração',
       prefix: 'duration',
       stateKey: 'durations',
@@ -213,25 +230,27 @@ export const SpeechAcervoFilters = ({
       }}
     >
       <CampaignListOmnibox
-        id={SPEECH_OMNIBOX_ID}
-        label="Buscar no acervo de falas"
-        placeholder="Busque por assunto, tema, município ou palavra-chave…"
+        id="recording-omnibox"
+        label="Buscar nas gravações enviadas"
+        placeholder="Busque por palavra, trecho ou tema da transcrição…"
         chips={chips}
         suggestions={suggestions}
         query={query}
         onQueryChange={setQuery}
         isPending={isPending}
         onSelectSuggestion={(suggestionId) => {
-          runAction(applySpeechOmniboxSuggestion({ state: viewState, suggestionId }))
+          runAction(applyRecordingOmniboxSuggestion({ state: viewState, suggestionId }))
         }}
         onCommitQuery={(text) => {
-          runAction(applySpeechOmniboxSuggestion({ state: viewState, suggestionId: `q:${text}` }))
+          runAction(
+            applyRecordingOmniboxSuggestion({ state: viewState, suggestionId: `q:${text}` }),
+          )
         }}
         onRemoveChip={(chipId) => {
-          runAction(removeSpeechOmniboxChip({ state: viewState, chipId }))
+          runAction(removeRecordingOmniboxChip({ state: viewState, chipId }))
         }}
         onClearAll={() => {
-          runAction(clearSpeechOmnibox(viewState))
+          runAction(clearRecordingOmnibox(viewState))
         }}
       />
 
@@ -239,12 +258,12 @@ export const SpeechAcervoFilters = ({
         activeMode={activeMode}
         themeUnavailable={themeUnavailable}
         onSelect={runMode}
-        relatedHint="Encontra falas relacionadas pelo sentido."
+        relatedHint="Encontra gravações relacionadas pelo sentido."
       />
 
       <div
         role="group"
-        aria-label="Filtros do acervo"
+        aria-label="Filtros do acervo de gravações"
         className="mt-2 flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible"
       >
         {facets.map((facet) => (
@@ -260,6 +279,17 @@ export const SpeechAcervoFilters = ({
             clear={facet.selected.length ? clearFacet(facet.stateKey) : undefined}
           />
         ))}
+        <CampaignHeaderFilterPopover
+          id="recording-filter-person"
+          label="Pessoa"
+          triggerVariant="chip"
+          triggerLabel={selectedFilterTriggerLabel('Pessoa', people)}
+          active={people.length > 0}
+          closeOnChoose={false}
+          emptyLabel="Nenhuma pessoa identificada nas gravações."
+          optionRows={personRows()}
+          clear={people.length ? clearFacet('people') : undefined}
+        />
       </div>
     </form>
   )

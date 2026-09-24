@@ -12,6 +12,7 @@ vi.mock('@ai-sdk/deepseek', () => ({ deepSeek: deepSeekMock }))
 
 import {
   expandContentPieceSearchTheme,
+  expandRecordingSearchTheme,
   expandSearchTheme,
   expandSpeechSearchTheme,
 } from '@/utilities/ai/expandSpeechSearchTheme'
@@ -97,5 +98,16 @@ describe('expandSearchTheme (S28 — corpus)', () => {
     delete process.env.DEEPSEEK_API_KEY
     await expect(expandSearchTheme('defesa do SUS', 'contentPiece')).resolves.toBeNull()
     expect(generateObjectMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses the recordings prompt for the enviadas corpus (C219)', async () => {
+    generateObjectMock.mockResolvedValue({ object: { terms: ['merenda escolar'] } })
+
+    await expandRecordingSearchTheme('merenda')
+
+    const call = generateObjectMock.mock.calls[0]![0] as { system: string }
+    expect(call.system).toContain('gravações enviadas pela equipe')
+    expect(call.system).not.toContain('acervo de discursos')
+    expect(call.system).not.toContain('Central de Conteúdos')
   })
 })

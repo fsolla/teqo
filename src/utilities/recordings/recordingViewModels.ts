@@ -11,6 +11,7 @@ import {
 } from '@/lib/recording'
 import { recordingSpeakerDefaultLabel, speakerNameMatches } from '@/lib/recordingDiarization'
 import { formatSpeechClock } from '@/lib/speechClock'
+import type { SpeechTopic } from '@/lib/speechFacets'
 import {
   buildHighlightedExcerpt,
   pickMatchingSegment,
@@ -18,6 +19,7 @@ import {
   type SpeechHighlightedExcerpt,
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
+import { speechTopicLabels } from '@/utilities/speech/speechListUrl'
 
 /** The segment shape the recording detail transcript renders. */
 export type RecordingSegmentRecord = {
@@ -40,6 +42,8 @@ type RecordingBaseRecord = {
 export type RecordingListRecord = RecordingBaseRecord & {
   /** C200 — derived distinct labels; drives the card chip under a "Pessoa" filter. */
   speakerNames?: string[] | null
+  /** C219 — classified topics; the card shows them as chips. */
+  topics?: SpeechTopic[] | null
 }
 
 export type RecordingDetailRecord = RecordingBaseRecord & {
@@ -55,6 +59,8 @@ export type RecordingListItemViewModel = RecordingViewModel & {
   excerpt: SpeechHighlightedExcerpt | null
   /** Selected "Pessoa" labels that this recording indeed contains. */
   matchedPersons: string[]
+  /** C219 — classified topics with their pt-BR labels (card chips). */
+  topics: { value: SpeechTopic; label: string }[]
   /**
    * Detail link that seeks the player to the matching segment when the search
    * found one (`?t=`), carrying the term for transcript highlighting (`?q=`).
@@ -149,6 +155,24 @@ const withSeek = (href: string, segment: RecordingSegmentRecord | undefined, que
 }
 
 /**
+ * C219 — the first expanded theme term that actually surfaced this recording:
+ * the passage that carries it, preferred for the excerpt so a theme result
+ * shows why it appeared. Returns undefined when no theme term applies.
+ */
+const pickThemeSegment = (
+  segments: readonly RecordingSegmentRecord[],
+  themeTerms: readonly string[],
+): { term: string; segment: RecordingSegmentRecord } | undefined => {
+  for (const term of themeTerms) {
+    const trimmed = term.trim()
+    if (!trimmed) continue
+    const segment = pickMatchingSegment(segments, trimmed)
+    if (segment) return { term: trimmed, segment }
+  }
+  return undefined
+}
+
+/**
  * List item of one recording. The excerpt only exists for a `ready` row and a
  * search term; the status cards of the other three states carry their own copy
  * (design scene 2) and no transcript claim.
@@ -157,20 +181,31 @@ export const toRecordingListItemViewModel = ({
   recording,
   matchedSegments,
   query,
+  themeTerms = [],
   people,
 }: {
   recording: RecordingListRecord
   /** Segments that matched the query (or the row's first one as fallback). */
   matchedSegments: readonly RecordingSegmentRecord[]
   query?: string
+  /** C219 — expanded theme terms; empty in the literal search. */
+  themeTerms?: readonly string[]
   /** C200 — the selected "Pessoa" labels of the list state. */
   people?: readonly string[]
 }): RecordingListItemViewModel => {
   const base = toRecordingViewModel(recording)
   const isReady = base.status === 'ready'
   const q = query?.trim()
-  const segment = isReady && q ? pickMatchingSegment(matchedSegments, q) : undefined
-  const excerpt = segment ? buildHighlightedExcerpt(segment.text, q ?? '') : null
+  const themeMatch = isReady ? pickThemeSegment(matchedSegments, themeTerms) : undefined
+  const segment =
+    themeMatch?.segment ?? (isReady && q ? pickMatchingSegment(matchedSegments, q) : undefined)
+  // The theme passage highlights the whole phrase as one band (the per-term
+  // split would break it into pieces), mirroring the speech acervo (C192).
+  const excerpt = themeMatch
+    ? buildHighlightedExcerpt(themeMatch.segment.text, themeMatch.term, { phrase: true })
+    : segment
+      ? buildHighlightedExcerpt(segment.text, q ?? '')
+      : null
   const speakerNames = recording.speakerNames ?? []
 
   return {
@@ -179,6 +214,7 @@ export const toRecordingListItemViewModel = ({
     matchedPersons: (people ?? []).filter((person) =>
       speakerNames.some((name) => speakerNameMatches(name, person)),
     ),
+    topics: (recording.topics ?? []).map((value) => ({ value, label: speechTopicLabels[value] })),
     watchHref: withSeek(base.detailHref, segment, q),
   }
 }
