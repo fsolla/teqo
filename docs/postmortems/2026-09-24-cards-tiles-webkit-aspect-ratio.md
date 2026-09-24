@@ -10,7 +10,7 @@
 | Severidade          | alta (funil público de conversão; nenhum dado perdido)                                                             |
 | Ambiente            | prod                                                                                                               |
 | Issue(s)            | sem Issue — relato do humano na sessão do worktree `fix/9` (o bug-fix não exige Issue; o post-mortem é o registro) |
-| PR do fix           | a definir (este PR)                                                                                                |
+| PR do fix           | #1321                                                                                                                              |
 | Detectado por       | humano                                                                                                             |
 
 ## Timeline
