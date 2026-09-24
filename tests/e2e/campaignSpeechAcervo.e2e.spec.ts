@@ -1,5 +1,6 @@
 import { request as playwrightRequest } from '@playwright/test'
 
+import type { ContentPieceLinkFailureReason } from '@/lib/contentPiece'
 import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import { normalizeForSearch } from '../../src/lib/speechSearch.js'
 import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
@@ -884,6 +885,7 @@ test.describe('communication vertical (C154/C162)', () => {
         origin?: 'arquivo' | 'instagram' | 'youtube'
         withMedia?: boolean
         sourceUrl?: string
+        linkFailureReason?: ContentPieceLinkFailureReason
       },
     ) => {
       const bytes = Buffer.from(`content-piece-${input.marker}`)
@@ -910,6 +912,7 @@ test.describe('communication vertical (C154/C162)', () => {
           origin: input.origin ?? 'arquivo',
           ...(media ? { media: media.id } : {}),
           ...(input.sourceUrl ? { sourceUrl: input.sourceUrl } : {}),
+          ...(input.linkFailureReason ? { linkFailureReason: input.linkFailureReason } : {}),
         },
         depth: 0,
       })
@@ -1196,6 +1199,38 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(((await invalid.json()) as { message: string }).message).toContain(
         'Cole um link do Instagram ou do YouTube',
       )
+    })
+
+    test('the peça-link ficha shows the honest reason and the list stays clean (C220)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecamotivo')
+      const { piece } = await createPiece(campaign, {
+        marker,
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: `https://www.instagram.com/reel/${marker}/`,
+        linkFailureReason: 'carrossel',
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const ficha = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos/${piece.id}`)).text(),
+      )
+      expect(ficha).toContain('Por que o arquivo não foi baixado')
+      expect(ficha).toContain('Carrossel: sem arquivo único para baixar')
+      expect(ficha).toContain('A peça continua disponível pelo link.')
+      expect(ficha).toContain('Anexar arquivo original')
+
+      // The list carries the neutral label and never the reason (D7).
+      const list = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${marker}`)).text(),
+      )
+      expect(list).toContain('Peça-link')
+      expect(list).not.toContain('Carrossel: sem arquivo único para baixar')
     })
   })
 })

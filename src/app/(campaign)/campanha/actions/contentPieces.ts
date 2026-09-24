@@ -54,6 +54,7 @@ const contentPieceSelect = {
   pieceDate: true,
   publishedAt: true,
   error: true,
+  linkFailureReason: true,
   media: true,
   curatedFields: true,
 } as const
@@ -187,7 +188,12 @@ export const retryContentPieceForActor = async (input: {
     where: {
       and: [{ id: { equals: parsed.contentPieceId } }, { processingStatus: { equals: 'falhou' } }],
     },
-    data: { processingStatus: 'processando', step: 'extraindo', error: null },
+    data: {
+      processingStatus: 'processando',
+      step: 'extraindo',
+      error: null,
+      linkFailureReason: null,
+    },
     depth: 0,
     select: contentPieceSelect,
     user: actor,

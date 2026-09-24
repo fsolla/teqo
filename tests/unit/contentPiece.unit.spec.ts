@@ -6,6 +6,7 @@ import {
   canRetryContentPiece,
   contentPieceFailureMessage,
   contentPieceIsPublic,
+  contentPieceLinkFailureReasonLabels,
   contentPieceLinkTitle,
   contentPieceOriginFromLink,
   contentPieceSearchText,
@@ -14,6 +15,7 @@ import {
   contentPieceTitleFromFilename,
   contentPieceTypeFromMime,
   isContentPieceCuratedField,
+  isContentPieceLinkFailureReason,
   isContentPieceOrigin,
   isContentPieceProcessingStatus,
   isContentPieceStatus,
@@ -46,8 +48,20 @@ describe('content piece vocabulary', () => {
     expect(isContentPieceCuratedField('slug')).toBe(false)
     expect(isContentPieceOrigin('arquivo')).toBe(true)
     expect(isContentPieceOrigin('link')).toBe(false)
+    expect(isContentPieceLinkFailureReason('carrossel')).toBe(true)
+    expect(isContentPieceLinkFailureReason('sem-credencial')).toBe(true)
+    expect(isContentPieceLinkFailureReason('falhou')).toBe(false)
     expect(isContentPieceTopic('saude')).toBe(true)
     expect(isContentPieceTopic('nao-existe')).toBe(false)
+  })
+
+  it('labels the four peça-link reasons verbatim (gate copy)', () => {
+    expect(contentPieceLinkFailureReasonLabels).toEqual({
+      'nao-encontrado': 'Link não encontrado entre as mídias recentes do perfil',
+      carrossel: 'Carrossel: sem arquivo único para baixar',
+      indisponivel: 'Instagram indisponível no momento',
+      'sem-credencial': 'Sem credencial do Instagram configurada',
+    })
   })
 
   it('knows which types need the pipeline', () => {
@@ -151,6 +165,31 @@ describe('content piece links', () => {
       canonicalUrl: 'https://www.instagram.com/reel/ABC123/',
     })
     expect(parseContentPieceLink('https://m.instagram.com/tv/ABC123/')?.origin).toBe('instagram')
+  })
+
+  it('accepts the profile-prefixed spelling the browser copies', () => {
+    expect(parseContentPieceLink('https://www.instagram.com/depjorgesolla/reel/ABC123/')).toEqual({
+      origin: 'instagram',
+      shortcode: 'ABC123',
+      canonicalUrl: 'https://www.instagram.com/reel/ABC123/',
+    })
+    expect(
+      parseContentPieceLink('https://m.instagram.com/depjorgesolla/p/ABC123/?igsh=xyz'),
+    ).toEqual({
+      origin: 'instagram',
+      shortcode: 'ABC123',
+      canonicalUrl: 'https://www.instagram.com/p/ABC123/',
+    })
+  })
+
+  it('refuses stories and malformed prefixed paths', () => {
+    expect(parseContentPieceLink('https://www.instagram.com/stories/depjorgesolla/123/')).toBeNull()
+    expect(parseContentPieceLink('https://www.instagram.com/stories/reel/ABC123/')).toBeNull()
+    expect(parseContentPieceLink('https://www.instagram.com/depjorgesolla/ABC123/')).toBeNull()
+    expect(
+      parseContentPieceLink('https://www.instagram.com/depjorgesolla/reel/ABC123/extra/'),
+    ).toBeNull()
+    expect(parseContentPieceLink('https://instagr.am/reel/ABC123/')).toBeNull()
   })
 
   it('canonicalizes YouTube forms to the watch URL', () => {
@@ -264,6 +303,24 @@ describe('toContentPieceViewModel', () => {
     expect(viewModel.fileHref).toBeNull()
     expect(viewModel.canRetry).toBe(true)
     expect(viewModel.failureMessage).toBe('Não foi possível processar a peça.')
+  })
+
+  it('maps the peça-link reason and ignores an unknown one', () => {
+    const withReason = toContentPieceViewModel({
+      id: 9,
+      processingStatus: 'pronto',
+      origin: 'instagram',
+      linkFailureReason: 'carrossel',
+      media: null,
+    })
+
+    expect(withReason.linkFailureReason).toBe('carrossel')
+    expect(withReason.linkFailureReasonLabel).toBe('Carrossel: sem arquivo único para baixar')
+    expect(withReason.failureMessage).toBeNull()
+
+    const unknown = toContentPieceViewModel({ id: 10, linkFailureReason: 'explodiu' })
+    expect(unknown.linkFailureReason).toBeNull()
+    expect(unknown.linkFailureReasonLabel).toBeNull()
   })
 })
 

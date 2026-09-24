@@ -53,6 +53,7 @@ const contentPieceDetailSelect = {
   sourceUrl: true,
   municipality: true,
   curatedFields: true,
+  linkFailureReason: true,
 } as const
 
 export const ContentPieceNotFoundError = createEntityNotFoundError(
