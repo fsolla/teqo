@@ -221,7 +221,19 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     ).toBeVisible()
     await expect(page.getByText('Central de Conteúdos').first()).toBeVisible()
     await expect(page.locator('article[data-content-piece]')).toHaveCount(2)
-    await expect(page.locator('article[data-content-piece-invite]')).toHaveCount(1)
+    // S38 — the six models are items of the same board: no invite tile and no
+    // section of their own (the card item and the pieces share one grid).
+    await expect(page.locator('[data-content-piece-invite]')).toHaveCount(0)
+    await expect(page.locator('[data-card-model]')).toHaveCount(6)
+    const board = page.locator('[data-card-model]').first().locator('xpath=..')
+    await expect(board.locator('article[data-content-piece]')).toHaveCount(2)
+    await expect(page.locator('[data-card-model="time-de-voce"]')).toHaveAttribute(
+      'href',
+      '/cards?model=time-de-voce',
+    )
+    await expect(
+      page.locator('[data-card-model="minha-colinha"]').getByText('santinho'),
+    ).toBeVisible()
 
     // The video mounts no media element and fetches nothing before the play
     // (the photo preview is the only media the catalogue loads on its own).
@@ -281,8 +293,8 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await waitForSettledPage(page)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(page.getByRole('link', { name: videoTitle, exact: true })).toBeVisible()
-    // A filtered board never shows the card invite.
-    await expect(page.locator('article[data-content-piece-invite]')).toHaveCount(0)
+    // A filtered board never shows the card models that the facet excludes.
+    await expect(page.locator('[data-card-model]')).toHaveCount(0)
 
     await page.goto(`/conteudos?q=${marker}`)
     await expect(page.locator('article[data-content-piece]')).toHaveCount(2)
@@ -306,6 +318,58 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(page).toHaveURL(new RegExp(`/conteudos/${video.slug}$`))
     await expect(page.getByRole('heading', { name: videoTitle })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Voltar à Central' })).toBeVisible()
+  })
+
+  test('lists the card models by nickname, filters by Tipo Card and routes to the studio (S38)', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryPiece(request, headers)
+    await createPiece(request, headers, {
+      title: `Peça do catálogo ${uniqueMarker()}`,
+      type: 'video',
+    })
+
+    // The nickname search finds the models that answer to it (no JS: querystring).
+    await page.goto('/conteudos?q=santinho')
+    await waitForSettledPage(page)
+    await expect(page.locator('[data-card-model]')).toHaveCount(2)
+    await expect(page.locator('[data-card-model="time-de-voce"]')).toBeVisible()
+    await expect(page.locator('[data-card-model="minha-colinha"]')).toBeVisible()
+
+    await page.goto('/conteudos?q=foto+de+perfil')
+    await waitForSettledPage(page)
+    await expect(page.locator('[data-card-model]')).toHaveCount(2)
+    await expect(page.locator('[data-card-model="perfil-quadrado"]')).toBeVisible()
+    await expect(page.locator('[data-card-model="perfil-retangular"]')).toBeVisible()
+
+    // Tipo Card brings the six models and the published piece leaves the board.
+    await page.goto('/conteudos?tipo=card')
+    await waitForSettledPage(page)
+    await expect(page.locator('[data-card-model]')).toHaveCount(6)
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(0)
+
+    // A geographic facet removes the models: they are not territorial.
+    await page.goto('/conteudos?cidade=salvador')
+    await waitForSettledPage(page)
+    await expect(page.locator('[data-card-model]')).toHaveCount(0)
+
+    // The item routes to the studio with the model chosen and counts the opening
+    // through the anonymous beacon (never a piece event).
+    const openingBeacon = page.waitForRequest((candidate) => {
+      if (!candidate.url().includes('/api/content-events')) return false
+      try {
+        const body = candidate.postDataJSON() as { type?: string; cardModelId?: string } | null
+        return body?.type === 'abertura' && body?.cardModelId === 'minha-colinha'
+      } catch {
+        return false
+      }
+    })
+    await page.locator('[data-card-model="minha-colinha"]').click()
+    await expect(page).toHaveURL(/\/cards\?model=minha-colinha$/)
+    await openingBeacon
+    await expect(page.getByRole('dialog')).toBeVisible()
   })
 
   test('offers the theme mode and degrades honestly without the provider key', async ({
@@ -512,6 +576,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await waitForSettledPage(page)
     await expect(page.getByRole('link', { name: 'Conteúdos' })).toBeVisible()
     await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
+    await expect(page.locator('[data-card-model]')).toHaveCount(6)
 
     await setPieceStatus(request, headers, piece.id, 'rascunho')
 
@@ -521,6 +586,8 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
       page.getByRole('heading', { name: 'As primeiras peças estão a caminho' }),
     ).toBeVisible()
     await expect(page.locator('article[data-content-piece]')).toHaveCount(0)
+    // S38 — an empty Central is the honest empty state, never a board of cards.
+    await expect(page.locator('[data-card-model]')).toHaveCount(0)
     await expect(page.getByRole('link', { name: 'Conteúdos' })).toHaveCount(0)
     await expect
       .poll(async () =>

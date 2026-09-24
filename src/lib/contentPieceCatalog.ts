@@ -8,7 +8,14 @@
  * The staff list contract (`src/utilities/content/contentPieceListUrl.ts`) is
  * deliberately NOT reused: its vocabulary (status, processing, page) is
  * internal and the public surface has its own facets with a single value each.
+ *
+ * S38 — the six personalized-card models are synthetic items of the same board
+ * (`CardCatalogItem`): no row, no file, no publication — each item is an invite
+ * that routes the visitor to `/cards?model=<id>`. They share the facet/search
+ * pipeline (Tipo gains `card`; the geographic facets never do) and the honest
+ * empty state.
  */
+import { CARD_MODELS, type CardModel, type CardModelId } from '@/lib/cardModels'
 import {
   CONTENT_PIECE_TYPES,
   contentPieceIsPublic,
@@ -151,9 +158,13 @@ const sortedOptions = (options: Map<string, string>): ContentPieceCatalogFacetOp
  * Facet options are derived from the published items alone: a filter that
  * cannot match anything never renders. Tipo/Tema keep the persisted enum
  * order; the label facets are alphabetical by their pt-BR label.
+ *
+ * S38 — a card item feeds ONLY the `tipo` facet (`card`): the models are not
+ * territorial and declare no theme, so Cidade/Região/Instituição/Tema never
+ * grow from them.
  */
 export const contentPieceCatalogFacets = (
-  items: readonly ContentPiecePublicItem[],
+  items: readonly ContentCatalogItem[],
 ): ContentPieceCatalogFacets => {
   const types = new Set<string>()
   const topics = new Set<string>()
@@ -162,6 +173,10 @@ export const contentPieceCatalogFacets = (
   const institutions = new Map<string, string>()
 
   for (const item of items) {
+    if (isCardCatalogItem(item)) {
+      types.add('card')
+      continue
+    }
     types.add(item.type)
     for (const topic of item.topics) topics.add(topic)
     if (item.cityLabel) cities.set(slugify(item.cityLabel), item.cityLabel)
@@ -241,15 +256,30 @@ const normalizedSearchTerms = (query: string, themeTerms: readonly string[]): st
   return terms
 }
 
-/** All active facets combine (AND); the term matches the denormalized haystack. */
+/**
+ * All active facets combine (AND); the term matches the denormalized haystack.
+ *
+ * S38 — a card item matches the Tipo facet only as `card` and never matches a
+ * geographic/theme facet (the models are not territorial and declare no theme);
+ * the term search runs over its `searchText` (name + aliases + description)
+ * exactly like a piece's.
+ */
 export const filterContentPieceCatalogItems = (
-  items: readonly ContentPiecePublicItem[],
+  items: readonly ContentCatalogItem[],
   params: ContentPieceCatalogParams,
   themeTerms: readonly string[] = [],
-): ContentPiecePublicItem[] => {
+): ContentCatalogItem[] => {
   const searchTerms = normalizedSearchTerms(params.q, themeTerms)
 
   return items.filter((item) => {
+    if (isCardCatalogItem(item)) {
+      if (params.tipo && params.tipo !== 'card') return false
+      if (params.cidade || params.regiao || params.tema || params.instituicao) return false
+      if (searchTerms.length === 0) return true
+
+      const haystack = normalizeForSearch(item.searchText)
+      return searchTerms.some((term) => haystack.includes(term))
+    }
     if (
       (params.tipo && item.type !== params.tipo) ||
       (params.cidade && (item.cityLabel === null || slugify(item.cityLabel) !== params.cidade)) ||
@@ -325,6 +355,79 @@ type ContentPiecePublicFile = {
   mimeType: string | null
   downloadFilename: string
 }
+/**
+ * S38 — the studio deep link of one model. `/cards` already validates the id
+ * and pre-selects the model (`isCardModelId`), so the item never carries a
+ * second selection contract.
+ */
+const cardModelCatalogHref = (modelId: CardModelId): string => `/cards?model=${modelId}`
+
+/**
+ * S38 — the art of a card item: the model's real file, or the neutral
+ * placeholder of the photo models (their master is the official frame with a
+ * transparent photo window, never a filled example).
+ */
+export type CardCatalogArt =
+  | { kind: 'image'; src: string }
+  | { kind: 'placeholder'; shape: 'square' | 'portrait' }
+
+/**
+ * S38 — one personalized-card model as a catalogue item. Synthetic by
+ * contract: no row, no file, no publication — `itemKind` marks the card side
+ * of the board union and the guard below is the only narrowing point.
+ */
+export type CardCatalogItem = {
+  itemKind: 'card'
+  modelId: CardModelId
+  title: string
+  description: string
+  aliases: readonly string[]
+  badge: string | null
+  art: CardCatalogArt
+  href: string
+  /** Raw haystack (name + aliases + description); normalized at match time. */
+  searchText: string
+}
+
+/** One item of the public board: a published piece or a synthetic card model. */
+export type ContentCatalogItem = ContentPiecePublicItem | CardCatalogItem
+
+export const isCardCatalogItem = (item: ContentCatalogItem): item is CardCatalogItem =>
+  'itemKind' in item
+
+const cardModelArt = (model: CardModel): CardCatalogArt =>
+  model.kind === 'photo'
+    ? { kind: 'placeholder', shape: model.width === model.height ? 'square' : 'portrait' }
+    : { kind: 'image', src: model.previewSrc ?? model.assetSrc }
+
+/**
+ * S38 — the six models as catalogue items, in the committed catalogue order.
+ * Nothing is written and nothing is published: the item is an invite to the
+ * studio, never a piece to download or share.
+ */
+export const cardCatalogItems = (): CardCatalogItem[] =>
+  CARD_MODELS.map((model) => ({
+    itemKind: 'card',
+    modelId: model.id,
+    title: model.label,
+    description: model.description,
+    aliases: model.aliases,
+    badge: model.badge ?? null,
+    art: cardModelArt(model),
+    href: cardModelCatalogHref(model.id),
+    searchText: [model.label, ...model.aliases, model.description].join(' '),
+  }))
+
+/**
+ * S38 — the items of the public board: the published pieces plus the synthetic
+ * card models. The guardrail lives here: the cards only ride along a non-empty
+ * Central — with nothing published, the board is the honest empty state (which
+ * carries the studio path), never a grid of cards.
+ */
+export const contentCatalogItems = (
+  items: readonly ContentPiecePublicItem[],
+  cards: readonly CardCatalogItem[],
+): ContentCatalogItem[] => (items.length > 0 ? [...items, ...cards] : [...items])
 
 export type ContentPieceMediaKind = 'video' | 'audio' | 'image' | 'text' | 'other'
 

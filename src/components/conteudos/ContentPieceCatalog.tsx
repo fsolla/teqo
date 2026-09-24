@@ -2,35 +2,45 @@
 
 import { useState } from 'react'
 
-import { contentPieceMediaKind, type ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
+import {
+  contentPieceMediaKind,
+  isCardCatalogItem,
+  type ContentCatalogItem,
+  type ContentPiecePublicItem,
+} from '@/lib/contentPieceCatalog'
 
+import { ContentCatalogCardItem } from './ContentCatalogCardItem'
 import { ContentPieceCard } from './ContentPieceCard'
-import { ContentPieceCardInvite } from './ContentPieceCardInvite'
 import { ContentPieceShareSheet } from './ContentPieceShareSheet'
 
 /**
  * S27 — the catalogue board (artefato: cena 01): full cards for video, audio
- * and link pieces, compact rows for photo/text, the card invite when nothing
- * is filtered. One piece plays at a time (switching unmounts the previous
- * element) and the share sheet is owned here, so every card opens the same
- * vote message.
+ * and link pieces, compact rows for photo/text, one piece plays at a time
+ * (switching unmounts the previous element) and the share sheet is owned here,
+ * so every card opens the same vote message.
+ *
+ * S38 — the six card models are items of the same board: they take the full-card
+ * bucket and the whole item is one link to the studio (`/cards?model=<id>`); the
+ * old single invite tile is gone and no section groups them.
  */
 export const ContentPieceCatalog = ({
   items,
-  showCardInvite,
   themeMode,
 }: {
-  items: readonly ContentPiecePublicItem[]
-  showCardInvite: boolean
+  items: readonly ContentCatalogItem[]
   /** S28 — the board is in the theme mode: cards state their provenance. */
   themeMode: boolean
 }) => {
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [sharingItem, setSharingItem] = useState<ContentPiecePublicItem | null>(null)
 
-  const largeItems: ContentPiecePublicItem[] = []
+  const largeItems: ContentCatalogItem[] = []
   const compactItems: ContentPiecePublicItem[] = []
   for (const item of items) {
+    if (isCardCatalogItem(item)) {
+      largeItems.push(item)
+      continue
+    }
     const kind = contentPieceMediaKind(item)
     if (kind === null || kind === 'video' || kind === 'audio') largeItems.push(item)
     else compactItems.push(item)
@@ -47,12 +57,15 @@ export const ContentPieceCatalog = ({
 
   return (
     <>
-      {largeItems.length > 0 || showCardInvite ? (
+      {largeItems.length > 0 ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {largeItems.map((item) => (
-            <ContentPieceCard key={item.id} {...cardProps(item)} />
-          ))}
-          {showCardInvite ? <ContentPieceCardInvite /> : null}
+          {largeItems.map((item) =>
+            isCardCatalogItem(item) ? (
+              <ContentCatalogCardItem key={`card:${item.modelId}`} item={item} />
+            ) : (
+              <ContentPieceCard key={item.id} {...cardProps(item)} />
+            ),
+          )}
         </div>
       ) : null}
 

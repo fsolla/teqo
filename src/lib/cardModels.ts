@@ -43,6 +43,17 @@ export type CardModel = {
   id: CardModelId
   kind: CardModelKind
   label: string
+  /**
+   * S38 — the one-line explanation of the model shown by its catalogue item on
+   * `/conteudos`, under the name. Copy of the model, never of the studio.
+   */
+  description: string
+  /**
+   * S38 — the popular nicknames the public catalogue search must find the model
+   * by ("santinho", "foto de perfil", "colinha", "estadual"). Search data of the
+   * item, never rendered as the model name.
+   */
+  aliases: readonly string[]
   assetSrc: string
   width: number
   height: number
@@ -73,6 +84,8 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'eu-sou-solla',
     kind: 'name',
     label: 'Card com seu nome',
+    description: 'Coloque seu nome no card oficial.',
+    aliases: ['nome'],
     assetSrc: '/cards/name-card-base.jpg',
     width: 1080,
     height: 1440,
@@ -81,6 +94,8 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'perfil-quadrado',
     kind: 'photo',
     label: 'Moldura quadrada',
+    description: 'Foto de perfil quadrada.',
+    aliases: ['foto de perfil'],
     assetSrc: '/cards/photo-square-frame.png',
     width: 1000,
     height: 1000,
@@ -90,6 +105,8 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'perfil-retangular',
     kind: 'photo',
     label: 'Moldura vertical',
+    description: 'Foto vertical para stories.',
+    aliases: ['foto de perfil'],
     assetSrc: '/cards/photo-portrait-frame.png',
     width: 1000,
     height: 1440,
@@ -99,6 +116,8 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'time-de-voce',
     kind: 'team',
     label: 'Time de você',
+    description: 'Entre para o time com sua foto.',
+    aliases: ['santinho'],
     assetSrc: '/cards/team-card-base.png',
     overlaySrc: '/cards/team-card-front.png',
     previewSrc: '/cards/team-card-example.jpg',
@@ -111,6 +130,8 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'time-do-estadual',
     kind: 'team',
     label: 'Time do estadual',
+    description: 'Escolha o estadual e personalize.',
+    aliases: ['estadual'],
     // S30 — the defaults are the illustrative pair (JULIO, the deputy of the
     // approved example art); the composer swaps them for the selected entry of
     // `stateDeputyCatalog`. `previewSrc` is the exact file approved by the
@@ -128,6 +149,8 @@ export const CARD_MODELS: readonly CardModel[] = [
     id: 'minha-colinha',
     kind: 'colinha',
     label: 'Minha colinha',
+    description: 'Monte sua cola de votação.',
+    aliases: ['santinho', 'colinha'],
     // S34 — the approved art delivered by the human is the base of the preview
     // and the download (drawn whole at 1.2×); the only drawn element is the
     // estadual row overlay. The gallery tile shows the same art via `assetSrc`.

@@ -452,10 +452,16 @@ describe('content events (C213)', () => {
         })
       ).status,
     ).toBe(400)
-    // The card only counts the download in v1.
+    // S38 — the opening never carries a state deputy (strict body).
     expect(
-      (await postEvent({ type: 'abertura', subjectType: 'card', cardModelId: 'eu-sou-solla' }))
-        .status,
+      (
+        await postEvent({
+          type: 'abertura',
+          subjectType: 'card',
+          cardModelId: 'minha-colinha',
+          stateDeputySlug: 'julio',
+        })
+      ).status,
     ).toBe(400)
     // The piece contract is untouched by the card variant.
     expect((await postEvent({ type: 'abertura', pieceSlug: 'peca-qualquer' })).status).toBe(204)
@@ -463,6 +469,38 @@ describe('content events (C213)', () => {
     expect(
       (await eventRowsOf(['modelo-inventado', 'minha-colinha', 'eu-sou-solla'])).docs,
     ).toHaveLength(0)
+  })
+
+  it('records a card opening with the model id and no state deputy (S38)', async () => {
+    const accepted = await postEvent({
+      type: 'abertura',
+      subjectType: 'card',
+      cardModelId: 'time-de-voce',
+    })
+
+    expect(accepted.status).toBe(204)
+    expect(accepted.headers.get('Cache-Control')).toBe('no-store')
+    const rows = await eventRowsOf(['time-de-voce'])
+    expect(rows.docs).toHaveLength(1)
+    expect(rows.docs[0]).toMatchObject({
+      type: 'abertura',
+      subjectType: 'card',
+      subjectId: 'time-de-voce',
+      variant: null,
+    })
+  })
+
+  it('refuses an unknown model id on the opening too (S38)', async () => {
+    expect(
+      (
+        await postEvent({
+          type: 'abertura',
+          subjectType: 'card',
+          cardModelId: 'modelo-inventado',
+        })
+      ).status,
+    ).toBe(400)
+    expect((await eventRowsOf(['modelo-inventado'])).docs).toHaveLength(0)
   })
 
   it('aggregates the card counters through the same reader, apart from the pieces', async () => {

@@ -105,8 +105,6 @@ export default async function ConteudosPage({
     )
   }
 
-  const hasActiveFilters = activeFilters.length > 0
-
   return (
     <>
       <ContentPiecePageHeader />
@@ -150,11 +148,7 @@ export default async function ConteudosPage({
 
             <div className="mt-5">
               {items.length > 0 ? (
-                <ContentPieceCatalog
-                  items={items}
-                  showCardInvite={!hasActiveFilters}
-                  themeMode={themeMode}
-                />
+                <ContentPieceCatalog items={items} themeMode={themeMode} />
               ) : themeMode && !themeUnavailable ? (
                 <ContentPieceThemeNoResults params={params} />
               ) : (

@@ -96,6 +96,17 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const model = getCardModel(parsed.data.cardModelId)
     if (!model) return silentResponse(400)
 
+    // S38 — the card opening: the catalogue item routed the visitor to the
+    // studio; there is no state deputy yet (the picker lives in the studio).
+    if (parsed.data.type === 'abertura') {
+      await recordContentEvent({
+        type: parsed.data.type,
+        subjectType: 'card',
+        subjectId: model.id,
+      })
+      return silentResponse(204)
+    }
+
     const requestedDeputySlug = parsed.data.stateDeputySlug
     let variant: string | null = null
     if (model.stateDeputyPicker === true) {

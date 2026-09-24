@@ -1,12 +1,15 @@
 import 'server-only'
 
 import {
+  cardCatalogItems,
+  contentCatalogItems,
   contentPieceCatalogActiveFilters,
   contentPieceCatalogFacets,
   contentPieceThemeTerms,
   filterContentPieceCatalogItems,
   parseContentPieceCatalogParams,
   toContentPiecePublicItem,
+  type ContentCatalogItem,
   type ContentPieceCatalogActiveFilter,
   type ContentPieceCatalogFacets,
   type ContentPieceCatalogParams,
@@ -32,12 +35,20 @@ import { headers } from 'next/headers'
  * something published, and always through the anonymous guard (limit +
  * eligibility + cache): the caller renders the discreet notice whenever it
  * resolves `null`.
+ *
+ * S38 — the same loader appends the six synthetic card items to the board (and
+ * only there): facets and filter below see one union, so Tipo "Card" and the
+ * nickname search work without a second pipeline.
  */
 export type ContentPieceCatalogSearchData = {
-  /** Public pieces on the Central before filters: zero renders the honest empty state. */
+  /**
+   * Public pieces on the Central before filters: zero renders the honest empty
+   * state. S38 — cards never count here (they only ride along a non-empty
+   * Central), so the guardrail of the empty state is this number alone.
+   */
   publishedCount: number
   params: ContentPieceCatalogParams
-  items: ContentPiecePublicItem[]
+  items: ContentCatalogItem[]
   facets: ContentPieceCatalogFacets
   activeFilters: ContentPieceCatalogActiveFilter[]
   /** The actor asked for the theme mode (always with a query): the badges state the provenance. */
@@ -96,12 +107,17 @@ export const loadContentPieceCatalogSearch = async ({
   }
 
   const publicItems = themeTerms.length > 0 ? toPublicItems(records, themeTerms) : publishedItems
-  const facets = contentPieceCatalogFacets(publicItems)
+  // S38 — the six card models are synthetic items of the same board, appended
+  // only while the Central has published pieces (the guard lives in the pure
+  // builder): an empty Central keeps the honest empty state, never a board of
+  // cards.
+  const catalogItems = contentCatalogItems(publicItems, cardCatalogItems())
+  const facets = contentPieceCatalogFacets(catalogItems)
 
   return {
-    publishedCount: publicItems.length,
+    publishedCount: publishedItems.length,
     params,
-    items: filterContentPieceCatalogItems(publicItems, params, themeTerms),
+    items: filterContentPieceCatalogItems(catalogItems, params, themeTerms),
     facets,
     activeFilters: contentPieceCatalogActiveFilters(params, facets),
     themeMode: themeRequested,

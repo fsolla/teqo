@@ -4,9 +4,9 @@ import { isCardModelId, type CardModelId } from '@/lib/cardModels'
 import { CONTENT_EVENT_TYPES } from '@/lib/contentEvents'
 
 /**
- * C213/S32 — the wire contract of the public `POST /api/content-events`.
+ * C213/S32/S38 — the wire contract of the public `POST /api/content-events`.
  *
- * Two additive variants, exactly one subject per body (strict objects: an
+ * Three additive variants, exactly one subject per body (strict objects: an
  * extra key is a malformed body, never a silently ignored one):
  * - a published piece (`{ type, pieceSlug }`): the client never names the
  *   internal subject id — the route resolves the slug against the published
@@ -14,7 +14,10 @@ import { CONTENT_EVENT_TYPES } from '@/lib/contentEvents'
  * - a personalized card download (`{ type: 'download', subjectType: 'card',
  *   cardModelId, stateDeputySlug? }`): the client names the public catalog keys
  *   and the route validates both against the committed catalogs (the card model
- *   and the state deputy), so an arbitrary id or slug writes nothing.
+ *   and the state deputy), so an arbitrary id or slug writes nothing;
+ * - a card opening (`{ type: 'abertura', subjectType: 'card', cardModelId }`,
+ *   S38): the catalogue item routed the visitor to the studio; the visitor has
+ *   not chosen a state deputy yet, so there is no `stateDeputySlug` here.
  *
  * A malformed body is refused before any query (and the beacon ignores every
  * response anyway).
@@ -38,7 +41,14 @@ const cardDownloadEventRequestSchema = z.strictObject({
   stateDeputySlug: publicSlug.optional(),
 })
 
+const cardOpeningEventRequestSchema = z.strictObject({
+  type: z.literal('abertura'),
+  subjectType: z.literal('card'),
+  cardModelId: z.custom<CardModelId>(isCardModelId),
+})
+
 export const contentEventRequestSchema = z.union([
   pieceEventRequestSchema,
   cardDownloadEventRequestSchema,
+  cardOpeningEventRequestSchema,
 ])
