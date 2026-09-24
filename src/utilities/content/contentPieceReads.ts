@@ -33,6 +33,10 @@ const contentPiecePublicSelect = {
   cityLabel: true,
   region: true,
   institution: true,
+  // S37 — only the display-name snapshot and the curated figures; the
+  // `leaders` relation NEVER enters this select (depth 1 would leak Contact).
+  leaderNames: true,
+  publicFigures: true,
   description: true,
   transcript: true,
   sourceUrl: true,

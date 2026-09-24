@@ -4,6 +4,7 @@ import type { APIRequestContext, Page } from '@playwright/test'
 
 import { loadMunicipalityGeometryModule } from '../../src/lib/bahiaGeometries.js'
 import { getMunicipalityCatalogEntry } from '../../src/lib/municipalityCatalog.js'
+import { slugify } from '../../src/lib/slug.js'
 import { adminHeaders } from '../helpers/adminApi'
 import { interiorPointOf } from '../helpers/featureBounds'
 import { seedTestUser } from '../helpers/seedUser'
@@ -37,6 +38,8 @@ type Headers = Record<string, string>
 
 const createdPieceIds: number[] = []
 const createdMediaIds: number[] = []
+const createdContactIds: number[] = []
+const createdLeadershipIds: number[] = []
 
 const uniqueMarker = () => randomUUID().slice(0, 8)
 
@@ -81,6 +84,9 @@ const createPiece = async (
     sourceUrl?: string
     /** S39 — the home sample resolves the município name from this relation. */
     municipality?: number
+    /** S37 — the campaign leaders and curated figures this piece carries. */
+    leaders?: number[]
+    publicFigures?: string[]
   },
 ): Promise<{ id: number; slug: string }> => {
   const mediaKind = data.type === 'video' || data.type === 'foto' ? data.type : 'texto'
@@ -106,12 +112,49 @@ const createPiece = async (
       ...(media ? { media } : {}),
       ...(data.sourceUrl ? { sourceUrl: data.sourceUrl } : {}),
       ...(data.municipality ? { municipality: data.municipality } : {}),
+      ...(data.leaders ? { leaders: data.leaders } : {}),
+      ...(data.publicFigures ? { publicFigures: data.publicFigures } : {}),
     },
   })
   expect(response.ok(), await response.text()).toBeTruthy()
   const doc = ((await response.json()) as { doc: { id: number; slug: string } }).doc
   createdPieceIds.push(doc.id)
   return { id: doc.id, slug: doc.slug }
+}
+
+/**
+ * S37 — a real leadership record (contact + municipality link) for the public
+ * "Lideranças" facet: the piece references the record, only the name is public.
+ */
+const createLeadershipWithContact = async (
+  request: APIRequestContext,
+  headers: Headers,
+  name: string,
+): Promise<{ leadershipId: number }> => {
+  const contactResponse = await request.post(`${BASE_URL}/api/contact`, {
+    headers,
+    data: { name },
+  })
+  expect(contactResponse.ok(), await contactResponse.text()).toBeTruthy()
+  const contactId = ((await contactResponse.json()) as { doc: { id: number } }).doc.id
+  createdContactIds.push(contactId)
+
+  const municipalityResponse = await request.get(
+    `${BASE_URL}/api/municipality?limit=1&depth=0&sort=name`,
+    { headers },
+  )
+  expect(municipalityResponse.ok(), await municipalityResponse.text()).toBeTruthy()
+  const municipalityId = ((await municipalityResponse.json()) as { docs: { id: number }[] })
+    .docs[0]!.id
+
+  const leadershipResponse = await request.post(`${BASE_URL}/api/leadership`, {
+    headers,
+    data: { contact: contactId, municipalities: [municipalityId] },
+  })
+  expect(leadershipResponse.ok(), await leadershipResponse.text()).toBeTruthy()
+  const leadershipId = ((await leadershipResponse.json()) as { doc: { id: number } }).doc.id
+  createdLeadershipIds.push(leadershipId)
+  return { leadershipId }
 }
 
 const setPieceStatus = async (
@@ -191,6 +234,12 @@ test.afterAll(async ({ request }) => {
   }
   for (const id of createdMediaIds.splice(0)) {
     await request.delete(`${BASE_URL}/api/contentMedia/${id}`, { headers }).catch(() => undefined)
+  }
+  for (const id of createdLeadershipIds.splice(0)) {
+    await request.delete(`${BASE_URL}/api/leadership/${id}`, { headers }).catch(() => undefined)
+  }
+  for (const id of createdContactIds.splice(0)) {
+    await request.delete(`${BASE_URL}/api/contact/${id}`, { headers }).catch(() => undefined)
   }
 })
 
@@ -695,5 +744,58 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     // Exact: the sr-only live region announces "Peças do seu município".
     await expect(section.getByText('Do seu município', { exact: true })).toBeVisible()
     await expect(section.getByRole('link', { name: title })).toBeVisible()
+  })
+  test('filters by who appears in the piece and removes a name when unpublished (S37)', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await unpublishEveryPiece(request, headers)
+    const marker = uniqueMarker()
+    const leaderName = `Maria Silva ${marker}`
+    const personSlug = slugify(leaderName)
+    const title = `Giro com a liderança ${marker}`
+    const { leadershipId } = await createLeadershipWithContact(request, headers, leaderName)
+    const piece = await createPiece(request, headers, {
+      title,
+      type: 'video',
+      leaders: [leadershipId],
+      publicFigures: ['dra elaine'],
+    })
+
+    await page.goto('/conteudos')
+    await waitForSettledPage(page)
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
+    // The card's metadata line leads with who appears in the piece.
+    await expect(
+      page.locator('article[data-content-piece]').getByText(leaderName, { exact: true }),
+    ).toBeVisible()
+
+    // The one "Lideranças" facet unions the leader name and the curated figure.
+    await page.locator('summary').filter({ hasText: 'Lideranças' }).first().click()
+    await expect(
+      page.getByText('Em peças publicadas').filter({ visible: true }).first(),
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Dra. Elaine', exact: true })).toBeVisible()
+    await page.getByRole('link', { name: leaderName, exact: true }).click()
+    await expect(page).toHaveURL(new RegExp(`lideranca=${personSlug}$`))
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
+    await expect(
+      page
+        .getByRole('link', { name: /Remover filtro Lideranças/ })
+        .filter({ visible: true })
+        .first(),
+    ).toBeVisible()
+
+    // Searching the name finds the piece (the haystack carries it).
+    await page.goto(`/conteudos?q=${encodeURIComponent(leaderName)}`)
+    await waitForSettledPage(page)
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
+
+    // Unpublishing the last piece with the name removes it from the facet.
+    await setPieceStatus(request, headers, piece.id, 'rascunho')
+    await page.goto('/conteudos')
+    await waitForSettledPage(page)
+    await expect(page.locator('summary').filter({ hasText: 'Lideranças' })).toHaveCount(0)
   })
 })

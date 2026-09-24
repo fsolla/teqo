@@ -12,6 +12,7 @@ import {
   contentPieceMediaKind,
   contentPieceMediaPath,
   contentPiecePublicPath,
+  contentPiecePublicPeople,
   contentPieceTextExcerpt,
   contentPieceThemeMatch,
   contentPieceThemeTerms,
@@ -65,6 +66,7 @@ describe('content piece catalog params', () => {
         regiao: 'metropolitano-de-salvador',
         tema: 'economia-trabalho',
         instituicao: 'camara-dos-deputados',
+        lideranca: 'maria-silva',
         q: '  escala  ',
         mode: 'tema',
       }),
@@ -74,6 +76,7 @@ describe('content piece catalog params', () => {
       regiao: 'metropolitano-de-salvador',
       tema: 'economia-trabalho',
       instituicao: 'camara-dos-deputados',
+      lideranca: 'maria-silva',
       q: 'escala',
       mode: 'tema',
     })
@@ -84,10 +87,13 @@ describe('content piece catalog params', () => {
       regiao: null,
       tema: null,
       instituicao: null,
+      lideranca: null,
       q: '',
       mode: null,
     })
     expect(parseContentPieceCatalogParams({ cidade: '../etc/passwd' }).cidade).toBeNull()
+    // S37 — the people facet is a display-name slug; spaces/accents never pass.
+    expect(parseContentPieceCatalogParams({ lideranca: 'Maria Silva' }).lideranca).toBeNull()
     expect(parseContentPieceCatalogParams({}).q).toBe('')
   })
 
@@ -114,6 +120,14 @@ describe('content piece catalog params', () => {
     expect(buildContentPieceCatalogHref({ tipo: 'video', tema: null, q: '' })).toBe(
       '/conteudos?tipo=video',
     )
+    // S37 — the people facet is appended after Instituição, before the query.
+    expect(
+      buildContentPieceCatalogHref({
+        instituicao: 'camara-dos-deputados',
+        lideranca: 'maria-silva',
+        q: 'escala',
+      }),
+    ).toBe('/conteudos?instituicao=camara-dos-deputados&lideranca=maria-silva&q=escala')
     expect(buildContentPieceCatalogHref({ q: 'escala', mode: 'tema' })).toBe(
       '/conteudos?q=escala&mode=tema',
     )
@@ -146,7 +160,7 @@ describe('content piece catalog params', () => {
 describe('content piece catalog facets', () => {
   it('derives options from published items only, in enum/alphabetical order', () => {
     const facets = contentPieceCatalogFacets([
-      item(),
+      item({ leaderNames: ['Maria Silva'] }),
       item({
         id: 2,
         slug: 'card-saude',
@@ -155,6 +169,7 @@ describe('content piece catalog facets', () => {
         cityLabel: 'Feira de Santana',
         region: 'Portal do Sertão',
         institution: 'Câmara dos Deputados',
+        publicFigures: ['Dep. Estadual Exemplo'],
       }),
     ])
 
@@ -171,6 +186,23 @@ describe('content piece catalog facets', () => {
     expect(facets.instituicao).toEqual([
       { value: 'camara-dos-deputados', label: 'Câmara dos Deputados' },
     ])
+    // S37 — one facet unions the leader snapshot and the curated figures,
+    // alphabetical by the display name.
+    expect(facets.lideranca).toEqual([
+      { value: 'dep-estadual-exemplo', label: 'Dep. Estadual Exemplo' },
+      { value: 'maria-silva', label: 'Maria Silva' },
+    ])
+  })
+
+  it('collapses homonyms and spelling variants into one people option (S37)', () => {
+    const facets = contentPieceCatalogFacets([
+      item({ leaderNames: ['Dra. Elaine'] }),
+      item({ id: 2, slug: 'outra', publicFigures: ['Dra Elaine'] }),
+    ])
+
+    expect(facets.lideranca).toEqual([{ value: 'dra-elaine', label: 'Dra Elaine' }])
+    // No piece carries people: the facet renders nothing.
+    expect(contentPieceCatalogFacets([item()]).lideranca).toEqual([])
   })
 })
 
@@ -210,6 +242,28 @@ describe('content piece catalog filtering', () => {
     expect(idsFor({ q: 'saúde' })).toEqual([1, 2])
     expect(idsFor({ tipo: 'video', cidade: 'feira-de-santana' })).toEqual([])
     expect(idsFor({ tipo: 'video', q: 'escala' })).toEqual([1])
+  })
+
+  it('filters by the people facet union and combines with the other facets (S37)', () => {
+    const people = [
+      item({ leaderNames: ['Maria Silva'] }),
+      item({
+        id: 2,
+        slug: 'card-feira',
+        type: 'card',
+        cityLabel: 'Feira de Santana',
+        publicFigures: ['Dep. Estadual Exemplo'],
+      }),
+    ]
+    const ids = (raw: Record<string, string>) =>
+      pieceRows(filterContentPieceCatalogItems(people, parseContentPieceCatalogParams(raw))).map(
+        (row) => row.id,
+      )
+
+    expect(ids({ lideranca: 'maria-silva' })).toEqual([1])
+    expect(ids({ lideranca: 'dep-estadual-exemplo' })).toEqual([2])
+    expect(ids({ lideranca: 'maria-silva', tipo: 'card' })).toEqual([])
+    expect(ids({ lideranca: 'ninguem' })).toEqual([])
   })
 
   it('ORs the literal query with the expanded theme terms, facets still AND', () => {
@@ -445,6 +499,31 @@ describe('content piece public view model', () => {
     expect(contentPieceMediaKind(item({ media: { id: 7 } }))).toBe('video')
     expect(contentPieceMediaKind(item({ type: 'card', media: { id: 7 } }))).toBe('image')
     expect(contentPieceMediaKind(item({ media: null, sourceUrl: 'https://youtu.be/X' }))).toBeNull()
+  })
+
+  it('leads the metadata line with who appears in the piece (S37)', () => {
+    expect(item({ leaderNames: ['Maria Silva'] }).metaLabel).toBe(
+      'Maria Silva · Economia e Trabalho · Salvador',
+    )
+    // A figure takes the slot when there is no leader name.
+    expect(item({ publicFigures: ['Dep. Estadual Exemplo'] }).metaLabel).toBe(
+      'Dep. Estadual Exemplo · Economia e Trabalho · Salvador',
+    )
+    // Nobody marked: the previous line stays byte-identical.
+    expect(item().metaLabel).toBe('Economia e Trabalho · Salvador')
+  })
+
+  it('unions leaders and figures as people options, deduped by display name (S37)', () => {
+    expect(
+      contentPiecePublicPeople({
+        leaderNames: ['Maria Silva'],
+        publicFigures: ['Maria Silva', 'Dep. Estadual Exemplo'],
+      }),
+    ).toEqual([
+      { slug: 'maria-silva', name: 'Maria Silva' },
+      { slug: 'dep-estadual-exemplo', name: 'Dep. Estadual Exemplo' },
+    ])
+    expect(contentPiecePublicPeople({ leaderNames: [], publicFigures: ['  '] })).toEqual([])
   })
 
   it('fails closed without a slug or without file and link', () => {

@@ -33,6 +33,7 @@ import {
   addContentPieceByLinkForActor,
   getContentPieceStatusesForActor,
   retryContentPieceForActor,
+  searchContentPieceLeaderOptionsForActor,
   setContentPiecePublishedForActor,
   updateContentPieceForActor,
 } from '@/app/(campaign)/campanha/actions/contentPieces'
@@ -48,6 +49,7 @@ import {
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
 } from '@/lib/schemas/contentPiece'
+import { slugify } from '@/lib/slug'
 import type { SpeechTopic } from '@/lib/speechFacets'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import type { CampaignUser, ContentMedia } from '@/payload-types'
@@ -66,6 +68,7 @@ import { loadContentPieceListPageData } from '@/utilities/content/contentPiecePa
 import {
   getPublishedContentPieceBySlug,
   getPublishedContentPieceItems,
+  getPublishedContentPieceRecords,
   hasPublishedContentPieces,
 } from '@/utilities/content/contentPieceReads'
 import { loadContentPieceCatalogSearch } from '@/utilities/content/contentPieceThemeSearch'
@@ -743,6 +746,123 @@ describe('content pieces (C211)', () => {
     expect(row.searchText).toContain('camara dos deputados')
   })
 
+  it('searches the leader options with the display-name projection only (S37)', async () => {
+    const fixtures = campaignFixtures()
+    const marker = `busca-${Date.now()}`
+    const contact = await fixtures.createContact({ name: `Maria Silva ${marker}` })
+    const municipality = await fixtures.getMunicipality()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+    })
+
+    getCampaignUserMock.mockResolvedValue(communicator)
+    const options = await searchContentPieceLeaderOptionsForActor(`Maria Silva ${marker}`)
+    const found = options.find((option) => option.id === leadership.id)
+
+    // The projection is exactly `{ id, label }` — no other leadership field
+    // (municipality, status, votes, contact) crosses the boundary.
+    expect(found).toEqual({ id: leadership.id, label: contact.name })
+    expect(Object.keys(found!).sort()).toEqual(['id', 'label'])
+
+    // Shorter than 2 chars never queries.
+    expect(await searchContentPieceLeaderOptionsForActor('M')).toEqual([])
+
+    // The role gate fails closed for every non-communication role.
+    for (const denied of [advisor, leader]) {
+      getCampaignUserMock.mockResolvedValue(denied)
+      await expect(
+        searchContentPieceLeaderOptionsForActor(`Maria Silva ${marker}`),
+      ).rejects.toThrow(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+    }
+  })
+
+  it('saves who appears in the piece, snapshots names and survives the pipeline (S37)', async () => {
+    const fixtures = campaignFixtures()
+    const marker = `pessoas-${Date.now()}`
+    const contact = await fixtures.createContact({ name: `Liderança ${marker}` })
+    const municipality = await fixtures.getMunicipality()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+    })
+    const { piece } = await createPiece({
+      processingStatus: 'processando',
+      title: `Peça pessoas ${marker}`,
+    })
+    getCampaignUserMock.mockResolvedValue(communicator)
+
+    await updateContentPieceForActor({
+      contentPieceId: piece.id,
+      title: `Peça pessoas ${marker}`,
+      description: null,
+      type: 'video',
+      pieceDate: null,
+      municipalityId: null,
+      institution: null,
+      transcript: null,
+      leaderIds: [leadership.id],
+      // A typed variant resolves to the catalog spelling; the free text stays.
+      publicFigures: ['dra elaine', 'Personalidade Sem Catálogo'],
+    })
+
+    const row = await payload.findByID({
+      collection: 'contentPiece',
+      id: piece.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(row.leaders).toEqual([leadership.id])
+    expect(row.leaderNames).toEqual([contact.name])
+    expect(row.publicFigures).toEqual(['Dra. Elaine', 'Personalidade Sem Catálogo'])
+    expect(row.searchText).toContain(normalizeForSearch(contact.name))
+    expect(row.searchText).toContain('dra. elaine')
+
+    // The pipeline job never touches the curation fields.
+    const restore = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+    try {
+      await runContentPieceJob(payload, piece.id, {
+        transcribe: transcribeOk,
+        catalog: catalogStub,
+      })
+    } finally {
+      restore()
+    }
+    const processed = await payload.findByID({
+      collection: 'contentPiece',
+      id: piece.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(processed.leaders).toEqual([leadership.id])
+    expect(processed.leaderNames).toEqual([contact.name])
+    expect(processed.publicFigures).toEqual(['Dra. Elaine', 'Personalidade Sem Catálogo'])
+
+    // Clearing the picks clears the snapshot, the figures and the haystack.
+    await updateContentPieceForActor({
+      contentPieceId: piece.id,
+      title: `Peça pessoas ${marker}`,
+      description: null,
+      type: 'video',
+      pieceDate: null,
+      municipalityId: null,
+      institution: null,
+      transcript: null,
+      leaderIds: [],
+      publicFigures: [],
+    })
+    const cleared = await payload.findByID({
+      collection: 'contentPiece',
+      id: piece.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(cleared.leaders).toEqual([])
+    expect(cleared.leaderNames).toEqual([])
+    expect(cleared.publicFigures).toEqual([])
+    expect(cleared.searchText).not.toContain(normalizeForSearch(contact.name))
+  })
+
   it('derives the city and the region from the related município', async () => {
     const municipality = await payload.find({
       collection: 'municipality',
@@ -1255,6 +1375,77 @@ describe('content pieces (C211)', () => {
     })
     expect(await getPublishedContentPieceBySlug(`nao-existe-${marker}`)).toBeNull()
     expect(await hasPublishedContentPieces()).toBe(true)
+  })
+
+  it('derives the people facet and the name search from published pieces only (S37)', async () => {
+    const fixtures = campaignFixtures()
+    const marker = `facet-${Date.now()}`
+    const contactName = `Liderança Pública ${marker}`
+    const contact = await fixtures.createContact({ name: contactName })
+    const municipality = await fixtures.getMunicipality()
+    const leadership = await fixtures.createLeadership({
+      contact: contact.id,
+      municipalities: [municipality.id],
+    })
+
+    const published = await createPiece({ title: `Publicada pessoas ${marker}` })
+    const draft = await createPiece({ title: `Rascunho pessoas ${marker}` })
+    getCampaignUserMock.mockResolvedValue(communicator)
+
+    for (const [id, title] of [
+      [published.piece.id, `Publicada pessoas ${marker}`],
+      [draft.piece.id, `Rascunho pessoas ${marker}`],
+    ] as const) {
+      await updateContentPieceForActor({
+        contentPieceId: id,
+        title,
+        description: null,
+        type: 'video',
+        pieceDate: null,
+        municipalityId: null,
+        institution: null,
+        transcript: null,
+        leaderIds: [leadership.id],
+        publicFigures: ['Dra. Elaine'],
+      })
+    }
+    await payload.update({
+      collection: 'contentPiece',
+      id: published.piece.id,
+      data: { status: 'publicado' },
+      overrideAccess: true,
+    })
+
+    const personSlug = slugify(contactName)
+    const records = await getPublishedContentPieceRecords()
+    const record = records.find((candidate) => candidate.id === published.piece.id)
+    expect(record?.leaderNames).toEqual([contactName])
+    expect(record?.publicFigures).toEqual(['Dra. Elaine'])
+    // The public select never carries the relation (depth 1 would leak Contact).
+    expect(record && 'leaders' in record).toBe(false)
+
+    const filtered = await loadContentPieceCatalogSearch({
+      rawSearchParams: { lideranca: personSlug },
+    })
+    expect(pieceRows(filtered.items).map((item) => item.id)).toContain(published.piece.id)
+    expect(pieceRows(filtered.items).map((item) => item.id)).not.toContain(draft.piece.id)
+    expect(filtered.facets.lideranca).toContainEqual({ value: personSlug, label: contactName })
+
+    const byName = await loadContentPieceCatalogSearch({ rawSearchParams: { q: contactName } })
+    expect(pieceRows(byName.items).map((item) => item.id)).toContain(published.piece.id)
+
+    // Unpublishing the last piece with the name removes it from the facet.
+    await payload.update({
+      collection: 'contentPiece',
+      id: published.piece.id,
+      data: { status: 'rascunho' },
+      overrideAccess: true,
+    })
+    const afterUnpublish = await loadContentPieceCatalogSearch({ rawSearchParams: {} })
+    expect(afterUnpublish.facets.lideranca).not.toContainEqual({
+      value: personSlug,
+      label: contactName,
+    })
   })
 
   it('serves a published piece file publicly and 404s draft, link and unknown slugs', async () => {

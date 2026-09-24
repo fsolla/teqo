@@ -10,9 +10,12 @@ import {
   CONTENT_PIECE_CURATED_FIELDS,
   CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
   CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
+  CONTENT_PIECE_LEADERS_MAX,
   CONTENT_PIECE_LINK_FAILURE_REASONS,
   CONTENT_PIECE_ORIGINS,
   CONTENT_PIECE_PROCESSING_STATUSES,
+  CONTENT_PIECE_PUBLIC_FIGURES_MAX,
+  CONTENT_PIECE_PUBLIC_FIGURE_MAX_LENGTH,
   CONTENT_PIECE_STATUSES,
   CONTENT_PIECE_STEPS,
   CONTENT_PIECE_TITLE_MAX_LENGTH,
@@ -27,6 +30,8 @@ import {
   contentPieceStepLabels,
   contentPieceTypeLabels,
 } from '@/lib/contentPiece'
+import { normalizeContentPiecePublicFigures } from '@/lib/publicFigureCatalog'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
 import { payloadAdminOnly } from '@/utilities/access/shared'
 import {
@@ -36,6 +41,7 @@ import {
   canUpdateContentPiece,
 } from '@/utilities/campaignAccess'
 import { stampCampaignCreatedBy, systemStampedActorField } from '@/utilities/campaignAuditFields'
+import { resolveContentPieceLeaderNames } from '@/utilities/content/contentPieceLeaderOptions'
 import { revalidateContentPiecesListing } from '@/utilities/documents'
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 
@@ -190,6 +196,23 @@ const deriveContentPieceCatalogIndex: CollectionBeforeValidateHook = async ({
 
   data.cityLabel = cityLabel
   data.region = region
+
+  // S37 — "who appears in the piece". The leader snapshot is recomputed only
+  // when the relation was TOUCHED (the ficha always sends the list, an empty
+  // one clearing it); a partial update keeps the stored names. The public
+  // figures are canonicalized against the catalog on every write, so any path
+  // (ficha, admin, direct update) stores the same spelling.
+  if (data.leaders !== undefined) {
+    data.leaderNames = await resolveContentPieceLeaderNames(
+      req.payload,
+      req,
+      uniqueRelationshipIds(data.leaders),
+    )
+  }
+  if (data.publicFigures !== undefined) {
+    data.publicFigures = normalizeContentPiecePublicFigures(data.publicFigures ?? [])
+  }
+
   data.searchText = contentPieceSearchText({
     title: data.title ?? originalDoc?.title,
     description: data.description ?? originalDoc?.description,
@@ -197,6 +220,8 @@ const deriveContentPieceCatalogIndex: CollectionBeforeValidateHook = async ({
     institution: data.institution ?? originalDoc?.institution,
     topics: data.topics ?? originalDoc?.topics,
     cityLabel,
+    leaderNames: data.leaderNames ?? originalDoc?.leaderNames,
+    publicFigures: data.publicFigures ?? originalDoc?.publicFigures,
   })
   return data
 }
@@ -310,6 +335,40 @@ export const ContentPiece: CollectionConfig = {
       type: 'text',
       label: 'Instituição',
       maxLength: CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
+    },
+    {
+      name: 'leaders',
+      type: 'relationship',
+      relationTo: 'leadership',
+      hasMany: true,
+      label: 'Lideranças da campanha',
+      maxRows: CONTENT_PIECE_LEADERS_MAX,
+      admin: {
+        description:
+          'Quem aparece na peça entre as lideranças já registradas. À Central pública vai apenas o nome.',
+      },
+    },
+    {
+      name: 'leaderNames',
+      type: 'text',
+      hasMany: true,
+      label: 'Nomes para a Central pública',
+      admin: {
+        readOnly: true,
+        description: 'Derivado das lideranças marcadas; é o que a faceta pública mostra.',
+      },
+    },
+    {
+      name: 'publicFigures',
+      type: 'text',
+      hasMany: true,
+      label: 'Figuras públicas',
+      maxRows: CONTENT_PIECE_PUBLIC_FIGURES_MAX,
+      maxLength: CONTENT_PIECE_PUBLIC_FIGURE_MAX_LENGTH,
+      admin: {
+        description:
+          'Dobradinhas/estaduais do catálogo e outras personalidades; a grafia é canonicalizada ao salvar.',
+      },
     },
     {
       name: 'pieceDate',

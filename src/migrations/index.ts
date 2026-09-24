@@ -85,6 +85,7 @@ import * as migration_20260923_190414_add_content_event_variant from './20260923
 import * as migration_20260924_040210_add_recording_facets from './20260924_040210_add_recording_facets';
 import * as migration_20260924_042028_add_web_speech_origin from './20260924_042028_add_web_speech_origin';
 import * as migration_20260924_045625_add_content_piece_link_failure_reason from './20260924_045625_add_content_piece_link_failure_reason';
+import * as migration_20260924_123940_add_content_piece_people from './20260924_123940_add_content_piece_people';
 
 export const migrations = [
   {
@@ -510,16 +511,21 @@ export const migrations = [
   {
     up: migration_20260924_040210_add_recording_facets.up,
     down: migration_20260924_040210_add_recording_facets.down,
-    name: '20260924_040210_add_recording_facets'
+    name: '20260924_040210_add_recording_facets',
   },
   {
     up: migration_20260924_042028_add_web_speech_origin.up,
     down: migration_20260924_042028_add_web_speech_origin.down,
-    name: '20260924_042028_add_web_speech_origin'
+    name: '20260924_042028_add_web_speech_origin',
   },
   {
     up: migration_20260924_045625_add_content_piece_link_failure_reason.up,
     down: migration_20260924_045625_add_content_piece_link_failure_reason.down,
-    name: '20260924_045625_add_content_piece_link_failure_reason'
+    name: '20260924_045625_add_content_piece_link_failure_reason',
+  },
+  {
+    up: migration_20260924_123940_add_content_piece_people.up,
+    down: migration_20260924_123940_add_content_piece_people.down,
+    name: '20260924_123940_add_content_piece_people',
   },
 ];

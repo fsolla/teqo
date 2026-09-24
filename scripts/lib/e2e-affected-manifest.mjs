@@ -172,6 +172,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/contentPieceCatalog',
       'src/lib/contentPieceHomeSelection.ts',
       'src/lib/contentPieceShare',
+      // S37 — the catalog behind the public "Lideranças" names.
+      'src/lib/publicFigureCatalog.ts',
       'src/lib/contentEvents.ts',
       'src/lib/cardModels.ts',
       'src/lib/schemas/contentEvent.ts',
@@ -495,6 +497,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/reel',
       'src/lib/recording',
       'src/lib/contentPiece',
+      // S37 — the public-figure catalog of the ficha picker.
+      'src/lib/publicFigureCatalog.ts',
       'src/lib/privateMedia',
       // The role predicates drive the vertical gate and the assistant surfaces.
       'src/lib/campaignRoles',

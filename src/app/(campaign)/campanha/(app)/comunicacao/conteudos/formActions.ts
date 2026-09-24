@@ -8,6 +8,7 @@ import { isContentPieceType } from '@/lib/contentPiece'
 import {
   nullableFormText,
   repeatedFormTexts,
+  repeatedRelationshipFormValues,
   requiredFormText,
   requiredIntegerFormValue,
 } from '@/lib/formData'
@@ -49,6 +50,10 @@ export const updateContentPieceFormAction = async (
         municipalityId: municipalityValue,
         institution: nullableFormText(formData, 'institution'),
         transcript: nullableFormText(formData, 'transcript'),
+        // S37 — the people order is the assessoria's: the first chip leads the
+        // card, so the submit order is preserved (no id sort).
+        leaderIds: repeatedRelationshipFormValues(formData, 'leaderIds', { sort: false }),
+        publicFigures: repeatedFormTexts(formData, 'publicFigures'),
       })
 
       revalidatePath(CAMPAIGN_COMMUNICATION_CONTEUDOS)

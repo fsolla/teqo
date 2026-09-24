@@ -49,6 +49,7 @@ export const CONTENT_PIECE_CATALOG_FACETS = [
   'regiao',
   'tema',
   'instituicao',
+  'lideranca',
 ] as const
 
 export type ContentPieceCatalogFacet = (typeof CONTENT_PIECE_CATALOG_FACETS)[number]
@@ -59,6 +60,7 @@ export const contentPieceCatalogFacetLabels: Record<ContentPieceCatalogFacet, st
   regiao: 'Região',
   tema: 'Tema',
   instituicao: 'Instituição',
+  lideranca: 'Lideranças',
 }
 
 /**
@@ -74,6 +76,8 @@ export type ContentPieceCatalogParams = {
   regiao: string | null
   tema: SpeechTopic | null
   instituicao: string | null
+  /** S37 — one display name present in the piece (`slugify` of the name). */
+  lideranca: string | null
   q: string
   mode: ContentPieceCatalogMode | null
 }
@@ -106,6 +110,7 @@ export const parseContentPieceCatalogParams = (
     regiao: slugFacet('regiao'),
     tema: isContentPieceTopic(tema) ? tema : null,
     instituicao: slugFacet('instituicao'),
+    lideranca: slugFacet('lideranca'),
     q,
     // Only `tema` is meaningful; anything else (and the default) means exact,
     // and a mode without a term has nothing to expand.
@@ -123,6 +128,7 @@ export const buildContentPieceCatalogHref = (
   if (params.regiao) search.set('regiao', params.regiao)
   if (params.tema) search.set('tema', params.tema)
   if (params.instituicao) search.set('instituicao', params.instituicao)
+  if (params.lideranca) search.set('lideranca', params.lideranca)
   const term = params.q?.trim()
   if (term) {
     search.set('q', term)
@@ -154,6 +160,30 @@ const sortedOptions = (options: Map<string, string>): ContentPieceCatalogFacetOp
     .map(([value, label]) => ({ value, label }))
     .sort((a, b) => a.label.localeCompare(b.label, 'pt-BR'))
 
+/** S37 — one display name of who appears in the piece (facet option shape). */
+export type ContentPiecePublicPerson = { slug: string; name: string }
+
+/**
+ * S37 — the single facet `Lideranças` union: the campaign-leader name snapshot
+ * plus the curated public figures, each as a display name keyed by `slugify`.
+ * Homonyms and spelling variants collapse into ONE option by design (the facet
+ * filters by display name, never by identity; the last spelling of the stable
+ * order labels it). Derived from the item alone — the public read never joins
+ * `leadership`/`Contact`.
+ */
+export const contentPiecePublicPeople = (
+  item: Pick<ContentPiecePublicItem, 'leaderNames' | 'publicFigures'>,
+): ContentPiecePublicPerson[] => {
+  const people = new Map<string, string>()
+  for (const value of [...item.leaderNames, ...item.publicFigures]) {
+    const name = value.trim()
+    const slug = slugify(name)
+    if (!name || !slug) continue
+    people.set(slug, name)
+  }
+  return [...people.entries()].map(([slug, name]) => ({ slug, name }))
+}
+
 /**
  * Facet options are derived from the board items alone: a filter that cannot
  * match anything never renders. Tipo/Tema keep the persisted enum order; the
@@ -171,6 +201,7 @@ export const contentPieceCatalogFacets = (
   const cities = new Map<string, string>()
   const regions = new Map<string, string>()
   const institutions = new Map<string, string>()
+  const people = new Map<string, string>()
 
   for (const item of items) {
     if (isCardCatalogItem(item)) {
@@ -182,6 +213,7 @@ export const contentPieceCatalogFacets = (
     if (item.cityLabel) cities.set(slugify(item.cityLabel), item.cityLabel)
     if (item.regionLabel) regions.set(slugify(item.regionLabel), item.regionLabel)
     if (item.institution) institutions.set(slugify(item.institution), item.institution)
+    for (const person of contentPiecePublicPeople(item)) people.set(person.slug, person.name)
   }
 
   return {
@@ -196,6 +228,7 @@ export const contentPieceCatalogFacets = (
     cidade: sortedOptions(cities),
     regiao: sortedOptions(regions),
     instituicao: sortedOptions(institutions),
+    lideranca: sortedOptions(people),
   }
 }
 
@@ -282,7 +315,9 @@ export const filterContentPieceCatalogItems = (
         (item.regionLabel === null || slugify(item.regionLabel) !== params.regiao)) ||
       (params.tema && !item.topics.includes(params.tema)) ||
       (params.instituicao &&
-        (item.institution === null || slugify(item.institution) !== params.instituicao))
+        (item.institution === null || slugify(item.institution) !== params.instituicao)) ||
+      (params.lideranca &&
+        !contentPiecePublicPeople(item).some((person) => person.slug === params.lideranca))
     ) {
       return false
     }
@@ -304,6 +339,10 @@ export type ContentPiecePublicSource = {
   cityLabel?: string | null
   region?: string | null
   institution?: string | null
+  /** S37 — derived display names of the linked campaign leaders (never the relation). */
+  leaderNames?: string[] | null
+  /** S37 — curated public figures (display names). */
+  publicFigures?: string[] | null
   description?: string | null
   transcript?: string | null
   sourceUrl?: string | null
@@ -329,12 +368,15 @@ export type ContentPiecePublicItem = {
   cityLabel: string | null
   regionLabel: string | null
   institution: string | null
+  /** S37 — display names of who appears in the piece (leader snapshot + figures). */
+  leaderNames: string[]
+  publicFigures: string[]
   description: string | null
   /** Opening of the text/transcript, for the `texto` card asset. */
   excerpt: string | null
   durationLabel: string | null
   pieceDateLabel: string | null
-  /** `Tema · Local` (or institution/city fallbacks) — the card's metadata line. */
+  /** S37 — `Nome · Tema · Local` (or the previous fallbacks) — the card's metadata line. */
   metaLabel: string
   searchText: string
   /** S28 — why the piece appeared in the theme mode; null in the literal search. */
@@ -647,8 +689,18 @@ export const toContentPiecePublicItem = (
   const cityLabel = record.cityLabel?.trim() || null
   const regionLabel = record.region?.trim() || null
   const institution = record.institution?.trim() || null
+  const leaderNames = (record.leaderNames ?? []).map((name) => name.trim()).filter(Boolean)
+  const publicFigures = (record.publicFigures ?? []).map((name) => name.trim()).filter(Boolean)
   const local = cityLabel ?? regionLabel
-  const metaLabel = [topicLabels[0] ?? institution, local].filter(Boolean).join(' · ')
+  const metaLabel = [
+    // S37 — who appears leads the metadata line; the previous shape stays for a
+    // piece with nobody marked (byte-identical card).
+    leaderNames[0] ?? publicFigures[0],
+    topicLabels[0] ?? institution,
+    local,
+  ]
+    .filter(Boolean)
+    .join(' · ')
   const isLink = media === null && sourceUrl !== null
 
   return {
@@ -666,6 +718,8 @@ export const toContentPiecePublicItem = (
     cityLabel,
     regionLabel,
     institution,
+    leaderNames,
+    publicFigures,
     description: record.description?.trim() || null,
     excerpt: contentPieceTextExcerpt(record.transcript),
     durationLabel: durationLabelOf(record.durationSeconds),

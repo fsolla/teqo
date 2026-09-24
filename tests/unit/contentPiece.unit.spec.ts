@@ -244,6 +244,16 @@ describe('contentPieceSearchText', () => {
   it('is empty when nothing is filled', () => {
     expect(contentPieceSearchText({})).toBe('')
   })
+
+  it('includes the display names of who appears in the piece (S37)', () => {
+    expect(
+      contentPieceSearchText({
+        title: 'Giro',
+        leaderNames: ['Maria Silva'],
+        publicFigures: ['Dra. Elaine'],
+      }),
+    ).toBe('giro maria silva dra. elaine')
+  })
 })
 
 describe('toContentPieceViewModel', () => {

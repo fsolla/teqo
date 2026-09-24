@@ -3,6 +3,9 @@ import { z } from 'zod'
 import {
   CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
   CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
+  CONTENT_PIECE_LEADERS_MAX,
+  CONTENT_PIECE_PUBLIC_FIGURES_MAX,
+  CONTENT_PIECE_PUBLIC_FIGURE_MAX_LENGTH,
   CONTENT_PIECE_TEXT_TOO_LARGE_MESSAGE,
   CONTENT_PIECE_TITLE_MAX_LENGTH,
   CONTENT_PIECE_TYPES,
@@ -90,6 +93,13 @@ export const contentPieceUpdateRequestSchema = z.object({
   municipalityId: z.number().int().positive().nullable().optional(),
   institution: trimmedNullableText(CONTENT_PIECE_INSTITUTION_MAX_LENGTH),
   transcript: trimmedNullableText(200_000),
+  // S37 — who appears in the piece: the leader relation ids and the curated
+  // public figures. The action canonicalizes the figures against the catalog.
+  leaderIds: z.array(z.number().int().positive()).max(CONTENT_PIECE_LEADERS_MAX).optional(),
+  publicFigures: z
+    .array(z.string().trim().max(CONTENT_PIECE_PUBLIC_FIGURE_MAX_LENGTH))
+    .max(CONTENT_PIECE_PUBLIC_FIGURES_MAX)
+    .optional(),
 })
 
 export type ContentPieceUpdateRequest = z.infer<typeof contentPieceUpdateRequestSchema>
