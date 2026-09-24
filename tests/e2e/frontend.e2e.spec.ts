@@ -1,6 +1,7 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
 import { readFileSync } from 'node:fs'
 
+import { COLINHA_ROW_LAYOUT } from '@/lib/cardColinha'
 import { TEAM_CARD_NAME_BANNER } from '@/lib/cardModels'
 
 import { adminHeaders } from '../helpers/adminApi'
@@ -2374,22 +2375,52 @@ test.describe('Cards personalizados (S30 — Time do estadual)', () => {
   })
 })
 
-test.describe('Cards personalizados (S31 — Minha colinha)', () => {
+test.describe('Cards personalizados (S34 — Minha colinha)', () => {
   /**
-   * Canvas probe at 1080×1920: the center of the estadual row's first digit box
-   * — content x (51.83 + 35.64) + the 30% office column (287.07) + the 21.6 gap
-   * + half box = 396.14 + 29.7 ≈ 426; row 1 (estadual) starts at 905.88 + 142.56
-   * and its box center is +17.28 + 36.72 ≈ 1102.
+   * Canvas probe at 1080×1920 over the estadual row, derived from the layout the
+   * renderer draws with: the label band reports the first dark-ink column and
+   * the first red column (the delivered art burns the label at x 571–856; the
+   * filled state wipes it and redraws the pair from the mask's left edge), and
+   * the first printed box interior reports glyph ink.
    */
-  const colinhaBoxPixel = (canvas: Locator) =>
-    canvas.evaluate((element) => {
-      const node = element as HTMLCanvasElement
-      return [...node.getContext('2d')!.getImageData(426, 1102, 1, 1).data]
-    })
+  const colinhaRowProbe = (canvas: Locator) =>
+    canvas.evaluate((element, layout) => {
+      const ctx = (element as HTMLCanvasElement).getContext('2d')!
+      const { mask, copy, digit } = layout
+      const bandX = Math.round(mask.x)
+      const bandY = Math.round(copy.top)
+      const bandWidth = Math.round(copy.right) - bandX
+      const bandHeight = Math.round(mask.y + mask.height) - bandY
+      const band = ctx.getImageData(bandX, bandY, bandWidth, bandHeight).data
+      let firstDarkX = -1
+      let redFirstX = -1
+      for (let x = 0; x < bandWidth && (firstDarkX < 0 || redFirstX < 0); x += 1) {
+        for (let y = 0; y < bandHeight; y += 1) {
+          const offset = (y * bandWidth + x) * 4
+          const r = band[offset]!
+          const g = band[offset + 1]!
+          const b = band[offset + 2]!
+          if (firstDarkX < 0 && r + g + b < 240) firstDarkX = bandX + x
+          if (redFirstX < 0 && r > 150 && g < 100 && b < 100) redFirstX = bandX + x
+        }
+      }
+      const boxX = Math.round(digit.left + digit.width / 2 - 17)
+      const boxY = Math.round(digit.top + digit.height / 2 - 17)
+      const box = ctx.getImageData(boxX, boxY, 34, 34).data
+      let boxInk = 0
+      for (let i = 0; i < box.length; i += 4) {
+        if (box[i]! + box[i + 1]! + box[i + 2]! < 240) boxInk += 1
+      }
+      return { firstDarkX, redFirstX, boxInk }
+    }, COLINHA_ROW_LAYOUT)
 
-  test('picks the estadual, fills the slip row and downloads the 1080×1920 PNG', async ({
-    page,
-  }) => {
+  const maskLeft = Math.round(COLINHA_ROW_LAYOUT.mask.x)
+  const filledRowProbe = async (canvas: Locator) => {
+    const { firstDarkX, redFirstX, boxInk } = await colinhaRowProbe(canvas)
+    return firstDarkX >= maskLeft && firstDarkX < 450 && redFirstX >= maskLeft && boxInk > 0
+  }
+
+  test('shows the delivered art with the download disabled before the pick', async ({ page }) => {
     await page.goto('/cards?model=minha-colinha')
 
     const dialog = page.getByRole('dialog')
@@ -2403,11 +2434,26 @@ test.describe('Cards personalizados (S31 — Minha colinha)', () => {
     await expect(canvas).toHaveAttribute('width', '1080')
     await expect(canvas).toHaveAttribute('height', '1920')
 
-    // The empty estadual row: five empty boxes (#fafafa), no glyph ink.
-    await expect.poll(() => colinhaBoxPixel(canvas)).toEqual([250, 250, 250, 255])
+    // The art as delivered: the burned label ink stays at the right, no red
+    // name and the printed boxes are empty.
+    await expect
+      .poll(async () => {
+        const { firstDarkX, redFirstX, boxInk } = await colinhaRowProbe(canvas)
+        return firstDarkX > 500 && redFirstX < 0 && boxInk === 0
+      })
+      .toBe(true)
 
+    await expect(dialog.getByRole('button', { name: 'Baixar minha colinha' })).toBeDisabled()
+  })
+
+  test('picks the estadual, fills the slip row and downloads the 1080×1920 PNG', async ({
+    page,
+  }) => {
+    await page.goto('/cards?model=minha-colinha')
+
+    const dialog = page.getByRole('dialog')
+    const canvas = dialog.locator('canvas')
     const primary = dialog.getByRole('button', { name: 'Baixar minha colinha' })
-    await expect(primary).toBeDisabled()
 
     await pickJulioByKeyboard(dialog)
 
@@ -2424,8 +2470,10 @@ test.describe('Cards personalizados (S31 — Minha colinha)', () => {
     ).toBeVisible()
     await expect(primary).toBeEnabled()
 
-    // The picked row is filled: the first box carries the `1` glyph ink.
-    await expect.poll(() => colinhaBoxPixel(canvas)).toEqual([20, 20, 20, 255])
+    // The picked row: the burned label is wiped and the redrawn pair (dark
+    // label + red name) starts at the mask's left edge; the first printed box
+    // carries the `1` glyph ink.
+    await expect.poll(() => filledRowProbe(canvas)).toBe(true)
 
     const [download, downloadEvent] = await Promise.all([
       page.waitForEvent('download'),
@@ -2447,6 +2495,20 @@ test.describe('Cards personalizados (S31 — Minha colinha)', () => {
         .subarray(0, 8)
         .equals(PNG_SIGNATURE),
     ).toBe(true)
+  })
+
+  test('shrinks the longest catalog name inside the mask', async ({ page }) => {
+    await page.goto('/cards?model=minha-colinha')
+
+    const dialog = page.getByRole('dialog')
+    const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
+    await search.fill('arthur')
+    await search.press('Enter')
+
+    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
+    await expect(trigger).toContainText('Artur Barachisio Lisbôa')
+    // The shrunk red name still starts inside the mask (never over the art).
+    await expect.poll(() => filledRowProbe(dialog.locator('canvas'))).toBe(true)
   })
 
   test('switching the estadual keeps the slip ready for download', async ({ page }) => {

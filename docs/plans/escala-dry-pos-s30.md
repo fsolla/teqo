@@ -48,6 +48,13 @@ A entrega S30 ([cards-estadual-dobradinha-impl.md](cards-estadual-dobradinha-imp
 - **P8 — `identitySha256` redundante após o `toEqual`**: **descartar** — precedente idêntico no `municipalityCatalog`; o hash é o guard de regeneração do fixture.
 - **P9 — `!` em `tests/unit/cardRender.unit.spec.ts`**: **descartar** — convenção do próprio arquivo (test-only, pré-existente).
 
+## Absorvidos do S34 (2026-09-24)
+
+Débitos que o /simplify do S34 ([cards-colinha-arte-exata-impl.md](cards-colinha-arte-exata-impl.md)) mandou para este lote (mesma superfície):
+
+- **S34-D1 — `name.toLocaleUpperCase('pt-BR')` duplicado** entre a `Linha conferida` do `CardComposer` e o nome desenhado em `renderColinhaCard`: a derivação do texto do nome entra em **F2** (função pura no dono `cardColinha.ts`), consumida pelos dois.
+- **S34-D2 — `ensureCardFont(fontFamily)` gateia o fluxo da colinha** (que desenha com o stack Arial, não com a display do site): o efeito de carga é reestruturado em **F1/F2**; hoje uma falha da fonte display derruba um fluxo que não a usa (pré-existente do S31).
+
 ## Rabbit holes / Não escopo
 
 - Extrair o listbox compartilhado agora (P2) — três superfícies divergentes (admin/omnibox, chips de relação, estúdio público) e gatilho documentado; abstração prematura.

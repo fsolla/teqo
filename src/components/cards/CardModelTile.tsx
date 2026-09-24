@@ -6,12 +6,12 @@ import type { CardModel } from '@/lib/cardModels'
 import { cn } from '@/lib/utils'
 
 /**
- * S13/S15/S31 — artwork preview of one card model, shared by the home section
- * and the `/cards` gallery. The name tile reuses the empty master with a
+ * S13/S15/S31/S34 — artwork preview of one card model, shared by the home
+ * section and the `/cards` gallery. The name tile reuses the empty master with a
  * `SEU NOME` preview drawn by the real composer pipeline (S14); the photo tiles
  * show the official transparent overlay above a neutral photo slot; the team
- * and colinha tiles show `previewSrc` (the filled example / the approved model
- * art) with the `NOVO` badge.
+ * tiles show `previewSrc` (the filled example) and the colinha tile shows the
+ * approved art itself (`assetSrc`, S34), with the `NOVO` badge.
  */
 export const CardModelTile = ({
   model,

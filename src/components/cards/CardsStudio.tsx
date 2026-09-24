@@ -82,7 +82,10 @@ export const CardsStudio = ({
               // `flex flex-col` (over the kit's `grid`) constrains the composer
               // body so its scrollable area shrinks and the CTA footer stays
               // pinned — required by the longer state-deputy selector (S30).
-              className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0"
+              // S34: the filled colinha state widens the dialog for the gate's
+              // scene 3 two-column composition (the empty state stays compact);
+              // `data-colinha-filled` is set by the composer (see CardComposer).
+              className="flex max-h-[92dvh] flex-col gap-0 overflow-hidden p-0 sm:max-w-lg sm:p-0 has-[[data-colinha-filled]]:sm:max-w-[60rem]"
             >
               <CardComposer
                 model={selectedModel}
