@@ -2,10 +2,13 @@ import { ExternalLinkIcon, PlayIcon, SparklesIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
-import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { SpeechExcerpt } from '@/components/campaign/speech/SpeechExcerpt'
 import { SpeechNestedCuts } from '@/components/campaign/speech/SpeechNestedCuts'
+import {
+  SpeechResultChips,
+  type SpeechChipGroup,
+} from '@/components/campaign/speech/SpeechResultChips'
 import { SpeechResultThumbnail } from '@/components/campaign/speech/SpeechResultThumbnail'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import type { SpeechHighlightedExcerpt } from '@/lib/speechHighlight'
 import type { SpeechListItemViewModel } from '@/utilities/speech/speechViewModels'
@@ -20,18 +23,6 @@ const MAX_KEYWORD_CHIPS = 3
 
 const MetaSeparator = () => <span aria-hidden="true">·</span>
 
-const SpeechExcerpt = ({ excerpt }: { excerpt: SpeechHighlightedExcerpt }) => {
-  if (excerpt.parts.length === 0) return null
-
-  return (
-    <p className="text-sm leading-relaxed text-foreground/90">
-      {excerpt.truncatedStart ? '… ' : null}
-      <SpeechHighlightParts parts={excerpt.parts} />
-      {excerpt.truncatedEnd ? ' …' : null}
-    </p>
-  )
-}
-
 /**
  * C192 — the theme result provenance: the real excerpt that matched the theme,
  * with the expanded term highlighted. It replaces the common excerpt (never
@@ -45,11 +36,11 @@ const SpeechThemeProvenance = ({ excerpt }: { excerpt: SpeechHighlightedExcerpt 
       <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
         Por que apareceu
       </p>
-      <p className="mt-1 text-sm leading-6 text-foreground/90">
-        {`“${excerpt.truncatedStart ? '… ' : ''}`}
-        <SpeechHighlightParts parts={excerpt.parts} />
-        {`${excerpt.truncatedEnd ? ' …' : ''}”`}
-      </p>
+      <SpeechExcerpt
+        excerpt={excerpt}
+        className="mt-1 text-sm leading-6 text-foreground/90"
+        quoted
+      />
     </div>
   )
 }
@@ -210,14 +201,17 @@ export const SpeechResultCard = ({
     )
   }
 
-  const visibleTopics = speech.topics.slice(0, MAX_TOPIC_CHIPS)
-  const visibleScopes = speech.scopes.slice(0, MAX_SCOPE_CHIPS)
-  const visibleKeywords = speech.keywords.slice(0, MAX_KEYWORD_CHIPS)
-  const hiddenChips =
-    speech.topics.length -
-    visibleTopics.length +
-    (speech.scopes.length - visibleScopes.length) +
-    (speech.keywords.length - visibleKeywords.length)
+  const chipGroups: SpeechChipGroup[] = [
+    { key: 'topics', items: speech.topics, max: MAX_TOPIC_CHIPS },
+    { key: 'scopes', items: speech.scopes, max: MAX_SCOPE_CHIPS },
+    {
+      key: 'keywords',
+      items: speech.keywords,
+      max: MAX_KEYWORD_CHIPS,
+      variant: 'outline',
+      className: 'font-normal text-muted-foreground',
+    },
+  ]
   const isTheme = speech.themeMatchTerm !== null
   // C192 — a theme card only offers the trecho seek when the speech really
   // contains the literal query (a stopword-only segment hit must not claim it).
@@ -228,32 +222,12 @@ export const SpeechResultCard = ({
   const bodyNode = isTheme ? (
     <SpeechThemeProvenance excerpt={speech.excerpt} />
   ) : (
-    <SpeechExcerpt excerpt={speech.excerpt} />
+    <SpeechExcerpt
+      excerpt={speech.excerpt}
+      className="text-sm leading-relaxed text-foreground/90"
+    />
   )
-  const chips = (
-    <>
-      {visibleTopics.map((topic) => (
-        <Badge key={topic.value} variant="secondary" className="font-normal">
-          {topic.label}
-        </Badge>
-      ))}
-      {visibleScopes.map((scope) => (
-        <Badge key={scope.value} variant="secondary" className="font-normal">
-          {scope.label}
-        </Badge>
-      ))}
-      {visibleKeywords.map((keyword) => (
-        <Badge key={keyword} variant="outline" className="font-normal text-muted-foreground">
-          {keyword}
-        </Badge>
-      ))}
-      {hiddenChips > 0 ? (
-        <Badge variant="outline" className="font-normal text-muted-foreground">
-          +{hiddenChips}
-        </Badge>
-      ) : null}
-    </>
-  )
+  const chips = <SpeechResultChips groups={chipGroups} />
   const hasChips = Boolean(speech.topics.length || speech.scopes.length || speech.keywords.length)
 
   return (

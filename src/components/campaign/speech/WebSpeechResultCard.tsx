@@ -1,10 +1,13 @@
 import { PlayIcon, VideoIcon } from 'lucide-react'
 import Link from 'next/link'
 
-import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import { SpeechExcerpt } from '@/components/campaign/speech/SpeechExcerpt'
+import {
+  SpeechResultChips,
+  type SpeechChipGroup,
+} from '@/components/campaign/speech/SpeechResultChips'
 import { SpeechResultThumbnail } from '@/components/campaign/speech/SpeechResultThumbnail'
 import { WebSpeechPlatformPill } from '@/components/campaign/speech/WebSpeechPlatformPill'
-import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/button'
 import type { WebSpeechListItemViewModel } from '@/utilities/speech/speechViewModels'
 
@@ -21,10 +24,10 @@ const MAX_SCOPE_CHIPS = 2
 export const WebSpeechResultCard = ({ speech }: { speech: WebSpeechListItemViewModel }) => {
   const { excerpt, thumbnailUrl, watchHref } = speech
   const metaLine = [speech.dateLabel, speech.durationLabel].filter(Boolean).join(' · ')
-  const visibleTopics = speech.topics.slice(0, MAX_TOPIC_CHIPS)
-  const visibleScopes = speech.scopes.slice(0, MAX_SCOPE_CHIPS)
-  const hiddenChips =
-    speech.topics.length - visibleTopics.length + (speech.scopes.length - visibleScopes.length)
+  const chipGroups: SpeechChipGroup[] = [
+    { key: 'topics', items: speech.topics, max: MAX_TOPIC_CHIPS },
+    { key: 'scopes', items: speech.scopes, max: MAX_SCOPE_CHIPS },
+  ]
   const hasChips = Boolean(speech.topics.length || speech.scopes.length)
 
   return (
@@ -65,31 +68,11 @@ export const WebSpeechResultCard = ({ speech }: { speech: WebSpeechListItemViewM
         </div>
         <h3 className="mt-2 text-sm font-semibold">{speech.title}</h3>
 
-        {excerpt.parts.length > 0 ? (
-          <p className="mt-2 text-sm leading-6 text-foreground/90">
-            {excerpt.truncatedStart ? '… ' : null}
-            <SpeechHighlightParts parts={excerpt.parts} />
-            {excerpt.truncatedEnd ? ' …' : null}
-          </p>
-        ) : null}
+        <SpeechExcerpt excerpt={excerpt} className="mt-2 text-sm leading-6 text-foreground/90" />
 
         {hasChips ? (
           <div className="mt-2 flex flex-wrap gap-1.5">
-            {visibleTopics.map((topic) => (
-              <Badge key={topic.value} variant="secondary" className="font-normal">
-                {topic.label}
-              </Badge>
-            ))}
-            {visibleScopes.map((scope) => (
-              <Badge key={scope.value} variant="secondary" className="font-normal">
-                {scope.label}
-              </Badge>
-            ))}
-            {hiddenChips > 0 ? (
-              <Badge variant="outline" className="font-normal text-muted-foreground">
-                +{hiddenChips}
-              </Badge>
-            ) : null}
+            <SpeechResultChips groups={chipGroups} />
           </div>
         ) : null}
       </div>
