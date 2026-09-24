@@ -141,6 +141,17 @@ export const CONTENT_PIECE_TITLE_MAX_LENGTH = 200
 export const CONTENT_PIECE_DESCRIPTION_MAX_LENGTH = 1200
 export const CONTENT_PIECE_INSTITUTION_MAX_LENGTH = 160
 
+/**
+ * S37 — "who appears in the piece": the campaign leaders linked to the
+ * existing `leadership` records and the curated public figures. The limits are
+ * the same on every path (collection, form schema and the picker).
+ */
+export const CONTENT_PIECE_LEADERS_MAX = 20
+export const CONTENT_PIECE_PUBLIC_FIGURES_MAX = 20
+export const CONTENT_PIECE_PUBLIC_FIGURE_MAX_LENGTH = 120
+/** The gated name search never returns more than this many options. */
+export const CONTENT_PIECE_LEADER_SEARCH_LIMIT = 20
+
 /** Batch policy: a generous ceiling with a clear message above it (product A). */
 export const CONTENT_PIECE_BATCH_MAX_FILES = 50
 
@@ -313,12 +324,15 @@ type ContentPieceSearchInput = {
   institution?: string | null
   topics?: readonly string[] | null
   cityLabel?: string | null
+  /** S37 — the display names of who appears in the piece (leader snapshot + figures). */
+  leaderNames?: readonly string[] | null
+  publicFigures?: readonly string[] | null
 }
 
 /**
- * The normalized haystack the list search matches: title, description, the
- * transcript/text, the topic labels and the city/institution — everything the
- * design's placeholder promises ("Buscar por título, tema ou cidade…").
+ * The normalized haystack the public/busy search matches: title, description,
+ * the transcript/text, the topic labels, the city/institution and — since S37 —
+ * the names of who appears in the piece, so searching a name finds the piece.
  */
 export const contentPieceSearchText = (input: ContentPieceSearchInput): string =>
   normalizeForSearch(
@@ -329,6 +343,8 @@ export const contentPieceSearchText = (input: ContentPieceSearchInput): string =
       input.institution ?? '',
       ...(input.topics ?? []).filter(isContentPieceTopic).map(contentPieceTopicLabel),
       input.cityLabel ?? '',
+      ...(input.leaderNames ?? []),
+      ...(input.publicFigures ?? []),
     ]
       .map((value) => value.trim())
       .filter(Boolean)

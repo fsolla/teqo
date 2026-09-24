@@ -151,14 +151,25 @@ export const nullableRelationshipFormValue = (
   return positiveInteger(field, entry.value)
 }
 
-export const repeatedRelationshipFormValues = (formData: FormData, field: string): number[] => {
+/**
+ * Relationship `hasMany` values from the form, deduped. Order is the value
+ * order (ascending id) for the scoped selects; `{ sort: false }` keeps the
+ * submission order for the lists where the user's order is meaningful (the
+ * S37 people chips — the first name leads the public card).
+ */
+export const repeatedRelationshipFormValues = (
+  formData: FormData,
+  field: string,
+  { sort = true }: { sort?: boolean } = {},
+): number[] => {
   const values = formData.getAll(field).map((value) => {
     if (typeof value !== 'string') {
       throw new FormDataBoundaryError(field, 'Arquivos não são aceitos neste campo.')
     }
     return positiveInteger(field, value)
   })
-  return [...new Set(values)].sort((left, right) => left - right)
+  const unique = [...new Set(values)]
+  return sort ? unique.sort((left, right) => left - right) : unique
 }
 
 export const repeatedFormTexts = (formData: FormData, field: string): string[] => {

@@ -2,6 +2,7 @@
 
 import { startTransition, useActionState, useState, type FormEvent } from 'react'
 
+import { ContentPiecePeopleField } from '@/components/campaign/content/ContentPiecePeopleField'
 import { CampaignFormActionMessage } from '@/components/campaign/shared/CampaignFormActionMessage'
 import { Button } from '@/components/ui/button'
 import { Field, FieldError, FieldLabel } from '@/components/ui/field'
@@ -21,6 +22,7 @@ import { SPEECH_TOPICS, type SpeechTopic } from '@/lib/speechFacets'
 import { cn } from '@/lib/utils'
 import type { CampaignFormActionState } from '@/utilities/campaignFormActionError'
 import { fieldError } from '@/utilities/campaignFormFields'
+import type { ContentPieceLeaderOption } from '@/utilities/content/contentPieceLeaderOptions'
 
 type MunicipalityOption = { id: number; name: string }
 
@@ -29,11 +31,15 @@ type MunicipalityOption = { id: number; name: string }
  * catalogue the pipeline filled, ready for the assessoria to revise. Saving
  * marks the sent fields as curated, so the automatic cataloguing never
  * overwrites them (D6). The transcript is a first-class field — it is what the
- * public search (S28) indexes.
+ * public search (S28) indexes. S37 adds "Quem aparece na peça" between Temas
+ * and Cidade (approved design scene 01A).
  */
 export const ContentPieceForm = ({
   piece,
   municipalityOptions,
+  leaderOptions,
+  publicFigures,
+  searchLeaders,
   formAction,
 }: {
   piece: {
@@ -48,6 +54,12 @@ export const ContentPieceForm = ({
     transcript: string | null
   }
   municipalityOptions: readonly MunicipalityOption[]
+  /** S37 — the picked leaders, resolved to `{ id, label }` for the chips. */
+  leaderOptions: readonly ContentPieceLeaderOption[]
+  /** S37 — the curated public figures already on the piece. */
+  publicFigures: readonly string[]
+  /** S37 — the gated async search behind the leader picker. */
+  searchLeaders: (query: string) => Promise<ContentPieceLeaderOption[]>
   formAction: (
     state: CampaignFormActionState,
     formData: FormData,
@@ -156,6 +168,12 @@ export const ContentPieceForm = ({
           })}
         </div>
       </Field>
+
+      <ContentPiecePeopleField
+        leaders={leaderOptions}
+        publicFigures={publicFigures}
+        searchLeaders={searchLeaders}
+      />
 
       <Field>
         <FieldLabel htmlFor="content-piece-municipality">Cidade</FieldLabel>

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
+import { searchContentPieceLeaderOptionsForActor } from '@/app/(campaign)/campanha/actions/contentPieces'
 import { ContentPieceAttachFileButton } from '@/components/campaign/content/ContentPieceAttachFileButton'
 import { ContentPieceCirculationPanel } from '@/components/campaign/content/ContentPieceCirculationPanel'
 import { ContentPieceForm } from '@/components/campaign/content/ContentPieceForm'
@@ -299,6 +300,9 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
                 transcript: piece.transcript,
               }}
               municipalityOptions={options.municipalities}
+              leaderOptions={data.leaderOptions}
+              publicFigures={piece.publicFigures}
+              searchLeaders={searchContentPieceLeaderOptionsForActor}
               formAction={updateContentPieceFormAction}
             />
             {piece.fileHref ? (

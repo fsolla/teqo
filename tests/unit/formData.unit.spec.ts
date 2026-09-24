@@ -69,6 +69,13 @@ describe('FormData boundary', () => {
     expect(repeatedRelationshipFormValues(formData, 'coordinators')).toEqual([3, 7, 12])
   })
 
+  it('keeps the submission order when the user order is meaningful (S37)', () => {
+    const formData = new FormData()
+    for (const value of ['12', '3', '12', '7']) formData.append('leaders', value)
+
+    expect(repeatedRelationshipFormValues(formData, 'leaders', { sort: false })).toEqual([12, 3, 7])
+  })
+
   it('distinguishes absent JSON from explicit empty arrays and rejects invalid inputs', () => {
     const formData = new FormData()
     expect(boundedJsonFormValue(formData, 'strengths', 100)).toBeUndefined()

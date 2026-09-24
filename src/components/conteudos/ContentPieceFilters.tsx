@@ -25,6 +25,33 @@ const DROPDOWN_LINK =
   'flex min-h-9 items-center rounded-lg px-2.5 text-sm font-medium text-black hover:bg-(--campaign-band) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red)'
 
 /**
+ * S37 — the active-filter chip is shared with the results header (design scene
+ * 03): on desktop the `Lideranças` chip lives next to the contextual heading,
+ * on mobile it stays in the facet row.
+ */
+export const ContentPieceActiveFilterChip = ({
+  filter,
+  className,
+  prefetch,
+}: {
+  filter: ContentPieceCatalogActiveFilter
+  className?: string
+  prefetch?: boolean
+}) => (
+  <Link
+    href={filter.removeHref}
+    prefetch={prefetch}
+    aria-label={`Remover filtro ${filter.label}: ${filter.value}`}
+    className={className ?? CONTENT_PIECE_ACTIVE_CHIP}
+  >
+    {filter.label} · {filter.value}
+    <span aria-hidden="true" className="text-base leading-none">
+      ×
+    </span>
+  </Link>
+)
+
+/**
  * S28 — the catalogue filters (artefato: cenas 07–09): a GET form (works
  * without JS, the URL is the state) with the search term, the mode segmented
  * control and one chip per facet — a `<details>` menu when empty, an active
@@ -65,7 +92,7 @@ export const ContentPieceFilters = ({
             type="search"
             name="q"
             defaultValue={params.q}
-            placeholder="Encontre uma peça por assunto, cidade ou tema…"
+            placeholder="Encontre uma peça por assunto, cidade ou pessoa…"
             aria-label="Buscar peças"
             className={FIELD_CLASS}
           />
@@ -83,23 +110,23 @@ export const ContentPieceFilters = ({
 
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
           {facetFilters.map((filter) => (
-            <Link
+            <ContentPieceActiveFilterChip
               key={filter.facet}
-              href={filter.removeHref}
+              filter={filter}
               prefetch={themeMode ? false : undefined}
-              aria-label={`Remover filtro ${filter.label}: ${filter.value}`}
-              className={CONTENT_PIECE_ACTIVE_CHIP}
-            >
-              {filter.label} · {filter.value}
-              <span aria-hidden="true" className="text-base leading-none">
-                ×
-              </span>
-            </Link>
+              // S37 — on desktop the Lideranças chip moves next to the results
+              // heading (design scene 03); mobile keeps it in the row.
+              className={
+                filter.facet === 'lideranca'
+                  ? `${CONTENT_PIECE_ACTIVE_CHIP} sm:hidden`
+                  : CONTENT_PIECE_ACTIVE_CHIP
+              }
+            />
           ))}
 
           {CONTENT_PIECE_CATALOG_FACETS.map((facet) =>
             params[facet] || facets[facet].length === 0 ? null : (
-              <details key={facet} className="relative">
+              <details key={facet} className="relative max-sm:open:w-full">
                 <summary
                   className={`${CONTENT_PIECE_CHIP} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
                 >
@@ -108,13 +135,32 @@ export const ContentPieceFilters = ({
                     ⌄
                   </span>
                 </summary>
-                <ul className="absolute z-20 mt-1 max-h-72 min-w-44 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1 shadow-[0_12px_30px_rgb(0_0_0/15%)]">
+                <ul
+                  className={`absolute z-20 mt-1 max-h-72 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1 shadow-[0_12px_30px_rgb(0_0_0/15%)] max-sm:static max-sm:mt-2 max-sm:w-full max-sm:min-w-0 max-sm:p-2 ${
+                    facet === 'lideranca' ? 'sm:w-64' : 'min-w-44'
+                  }`}
+                >
+                  {facet === 'lideranca' ? (
+                    // S37 (design scene 03): the facet derives from published
+                    // pieces alone — the caption states the rule; the mobile
+                    // panel names the facet it belongs to.
+                    <>
+                      <li className="px-2.5 py-1 text-[10px] font-black tracking-wide text-(--campaign-muted) uppercase sm:hidden">
+                        Lideranças · Em peças publicadas
+                      </li>
+                      <li className="hidden px-2.5 py-1 text-[10px] font-black tracking-wide text-(--campaign-muted) uppercase sm:block">
+                        Em peças publicadas
+                      </li>
+                    </>
+                  ) : null}
                   {facets[facet].map((option) => (
                     <li key={option.value}>
                       <Link
                         href={buildContentPieceCatalogHref({ ...params, [facet]: option.value })}
                         prefetch={themeMode ? false : undefined}
-                        className={DROPDOWN_LINK}
+                        className={`${DROPDOWN_LINK}${
+                          facet === 'lideranca' ? ' sm:px-3 sm:py-2' : ''
+                        }`}
                       >
                         {option.label}
                       </Link>

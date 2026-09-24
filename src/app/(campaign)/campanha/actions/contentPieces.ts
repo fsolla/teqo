@@ -11,6 +11,7 @@ import {
   type ContentPieceCuratedField,
   type ContentPieceViewModel,
 } from '@/lib/contentPiece'
+import { normalizeContentPiecePublicFigures } from '@/lib/publicFigureCatalog'
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
@@ -29,6 +30,10 @@ import type { SpeechTopic } from '@/lib/speechFacets'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
 import { reapStaleContentPiece } from '@/utilities/content/contentPieceJob'
+import {
+  searchContentPieceLeaderOptions,
+  type ContentPieceLeaderOption,
+} from '@/utilities/content/contentPieceLeaderOptions'
 import { startContentPieceJobInBackground } from '@/utilities/content/contentPieceScheduler'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
@@ -125,6 +130,8 @@ export const updateContentPieceForActor = async (
       municipality: parsed.municipalityId ?? null,
       institution: parsed.institution ?? null,
       transcript: parsed.transcript ?? null,
+      leaders: parsed.leaderIds ?? [],
+      publicFigures: normalizeContentPiecePublicFigures(parsed.publicFigures ?? []),
       curatedFields: [...curated],
     },
     depth: 0,
@@ -314,4 +321,20 @@ export const addContentPieceByLinkForActor = async (input: {
     }
     throw error
   }
+}
+
+/**
+ * S37 — the ficha's leader picker search. Same communication gate as every
+ * action of the vertical; the returned options carry ONLY `{ id, label }` (the
+ * display-name projection the int tests assert), never any other leadership
+ * field.
+ */
+export const searchContentPieceLeaderOptionsForActor = async (
+  query: string,
+): Promise<ContentPieceLeaderOption[]> => {
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+
+  return searchContentPieceLeaderOptions(payload, actor, query)
 }

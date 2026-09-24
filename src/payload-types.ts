@@ -1266,6 +1266,18 @@ export interface ContentPiece {
    */
   region?: string | null;
   institution?: string | null;
+  /**
+   * Quem aparece na peça entre as lideranças já registradas. À Central pública vai apenas o nome.
+   */
+  leaders?: (number | Leadership)[] | null;
+  /**
+   * Derivado das lideranças marcadas; é o que a faceta pública mostra.
+   */
+  leaderNames?: string[] | null;
+  /**
+   * Dobradinhas/estaduais do catálogo e outras personalidades; a grafia é canonicalizada ao salvar.
+   */
+  publicFigures?: string[] | null;
   pieceDate?: string | null;
   /**
    * Medida pelo provedor de transcrição; nunca estimada.
@@ -2849,6 +2861,9 @@ export interface ContentPieceSelect<T extends boolean = true> {
   cityLabel?: T;
   region?: T;
   institution?: T;
+  leaders?: T;
+  leaderNames?: T;
+  publicFigures?: T;
   pieceDate?: T;
   durationSeconds?: T;
   transcript?: T;

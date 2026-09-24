@@ -1,6 +1,9 @@
 import { CampaignFooter } from '@/components/CampaignFooter'
 import { ContentPieceCatalog } from '@/components/conteudos/ContentPieceCatalog'
-import { ContentPieceFilters } from '@/components/conteudos/ContentPieceFilters'
+import {
+  ContentPieceActiveFilterChip,
+  ContentPieceFilters,
+} from '@/components/conteudos/ContentPieceFilters'
 import { ContentPieceHero } from '@/components/conteudos/ContentPieceHero'
 import { ContentPiecePageHeader } from '@/components/conteudos/ContentPiecePageHeader'
 import {
@@ -9,6 +12,7 @@ import {
   ContentPieceThemeFallbackNotice,
   ContentPieceThemeNoResults,
 } from '@/components/conteudos/ContentPieceStates'
+import { CONTENT_PIECE_ACTIVE_CHIP } from '@/components/conteudos/contentPieceClasses'
 import {
   CONTENT_PIECE_CATALOG_PATH,
   buildContentPieceCatalogHref,
@@ -105,6 +109,10 @@ export default async function ConteudosPage({
     )
   }
 
+  // S37 (design scene 03): the people filter leads the results with its own
+  // heading and the active chip at the side (desktop).
+  const liderancaFilter = activeFilters.find((filter) => filter.facet === 'lideranca')
+
   return (
     <>
       <ContentPiecePageHeader />
@@ -129,13 +137,24 @@ export default async function ConteudosPage({
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
                 <h2 className="border-0 pb-0 font-[family-name:var(--font-exo2)] text-xl font-black tracking-[-0.02em] sm:text-2xl">
-                  {themeMode ? `Resultados para “${params.q}”` : 'Escolha, compartilhe e peça voto'}
+                  {liderancaFilter
+                    ? `Peças com ${liderancaFilter.value}`
+                    : themeMode
+                      ? `Resultados para “${params.q}”`
+                      : 'Escolha, compartilhe e peça voto'}
                 </h2>
                 <p className="mt-1 text-sm text-(--campaign-muted)">
-                  O play só carrega a mídia quando você pedir.
+                  {liderancaFilter
+                    ? 'O filtro combina com cidade, tema e os demais recortes.'
+                    : 'O play só carrega a mídia quando você pedir.'}
                 </p>
               </div>
-              {themeMode ? (
+              {liderancaFilter ? (
+                <ContentPieceActiveFilterChip
+                  filter={liderancaFilter}
+                  className={`${CONTENT_PIECE_ACTIVE_CHIP} max-sm:hidden`}
+                />
+              ) : themeMode ? (
                 themeApplied ? (
                   <span className="text-sm text-(--campaign-muted)">Por tema ativo</span>
                 ) : null

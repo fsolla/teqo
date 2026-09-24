@@ -9,10 +9,15 @@ import {
   type ContentPieceCirculationCounts,
   type ContentPieceRowViewModel,
 } from '@/lib/contentPieceCirculation'
+import { uniqueRelationshipIds } from '@/lib/relationship'
 import { CONTENT_PIECE_NOT_FOUND_MESSAGE } from '@/lib/schemas/contentPiece'
 import type { CampaignUser } from '@/payload-types'
 import { type RawSearchParams } from '@/utilities/campaignListUrl'
 import { loadContentEventCountsBySubject } from '@/utilities/content/contentEventAggregate'
+import {
+  resolveContentPieceLeaderOptions,
+  type ContentPieceLeaderOption,
+} from '@/utilities/content/contentPieceLeaderOptions'
 import {
   buildContentPieceListWhere,
   contentPiecePageSize,
@@ -54,6 +59,9 @@ const contentPieceDetailSelect = {
   municipality: true,
   curatedFields: true,
   linkFailureReason: true,
+  // S37 — the picked leaders (ids) and the curated figures the ficha renders.
+  leaders: true,
+  publicFigures: true,
 } as const
 
 export const ContentPieceNotFoundError = createEntityNotFoundError(
@@ -173,7 +181,11 @@ export type ContentPieceDetailPageData = {
     pieceDate: string | null
     municipalityId: number | null
     curatedFields: string[]
+    /** S37 — the curated public figures (display names). */
+    publicFigures: string[]
   }
+  /** S37 — `{ id, label }` of the picked leaders, for the ficha chips. */
+  leaderOptions: ContentPieceLeaderOption[]
 }
 
 /**
@@ -200,7 +212,11 @@ export const loadContentPieceDetailPageData = async (
   const piece = result.docs[0]
   if (!piece) throw new ContentPieceNotFoundError()
 
-  const circulation = await loadCirculationLookup(payload, [piece])
+  const leaderIds = uniqueRelationshipIds(piece.leaders)
+  const [circulation, leaderOptions] = await Promise.all([
+    loadCirculationLookup(payload, [piece]),
+    resolveContentPieceLeaderOptions(payload, user, leaderIds),
+  ])
   const viewModel = toContentPieceRow(piece, circulation)
   return {
     piece: {
@@ -215,6 +231,8 @@ export const loadContentPieceDetailPageData = async (
           ? piece.municipality
           : (piece.municipality?.id ?? null),
       curatedFields: piece.curatedFields ?? [],
+      publicFigures: piece.publicFigures ?? [],
     },
+    leaderOptions,
   }
 }

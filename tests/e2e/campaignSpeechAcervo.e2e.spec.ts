@@ -1490,6 +1490,47 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(afterUnpublish.media).toBeTruthy()
     })
 
+    test('the ficha renders who appears in the piece for the communicator (S37)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecapessoas')
+      const { piece } = await createPiece(campaign, { marker })
+      const municipality = await campaign.fixtures.claimMunicipality()
+      const { contactName, leadershipId } = await campaign.fixtures.createStaffLeadership({
+        namePrefix: 'Liderança',
+        municipalities: [municipality],
+      })
+      await campaign.fixtures.payload.update({
+        collection: 'contentPiece',
+        id: piece.id,
+        data: { leaders: [leadershipId], publicFigures: ['dra elaine'] },
+        depth: 0,
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+      const response = await request.get(`/campanha/comunicacao/conteudos/${piece.id}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain('Quem aparece na peça')
+      expect(html).toContain('Lideranças da campanha')
+      expect(html).toContain('Figuras públicas')
+      expect(html).toContain('Curadoria humana')
+      // The chip labels come from the projection; the figure was canonicalized.
+      expect(html).toContain(contactName)
+      expect(html).toContain('Dra. Elaine')
+
+      // The advisor stays denied on the whole communication vertical.
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      await assertCampaignRedirect(
+        advisorRequest,
+        `/campanha/comunicacao/conteudos/${piece.id}`,
+        '/campanha',
+      )
+    })
+
     test('the list and the ficha show the anonymous circulation counters', async ({
       campaign,
       campaignRequest,
