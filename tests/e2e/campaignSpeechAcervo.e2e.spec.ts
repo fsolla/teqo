@@ -534,6 +534,13 @@ test.describe('communication vertical (C154/C162)', () => {
           speakerKey?: string | null
         }[]
         speakerLabels?: { speakerKey: string; label: string }[]
+        /** C219 — parity facets. */
+        recordedAt?: string
+        durationSeconds?: number
+        topics?: SpeechTopic[]
+        scopes?: SpeechScope[]
+        classifiedBy?: 'gazetteer' | 'llm' | 'manual'
+        mentionedMunicipalities?: number[]
       },
     ) => {
       const bytes = Buffer.from(`recording-${input.marker}`)
@@ -552,9 +559,18 @@ test.describe('communication vertical (C154/C162)', () => {
         data: {
           title: `Gravação ${input.marker}`,
           status: input.status ?? 'ready',
-          recordedAt: '2026-09-01T00:00:00.000Z',
+          recordedAt: input.recordedAt ?? '2026-09-01T00:00:00.000Z',
           media: media.id,
           ...(input.speakerLabels ? { speakerLabels: input.speakerLabels } : {}),
+          ...(input.durationSeconds !== undefined
+            ? { durationSeconds: input.durationSeconds }
+            : {}),
+          ...(input.topics ? { topics: input.topics } : {}),
+          ...(input.scopes ? { scopes: input.scopes } : {}),
+          ...(input.classifiedBy ? { classifiedBy: input.classifiedBy } : {}),
+          ...(input.mentionedMunicipalities
+            ? { mentionedMunicipalities: input.mentionedMunicipalities }
+            : {}),
         },
         depth: 0,
       })
@@ -804,6 +820,135 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(html).toContain('aparece nesta gravação')
       expect(html).toContain(`/campanha/comunicacao/acervo/gravacoes/${recording.id}`)
       expect(html).not.toContain(`/campanha/comunicacao/acervo/gravacoes/${other.id}`)
+    })
+
+    test('the parity facets narrow, order by duration and render the filter bar (C219)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaofacetas')
+      const otherMarker = `${marker}b`
+      const municipality = await campaign.fixtures.claimMunicipality()
+
+      const { recording: health } = await createRecording(campaign, {
+        marker,
+        recordedAt: '2025-04-02T00:00:00.000Z',
+        durationSeconds: 90,
+        topics: ['saude'],
+        scopes: ['bahia'],
+        classifiedBy: 'llm',
+        mentionedMunicipalities: [municipality.id],
+        segments: [
+          { startSeconds: 12, endSeconds: 20, text: `A plenária discutiu a saúde ${marker}.` },
+        ],
+      })
+      const { recording: culture } = await createRecording(campaign, {
+        marker: otherMarker,
+        recordedAt: '2023-08-02T00:00:00.000Z',
+        durationSeconds: 400,
+        topics: ['cultura'],
+        segments: [
+          {
+            startSeconds: 12,
+            endSeconds: 20,
+            text: `A plenária discutiu a cultura ${otherMarker}.`,
+          },
+        ],
+      })
+      const { recording: noDuration } = await createRecording(campaign, {
+        marker: `${marker}c`,
+        segments: [{ startSeconds: 12, endSeconds: 20, text: `Sem duração ${marker}.` }],
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      // The bar renders the Câmara-parity facets, the mode selector and the sort.
+      const bar = rendered(
+        await (
+          await request.get(`/campanha/comunicacao/acervo?source=enviadas&q=${marker}`)
+        ).text(),
+      )
+      for (const label of ['Ano', 'Tema', 'Alcance', 'Município citado', 'Duração', 'Pessoa']) {
+        expect(bar).toContain(label)
+      }
+      expect(bar).toContain('Termo exato')
+      expect(bar).toContain('Por tema')
+      expect(bar).toContain('Ordenar por')
+      expect(bar).toContain('Mais recentes')
+
+      // Year + topic + cited municipality + duration narrow to the health row.
+      // The params ride in the canonical order: a hand-built URL out of order
+      // canonicalizes through a redirect the HTTP request helper does not follow.
+      const narrowed = rendered(
+        await (
+          await request.get(
+            `/campanha/comunicacao/acervo?source=enviadas&q=${marker}` +
+              `&year=2025&topic=saude&municipality=${municipality.id}&duration=curta`,
+          )
+        ).text(),
+      )
+      expect(narrowed).toContain(`/gravacoes/${health.id}?`)
+      expect(narrowed).not.toContain(`/gravacoes/${culture.id}?`)
+      expect(narrowed).not.toContain(`/gravacoes/${noDuration.id}?`)
+
+      // A contradictory combination is an honest empty state with the clear CTA.
+      const empty = rendered(
+        await (
+          await request.get(
+            `/campanha/comunicacao/acervo?source=enviadas&q=${marker}&year=2023&topic=saude`,
+          )
+        ).text(),
+      )
+      expect(empty).toContain('Nenhuma gravação encontrada')
+      expect(empty).toContain('Limpar filtros')
+
+      // Duration orders list the measured rows only, longest first.
+      const longestFirst = rendered(
+        await (
+          await request.get(
+            `/campanha/comunicacao/acervo?source=enviadas&q=${marker}&sort=duracao_maior`,
+          )
+        ).text(),
+      )
+      const cultureAt = longestFirst.indexOf(`/gravacoes/${culture.id}?`)
+      const healthAt = longestFirst.indexOf(`/gravacoes/${health.id}?`)
+      expect(cultureAt).toBeGreaterThan(-1)
+      expect(healthAt).toBeGreaterThan(cultureAt)
+      expect(longestFirst).not.toContain(`/gravacoes/${noDuration.id}?`)
+      expect(longestFirst).toContain('Gravações sem duração aparecem apenas em Mais recentes.')
+    })
+
+    test('theme mode degrades honestly on the recordings source too (C219)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('gravacaotemadeg')
+      await createRecording(campaign, { marker })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      // The e2e environment blanks DEEPSEEK_API_KEY (playwright.config.ts), so
+      // the expansion is unavailable and the page must fall back with the notice.
+      const themed = await request.get(
+        `/campanha/comunicacao/acervo?source=enviadas&q=${marker}&mode=tema`,
+      )
+      expect(themed.status()).toBe(200)
+      const themedHtml = rendered(await themed.text())
+      expect(themedHtml).toContain('data-testid="recording-theme-fallback"')
+      expect(themedHtml).toContain('A busca por tema está indisponível agora.')
+      expect(themedHtml).toContain('Resultados por termo exato')
+      expect(themedHtml).toContain('Tentar por tema novamente')
+      expect(themedHtml).toContain(marker)
+      expect(themedHtml).toContain('<mark')
+
+      // The default mode stays untouched: no mode param means no notice.
+      const exact = await request.get(`/campanha/comunicacao/acervo?source=enviadas&q=${marker}`)
+      expect(exact.status()).toBe(200)
+      expect(rendered(await exact.text())).not.toContain(
+        'A busca por tema está indisponível agora.',
+      )
     })
 
     test('labels a cluster through the JSON route and denies the non-acervo roles', async ({

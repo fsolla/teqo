@@ -15,17 +15,23 @@ const EXPAND_TIMEOUT_MS = 4000
 const MAX_OUTPUT_TOKENS = 200
 const MAX_THEME_LENGTH = 200
 
+const EXPAND_SUBJECT_BY_CORPUS: Record<ThemeSearchCorpus, string> = {
+  speech: 'na transcrição de falas',
+  contentPiece: 'na descrição ou na transcrição de uma peça',
+  recording: 'na transcrição de uma gravação enviada pela equipe',
+}
+
 const expandSchemaFor = (corpus: ThemeSearchCorpus) =>
   z.object({
     terms: z
       .array(z.string())
       .describe(
-        `Termos e expressões curtas (${MIN_SPEECH_THEME_TERMS} a ${MAX_SPEECH_THEME_TERMS}) que podem aparecer ${corpus === 'speech' ? 'na transcrição de falas' : 'na descrição ou na transcrição de uma peça'} sobre o tema. Lista vazia quando não houver termo confiável.`,
+        `Termos e expressões curtas (${MIN_SPEECH_THEME_TERMS} a ${MAX_SPEECH_THEME_TERMS}) que podem aparecer ${EXPAND_SUBJECT_BY_CORPUS[corpus]} sobre o tema. Lista vazia quando não houver termo confiável.`,
       ),
   })
 
 /** The term rules are one contract; only the noun of the corpus changes. */
-const themeExpansionRules = (subject: 'discurso' | 'peça'): string =>
+const themeExpansionRules = (subject: 'discurso' | 'peça' | 'gravação'): string =>
   `Devolva de ${MIN_SPEECH_THEME_TERMS} a ${MAX_SPEECH_THEME_TERMS} termos, cada um com no máximo ${MAX_SPEECH_THEME_TERM_LENGTH} caracteres, sem explicações, ` +
   `sem pontuação extra e sem termos genéricos que apareceriam em qualquer ${subject} (ex.: "Brasil", ` +
   '"povo", "governo"). Se não houver termo confiável, devolva a lista vazia. Nunca invente fatos.'
@@ -48,14 +54,34 @@ const CONTENT_PIECE_CORPUS_PROMPT =
   themeExpansionRules('peça')
 
 /**
- * S28 — the corpus a theme expansion serves: the internal speech acervo (C192)
- * and the public Central de Conteúdos (S28). The mechanism is one; only the
- * system prompt describes a different body of material and persona.
+ * C219 — the third corpus: the uploaded recordings of the acervo ("Gravações
+ * enviadas"), whose material is the team's own plenárias/debates rather than
+ * the Câmara's speeches, so the prompt describes that body of material.
  */
-export type ThemeSearchCorpus = 'speech' | 'contentPiece'
+const RECORDING_CORPUS_PROMPT =
+  'Você ajuda a assessoria de comunicação a achar, no acervo de gravações enviadas pela equipe ' +
+  '(plenárias, debates e materiais próprios do deputado Jorge Solla), trechos sobre um tema mesmo ' +
+  'quando a gravação não usa as palavras exatas da busca. ' +
+  'Receberá o tema digitado e deve devolver termos e expressões curtas que provavelmente aparecem ' +
+  'na transcrição de uma gravação sobre esse tema — sinônimos, nomes de programas, termos técnicos ' +
+  'e palavras relacionadas. Inclua a própria expressão do tema quando ela for útil. ' +
+  themeExpansionRules('gravação')
 
-const systemPromptFor = (corpus: ThemeSearchCorpus): string =>
-  corpus === 'contentPiece' ? CONTENT_PIECE_CORPUS_PROMPT : SPEECH_CORPUS_PROMPT
+/**
+ * S28/C219 — the corpus a theme expansion serves: the internal speech acervo
+ * (C192), the public Central de Conteúdos (S28) and the uploaded recordings
+ * (C219). The mechanism is one; only the system prompt describes a different
+ * body of material and persona.
+ */
+export type ThemeSearchCorpus = 'speech' | 'contentPiece' | 'recording'
+
+const SYSTEM_PROMPT_BY_CORPUS: Record<ThemeSearchCorpus, string> = {
+  speech: SPEECH_CORPUS_PROMPT,
+  contentPiece: CONTENT_PIECE_CORPUS_PROMPT,
+  recording: RECORDING_CORPUS_PROMPT,
+}
+
+const systemPromptFor = (corpus: ThemeSearchCorpus): string => SYSTEM_PROMPT_BY_CORPUS[corpus]
 
 export type ThemeSearchExpansion = { terms: string[] }
 
@@ -110,3 +136,7 @@ export const expandSpeechSearchTheme: SpeechThemeExpansionResolver = (theme) =>
 /** S28 — the public Central de Conteúdos expansion. */
 export const expandContentPieceSearchTheme: ThemeSearchExpansionResolver = (theme) =>
   expandSearchTheme(theme, 'contentPiece')
+
+/** C219 — the uploaded recordings expansion ("Gravações enviadas"). */
+export const expandRecordingSearchTheme: ThemeSearchExpansionResolver = (theme) =>
+  expandSearchTheme(theme, 'recording')

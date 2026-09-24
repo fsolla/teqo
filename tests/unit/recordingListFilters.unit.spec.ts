@@ -41,4 +41,80 @@ describe('recording list filters (C199/C200)', () => {
       ],
     })
   })
+
+  it('ANDs the C219 facets (year, topic, scope, cited municipality)', () => {
+    expect(
+      buildRecordingListWhere({
+        source: 'enviadas',
+        page: 1,
+        years: [2026],
+        topics: ['saude'],
+        scopes: ['bahia'],
+        municipalities: [42],
+      }),
+    ).toEqual({
+      and: [
+        { year: { in: [2026] } },
+        { topics: { in: ['saude'] } },
+        { scopes: { in: ['bahia'] } },
+        { mentionedMunicipalities: { in: [42] } },
+      ],
+    })
+  })
+
+  it('maps each duration bucket to the shared Câmara predicate', () => {
+    expect(buildRecordingListWhere({ source: 'enviadas', page: 1, durations: ['curta'] })).toEqual({
+      durationSeconds: { less_than: 120 },
+    })
+    expect(buildRecordingListWhere({ source: 'enviadas', page: 1, durations: ['media'] })).toEqual({
+      durationSeconds: { greater_than_equal: 120, less_than: 300 },
+    })
+    expect(buildRecordingListWhere({ source: 'enviadas', page: 1, durations: ['longa'] })).toEqual({
+      durationSeconds: { greater_than_equal: 300 },
+    })
+    expect(
+      buildRecordingListWhere({ source: 'enviadas', page: 1, durations: ['sem_duracao'] }),
+    ).toEqual({ durationSeconds: { exists: false } })
+
+    // Two buckets OR together inside the AND.
+    expect(
+      buildRecordingListWhere({ source: 'enviadas', page: 1, durations: ['curta', 'longa'] }),
+    ).toEqual({
+      or: [
+        { durationSeconds: { less_than: 120 } },
+        { durationSeconds: { greater_than_equal: 300 } },
+      ],
+    })
+  })
+
+  it('ORs the literal query with the expanded theme terms, deduped', () => {
+    expect(
+      buildRecordingListWhere({ source: 'enviadas', page: 1, q: 'saúde' }, [
+        'acesso universal à saúde',
+        'saúde',
+      ]),
+    ).toEqual({
+      or: [{ searchText: { like: 'saude' } }, { searchText: { like: 'acesso universal a saude' } }],
+    })
+  })
+
+  it('gates rows without a measured duration out of the duration orders', () => {
+    expect(buildRecordingListWhere({ source: 'enviadas', page: 1, sort: 'duracao_maior' })).toEqual(
+      { durationSeconds: { exists: true } },
+    )
+
+    expect(
+      buildRecordingListWhere({
+        source: 'enviadas',
+        page: 1,
+        sort: 'duracao_menor',
+        q: 'merenda',
+      }),
+    ).toEqual({
+      and: [{ durationSeconds: { exists: true } }, { searchText: { like: 'merenda' } }],
+    })
+
+    // The default order carries no gate.
+    expect(buildRecordingListWhere({ source: 'enviadas', page: 1 })).toEqual({})
+  })
 })

@@ -5,8 +5,11 @@ import { useTransition } from 'react'
 
 import { Button } from '@/components/ui/button'
 
-/** C192 — re-runs the same `mode=tema` request after a degraded fallback. */
-export const SpeechThemeRetryButton = () => {
+/**
+ * C192/C219 — re-runs the same `mode=tema` request after a degraded fallback.
+ * Shared by both acervo sources; the notice copy stays per domain.
+ */
+export const CampaignThemeRetryButton = () => {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 

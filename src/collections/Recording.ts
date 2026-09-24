@@ -1,4 +1,5 @@
 import type {
+  CollectionBeforeChangeHook,
   CollectionBeforeDeleteHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
@@ -14,6 +15,7 @@ import {
   recordingStepLabels,
 } from '@/lib/recording'
 import { speakerNamesFromLabels } from '@/lib/recordingDiarization'
+import { SPEECH_CLASSIFICATION_SOURCES, SPEECH_SCOPES, SPEECH_TOPICS } from '@/lib/speechFacets'
 import {
   canDeleteRecording,
   canReadRecording,
@@ -67,6 +69,44 @@ const deriveSpeakerNames: CollectionBeforeValidateHook = ({ data, originalDoc })
   return data
 }
 
+/**
+ * C219 — the "Ano" facet is derived from the recording date the team already
+ * informed (`recordedAt`), never a second hand-typed field. A recording without
+ * a date honestly has no year (it stays out of the year filter).
+ */
+const deriveRecordingYear: CollectionBeforeValidateHook = ({ data, originalDoc }) => {
+  if (!data) return data
+  const recordedAt =
+    typeof data.recordedAt === 'string' ? data.recordedAt : (originalDoc?.recordedAt ?? null)
+  const year = Number(String(recordedAt ?? '').slice(0, 4))
+  // Clearing the date clears the derived year too — a stale year would keep the
+  // recording in an "Ano" facet the team just removed.
+  data.year = Number.isInteger(year) && year > 1900 ? year : null
+  return data
+}
+const FACET_FIELDS = ['topics', 'scopes', 'classifiedBy', 'mentionedMunicipalities'] as const
+
+/**
+ * C219 — a manual facet correction is curation: unauthenticated writes (the
+ * transcription job and the backfill CLI) never overwrite it. Authenticated
+ * admin edits stay free to change both the facets and the provenance.
+ */
+const preserveManualFacets: CollectionBeforeChangeHook = ({
+  data,
+  operation,
+  originalDoc,
+  req,
+}) => {
+  if (!data || operation !== 'update' || originalDoc?.classifiedBy !== 'manual') return data
+  if (req.user) return data
+
+  const next = data as Record<string, unknown>
+  for (const field of FACET_FIELDS) {
+    if (field in next) next[field] = originalDoc[field]
+  }
+  return data
+}
+
 export const Recording: CollectionConfig = {
   slug: 'recording',
   labels: {
@@ -76,9 +116,9 @@ export const Recording: CollectionConfig = {
   admin: {
     group: 'Comunicação',
     useAsTitle: 'title',
-    defaultColumns: ['title', 'recordedAt', 'status', 'durationSeconds', 'createdAt'],
+    defaultColumns: ['title', 'recordedAt', 'status', 'topics', 'classifiedBy'],
     description:
-      'Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura.',
+      'Gravações próprias da equipe no acervo. O arquivo é privado; a transcrição é somente leitura. Tema, alcance e municípios citados são classificados automaticamente pelo início da transcrição e podem ser corrigidos aqui (a correção vira proveniência "Manual").',
   },
   access: {
     create: canUploadRecording,
@@ -87,8 +127,8 @@ export const Recording: CollectionConfig = {
     delete: canDeleteRecording,
   },
   hooks: {
-    beforeValidate: [deriveSpeakerNames],
-    beforeChange: [stampCampaignCreatedBy],
+    beforeValidate: [deriveSpeakerNames, deriveRecordingYear],
+    beforeChange: [preserveManualFacets, stampCampaignCreatedBy],
     beforeDelete: [deleteRecordingSegments],
   },
   fields: [
@@ -106,6 +146,16 @@ export const Recording: CollectionConfig = {
       index: true,
       admin: {
         description: 'Data em que a gravação foi feita (opcional).',
+      },
+    },
+    {
+      name: 'year',
+      type: 'number',
+      label: 'Ano',
+      index: true,
+      admin: {
+        readOnly: true,
+        description: 'Derivado da data da gravação.',
       },
     },
     {
@@ -154,6 +204,47 @@ export const Recording: CollectionConfig = {
         readOnly: true,
         description: 'Concatenação normalizada dos segmentos (sem acentos, minúsculas).',
       },
+    },
+    {
+      name: 'topics',
+      type: 'select',
+      label: 'Temas',
+      hasMany: true,
+      index: true,
+      options: SPEECH_TOPICS.map(({ value, label }) => ({ value, label })),
+    },
+    {
+      name: 'scopes',
+      type: 'select',
+      label: 'Alcance',
+      hasMany: true,
+      index: true,
+      options: SPEECH_SCOPES.map(({ value, label }) => ({ value, label })),
+    },
+    {
+      name: 'classifiedBy',
+      type: 'select',
+      label: 'Proveniência da classificação',
+      // Optional on purpose: a recording from before C219 was never classified,
+      // and stamping it `gazetteer` would claim a pass that never ran. Null is
+      // the honest "não classificada" until the backfill CLI runs.
+      index: true,
+      options: SPEECH_CLASSIFICATION_SOURCES.map((value) => ({
+        value,
+        label: value === 'gazetteer' ? 'Gazetteer' : value === 'llm' ? 'LLM' : 'Manual',
+      })),
+      admin: {
+        description:
+          'Automática e auditável: Gazetteer (léxico), LLM (refinamento validado) ou Manual (correção humana).',
+      },
+    },
+    {
+      name: 'mentionedMunicipalities',
+      type: 'relationship',
+      relationTo: 'municipality',
+      label: 'Municípios citados',
+      hasMany: true,
+      index: true,
     },
     {
       name: 'speakerLabels',

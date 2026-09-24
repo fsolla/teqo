@@ -66,8 +66,16 @@ export const RecordingResultCard = ({ recording }: { recording: RecordingListIte
           </p>
         )}
 
-        {recording.matchedPersons.length > 0 ? (
+        {recording.topics.length > 0 || recording.matchedPersons.length > 0 ? (
           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+            {recording.topics.map((topic) => (
+              <span
+                key={topic.value}
+                className="inline-flex min-h-7 items-center rounded-md bg-muted px-2 py-1 text-xs font-semibold"
+              >
+                {topic.label}
+              </span>
+            ))}
             {recording.matchedPersons.map((person) => (
               <span
                 key={person}
@@ -77,7 +85,9 @@ export const RecordingResultCard = ({ recording }: { recording: RecordingListIte
                 {person}
               </span>
             ))}
-            <span className="text-muted-foreground">aparece nesta gravação</span>
+            {recording.matchedPersons.length > 0 ? (
+              <span className="text-muted-foreground">aparece nesta gravação</span>
+            ) : null}
           </div>
         ) : null}
       </div>

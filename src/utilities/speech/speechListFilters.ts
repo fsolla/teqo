@@ -13,7 +13,11 @@ import type { SpeechDurationBucket, SpeechListState } from '@/utilities/speech/s
 const DURATION_MEDIA_MIN_SECONDS = 120
 const DURATION_LONGA_MIN_SECONDS = 300
 
-const durationBucketWhere = (bucket: SpeechDurationBucket): Where => {
+/**
+ * The ONE duration-bucket predicate of the acervo: the recordings list (C219)
+ * reuses it so the buckets can never diverge between the two sources.
+ */
+export const durationBucketWhere = (bucket: SpeechDurationBucket): Where => {
   switch (bucket) {
     case 'curta':
       return { durationSeconds: { less_than: DURATION_MEDIA_MIN_SECONDS } }
