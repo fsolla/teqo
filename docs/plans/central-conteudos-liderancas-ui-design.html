@@ -1,37 +1,425 @@
 <!doctype html>
 <html lang="pt-BR">
   <head>
-    <meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <title>Design — S34 · Lideranças nas peças</title>
     <style type="text/tailwindcss">
-      @theme{--font-sans:Arimo,Arial,sans-serif} :root{--red:#a21c1c;--kit:#e4102f;--blue:#184e92;--yellow:#ffe607;--cream:#fff8f2;--muted:#6c615e;--line:rgb(0 0 0/.12);--display:'Exo 2','Arial Black',sans-serif}
-      *{box-sizing:border-box}.display{font-family:var(--display)}.board{background:#e7e3e0;background-image:radial-gradient(rgb(24 78 146/.09) .7px,transparent .7px);background-size:18px 18px}.frame{box-shadow:0 22px 60px rgb(39 25 22/.13)}.desktop{width:1280px}.phone{width:390px;border-radius:28px}.scene:after{content:'';height:1px;flex:1;background:#cfc9c5}
-      .field{min-height:44px;border:1px solid #d6d3d1;border-radius:6px;background:white;padding:10px 12px;font-size:14px}.label{font-size:13px;font-weight:600}.chip{display:inline-flex;min-height:36px;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;background:white;padding:6px 11px;font-size:12px;font-weight:700}.active{border-color:rgb(24 78 146/.35);background:#eef4fb;color:#184e92}.tag{display:inline-flex;align-items:center;gap:5px;border-radius:999px;background:#f4f4f5;padding:5px 8px;font-size:12px;font-weight:600}.btn{display:inline-flex;min-height:44px;align-items:center;justify-content:center;border-radius:8px;padding:9px 14px;font-size:14px;font-weight:700}.primary{background:#c51414;color:white}.catalog-card{overflow:hidden;border:1px solid var(--line);border-radius:14px;background:white;box-shadow:0 8px 24px rgb(71 19 14/.07)}
+      @theme {
+        --font-sans: Arimo, Arial, sans-serif;
+      }
+      :root {
+        --red: #a21c1c;
+        --kit: #e4102f;
+        --blue: #184e92;
+        --yellow: #ffe607;
+        --cream: #fff8f2;
+        --muted: #6c615e;
+        --line: rgb(0 0 0/0.12);
+        --display: 'Exo 2', 'Arial Black', sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      .display {
+        font-family: var(--display);
+      }
+      .board {
+        background: #e7e3e0;
+        background-image: radial-gradient(rgb(24 78 146/0.09) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .frame {
+        box-shadow: 0 22px 60px rgb(39 25 22/0.13);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .scene:after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #cfc9c5;
+      }
+      .field {
+        min-height: 44px;
+        border: 1px solid #d6d3d1;
+        border-radius: 6px;
+        background: white;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+      .label {
+        font-size: 13px;
+        font-weight: 600;
+      }
+      .chip {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: white;
+        padding: 6px 11px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .active {
+        border-color: rgb(24 78 146/0.35);
+        background: #eef4fb;
+        color: #184e92;
+      }
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        background: #f4f4f5;
+        padding: 5px 8px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        padding: 9px 14px;
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .primary {
+        background: #c51414;
+        color: white;
+      }
+      .catalog-card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: white;
+        box-shadow: 0 8px 24px rgb(71 19 14/0.07);
+      }
     </style>
   </head>
   <body class="board min-h-screen text-black antialiased">
     <main class="mx-auto max-w-[1480px] space-y-14 px-4 py-12 md:px-8">
-      <header class="max-w-3xl"><span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white">S34 · dois recortes, uma faceta</span><h1 class="display mt-4 text-4xl font-black">Quem aparece na peça fica encontrável — sem expor quem não aparece.</h1><p class="mt-2 text-sm leading-6 text-[#6c615e]">A ficha separa liderança interna de figura pública; a Central pública reúne apenas os nomes presentes em peças publicadas.</p></header>
+      <header class="max-w-3xl">
+        <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white"
+          >S34 · dois recortes, uma faceta</span
+        >
+        <h1 class="display mt-4 text-4xl font-black">
+          Quem aparece na peça fica encontrável — sem expor quem não aparece.
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-[#6c615e]">
+          A ficha separa liderança interna de figura pública; a Central pública reúne apenas os
+          nomes presentes em peças publicadas.
+        </p>
+      </header>
 
-      <section><div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENA 01</span><h2>Ficha interna · desktop 1280 · os dois recortes</h2></div>
-        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white" data-theme="campaign"><header class="flex h-14 items-center justify-between border-b bg-[#fafaf9] px-6"><b>Campanha · Comunicação</b><span class="text-sm text-[#6b7280]">Central de Conteúdos</span></header><div class="p-8"><a class="text-xs font-semibold text-[#c51414]">← Conteúdos</a><div class="mt-2 flex items-start justify-between"><div><h2 class="text-xl font-semibold">Título da peça em revisão</h2><div class="mt-2 flex gap-2"><span class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">Pronto</span><span class="rounded-full bg-[#f4f4f5] px-2 py-1 text-xs font-semibold text-[#6b7280]">Rascunho</span></div></div><button class="btn border bg-white">Publicar</button></div>
-          <div class="mt-7 grid grid-cols-[300px_1fr] gap-8"><aside><div class="grid aspect-video place-items-center rounded-xl bg-stone-200 text-xs font-bold text-stone-500">NEEDS ASSET · PREVIEW REAL</div><dl class="mt-4 space-y-2 text-xs"><div class="flex justify-between"><dt class="text-[#6b7280]">Origem</dt><dd>Arquivo</dd></div><div class="flex justify-between"><dt class="text-[#6b7280]">Tipo</dt><dd>Vídeo</dd></div></dl></aside>
-            <form class="grid grid-cols-2 gap-4"><div class="col-span-2"><p class="label">Título</p><div class="field mt-1">Título da peça em revisão</div></div><div class="col-span-2 rounded-xl border p-5"><div class="flex items-start justify-between gap-6"><div><h3 class="font-semibold">Quem aparece na peça</h3><p class="mt-1 text-xs leading-5 text-[#6b7280]">Marque somente pessoas visíveis ou participantes desta peça. A publicação expõe apenas o nome.</p></div><span class="rounded-full bg-[#fff5ed] px-2 py-1 text-[11px] font-semibold text-[#6b2d15]">Curadoria humana</span></div>
-              <div class="mt-5 grid grid-cols-2 gap-5"><div><p class="label">Lideranças da campanha</p><p class="mt-1 text-xs leading-5 text-[#6b7280]">Busca nos registros existentes. Nenhum telefone, município ou voto vai para a Central pública.</p><div class="mt-2 flex flex-wrap gap-1.5"><span class="tag">Nome da liderança <b>×</b></span></div><div class="field mt-2 flex items-center justify-between text-[#6b7280]"><span>Buscar liderança…</span><span>⌄</span></div><div class="mt-1 rounded-lg border bg-white p-1 shadow-lg"><div class="rounded-md bg-[#f4f4f5] px-3 py-2 text-sm"><b>Nome da liderança</b><span class="block text-xs text-[#6b7280]">Registro da campanha</span></div><div class="px-3 py-2 text-sm">Outra liderança de exemplo</div></div></div>
-                <div><p class="label">Figuras públicas</p><p class="mt-1 text-xs leading-5 text-[#6b7280]">Texto curado com catálogo, no mesmo molde de Instituição.</p><div class="mt-2 flex flex-wrap gap-1.5"><span class="tag">Dep. Estadual Exemplo <b>×</b></span></div><div class="field mt-2 flex items-center justify-between text-[#6b7280]"><span>Digite ou escolha uma figura pública…</span><span>⌄</span></div><div class="mt-1 rounded-lg border bg-white p-1 shadow-lg"><div class="rounded-md bg-[#f4f4f5] px-3 py-2 text-sm"><b>Dep. Estadual Exemplo</b><span class="block text-xs text-[#6b7280]">Figura pública catalogada</span></div><div class="px-3 py-2 text-sm">Personalidade Exemplo</div></div></div></div>
-            </div><div><p class="label">Instituição</p><div class="field mt-1 text-[#6b7280]">Sem instituição</div></div><div><p class="label">Cidade</p><div class="field mt-1 text-[#6b7280]">Sem cidade</div></div><div class="col-span-2 flex justify-end"><button class="btn primary">Salvar alterações</button></div></form>
-          </div></div></div>
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2>Ficha interna · desktop 1280 · os dois recortes</h2>
+        </div>
+        <div
+          class="desktop frame mx-auto overflow-hidden rounded-xl bg-white"
+          data-theme="campaign"
+        >
+          <header class="flex h-14 items-center justify-between border-b bg-[#fafaf9] px-6">
+            <b>Campanha · Comunicação</b
+            ><span class="text-sm text-[#6b7280]">Central de Conteúdos</span>
+          </header>
+          <div class="p-8">
+            <a class="text-xs font-semibold text-[#c51414]">← Conteúdos</a>
+            <div class="mt-2 flex items-start justify-between">
+              <div>
+                <h2 class="text-xl font-semibold">Título da peça em revisão</h2>
+                <div class="mt-2 flex gap-2">
+                  <span
+                    class="rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800"
+                    >Pronto</span
+                  ><span
+                    class="rounded-full bg-[#f4f4f5] px-2 py-1 text-xs font-semibold text-[#6b7280]"
+                    >Rascunho</span
+                  >
+                </div>
+              </div>
+              <button class="btn border bg-white">Publicar</button>
+            </div>
+            <div class="mt-7 grid grid-cols-[300px_1fr] gap-8">
+              <aside>
+                <div
+                  class="grid aspect-video place-items-center rounded-xl bg-stone-200 text-xs font-bold text-stone-500"
+                >
+                  NEEDS ASSET · PREVIEW REAL
+                </div>
+                <dl class="mt-4 space-y-2 text-xs">
+                  <div class="flex justify-between">
+                    <dt class="text-[#6b7280]">Origem</dt>
+                    <dd>Arquivo</dd>
+                  </div>
+                  <div class="flex justify-between">
+                    <dt class="text-[#6b7280]">Tipo</dt>
+                    <dd>Vídeo</dd>
+                  </div>
+                </dl>
+              </aside>
+              <form class="grid grid-cols-2 gap-4">
+                <div class="col-span-2">
+                  <p class="label">Título</p>
+                  <div class="field mt-1">Título da peça em revisão</div>
+                </div>
+                <div class="col-span-2 rounded-xl border p-5">
+                  <div class="flex items-start justify-between gap-6">
+                    <div>
+                      <h3 class="font-semibold">Quem aparece na peça</h3>
+                      <p class="mt-1 text-xs leading-5 text-[#6b7280]">
+                        Marque somente pessoas visíveis ou participantes desta peça. A publicação
+                        expõe apenas o nome.
+                      </p>
+                    </div>
+                    <span
+                      class="rounded-full bg-[#fff5ed] px-2 py-1 text-[11px] font-semibold text-[#6b2d15]"
+                      >Curadoria humana</span
+                    >
+                  </div>
+                  <div class="mt-5 grid grid-cols-2 gap-5">
+                    <div>
+                      <p class="label">Lideranças da campanha</p>
+                      <p class="mt-1 text-xs leading-5 text-[#6b7280]">
+                        Busca nos registros existentes. Nenhum telefone, município ou voto vai para
+                        a Central pública.
+                      </p>
+                      <div class="mt-2 flex flex-wrap gap-1.5">
+                        <span class="tag">Nome da liderança <b>×</b></span>
+                      </div>
+                      <div class="field mt-2 flex items-center justify-between text-[#6b7280]">
+                        <span>Buscar liderança…</span><span>⌄</span>
+                      </div>
+                      <div class="mt-1 rounded-lg border bg-white p-1 shadow-lg">
+                        <div class="rounded-md bg-[#f4f4f5] px-3 py-2 text-sm">
+                          <b>Nome da liderança</b
+                          ><span class="block text-xs text-[#6b7280]">Registro da campanha</span>
+                        </div>
+                        <div class="px-3 py-2 text-sm">Outra liderança de exemplo</div>
+                      </div>
+                    </div>
+                    <div>
+                      <p class="label">Figuras públicas</p>
+                      <p class="mt-1 text-xs leading-5 text-[#6b7280]">
+                        Texto curado com catálogo, no mesmo molde de Instituição.
+                      </p>
+                      <div class="mt-2 flex flex-wrap gap-1.5">
+                        <span class="tag">Dep. Estadual Exemplo <b>×</b></span>
+                      </div>
+                      <div class="field mt-2 flex items-center justify-between text-[#6b7280]">
+                        <span>Digite ou escolha uma figura pública…</span><span>⌄</span>
+                      </div>
+                      <div class="mt-1 rounded-lg border bg-white p-1 shadow-lg">
+                        <div class="rounded-md bg-[#f4f4f5] px-3 py-2 text-sm">
+                          <b>Dep. Estadual Exemplo</b
+                          ><span class="block text-xs text-[#6b7280]"
+                            >Figura pública catalogada</span
+                          >
+                        </div>
+                        <div class="px-3 py-2 text-sm">Personalidade Exemplo</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <p class="label">Instituição</p>
+                  <div class="field mt-1 text-[#6b7280]">Sem instituição</div>
+                </div>
+                <div>
+                  <p class="label">Cidade</p>
+                  <div class="field mt-1 text-[#6b7280]">Sem cidade</div>
+                </div>
+                <div class="col-span-2 flex justify-end">
+                  <button class="btn primary">Salvar alterações</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section><div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENA 02</span><h2>Ficha interna · mobile 390 · pessoa marcada e ninguém marcado</h2></div>
-        <div class="flex flex-wrap justify-center gap-8"><div class="phone frame min-h-[760px] overflow-hidden bg-white"><header class="flex h-14 items-center justify-between border-b px-4"><b>Central de Conteúdos</b><span>☰</span></header><div class="p-4"><a class="text-xs font-semibold text-[#c51414]">← Conteúdos</a><h2 class="mt-2 text-lg font-semibold">Título da peça</h2><div class="mt-5 rounded-xl border p-4"><h3 class="font-semibold">Quem aparece na peça</h3><p class="mt-1 text-xs leading-5 text-[#6b7280]">Somente o nome poderá aparecer no filtro público.</p><p class="label mt-5">Lideranças da campanha</p><div class="mt-2 flex"><span class="tag">Nome da liderança <b>×</b></span></div><div class="field mt-2 flex justify-between text-[#6b7280]"><span>Buscar liderança…</span><span>⌄</span></div><p class="label mt-5">Figuras públicas</p><div class="mt-2 flex"><span class="tag">Dep. Estadual Exemplo <b>×</b></span></div><div class="field mt-2 flex justify-between text-[#6b7280]"><span>Digite ou escolha…</span><span>⌄</span></div></div><button class="btn primary mt-5 w-full">Salvar alterações</button></div></div>
-          <div class="phone frame min-h-[620px] overflow-hidden bg-white"><header class="flex h-14 items-center justify-between border-b px-4"><b>Central de Conteúdos</b><span>☰</span></header><div class="p-4"><a class="text-xs font-semibold text-[#c51414]">← Conteúdos</a><h2 class="mt-2 text-lg font-semibold">Peça sem ninguém marcado</h2><div class="mt-5 rounded-xl border p-4"><h3 class="font-semibold">Quem aparece na peça</h3><div class="mt-4 rounded-lg bg-[#f4f4f5] p-3 text-xs leading-5 text-[#6b7280]">Ninguém marcado. A peça pode ser publicada normalmente e não cria nenhum nome na faceta “Lideranças”.</div><p class="label mt-5">Lideranças da campanha</p><div class="field mt-2 text-[#6b7280]">Buscar liderança…</div><p class="label mt-5">Figuras públicas</p><div class="field mt-2 text-[#6b7280]">Digite ou escolha…</div></div><button class="btn primary mt-5 w-full">Salvar alterações</button></div></div></div>
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 02</span>
+          <h2>Ficha interna · mobile 390 · pessoa marcada e ninguém marcado</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[760px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center justify-between border-b px-4">
+              <b>Central de Conteúdos</b><span>☰</span>
+            </header>
+            <div class="p-4">
+              <a class="text-xs font-semibold text-[#c51414]">← Conteúdos</a>
+              <h2 class="mt-2 text-lg font-semibold">Título da peça</h2>
+              <div class="mt-5 rounded-xl border p-4">
+                <h3 class="font-semibold">Quem aparece na peça</h3>
+                <p class="mt-1 text-xs leading-5 text-[#6b7280]">
+                  Somente o nome poderá aparecer no filtro público.
+                </p>
+                <p class="label mt-5">Lideranças da campanha</p>
+                <div class="mt-2 flex">
+                  <span class="tag">Nome da liderança <b>×</b></span>
+                </div>
+                <div class="field mt-2 flex justify-between text-[#6b7280]">
+                  <span>Buscar liderança…</span><span>⌄</span>
+                </div>
+                <p class="label mt-5">Figuras públicas</p>
+                <div class="mt-2 flex">
+                  <span class="tag">Dep. Estadual Exemplo <b>×</b></span>
+                </div>
+                <div class="field mt-2 flex justify-between text-[#6b7280]">
+                  <span>Digite ou escolha…</span><span>⌄</span>
+                </div>
+              </div>
+              <button class="btn primary mt-5 w-full">Salvar alterações</button>
+            </div>
+          </div>
+          <div class="phone frame min-h-[620px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center justify-between border-b px-4">
+              <b>Central de Conteúdos</b><span>☰</span>
+            </header>
+            <div class="p-4">
+              <a class="text-xs font-semibold text-[#c51414]">← Conteúdos</a>
+              <h2 class="mt-2 text-lg font-semibold">Peça sem ninguém marcado</h2>
+              <div class="mt-5 rounded-xl border p-4">
+                <h3 class="font-semibold">Quem aparece na peça</h3>
+                <div class="mt-4 rounded-lg bg-[#f4f4f5] p-3 text-xs leading-5 text-[#6b7280]">
+                  Ninguém marcado. A peça pode ser publicada normalmente e não cria nenhum nome na
+                  faceta “Lideranças”.
+                </div>
+                <p class="label mt-5">Lideranças da campanha</p>
+                <div class="field mt-2 text-[#6b7280]">Buscar liderança…</div>
+                <p class="label mt-5">Figuras públicas</p>
+                <div class="field mt-2 text-[#6b7280]">Digite ou escolha…</div>
+              </div>
+              <button class="btn primary mt-5 w-full">Salvar alterações</button>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section><div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENA 03</span><h2>Catálogo público · faceta única “Lideranças” · desktop e mobile</h2></div>
-        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white"><header class="flex h-16 items-center justify-between bg-[#ae1603] px-10"><div class="h-9 w-44 rounded bg-white/20"></div><b class="text-sm text-white">Central de Conteúdos</b></header><div class="mx-auto max-w-6xl px-10 py-10"><div class="rounded-xl bg-[#fff8f2] p-4"><div class="h-11 rounded-[10px] border bg-white px-3 py-3 text-sm text-[#6c615e]">Encontre uma peça por assunto, cidade ou pessoa…</div><div class="mt-3 flex flex-wrap gap-2"><span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span><span class="chip">Região⌄</span><span class="chip">Tema⌄</span><span class="chip">Instituição⌄</span><details open class="relative"><summary class="chip list-none border-[#184e92]/35 bg-[#eef4fb] text-[#184e92]">Lideranças⌄</summary><div class="absolute z-10 mt-1 w-64 rounded-xl border bg-white p-2 shadow-xl"><p class="px-2 py-1 text-[10px] font-black tracking-wide text-[#6c615e]">EM PEÇAS PUBLICADAS</p><div class="rounded-lg bg-[#f4f4f5] px-3 py-2 text-sm font-medium">Nome da liderança</div><div class="px-3 py-2 text-sm">Dep. Estadual Exemplo</div><div class="px-3 py-2 text-sm">Personalidade Exemplo</div></div></details></div></div><div class="mt-24 flex items-center justify-between"><div><h3 class="display text-2xl font-black">Peças com Nome da liderança</h3><p class="mt-1 text-sm text-[#6c615e]">O filtro combina com cidade, tema e os demais recortes.</p></div><span class="chip active">Lideranças · Nome da liderança ×</span></div><div class="mt-5 grid grid-cols-3 gap-6"><article class="catalog-card"><div class="grid aspect-video place-items-center bg-stone-200 text-[10px] font-black text-stone-500">NEEDS ASSET · PREVIEW REAL</div><div class="p-4"><span class="rounded-full bg-[#eef4fb] px-2 py-1 text-[11px] font-extrabold text-[#184e92]">Vídeo</span><h4 class="mt-2 font-extrabold">Título da peça publicada</h4><p class="mt-1 text-xs text-[#6c615e]">Nome da liderança · Tema</p></div></article></div><div class="mt-7 rounded-lg border border-dashed p-4 text-xs leading-5 text-[#6c615e]"><b class="text-black">Regra visível do gate:</b> este menu é derivado somente das peças publicadas. Despublicar a última peça de um nome remove esse nome da faceta imediatamente. Sem contato, território, organização, status ou votos.</div></div></div>
-        <div class="phone frame mx-auto mt-8 min-h-[740px] overflow-hidden bg-white"><header class="flex h-14 items-center justify-between bg-[#ae1603] px-4"><div class="h-7 w-32 rounded bg-white/20"></div><span class="text-white">☰</span></header><div class="p-4"><div class="h-11 rounded-[10px] border px-3 py-3 text-sm text-[#6c615e]">Busque uma pessoa…</div><div class="mt-3 flex gap-2 overflow-hidden"><span class="chip shrink-0">Tipo⌄</span><span class="chip active shrink-0">Lideranças · Nome da liderança ×</span></div><div class="mt-5 rounded-xl border bg-white p-3 shadow-lg"><p class="px-2 py-1 text-[10px] font-black tracking-wide text-[#6c615e]">LIDERANÇAS · EM PEÇAS PUBLICADAS</p><div class="rounded-lg bg-[#f4f4f5] px-3 py-3 text-sm font-medium">Nome da liderança</div><div class="px-3 py-3 text-sm">Dep. Estadual Exemplo</div></div><article class="catalog-card mt-5"><div class="grid aspect-video place-items-center bg-stone-200 text-[10px] font-black text-stone-500">NEEDS ASSET · PREVIEW REAL</div><div class="p-4"><span class="rounded-full bg-[#eef4fb] px-2 py-1 text-[11px] font-extrabold text-[#184e92]">Vídeo</span><h4 class="mt-2 text-lg font-extrabold">Título da peça publicada</h4><p class="mt-1 text-xs text-[#6c615e]">Nome da liderança</p><button class="btn mt-4 w-full bg-[#ffe607] text-black">Compartilhar</button></div></article></div></div>
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 03</span>
+          <h2>Catálogo público · faceta única “Lideranças” · desktop e mobile</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <div class="h-9 w-44 rounded bg-white/20"></div>
+            <b class="text-sm text-white">Central de Conteúdos</b>
+          </header>
+          <div class="mx-auto max-w-6xl px-10 py-10">
+            <div class="rounded-xl bg-[#fff8f2] p-4">
+              <div class="h-11 rounded-[10px] border bg-white px-3 py-3 text-sm text-[#6c615e]">
+                Encontre uma peça por assunto, cidade ou pessoa…
+              </div>
+              <div class="mt-3 flex flex-wrap gap-2">
+                <span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span
+                ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+                ><span class="chip">Instituição⌄</span>
+                <details open class="relative">
+                  <summary class="chip list-none border-[#184e92]/35 bg-[#eef4fb] text-[#184e92]">
+                    Lideranças⌄
+                  </summary>
+                  <div class="absolute z-10 mt-1 w-64 rounded-xl border bg-white p-2 shadow-xl">
+                    <p class="px-2 py-1 text-[10px] font-black tracking-wide text-[#6c615e]">
+                      EM PEÇAS PUBLICADAS
+                    </p>
+                    <div class="rounded-lg bg-[#f4f4f5] px-3 py-2 text-sm font-medium">
+                      Nome da liderança
+                    </div>
+                    <div class="px-3 py-2 text-sm">Dep. Estadual Exemplo</div>
+                    <div class="px-3 py-2 text-sm">Personalidade Exemplo</div>
+                  </div>
+                </details>
+              </div>
+            </div>
+            <div class="mt-24 flex items-center justify-between">
+              <div>
+                <h3 class="display text-2xl font-black">Peças com Nome da liderança</h3>
+                <p class="mt-1 text-sm text-[#6c615e]">
+                  O filtro combina com cidade, tema e os demais recortes.
+                </p>
+              </div>
+              <span class="chip active">Lideranças · Nome da liderança ×</span>
+            </div>
+            <div class="mt-5 grid grid-cols-3 gap-6">
+              <article class="catalog-card">
+                <div
+                  class="grid aspect-video place-items-center bg-stone-200 text-[10px] font-black text-stone-500"
+                >
+                  NEEDS ASSET · PREVIEW REAL
+                </div>
+                <div class="p-4">
+                  <span
+                    class="rounded-full bg-[#eef4fb] px-2 py-1 text-[11px] font-extrabold text-[#184e92]"
+                    >Vídeo</span
+                  >
+                  <h4 class="mt-2 font-extrabold">Título da peça publicada</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Nome da liderança · Tema</p>
+                </div>
+              </article>
+            </div>
+            <div class="mt-7 rounded-lg border border-dashed p-4 text-xs leading-5 text-[#6c615e]">
+              <b class="text-black">Regra visível do gate:</b> este menu é derivado somente das
+              peças publicadas. Despublicar a última peça de um nome remove esse nome da faceta
+              imediatamente. Sem contato, território, organização, status ou votos.
+            </div>
+          </div>
+        </div>
+        <div class="phone frame mx-auto mt-8 min-h-[740px] overflow-hidden bg-white">
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4">
+            <div class="h-7 w-32 rounded bg-white/20"></div>
+            <span class="text-white">☰</span>
+          </header>
+          <div class="p-4">
+            <div class="h-11 rounded-[10px] border px-3 py-3 text-sm text-[#6c615e]">
+              Busque uma pessoa…
+            </div>
+            <div class="mt-3 flex gap-2 overflow-hidden">
+              <span class="chip shrink-0">Tipo⌄</span
+              ><span class="chip active shrink-0">Lideranças · Nome da liderança ×</span>
+            </div>
+            <div class="mt-5 rounded-xl border bg-white p-3 shadow-lg">
+              <p class="px-2 py-1 text-[10px] font-black tracking-wide text-[#6c615e]">
+                LIDERANÇAS · EM PEÇAS PUBLICADAS
+              </p>
+              <div class="rounded-lg bg-[#f4f4f5] px-3 py-3 text-sm font-medium">
+                Nome da liderança
+              </div>
+              <div class="px-3 py-3 text-sm">Dep. Estadual Exemplo</div>
+            </div>
+            <article class="catalog-card mt-5">
+              <div
+                class="grid aspect-video place-items-center bg-stone-200 text-[10px] font-black text-stone-500"
+              >
+                NEEDS ASSET · PREVIEW REAL
+              </div>
+              <div class="p-4">
+                <span
+                  class="rounded-full bg-[#eef4fb] px-2 py-1 text-[11px] font-extrabold text-[#184e92]"
+                  >Vídeo</span
+                >
+                <h4 class="mt-2 text-lg font-extrabold">Título da peça publicada</h4>
+                <p class="mt-1 text-xs text-[#6c615e]">Nome da liderança</p>
+                <button class="btn mt-4 w-full bg-[#ffe607] text-black">Compartilhar</button>
+              </div>
+            </article>
+          </div>
+        </div>
       </section>
     </main>
   </body>

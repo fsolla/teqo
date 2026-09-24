@@ -55,7 +55,7 @@ Isso revoga explicitamente a decisão D6 do S27 (`docs/plans/central-conteudos-p
 
 - **Vou apresentar dados?** Não — o item não exibe número/contador; só roteia o visitante ao estúdio. A contagem de uso continua no mecanismo anônimo do C213/S32 (assunto card), sem métrica nova.
 - **Decisões desbloqueadas:** o eleitor escolhe o modelo sem varrer a galeria; a comunicação passa a poder ler quais modelos são procurados no catálogo, se a questão (c) for aceita (leitura pelo mecanismo existente).
-- **Forma:** *adiada ao plano de implementação* — nenhuma tabela/gráfico; quando muito, o evento anônimo já existente.
+- **Forma:** _adiada ao plano de implementação_ — nenhuma tabela/gráfico; quando muito, o evento anônimo já existente.
 
 ## Dados da decisão (literais)
 

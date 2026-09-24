@@ -51,7 +51,7 @@ A campanha já tem a Central de Conteúdos interna (C211), onde a assessoria cat
 
 - **Vou apresentar dados?** Não — a faceta é uma lista de nomes; sem contagem, sem ranking, sem placar de aparições.
 - **Decisões desbloqueadas:** a comunicação decide quem aparece em cada peça; o eleitor decide qual peça procurar pelo nome de quem aparece nela.
-- **Forma:** *adiada ao plano de implementação* — restrição de produto: só nomes de exibição (sem número, sem contagem por pessoa, sem métrica de aparições).
+- **Forma:** _adiada ao plano de implementação_ — restrição de produto: só nomes de exibição (sem número, sem contagem por pessoa, sem métrica de aparições).
 
 ## Dados da decisão (literais)
 
