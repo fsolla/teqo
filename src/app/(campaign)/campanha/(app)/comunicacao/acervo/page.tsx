@@ -34,12 +34,14 @@ import {
   buildRecordingFiltersKey,
   buildRecordingListHref,
   recordingHasActiveFilters,
+  type RecordingListState,
 } from '@/utilities/recordings/recordingListUrl'
 import { loadRecordingsPageData } from '@/utilities/recordings/recordingPageData'
 import {
   buildSpeechFiltersKey,
   buildSpeechListHref,
   speechHasActiveFilters,
+  type SpeechListState,
 } from '@/utilities/speech/speechListUrl'
 import {
   loadSpeechAcervoPageData,
@@ -101,14 +103,14 @@ const AcervoResultsHeading = ({
   themeActive,
   themeUnavailable,
   idleTitle,
-  subject,
+  itemNoun,
   controls,
 }: {
   themeMode: boolean
   themeActive: boolean
   themeUnavailable: boolean
   idleTitle: string
-  subject: 'fala' | 'gravação'
+  itemNoun: 'fala' | 'gravação'
   controls: ReactNode
 }) => (
   <div className="flex flex-wrap items-end justify-between gap-3">
@@ -125,12 +127,31 @@ const AcervoResultsHeading = ({
           {themeUnavailable
             ? 'Comportamento atual do acervo.'
             : themeActive
-              ? `Confira o indício em cada ${subject} antes de abrir.`
+              ? `Confira o indício em cada ${itemNoun} antes de abrir.`
               : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
         </p>
       ) : null}
     </div>
     {controls}
+  </div>
+)
+
+/**
+ * The retry + ordering wrapper of the two sources that offer the sort control;
+ * the Câmara hands the retry button bare to the heading instead.
+ */
+const AcervoResultsControls = ({
+  state,
+  themeUnavailable,
+  hint,
+}: {
+  state: RecordingListState | SpeechListState
+  themeUnavailable: boolean
+  hint: string
+}) => (
+  <div className="flex flex-wrap items-end gap-2">
+    {themeUnavailable ? <CampaignThemeRetryButton /> : null}
+    <AcervoSortSelect state={state} hint={hint} />
   </div>
 )
 
@@ -164,15 +185,13 @@ const RecordingsSource = ({
           themeActive={themeActive}
           themeUnavailable={data.themeUnavailable}
           idleTitle="Gravações encontradas"
-          subject="gravação"
+          itemNoun="gravação"
           controls={
-            <div className="flex flex-wrap items-end gap-2">
-              {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
-              <AcervoSortSelect
-                state={data.state}
-                hint="Gravações sem duração aparecem apenas em Mais recentes."
-              />
-            </div>
+            <AcervoResultsControls
+              state={data.state}
+              themeUnavailable={data.themeUnavailable}
+              hint="Gravações sem duração aparecem apenas em Mais recentes."
+            />
           }
         />
 
@@ -275,15 +294,13 @@ const WebSpeechesSource = ({
           themeActive={themeActive}
           themeUnavailable={data.themeUnavailable}
           idleTitle="Resultados encontrados"
-          subject="fala"
+          itemNoun="fala"
           controls={
-            <div className="flex flex-wrap items-end gap-2">
-              {data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
-              <AcervoSortSelect
-                state={data.state}
-                hint="Falas sem duração aparecem apenas em Mais recentes."
-              />
-            </div>
+            <AcervoResultsControls
+              state={data.state}
+              themeUnavailable={data.themeUnavailable}
+              hint="Falas sem duração aparecem apenas em Mais recentes."
+            />
           }
         />
 
@@ -371,7 +388,7 @@ const CamaraSource = ({ data }: { data: Awaited<ReturnType<typeof loadSpeechAcer
             themeActive={themeActive}
             themeUnavailable={data.themeUnavailable}
             idleTitle="Resultados"
-            subject="fala"
+            itemNoun="fala"
             controls={data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
           />
         ) : null}

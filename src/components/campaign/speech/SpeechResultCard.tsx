@@ -206,7 +206,7 @@ export const SpeechResultCard = ({
     { key: 'scopes', items: speech.scopes, max: MAX_SCOPE_CHIPS },
     {
       key: 'keywords',
-      items: speech.keywords,
+      items: speech.keywords.map((keyword) => ({ value: keyword, label: keyword })),
       max: MAX_KEYWORD_CHIPS,
       variant: 'outline',
       className: 'font-normal text-muted-foreground',

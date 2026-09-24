@@ -63,7 +63,7 @@ Ajustes de rota que acompanham D1 (comportamento idêntico, mesmos 404s):
 **D3 (F3) — `SpeechExcerpt` com `className` por site e `quoted`; chips por grupos.**
 `Decisão: SpeechExcerpt({ excerpt, className, quoted? }) em novo src/components/campaign/speech/SpeechExcerpt.tsx: null sem parts; '… '/' …' conforme truncatedStart/End; com quoted envolve em “ … ”. className fica por call site (Câmara 'text-sm leading-relaxed text-foreground/90'; web 'mt-2 text-sm leading-6 text-foreground/90'; provenance 'mt-1 text-sm leading-6 text-foreground/90'). SpeechResultChips({ groups: { key, items, max, variant?, className? }[] }) em novo SpeechResultChips.tsx: renderiza até max por grupo, soma o +N de todos os grupos e usa Badge (secondary com className 'font-normal'; +N outline com 'font-normal text-muted-foreground'); container e guard de vazio continuam no call site. Câmara passa 3 grupos (topics/3, scopes/2, keywords/3 outline muted — keywords mapeadas de string para { value, label }); web passa 2.`
 `Por quê: são 3 sites do MESMO truncamento (os dois cards + o provenance C192, no mesmo arquivo do card) e 2 sites de chips com caps 3/2 (+ 3 keywords na Câmara); o +N somando grupos é a única forma de manter a semântica da Câmara sem duplicar a soma. className explícito evita mudança de pixel (Impeccable A) e é honesto — as classes divergem de propósito.`
-`Rejeitadas: unificar className/line-height (muda pixel sem design review; o e2e não pina line-height, mas a intenção é A); incluir RecordingResultCard.tsx:57-62 (terceiro excerpt é de OUTRO card — fora do gatilho "3º card de fala"); API de chips por props fixas (não permitiria 3 grupos × 2); exportar os tipos dos grupos (knip types: error sem consumidor externo — os call sites usam literais contextuais).`
+`Rejeitadas: unificar className/line-height (muda pixel sem design review; o e2e não pina line-height, mas a intenção é A); incluir RecordingResultCard.tsx:57-62 (terceiro excerpt é de OUTRO card — fora do gatilho "3º card de fala"); API de chips por props fixas (não permitiria 3 grupos × 2); exportar os tipos dos grupos — na execução o tipo `SpeechChipGroup` saiu e os 2 call sites anotam `SpeechChipGroup[]` (knip verde); a hipótese do literal contextual não se confirmou).`
 
 ### Componentes / mudanças
 
@@ -76,7 +76,7 @@ Ajustes de rota que acompanham D1 (comportamento idêntico, mesmos 404s):
 - **Migration:** sem migration (nenhum schema/collection/global tocado).
 - **Access / Consent:** inalterados — o helper reusa `getCampaignUser` + `canReadCommunicationCatalog` fail-closed; nenhum Consent novo, nenhum ID hardcoded, nenhum PII novo.
 - **UI:** Impeccable A — sem superfície visual nova; F2/F3 são refactor byte-idêntico (classes preservadas por call site).
-- **Testes:** novo `tests/unit/speechResultCards.unit.spec.ts` com `renderToStaticMarkup` (padrão de `campaignComponents.unit.spec.ts`): pin do excerpt (ellipses, `mark`, `quoted`, vazio) e do `+N` somando grupos (Câmara 3+2+3 com caps → +3; web 2 grupos → +1).
+- **Testes:** novo `tests/unit/speechResultCards.unit.spec.ts` com `renderToStaticMarkup` (padrão de `campaignComponents.unit.spec.ts`): pin do excerpt (ellipses, `mark`, `quoted`, vazio) e do `+N` somando grupos (Câmara 4+3+4 com caps → +3; web 4+3 → +2).
 
 ## Fases verificáveis
 
@@ -85,12 +85,43 @@ Ajustes de rota que acompanham D1 (comportamento idêntico, mesmos 404s):
 3. **F3 (excerpt/chips) — unit + cards.** Cria os 2 componentes, migra os 3 sites de excerpt e os 2 de chips, adiciona o unit novo. Verificação: `pnpm test:unit` + e2e `campaignSpeechAcervo` (listas Câmara/web/gravações).
 4. **Gates — `pnpm gate:fast`; `pnpm push`** (o CI do PR roda a cascata completa, incl. os e2e da vertical). Commits pequenos por fase, F1 primeiro.
 
+## Adiado com gatilho (triage pós-revisão, 2026-09-24)
+
+Nada abaixo atingiu o piso de registro (expensive_lock ≥4). Aplicados na sessão (não
+reabrir): S1 (JSDoc do isServable), S4 (números dos chips no impl plan), Q1
+(subject→itemNoun), Q4 (AcervoResultsControls), Q5 (keywords normalizadas no call site),
+Q8 (changelog), Q10 (unit com o caso sem +N).
+
+- **F1-residual — `select` não chaveado à collection (`privateMediaGate.ts:45`).**
+  Chave errada/omitida compila e um predicado pode ler campo não selecionado; o efeito é
+  404 silencioso (fail-closed). O mapped type por `DataFromCollectionSlug` **não é viável
+  sem cast** (probe 2026-09-24): `SelectFromCollectionSlug` não é exportado por `payload`;
+  `Partial<Record<keyof DataFromCollectionSlug<TSlug>, true>>` não assigna ao `select` do
+  `findByID` (`undefined` vs `SelectIncludeType | true`); intersectar com `SelectType`
+  compila, mas o index signature anula o excess-property check. Caminho barato quando
+  doer: `satisfies Partial<Record<keyof DataFromCollectionSlug<'<slug>'>, true>>` no
+  literal de cada call site (pega chave errada; omissão continua passando).
+  **Gatilho:** a 6ª rota usar o gate (poster/C217) ou o primeiro 404 rastreado a `select`
+  divergente do predicado.
+- **F1-residual — `notFound` silencioso em 6 cópias + `Number(id)` em 5 rotas.**
+  Extrair `privateMediaNotFound()` no dono (`privateMediaResponse.ts`, onde a 6ª cópia já
+  mora — o `NextResponse` das rotas é assignável a `Response`) e o gate aceitar
+  `id: string | number`, validando no dono; `pieceIdFrom` do POST fica (a schema precisa
+  do número). A rota mantém o controle (`if (!found) return privateMediaNotFound()`).
+  **Gatilho:** o mesmo acima, ou qualquer mudança no shape do 404 (status/header).
+- **Harness de router duplicado nos unit specs** (`campaignComponents.unit.spec.ts:99-120`
+  e `speechResultCards.unit.spec.ts:17-27`). Consolidar `mockAppRouter`/`renderWithAppRouter`
+  em `tests/helpers/`. O gatilho de `escala-dry-pos-b33.md:106` (4º spec de router) já
+  vencera antes deste F3 (17 specs mockam `next/navigation`); a conversão do `vi.mock` de
+  `campaignListFilterNavigation.unit.spec.ts` entra no mesmo pagamento.
+  **Gatilho:** o próximo lote que tocar unit specs de componente.
+
 ## Rabbit holes / Não escopo (engenharia)
 
 - Rota `poster` (`acervo/[id]/poster/route.ts`) e demais rotas de mídia fora das 5 — o gate delas não está neste lote.
 - POST de upload/anexo (`conteudos/[id]/arquivo` POST, `conteudos/enviar`, `gravacoes/enviar`) — auth própria por envelope de erro (401/403), não é o 404 silencioso do gate de leitura.
 - Central de Conteúdos público (`(frontend)/conteudos/[slug]/midia`) — contrato público, outro gate.
-- `RecordingResultCard.tsx:57-62` (terceiro excerpt, de outro card) — o gatilho do F3 é um 3º card de FALA.
+- `RecordingResultCard.tsx:57-62` (excerpt de outro card — o gatilho do F3 era um 3º card de FALA, não este). **Gatilho:** a próxima edição do card (C217/design) troca o bloco pelo `SpeechExcerpt` com className próprio (`mt-2 text-sm leading-5 text-foreground/90`, bytes idênticos); conferir o caso `parts` vazio (hoje o site emite as elipses; o componente devolve null).
 - `speechCoverage`/Sollinha/C217.
 - Unificar `speechHasActiveFilters` × `recordingHasActiveFilters` (shapes `phases` × `people`) — defer com gatilho no impl do C216.
 - Centralizar fixtures de bytes MP4/MP3 dos int specs (2 sites) — defer.

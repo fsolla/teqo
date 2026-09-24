@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/Badge'
  */
 export type SpeechChipGroup = {
   key: string
-  items: readonly { value: string; label: string }[] | readonly string[]
+  items: readonly { value: string; label: string }[]
   max: number
   variant?: 'secondary' | 'outline'
   className?: string
@@ -27,18 +27,15 @@ export const SpeechResultChips = ({ groups }: { groups: readonly SpeechChipGroup
   return (
     <>
       {groups.flatMap((group) =>
-        group.items.slice(0, group.max).map((item) => {
-          const chip = typeof item === 'string' ? { value: item, label: item } : item
-          return (
-            <Badge
-              key={`${group.key}:${chip.value}`}
-              variant={group.variant ?? 'secondary'}
-              className={group.className ?? 'font-normal'}
-            >
-              {chip.label}
-            </Badge>
-          )
-        }),
+        group.items.slice(0, group.max).map((chip) => (
+          <Badge
+            key={`${group.key}:${chip.value}`}
+            variant={group.variant ?? 'secondary'}
+            className={group.className ?? 'font-normal'}
+          >
+            {chip.label}
+          </Badge>
+        )),
       )}
       {hidden > 0 ? (
         <Badge variant="outline" className="font-normal text-muted-foreground">
