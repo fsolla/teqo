@@ -216,7 +216,12 @@ export async function resolveOfficialPdfUrl(legacyUrl, { timeoutMs = 180_000, at
   throw lastError
 }
 
-export const DEEPINFRA_COST_PER_MINUTE_USD = 0.00045
+/**
+ * Provider price (~US$ per audio minute). The app-side owner is
+ * `src/utilities/ai/deepInfraTranscribe.ts` (C215) — re-exported here so the
+ * Câmara scripts and the web ingestion always report the same number.
+ */
+export { DEEPINFRA_TRANSCRIBE_COST_PER_MINUTE_USD as DEEPINFRA_COST_PER_MINUTE_USD } from '../../src/utilities/ai/deepInfraTranscribe.ts'
 
 /**
  * Sends the excerpt MP4 (video/mp4 is accepted; no ffmpeg) to Deep Infra's

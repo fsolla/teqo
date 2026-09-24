@@ -32,7 +32,9 @@ const durationBucketWhere = (bucket: SpeechDurationBucket): Where => {
 }
 
 const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
-  const filters: Where[] = []
+  // C215 — this contract is the Câmara list: the web speeches share the table
+  // but are served by their own source (C216), never mixed here.
+  const filters: Where[] = [{ origin: { equals: 'camara' } }]
 
   if (state.years?.length) filters.push({ year: { in: state.years } })
   if (state.topics?.length) filters.push({ topics: { in: state.topics } })

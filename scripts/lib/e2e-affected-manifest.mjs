@@ -454,6 +454,11 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/privateMedia',
       'src/utilities/media',
       'src/lib/speech',
+      // C215 — the web-speech contract, its collection and the private mirror
+      // collection drive the same acervo vertical.
+      'src/lib/webSpeech',
+      'src/collections/Speech.ts',
+      'src/collections/InternetSpeechMedia.ts',
       'src/lib/reel',
       'src/lib/recording',
       'src/lib/contentPiece',

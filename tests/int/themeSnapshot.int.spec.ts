@@ -59,6 +59,7 @@ describe('theme snapshot (C190)', () => {
         collection: 'speech',
         data: {
           sourceKey: `test-theme-${randomUUID()}`,
+          origin: 'camara',
           speechAt: '2024-05-10T17:28',
           type: 'DISCURSO',
           phase: 'Discurso',

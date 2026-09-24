@@ -194,6 +194,33 @@ export const requiresWriteConfirm = ({
   allowRemoteDb = isRemoteDbOverrideSet(),
 } = {}) => nodeEnv === 'production' || allowRemoteDb || !isLocalDatabaseUrl(databaseUrl)
 
+/** Human label of the write target for the guard messages (`host/name`). */
+export const databaseTarget = () => {
+  const url = process.env.DATABASE_URL
+  const host = databaseHostname(url)
+  if (host === null) return '(DATABASE_URL ausente ou inválida)'
+  return `${host}${new URL(url).pathname}`
+}
+
+/**
+ * C155/C215 write guard shared by the import CLIs: a non-local/production
+ * target (or the `ALLOW_REMOTE_DB` escape) refuses the run unless the command's
+ * own intent flag is set. The homeserver env sets `NODE_ENV=production` and the
+ * proxy rewrites the DB host, so the explicit flag is what makes the write
+ * deliberate.
+ *
+ * @param {{ label: string, flag: string, command: string, hint?: string }} options
+ */
+export const assertWriteConfirm = ({ label, flag, command, hint = '' }) => {
+  if (!requiresWriteConfirm()) return
+  if (isTruthyEnv(process.env[flag])) return
+  dieWithLabel(label)(
+    `alvo de escrita não-local/produção detectado (${databaseTarget()}).\n` +
+      `Confirme a intenção com:\n  ${flag}=1 ${command} …` +
+      (hint ? `\n${hint}` : ''),
+  )
+}
+
 /**
  * Port for `next dev` (OPS40). Next's CLI resolves its port via commander's
  * `.env('PORT')` BEFORE `@next/env` loads `.env.local`, so a `PORT` written by

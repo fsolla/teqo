@@ -51,6 +51,7 @@ const createSpeech = async (
     collection: 'speech',
     data: {
       sourceKey: campaign.fixtures.value('speech'),
+      origin: 'camara',
       speechAt: input.speechAt ?? '2026-03-10T18:00',
       type: 'BREVES COMUNICAÇÕES',
       phase: 'Breves Comunicações',

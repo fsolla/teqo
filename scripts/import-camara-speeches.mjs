@@ -78,12 +78,11 @@ import {
   speechSourceKey,
 } from './lib/camaraSpeeches.mjs'
 import {
-  databaseHostname,
+  assertWriteConfirm,
+  databaseTarget,
   dieWithLabel,
   ensureCachedDownload,
-  isTruthyEnv,
   loadCliEnv,
-  requiresWriteConfirm,
 } from './lib/cli.mjs'
 
 loadCliEnv()
@@ -1149,14 +1148,6 @@ const runRepairLinks = async (payload, options) => {
   }
 }
 
-const databaseTarget = () => {
-  const url = process.env.DATABASE_URL
-  const host = databaseHostname(url)
-  if (host === null) return '(DATABASE_URL ausente ou inválida)'
-  // `databaseHostname` only returns non-null when `new URL` already parsed.
-  return `${host}${new URL(url).pathname}`
-}
-
 const modeLabel = (options) => {
   if (options.coverage) return 'coverage (read-only)'
   if (options.verifyLinks !== null) return `verify-links n=${options.verifyLinks} (read-only)`
@@ -1166,21 +1157,6 @@ const modeLabel = (options) => {
   if (options.all) return 'backfill 54ª–57ª'
   if (options.date) return `date ${options.date}`
   return `legislature ${options.legislature}`
-}
-
-/**
- * C155 write guard: the homeserver env file sets `NODE_ENV=production` and the
- * runbook rewrites the DB host to the local proxy, so the host check alone
- * cannot see production — the explicit flag is what makes the write deliberate.
- */
-const assertWriteAllowed = () => {
-  if (!requiresWriteConfirm()) return
-  if (isTruthyEnv(process.env[WRITE_CONFIRM_FLAG])) return
-  die(
-    `alvo de escrita não-local/produção detectado (${databaseTarget()}).\n` +
-      `Confirme a intenção com:\n  ${WRITE_CONFIRM_FLAG}=1 pnpm camara:import …\n` +
-      `Runbook: docs/ops/teqo-1313-deploy.md §C155/§C160.`,
-  )
 }
 
 async function main() {
@@ -1197,7 +1173,12 @@ async function main() {
   } else {
     // Confirm first: a non-local host is exactly what the flag is for; the
     // local-DB guard below still blocks a remote host without ALLOW_REMOTE_DB.
-    assertWriteAllowed()
+    assertWriteConfirm({
+      label: 'camara:import',
+      flag: WRITE_CONFIRM_FLAG,
+      command: 'pnpm camara:import',
+      hint: 'Runbook: docs/ops/teqo-1313-deploy.md §C155/§C160.',
+    })
     assertLocalDatabase(
       'camara:import',
       'O import escreve no acervo; produção exige CAMARA_IMPORT_CONFIRM=1 (runbook §C155/§C160).',

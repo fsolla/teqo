@@ -20,11 +20,12 @@ type SpeechCreateData = RequiredDataFromCollectionSlug<'speech'>
 
 const createSpeech = (
   transactionID: number | string,
-  data: SpeechCreateData,
+  data: Omit<SpeechCreateData, 'origin'>,
 ): Promise<{ id: number }> =>
   payload.create({
     collection: 'speech',
-    data,
+    // C215 — this spec measures the Câmara coverage.
+    data: { origin: 'camara', ...data },
     depth: 0,
     req: { transactionID },
     // Intentional bypass: the spec seeds its own rows.

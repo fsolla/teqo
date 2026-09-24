@@ -8,9 +8,12 @@ import {
 } from '@/utilities/speech/speechListFilters'
 import { parseSpeechListParams } from '@/utilities/speech/speechListUrl'
 
+// C215 — the Câmara list contract always carries the source discriminator.
+const camara = { origin: { equals: 'camara' } }
+
 describe('buildSpeechListWhere', () => {
-  it('is empty without filters', () => {
-    expect(buildSpeechListWhere(parseSpeechListParams({}))).toEqual({})
+  it('keeps only the Câmara discriminator without filters', () => {
+    expect(buildSpeechListWhere(parseSpeechListParams({}))).toEqual({ and: [camara] })
   })
 
   it('assembles the facet filters', () => {
@@ -26,6 +29,7 @@ describe('buildSpeechListWhere', () => {
 
     expect(where).toEqual({
       and: [
+        camara,
         { year: { in: [2026] } },
         { topics: { in: ['saude'] } },
         { scopes: { in: ['bahia'] } },
@@ -39,6 +43,7 @@ describe('buildSpeechListWhere', () => {
     const where = buildSpeechListWhere(parseSpeechListParams({ q: 'Farmácia Popular' }))
     expect(where).toEqual({
       and: [
+        camara,
         {
           or: [
             { searchText: { like: 'farmacia popular' } },
@@ -51,24 +56,26 @@ describe('buildSpeechListWhere', () => {
 
   it('maps each duration bucket to its range and ORs them', () => {
     expect(buildSpeechListWhere(parseSpeechListParams({ duration: 'curta' }))).toEqual({
-      and: [{ durationSeconds: { less_than: 120 } }],
+      and: [camara, { durationSeconds: { less_than: 120 } }],
     })
     expect(buildSpeechListWhere(parseSpeechListParams({ duration: ['media'] }))).toEqual({
       and: [
+        camara,
         {
           durationSeconds: { greater_than_equal: 120, less_than: 300 },
         },
       ],
     })
     expect(buildSpeechListWhere(parseSpeechListParams({ duration: ['longa'] }))).toEqual({
-      and: [{ durationSeconds: { greater_than_equal: 300 } }],
+      and: [camara, { durationSeconds: { greater_than_equal: 300 } }],
     })
     expect(buildSpeechListWhere(parseSpeechListParams({ duration: ['sem_duracao'] }))).toEqual({
-      and: [{ durationSeconds: { exists: false } }],
+      and: [camara, { durationSeconds: { exists: false } }],
     })
 
     expect(buildSpeechListWhere(parseSpeechListParams({ duration: ['curta', 'longa'] }))).toEqual({
       and: [
+        camara,
         {
           or: [
             { durationSeconds: { less_than: 120 } },
@@ -89,6 +96,7 @@ describe('buildSpeechListWhereIncludingCutOrigins (C174)', () => {
 
     expect(where).toEqual({
       and: [
+        camara,
         {
           or: [
             { searchText: { like: 'reforma' } },
@@ -107,6 +115,7 @@ describe('buildSpeechListWhereIncludingCutOrigins (C174)', () => {
     )
     expect(withFacet).toEqual({
       and: [
+        camara,
         { topics: { in: ['saude'] } },
         {
           or: [
@@ -132,6 +141,7 @@ describe('buildSpeechListWhere theme expansion (C192)', () => {
 
     expect(where).toEqual({
       and: [
+        camara,
         {
           or: [
             { searchText: { like: 'defesa do sus' } },
@@ -148,7 +158,7 @@ describe('buildSpeechListWhere theme expansion (C192)', () => {
 
   it('dedupes a term that repeats the query', () => {
     expect(buildSpeechListWhere(parseSpeechListParams({ q: 'SUS' }), ['SUS'])).toEqual({
-      and: [{ or: [{ searchText: { like: 'sus' } }, { keywords: { contains: 'SUS' } }] }],
+      and: [camara, { or: [{ searchText: { like: 'sus' } }, { keywords: { contains: 'SUS' } }] }],
     })
   })
 
@@ -161,6 +171,7 @@ describe('buildSpeechListWhere theme expansion (C192)', () => {
       ),
     ).toEqual({
       and: [
+        camara,
         { topics: { in: ['saude'] } },
         {
           or: [

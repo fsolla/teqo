@@ -1,29 +1,24 @@
 /**
- * C196 — ffmpeg plumbing of the reel composer: binary resolution with a
- * fail-closed capability probe, the per-scene clip command (zoompan + burned
- * caption overlays) and the concat that stitches the scenes into `reel.mp4`.
- *
- * Resolution order (see `docs/plans/reels-tutoriais-impl.md`, Decisão 2):
- * `FFMPEG_PATH` → `ffmpeg` on PATH → the registry-packaged
- * `@ffmpeg-installer/ffmpeg` binary. The packed fallback keeps the
- * non-technical operator flow working on a workstation without a system
- * ffmpeg; the homeserver Docker build installs it from npm (never from GitHub
- * releases, which the homeserver cannot reach — see the sharp override note in
- * `pnpm-workspace.yaml`).
+ * C196 — ffmpeg plumbing of the reel composer: the per-scene clip command
+ * (zoompan + burned caption overlays) and the concat that stitches the scenes
+ * into `reel.mp4`. The generic binary resolution/probe/runner (C215 moved them
+ * to `mediaBinaries.mjs`) is re-exported here so the reel tools and their unit
+ * pins keep the same import surface; the reel requirements (libx264 + the
+ * composer filters, `atempo` when audio) are injected into the wrappers.
  */
 
-import { execFile } from 'node:child_process'
 import { writeFile } from 'node:fs/promises'
-import { promisify } from 'node:util'
 
+import {
+  probeFfmpeg as probeFfmpegBin,
+  resolveFfmpeg as resolveFfmpegBin,
+  runProcess,
+  runTool,
+} from './mediaBinaries.mjs'
 import { NARRATION_PCM } from './reelScript.mjs'
 import { seconds } from './reelTimeline.mjs'
 
-const execFileAsync = promisify(execFile)
-const MAX_BUFFER_BYTES = 16 * 1024 * 1024
-
 const REQUIRED_FILTERS = ['fade', 'overlay', 'scale', 'zoompan']
-const AUDIO_REQUIRED_ENCODER = 'libmp3lame'
 const AUDIO_REQUIRED_FILTERS = ['atempo']
 export const REEL_PRESET = 'medium'
 export const REEL_CRF = 18
@@ -38,25 +33,7 @@ export const PREVIEW_CRF = 14
  * @typedef {(bin: string, args: string[]) => Promise<{ ok: boolean, stdout: string, stderr: string, error?: { code?: string } }>} RunFn
  */
 
-/**
- * Generic process runner shared by the reel tools (ffmpeg and edge-tts): never
- * throws, returns the exit outcome.
- *
- * @type {RunFn}
- */
-export const runProcess = async (bin, args) => {
-  try {
-    const { stdout, stderr } = await execFileAsync(bin, args, { maxBuffer: MAX_BUFFER_BYTES })
-    return { ok: true, stdout, stderr }
-  } catch (error) {
-    return { ok: false, stdout: error.stdout ?? '', stderr: error.stderr ?? '', error }
-  }
-}
-
-const defaultRun = runProcess
-
-const versionLine = (stdout) =>
-  stdout.split('\n').find((line) => line.startsWith('ffmpeg version')) ?? ''
+export { runProcess, runTool }
 
 /**
  * Capability probe: the binary must encode H.264 (libx264) and ship the
@@ -66,90 +43,28 @@ const versionLine = (stdout) =>
  * @param {{ run?: RunFn, audio?: boolean }} [options]
  * @returns {Promise<{ ok: true, bin: string, version: string } | { ok: false, bin: string, reason: string }>}
  */
-export const probeFfmpeg = async (bin, { run = defaultRun, audio = false } = {}) => {
-  const version = await run(bin, ['-hide_banner', '-version'])
-  if (!version.ok)
-    return { ok: false, bin, reason: `não executou (${version.error?.code ?? 'erro'})` }
-  const encoders = await run(bin, ['-hide_banner', '-encoders'])
-  if (!encoders.ok || !/\blibx264\b/.test(encoders.stdout)) {
-    return { ok: false, bin, reason: 'sem encoder libx264' }
-  }
-  if (audio && !new RegExp(`\\b${AUDIO_REQUIRED_ENCODER}\\b`).test(encoders.stdout)) {
-    return { ok: false, bin, reason: `sem encoder ${AUDIO_REQUIRED_ENCODER}` }
-  }
-  const filters = await run(bin, ['-hide_banner', '-filters'])
-  if (!filters.ok) return { ok: false, bin, reason: 'não listou filtros' }
-  const requiredFilters = audio
-    ? [...REQUIRED_FILTERS, ...AUDIO_REQUIRED_FILTERS]
-    : REQUIRED_FILTERS
-  const missing = requiredFilters.filter(
-    (filter) => !new RegExp(`\\b${filter}\\b`).test(filters.stdout),
-  )
-  if (missing.length > 0) return { ok: false, bin, reason: `sem filtro(s): ${missing.join(', ')}` }
-  return { ok: true, bin, version: versionLine(version.stdout) }
-}
-
-const installHint =
-  'Defina FFMPEG_PATH, instale o ffmpeg (ex.: `sudo apt install ffmpeg`) ou rode `pnpm install` para o binário empacotado.'
+export const probeFfmpeg = (bin, { audio = false, ...options } = {}) =>
+  probeFfmpegBin(bin, {
+    ...options,
+    audio,
+    encoders: ['libx264'],
+    filters: [...REQUIRED_FILTERS, ...(audio ? AUDIO_REQUIRED_FILTERS : [])],
+  })
 
 /**
- * Resolves the first candidate that passes the probe. Explicit `FFMPEG_PATH` is strict.
+ * Resolves the first candidate that passes the reel probe. Explicit
+ * `FFMPEG_PATH` is strict.
  *
  * @param {{ env?: Record<string, string | undefined>, run?: RunFn, installer?: { path?: string } | null, audio?: boolean }} [options]
  * @returns {Promise<{ ok: true, bin: string, version: string, source: string }>}
  */
-export const resolveFfmpeg = async ({
-  env = process.env,
-  run = defaultRun,
-  installer,
-  audio = false,
-} = {}) => {
-  let packaged = installer
-  if (packaged === undefined) {
-    try {
-      packaged = (await import('@ffmpeg-installer/ffmpeg')).default
-    } catch {
-      // The packaged binary throws on import when its platform package is
-      // missing; the probe below decides, never the import.
-      packaged = null
-    }
-  }
-  const candidates = []
-  const explicit = env.FFMPEG_PATH?.trim()
-  if (explicit) candidates.push({ bin: explicit, source: 'FFMPEG_PATH', strict: true })
-  candidates.push({ bin: 'ffmpeg', source: 'PATH', strict: false })
-  if (packaged?.path) candidates.push({ bin: packaged.path, source: 'empacotado', strict: false })
-  const failures = []
-  for (const candidate of candidates) {
-    const probe = await probeFfmpeg(candidate.bin, { run, audio })
-    if (probe.ok) {
-      return { ok: true, bin: probe.bin, version: probe.version, source: candidate.source }
-    }
-    failures.push(`${candidate.source}: ${probe.reason}`)
-    if (candidate.strict) break
-  }
-  throw new Error(
-    `Nenhum ffmpeg utilizável (libx264 + filtros do reel${audio ? ' + áudio' : ''}). ${failures.join('; ')}. ${installHint}`,
-  )
-}
-
-/**
- * Runs a process and fails with the stderr tail — never swallows the exit
- * code. Shared by the reel tools (ffmpeg and edge-tts); `runFfmpeg` is the
- * ffmpeg-labelled alias kept for the historical call sites.
- *
- * @param {string} bin
- * @param {string[]} args
- * @param {{ run?: RunFn, label?: string }} [options]
- */
-export const runTool = async (bin, args, { run = defaultRun, label = 'processo' } = {}) => {
-  const result = await run(bin, args)
-  if (!result.ok) {
-    const tail = (result.stderr || result.error?.message || '').trim().slice(-400)
-    throw new Error(`${label} falhou${tail ? `: ${tail}` : ''}`)
-  }
-  return result
-}
+export const resolveFfmpeg = (options = {}) =>
+  resolveFfmpegBin({
+    requirementsLabel: `libx264 + filtros do reel${options.audio ? ' + áudio' : ''}`,
+    ...options,
+    encoders: ['libx264'],
+    filters: [...REQUIRED_FILTERS, ...(options.audio ? AUDIO_REQUIRED_FILTERS : [])],
+  })
 
 /** @type {typeof runTool} */
 export const runFfmpeg = (bin, args, options = {}) =>
@@ -284,7 +199,7 @@ export const encodeFrames = async ({
   preset = PREVIEW_PRESET,
   crf = PREVIEW_CRF,
   writeFileImpl = writeFile,
-  run = defaultRun,
+  run = runProcess,
 }) => {
   await writeFileImpl(listPath, buildFrameListContent({ frames, fps }))
   await runFfmpeg(
