@@ -132,6 +132,12 @@ Não aplicável — a intenção decidiu que o item não apresenta número/conta
 - **Dashboard/segundo analytics** das aberturas — fora; a Fase 3 só grava no mecanismo existente.
 - **Restringir cards a `q` literal no modo tema** — não nesta entrega; o branch de card é o ponto único de revisão (nota no D3).
 
+### Débitos deferidos (triagem do simplify, 2026-09-24)
+
+- **Copy do catálogo só fala em "peça"** (`ContentPieceStates.tsx:48,51` no-results; `ContentPieceFilters.tsx:68` placeholder) — o artefato se contradiz (cena 02 "peça ou card" × cenas 01/03/04 "peça"); gatilho: próxima passagem de copy/design do catálogo (S39) ou decisão do `designer` sobre a cena 02.
+- **Helper `pieceRows` duplicado** em `tests/int/contentPiece.int.spec.ts` + `tests/unit/contentPieceCatalog.unit.spec.ts` — gatilho: 3ª suíte/camada precisar do narrowing de `ContentCatalogItem`.
+- **Corpo da abertura declarado 2×** (tipo do cliente em `contentEvents.ts` + zod em `schemas/contentEvent.ts`), como o gêmeo do download S32 — gatilho: 4ª variante do beacon ou divergência sender↔schema pega por teste.
+
 ## Riscos e mitigação
 
 - **`publishedCount` perder a semântica de peças** (alguém "simplificar" para `catalogItems.length` mataria o estado vazio e o guardrail). Mitigação: unit do builder puro (zero peças ⇒ nenhum card) + pin int (`publishedCount === pieceRows(items).length` com cards no board) + e2e do kill switch (zero publicadas ⇒ 0 cards).

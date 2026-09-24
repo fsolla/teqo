@@ -431,6 +431,26 @@ export const contentCatalogItems = (
   cards: readonly CardCatalogItem[],
 ): ContentCatalogItem[] => (publishedCount > 0 ? [...pieces, ...cards] : [...pieces])
 
+/**
+ * S38 — the full-card sequence of the board: the pieces and the card models
+ * alternate (`peça → card → peça`, artefato cenas 01/02), so the models never
+ * read as a section of their own. The remainder of whichever side is longer
+ * lands at the end, in its own committed order.
+ */
+export const interleaveCatalogItems = (
+  pieces: readonly ContentPiecePublicItem[],
+  cards: readonly CardCatalogItem[],
+): ContentCatalogItem[] => {
+  const items: ContentCatalogItem[] = []
+  for (let index = 0; index < Math.max(pieces.length, cards.length); index += 1) {
+    const piece = pieces[index]
+    if (piece) items.push(piece)
+    const card = cards[index]
+    if (card) items.push(card)
+  }
+  return items
+}
+
 export type ContentPieceMediaKind = 'video' | 'audio' | 'image' | 'text' | 'other'
 
 /** S28 — where the "Por que apareceu" passage came from (label of the fallback). */
