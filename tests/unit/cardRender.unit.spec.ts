@@ -287,12 +287,14 @@ describe('renderTeamCard', () => {
     expect(textCalls.map((call) => call.text)).toEqual(['TIME DE'])
   })
 
-  it('returns the clamped photo transform for the photo subject', () => {
+  it('returns the photo transform with the zoom clamped and the free position kept (S33)', () => {
     const { result, photo } = render('Maria')
 
     expect(result.transform).toEqual(transform)
 
-    // A transform outside the cover floor comes back clamped, never as sent.
+    // S33 — `time-de-voce` is `free`: the zoom still clamps to [1, 4] but the
+    // position comes back exactly as sent; a re-clamp here would snap the photo
+    // back on the next paint (drawing and return share the model's policy).
     const fake = createFakeContext()
     const outOfBounds = { zoom: 0.5, offsetX: 10_000, offsetY: -10_000 }
     const clamped = renderTeamCard(fake.ctx, teamModel, {
@@ -305,8 +307,9 @@ describe('renderTeamCard', () => {
       measure: createCardMeasure(fake.ctx, 'Brexter'),
     })
 
-    expect(clamped.transform).not.toEqual(outOfBounds)
-    expect(clamped.transform?.zoom).toBe(1)
+    expect(clamped.transform).toEqual({ zoom: 1, offsetX: 10_000, offsetY: -10_000 })
+    // The drawing follows the same free policy (second drawImage is the photo).
+    expect(fake.drawCalls[1]).toMatchObject({ dx: 10_000, dy: -10_000 })
   })
 
   it('draws the visitor silhouette instead of the photo when no cutout is ready (S30)', () => {
@@ -451,6 +454,26 @@ describe('renderPhotoCard', () => {
     expect(drawCalls[0]!.dy).toBeLessThanOrEqual(window.y)
     expect(drawCalls[0]!.dx + drawCalls[0]!.dw).toBeGreaterThanOrEqual(window.x + window.width)
     expect(drawCalls[0]!.dy + drawCalls[0]!.dh).toBeGreaterThanOrEqual(window.y + window.height)
+  })
+
+  it('still clamps the visitor adjustment on the bounded photo models (S13/S14)', () => {
+    const { ctx, drawCalls } = createFakeContext()
+    const photo = { id: 'photo' } as unknown as CanvasImageSource
+    const frame = { id: 'frame' } as unknown as CanvasImageSource
+    const size: CardPhotoSize = { width: 2000, height: 1000 }
+    const window: CardRect = squareModel.photoWindow!
+
+    const clamped = renderPhotoCard(ctx, {
+      photo,
+      frame,
+      photoSize: size,
+      frameSize: { width: squareModel.width, height: squareModel.height },
+      window,
+      transform: { zoom: 1, offsetX: 9999, offsetY: 9999 },
+    })
+
+    expect(clamped).toEqual({ zoom: 1, offsetX: 0, offsetY: 0 })
+    expect(drawCalls[0]).toEqual({ image: photo, dx: 0, dy: 0, dw: 1480, dh: 740 })
   })
 })
 

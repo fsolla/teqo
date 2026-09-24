@@ -1,14 +1,19 @@
 /**
  * S13 — pure cover/pan/zoom math for the photo card models. The visitor photo
- * is drawn full-bleed under the master overlay and must always cover the
- * transparent window: `clampCardPhotoTransform` keeps the zoom inside
+ * is drawn full-bleed under the master overlay and, by default, must always
+ * cover the transparent window: `clampCardPhotoTransform` keeps the zoom inside
  * [1, 4] and pins the offsets so no gap can open at the window edges.
+ *
+ * S33 — the two team models carry `photoPosition: 'free'` (human gate of
+ * 2026-09-24): their adjustment is not clamped in any axis — the photo may
+ * leave the frame — while the zoom keeps its range. The policy arrives through
+ * `CardPhotoClampOptions`; the omitted default is the S13 bounded behavior.
  *
  * `centerCardPhotoTransform` is the initial framing (cover on the window, not
  * on the whole card) so the face lands on the visible area of the frame.
  */
 
-import type { CardRect } from './cardModels'
+import type { CardPhotoPosition, CardRect } from './cardModels'
 
 export const CARD_PHOTO_MIN_ZOOM = 1
 export const CARD_PHOTO_MAX_ZOOM = 4
@@ -37,6 +42,15 @@ export type CardPhotoTransform = {
   offsetY: number
 }
 
+/**
+ * S33 — the adjustment policy of the call site: `bounded` (omitted default)
+ * pins the offsets so the photo covers the window; `free` keeps the offsets
+ * untouched in both axes, normalizing only the zoom.
+ */
+export type CardPhotoClampOptions = {
+  position?: CardPhotoPosition
+}
+
 /** Alpha bounding box of a cutout photo, in source pixels. */
 export type CardAlphaBbox = {
   x: number
@@ -61,8 +75,9 @@ export const cardPhotoDrawRect = (
   transform: CardPhotoTransform,
   source: CardPhotoSize,
   window: CardRect,
+  options: CardPhotoClampOptions = {},
 ): CardRect => {
-  const clamped = clampCardPhotoTransform(transform, source, window)
+  const clamped = clampCardPhotoTransform(transform, source, window, options)
   const scale = coverScale(source, window) * clamped.zoom
 
   return {
@@ -77,8 +92,13 @@ export const clampCardPhotoTransform = (
   transform: CardPhotoTransform,
   source: CardPhotoSize,
   window: CardRect,
+  options: CardPhotoClampOptions = {},
 ): CardPhotoTransform => {
   const zoom = clamp(transform.zoom, CARD_PHOTO_MIN_ZOOM, CARD_PHOTO_MAX_ZOOM)
+  if (options.position === 'free') {
+    return { zoom, offsetX: transform.offsetX, offsetY: transform.offsetY }
+  }
+
   const scale = coverScale(source, window) * zoom
   const width = source.width * scale
   const height = source.height * scale
@@ -149,23 +169,26 @@ export const frameCardPhotoOnBbox = (
   )
 }
 
-/** Nudges the offset by a step in card pixels, clamped to the window. */
+/** Nudges the offset by a step in card pixels; clamped to the window by default. */
 export const panCardPhotoTransform = (
   transform: CardPhotoTransform,
   source: CardPhotoSize,
   window: CardRect,
   dx: number,
   dy: number,
+  options: CardPhotoClampOptions = {},
 ): CardPhotoTransform =>
   clampCardPhotoTransform(
     { ...transform, offsetX: transform.offsetX + dx, offsetY: transform.offsetY + dy },
     source,
     window,
+    options,
   )
 
 /**
  * Rescales around a window anchor (used by the zoom control): keeps the point
- * under `anchor` stable from old to new zoom, then clamps.
+ * under `anchor` stable from old to new zoom, then clamps — under the free
+ * policy only the zoom is normalized.
  */
 export const zoomCardPhotoTransform = (
   transform: CardPhotoTransform,
@@ -176,9 +199,10 @@ export const zoomCardPhotoTransform = (
     x: window.x + window.width / 2,
     y: window.y + window.height / 2,
   },
+  options: CardPhotoClampOptions = {},
 ): CardPhotoTransform => {
   const zoom = clamp(nextZoom, CARD_PHOTO_MIN_ZOOM, CARD_PHOTO_MAX_ZOOM)
-  if (zoom === transform.zoom) return clampCardPhotoTransform(transform, source, window)
+  if (zoom === transform.zoom) return clampCardPhotoTransform(transform, source, window, options)
 
   const ratio = zoom / transform.zoom
 
@@ -190,5 +214,6 @@ export const zoomCardPhotoTransform = (
     },
     source,
     window,
+    options,
   )
 }

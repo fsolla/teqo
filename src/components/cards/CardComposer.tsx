@@ -219,6 +219,8 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
   const zoomInputId = useId()
 
   const photoWindow = model.photoWindow
+  /** S33 — the model's adjustment policy: the two team models are position-free. */
+  const photoPosition = model.photoPosition ?? 'bounded'
   const isNameModel = model.kind === 'name'
   const isTeamModel = model.kind === 'team'
   const isColinhaModel = model.kind === 'colinha'
@@ -554,7 +556,7 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
     const dy = (event.clientY - drag.y) * scale
     dragRef.current = { ...drag, x: event.clientX, y: event.clientY }
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy),
+      panCardPhotoTransform(transform, size, window, dx, dy, { position: photoPosition }),
     )
   }
 
@@ -564,13 +566,13 @@ export const CardComposer = ({ model, shell, fontFamily, onClose }: CardComposer
 
   const panBy = (dx: number, dy: number) => {
     withTransform((transform, size, window) =>
-      panCardPhotoTransform(transform, size, window, dx, dy),
+      panCardPhotoTransform(transform, size, window, dx, dy, { position: photoPosition }),
     )
   }
 
   const zoomTo = (zoom: number) => {
     withTransform((transform, size, window) =>
-      zoomCardPhotoTransform(transform, size, window, zoom),
+      zoomCardPhotoTransform(transform, size, window, zoom, undefined, { position: photoPosition }),
     )
   }
 

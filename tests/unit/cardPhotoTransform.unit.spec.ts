@@ -183,3 +183,64 @@ describe('zoomCardPhotoTransform', () => {
     expect(same).toEqual(start)
   })
 })
+
+describe('free position (S33 — position: free)', () => {
+  const outside = { zoom: 1, offsetX: 9999, offsetY: -9999 }
+
+  it('keeps the offsets outside the window and still clamps the zoom to [1, 4]', () => {
+    expect(
+      clampCardPhotoTransform({ ...outside, zoom: 9 }, LANDSCAPE, WINDOW, { position: 'free' }),
+    ).toEqual({ ...outside, zoom: CARD_PHOTO_MAX_ZOOM })
+    expect(
+      clampCardPhotoTransform({ ...outside, zoom: 0.2 }, LANDSCAPE, WINDOW, { position: 'free' }),
+    ).toEqual({ ...outside, zoom: CARD_PHOTO_MIN_ZOOM })
+    // Idempotent: a settled free transform never drifts on a second pass.
+    const free = clampCardPhotoTransform(outside, LANDSCAPE, WINDOW, { position: 'free' })
+    expect(clampCardPhotoTransform(free, LANDSCAPE, WINDOW, { position: 'free' })).toEqual(free)
+  })
+
+  it('draws the photo at the sent offsets, only the cover scale applied', () => {
+    expect(cardPhotoDrawRect(outside, LANDSCAPE, WINDOW, { position: 'free' })).toEqual({
+      x: 9999,
+      y: -9999,
+      width: 1480,
+      height: 740,
+    })
+  })
+
+  it('lets the pan leave the window on both axes', () => {
+    const start = centerCardPhotoTransform(LANDSCAPE, WINDOW)
+    const panned = panCardPhotoTransform(start, LANDSCAPE, WINDOW, 9999, 9999, {
+      position: 'free',
+    })
+
+    expect(panned).toEqual({ zoom: 1, offsetX: 9759, offsetY: 9999 })
+  })
+
+  it('keeps the free position when the zoom does not change (anti snap-back)', () => {
+    // The bounded default pulls the photo back to the window (S13/S14)…
+    expect(zoomCardPhotoTransform(outside, LANDSCAPE, WINDOW, outside.zoom)).toEqual({
+      zoom: 1,
+      offsetX: 0,
+      offsetY: 0,
+    })
+    // …while the free team policy normalizes only the zoom.
+    expect(
+      zoomCardPhotoTransform(outside, LANDSCAPE, WINDOW, outside.zoom, undefined, {
+        position: 'free',
+      }),
+    ).toEqual(outside)
+  })
+
+  it('clamps the zoom but never pulls the free position back', () => {
+    const zoomed = zoomCardPhotoTransform(outside, LANDSCAPE, WINDOW, 99, undefined, {
+      position: 'free',
+    })
+
+    expect(zoomed).toEqual({
+      zoom: CARD_PHOTO_MAX_ZOOM,
+      offsetX: 500 - (500 - 9999) * CARD_PHOTO_MAX_ZOOM,
+      offsetY: 370 - (370 + 9999) * CARD_PHOTO_MAX_ZOOM,
+    })
+  })
+})
