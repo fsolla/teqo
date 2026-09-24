@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 
 import { RecordingRetryButton } from '@/components/campaign/recording/RecordingRetryButton'
 import { RecordingSpeakerTranscript } from '@/components/campaign/recording/RecordingSpeakerTranscript'
-import { RecordingTranscriptSegmentButton } from '@/components/campaign/recording/RecordingTranscriptSegmentButton'
+import { CampaignTranscriptSegmentButton } from '@/components/campaign/shared/CampaignTranscriptSegmentButton'
 import { Button } from '@/components/ui/button'
 import {
   canRetryRecording,
@@ -232,7 +232,7 @@ export const RecordingDetailPlayer = ({
           <ol className="mt-2 max-h-[28rem] space-y-0.5 overflow-y-auto">
             {segments.map((segment) => (
               <li key={`${segment.startSeconds}-${segment.startLabel}`}>
-                <RecordingTranscriptSegmentButton
+                <CampaignTranscriptSegmentButton
                   segment={segment}
                   active={activeStart === segment.startSeconds}
                   onSeek={seekTo}

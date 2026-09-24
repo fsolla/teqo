@@ -57,11 +57,24 @@ export const SpeechAcervoFilters = ({
   state,
   filterOptions,
   themeUnavailable = false,
+  omniboxLabel = 'Buscar no acervo de falas',
+  omniboxPlaceholder = 'Busque por assunto, tema, município ou palavra-chave…',
+  municipalityFacetLabel = 'Município',
+  showPhaseFacet = true,
+  filtersAriaLabel = 'Filtros do acervo',
 }: {
   state: SpeechListState
   filterOptions: SpeechFilterOptions
   /** C192 — the theme expansion is down; the selector reflects the fallback. */
   themeUnavailable?: boolean
+  /** C216 — the source's copy; the defaults are the Câmara's exact strings. */
+  omniboxLabel?: string
+  omniboxPlaceholder?: string
+  /** C216 — the web source labels the facet "Município citado". */
+  municipalityFacetLabel?: string
+  /** C216 — the web source has no Fase facet. */
+  showPhaseFacet?: boolean
+  filtersAriaLabel?: string
 }) => {
   const { navigate, isPending } = useCampaignListFilterNavigation({
     state,
@@ -83,8 +96,13 @@ export const SpeechAcervoFilters = ({
   }, [filterOptions.municipalities])
 
   const chips = useMemo(
-    () => buildSpeechOmniboxChips({ state: viewState, municipalityLabelsById }),
-    [viewState, municipalityLabelsById],
+    () =>
+      buildSpeechOmniboxChips({
+        state: viewState,
+        municipalityLabelsById,
+        municipalityLabel: municipalityFacetLabel,
+      }),
+    [viewState, municipalityLabelsById, municipalityFacetLabel],
   )
 
   const suggestionSeeds = useMemo(
@@ -93,8 +111,9 @@ export const SpeechAcervoFilters = ({
         years: filterOptions.years,
         phases: filterOptions.phases,
         municipalityOptions: filterOptions.municipalities,
+        municipalityLabel: municipalityFacetLabel,
       }),
-    [filterOptions],
+    [filterOptions, municipalityFacetLabel],
   )
 
   const suggestions = useMemo(
@@ -176,17 +195,21 @@ export const SpeechAcervoFilters = ({
       selected: scopes,
       labels: speechScopeLabels,
     },
-    {
-      id: 'speech-filter-phase',
-      label: 'Fase',
-      prefix: 'phase',
-      stateKey: 'phases',
-      options: filterOptions.phases.map((phase) => ({ value: phase, label: phase })),
-      selected: phases,
-    },
+    ...(showPhaseFacet
+      ? [
+          {
+            id: 'speech-filter-phase',
+            label: 'Fase',
+            prefix: 'phase',
+            stateKey: 'phases' as const,
+            options: filterOptions.phases.map((phase) => ({ value: phase, label: phase })),
+            selected: phases,
+          },
+        ]
+      : []),
     {
       id: 'speech-filter-municipality',
-      label: 'Município',
+      label: municipalityFacetLabel,
       prefix: 'municipality',
       stateKey: 'municipalities',
       options: filterOptions.municipalities,
@@ -214,8 +237,8 @@ export const SpeechAcervoFilters = ({
     >
       <CampaignListOmnibox
         id={SPEECH_OMNIBOX_ID}
-        label="Buscar no acervo de falas"
-        placeholder="Busque por assunto, tema, município ou palavra-chave…"
+        label={omniboxLabel}
+        placeholder={omniboxPlaceholder}
         chips={chips}
         suggestions={suggestions}
         query={query}
@@ -244,7 +267,7 @@ export const SpeechAcervoFilters = ({
 
       <div
         role="group"
-        aria-label="Filtros do acervo"
+        aria-label={filtersAriaLabel}
         className="mt-2 flex gap-2 overflow-x-auto pb-1 md:flex-wrap md:overflow-visible"
       >
         {facets.map((facet) => (

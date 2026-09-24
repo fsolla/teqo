@@ -8,7 +8,11 @@ import type { Where } from 'payload'
 
 import { normalizeForSearch } from '@/lib/speechSearch'
 import { collapseListWhereOrBranches } from '@/utilities/campaignListUrl'
-import type { SpeechDurationBucket, SpeechListState } from '@/utilities/speech/speechListUrl'
+import {
+  webSpeechSortIsDuration,
+  type SpeechDurationBucket,
+  type SpeechListState,
+} from '@/utilities/speech/speechListUrl'
 
 const DURATION_MEDIA_MIN_SECONDS = 120
 const DURATION_LONGA_MIN_SECONDS = 300
@@ -36,14 +40,16 @@ export const durationBucketWhere = (bucket: SpeechDurationBucket): Where => {
 }
 
 const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
-  // C215 — this contract is the Câmara list: the web speeches share the table
-  // but are served by their own source (C216), never mixed here.
-  const filters: Where[] = [{ origin: { equals: 'camara' } }]
+  // C215/C216 — ONE discriminator decides the source: the web list carries
+  // `source=internet` and reads `origin: web`; everything else is the Câmara
+  // list (the web speeches are never mixed here). The Fase facet is Câmara-only.
+  const isWeb = state.source === 'internet'
+  const filters: Where[] = [{ origin: { equals: isWeb ? 'web' : 'camara' } }]
 
   if (state.years?.length) filters.push({ year: { in: state.years } })
   if (state.topics?.length) filters.push({ topics: { in: state.topics } })
   if (state.scopes?.length) filters.push({ scopes: { in: state.scopes } })
-  if (state.phases?.length) filters.push({ phase: { in: state.phases } })
+  if (!isWeb && state.phases?.length) filters.push({ phase: { in: state.phases } })
   if (state.municipalities?.length) {
     filters.push({ mentionedMunicipalities: { in: state.municipalities } })
   }
@@ -51,6 +57,10 @@ const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
     const branch = collapseListWhereOrBranches(state.durations.map(durationBucketWhere))
     if (branch) filters.push(branch)
   }
+  // C216 — a duration order only lists rows with a measured duration (Postgres
+  // sorts NULLS FIRST on DESC, so without the gate "Duração (maior)" would open
+  // with the rows that have no duration).
+  if (webSpeechSortIsDuration(state)) filters.push({ durationSeconds: { exists: true } })
 
   return filters
 }

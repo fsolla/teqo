@@ -1,15 +1,18 @@
 /**
- * C199/C219 — source switcher + list URL contract of the uploaded recordings.
- * The Câmara acervo keeps its own frozen contract (`speechListUrl`); the
- * recordings branch lives on the same `/campanha/comunicacao/acervo` page
- * behind `?source=enviadas` and owns its parses/serialization over the shared
- * helpers. C219 brings the parity facets — search mode, year, topic, scope,
- * cited municipality, duration and sort — reusing the Câmara taxonomy, the
- * duration buckets and the structural year/municipality parsers. The original
- * `?source=enviadas&q&person&page` deep links stay byte-identical: the new
- * params are only serialized when selected and `mode=termo`/the default sort
- * are never serialized.
+ * C199/C219 — list URL contract of the uploaded recordings. The Câmara acervo
+ * keeps its own frozen contract (`speechListUrl`); the recordings branch lives
+ * on the same `/campanha/comunicacao/acervo` page behind `?source=enviadas` and
+ * owns its parses/serialization over the shared helpers. C219 brings the parity
+ * facets — search mode, year, topic, scope, cited municipality, duration and
+ * sort — reusing the Câmara taxonomy, the duration buckets and the structural
+ * year/municipality parsers. The original `?source=enviadas&q&person&page` deep
+ * links stay byte-identical: the new params are only serialized when selected
+ * and `mode=termo`/the default sort are never serialized. C216 moved the source
+ * vocabulary (`acervoSource`) and the sort vocabulary (`acervoListSort`) to
+ * `src/lib` — this module keeps only the recording's own mapping.
  */
+import { acervoSortIsDuration, parseAcervoSort, type AcervoSortKey } from '@/lib/acervoListSort'
+import { ACERVO_SOURCE_ENVIADAS, ACERVO_SOURCE_PARAM } from '@/lib/acervoSource'
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import { RECORDING_SPEAKER_LABEL_MAX_LENGTH } from '@/lib/recording'
@@ -40,24 +43,12 @@ import {
 
 export const recordingPageSize = 25
 
-/** Which acervo source the page is showing. `camara` is the default. */
-export type AcervoSource = 'camara' | 'enviadas'
-
 /**
- * C219 — list ordering. `recentes` is the default and never serialized (the
- * stored contract stays `-createdAt`); the duration orders only list rows with
- * a measured duration, which is why the `where` gates `durationSeconds`.
+ * C219/C216 — list ordering. The vocabulary (options, labels, `recentes`
+ * default, duration gate) is shared with the web speeches source in
+ * `@/lib/acervoListSort`; this module owns only the mapping to the recording's
+ * Payload order (`-createdAt` default).
  */
-export const RECORDING_SORT_OPTIONS = [
-  { value: 'recentes', label: 'Mais recentes' },
-  { value: 'duracao_maior', label: 'Duração (maior)' },
-  { value: 'duracao_menor', label: 'Duração (menor)' },
-] as const
-
-export type RecordingSortKey = (typeof RECORDING_SORT_OPTIONS)[number]['value']
-
-const ACERVO_SOURCE_PARAM = 'source'
-const ACERVO_SOURCE_ENVIADAS = 'enviadas'
 const ACERVO_PERSON_PARAM = 'person'
 
 const recordingListParamNames = [
@@ -77,7 +68,6 @@ const recordingListParamNameSet = new Set<string>(recordingListParamNames)
 const recordingTopicSet = new Set<string>(SPEECH_TOPICS.map(({ value }) => value))
 const recordingScopeSet = new Set<string>(SPEECH_SCOPES.map(({ value }) => value))
 const recordingDurationSet = new Set<string>(SPEECH_DURATION_BUCKETS.map(({ value }) => value))
-const recordingSortSet = new Set<string>(RECORDING_SORT_OPTIONS.map(({ value }) => value))
 
 export type RecordingListState = {
   source: 'enviadas'
@@ -91,7 +81,7 @@ export type RecordingListState = {
   /** Cited municipalities (`mentionedMunicipalities`), not the uploader's. */
   municipalities?: number[]
   durations?: SpeechDurationBucket[]
-  sort?: RecordingSortKey
+  sort?: AcervoSortKey
   /** Selected "Pessoa" labels; repeated `person` params, literal text. */
   people?: string[]
 }
@@ -102,10 +92,6 @@ export type RecordingFilterOptions = {
   years: number[]
   municipalities: { value: string; label: string }[]
 }
-
-/** `enviadas` only for the explicit value; anything else is the Câmara default. */
-export const parseAcervoSource = (params: RawSearchParams): AcervoSource =>
-  firstValue(params[ACERVO_SOURCE_PARAM]) === ACERVO_SOURCE_ENVIADAS ? 'enviadas' : 'camara'
 
 /**
  * Parses the repeated `person` filter: trims, drops empty and oversized values
@@ -130,14 +116,6 @@ const parseRecordingSearchMode = (
   raw: string | string[] | undefined,
 ): SpeechSearchMode | undefined => (firstValue(raw) === 'tema' ? 'tema' : undefined)
 
-/** Only the non-default duration orders are meaningful; anything else is `recentes`. */
-const parseRecordingSort = (raw: string | string[] | undefined): RecordingSortKey | undefined => {
-  const value = firstValue(raw)
-  return value && value !== 'recentes' && recordingSortSet.has(value)
-    ? (value as RecordingSortKey)
-    : undefined
-}
-
 export const parseRecordingListParams = (params: RawSearchParams): RecordingListState => {
   const rawPage = strictDecimalInteger(firstValue(params.page))
   const rawQ = normalizedText(firstValue(params.q))
@@ -151,7 +129,7 @@ export const parseRecordingListParams = (params: RawSearchParams): RecordingList
     params.duration,
     recordingDurationSet,
   )
-  const sort = parseRecordingSort(params.sort)
+  const sort = parseAcervoSort(params.sort)
   const people = parseRecordingPeople(params[ACERVO_PERSON_PARAM])
 
   return {
@@ -267,7 +245,7 @@ export const recordingSortOrder = (state: RecordingListState): string => {
 
 /** Duration orders only make sense over rows with a measured duration. */
 export const recordingSortIsDuration = (state: RecordingListState): boolean =>
-  state.sort === 'duracao_maior' || state.sort === 'duracao_menor'
+  acervoSortIsDuration(state.sort)
 
 /**
  * C219 — whether the actor narrowed the list (query/mode or any facet). The
@@ -285,12 +263,6 @@ export const recordingHasActiveFilters = (state: RecordingListState): boolean =>
     state.durations?.length ||
     state.people?.length,
   )
-
-/** Toggle hrefs of the source switcher (the Câmara side is the bare acervo). */
-export const buildAcervoSourceHref = (source: AcervoSource): string =>
-  source === 'enviadas'
-    ? `${CAMPAIGN_COMMUNICATION_ACERVO}?${ACERVO_SOURCE_PARAM}=${ACERVO_SOURCE_ENVIADAS}`
-    : CAMPAIGN_COMMUNICATION_ACERVO
 
 export const resolveRecordingListUrl = (
   params: RawSearchParams,

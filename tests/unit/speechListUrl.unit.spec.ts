@@ -9,6 +9,9 @@ import {
   parseSpeechListParams,
   resolveSpeechListUrl,
   serializeCanonicalSpeechListSearchParams,
+  speechHasActiveFilters,
+  webSpeechSortIsDuration,
+  webSpeechSortOrder,
 } from '@/utilities/speech/speechListUrl'
 
 describe('parseSpeechListParams', () => {
@@ -149,5 +152,97 @@ describe('buildSpeechFiltersKey', () => {
   it('is empty without filters and stable with them', () => {
     expect(buildSpeechFiltersKey(parseSpeechListParams({}))).toBe('')
     expect(buildSpeechFiltersKey(parseSpeechListParams({ topic: ['saude'] }))).toBe('topic=saude')
+  })
+})
+
+// C216 — the web speeches source lives in the same contract, additively: the
+// Câmara URLs above stay byte-identical, and only `source=internet` turns on
+// the web state (source always serialized, sort, no Fase).
+describe('web speeches source (C216)', () => {
+  it('parses the web state and ignores the Câmara-only phase param', () => {
+    const state = parseSpeechListParams({
+      source: 'internet',
+      q: 'saúde pública',
+      topic: ['saude'],
+      phase: ['Breves Comunicações'],
+      page: '2',
+    })
+
+    expect(state).toEqual({
+      source: 'internet',
+      page: 2,
+      q: 'saúde pública',
+      topics: ['saude'],
+    })
+  })
+
+  it('keeps an unknown source on the Câmara (fail-closed)', () => {
+    expect(parseSpeechListParams({ source: 'web' }).source).toBeUndefined()
+    expect(parseSpeechListParams({ source: 'web', q: 'SUS' }).source).toBeUndefined()
+  })
+
+  it('parses the sort only for the web source and drops the default', () => {
+    expect(parseSpeechListParams({ source: 'internet', sort: 'duracao_maior' }).sort).toBe(
+      'duracao_maior',
+    )
+    expect(parseSpeechListParams({ source: 'internet', sort: 'recentes' }).sort).toBeUndefined()
+    expect(parseSpeechListParams({ source: 'internet', sort: 'maratona' }).sort).toBeUndefined()
+    // A Câmara URL never carries the sort, not even when the param is present.
+    expect(parseSpeechListParams({ sort: 'duracao_maior' }).sort).toBeUndefined()
+  })
+
+  it('serializes `source=internet` always and the sort only when non-default', () => {
+    expect(
+      serializeCanonicalSpeechListSearchParams(
+        parseSpeechListParams({ source: 'internet', q: 'SUS', sort: 'duracao_menor' }),
+      ).toString(),
+    ).toBe('source=internet&q=SUS&sort=duracao_menor')
+
+    expect(
+      serializeCanonicalSpeechListSearchParams(
+        parseSpeechListParams({ source: 'internet', q: 'SUS', sort: 'recentes', phase: 'X' }),
+      ).toString(),
+    ).toBe('source=internet&q=SUS')
+  })
+
+  it('builds the canonical web hrefs on the same acervo path', () => {
+    const state = parseSpeechListParams({ source: 'internet', q: 'SUS' })
+    expect(buildSpeechListHref(state, 1)).toBe('/campanha/comunicacao/acervo?source=internet&q=SUS')
+    expect(buildSpeechListHref(state, 2)).toBe(
+      '/campanha/comunicacao/acervo?source=internet&q=SUS&page=2',
+    )
+    expect(buildSpeechFiltersKey(state)).toBe('source=internet&q=SUS')
+  })
+
+  it('redirects a phase on the web source away (canonicalization)', () => {
+    const resolved = resolveSpeechListUrl({ source: 'internet', q: 'SUS', phase: 'Ordem do Dia' })
+    expect(resolved.state.phases).toBeUndefined()
+    expect(resolved.redirectHref).toBe('/campanha/comunicacao/acervo?source=internet&q=SUS')
+  })
+
+  it('maps the sort to the speech order and gates the duration sorts', () => {
+    expect(webSpeechSortOrder(parseSpeechListParams({ source: 'internet' }))).toBe('-speechAt')
+    expect(
+      webSpeechSortOrder(parseSpeechListParams({ source: 'internet', sort: 'duracao_maior' })),
+    ).toBe('-durationSeconds')
+    expect(
+      webSpeechSortOrder(parseSpeechListParams({ source: 'internet', sort: 'duracao_menor' })),
+    ).toBe('durationSeconds')
+
+    expect(webSpeechSortIsDuration(parseSpeechListParams({ source: 'internet' }))).toBe(false)
+    expect(
+      webSpeechSortIsDuration(parseSpeechListParams({ source: 'internet', sort: 'duracao_maior' })),
+    ).toBe(true)
+    // The gate never applies to the Câmara state.
+    expect(webSpeechSortIsDuration(parseSpeechListParams({}))).toBe(false)
+  })
+
+  it('tells an active filter from the source discriminator', () => {
+    expect(speechHasActiveFilters(parseSpeechListParams({ source: 'internet' }))).toBe(false)
+    expect(speechHasActiveFilters(parseSpeechListParams({ source: 'internet', q: 'SUS' }))).toBe(
+      true,
+    )
+    expect(speechHasActiveFilters(parseSpeechListParams({ q: 'SUS' }))).toBe(true)
+    expect(speechHasActiveFilters(parseSpeechListParams({}))).toBe(false)
   })
 })

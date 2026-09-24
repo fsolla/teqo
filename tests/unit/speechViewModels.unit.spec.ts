@@ -5,7 +5,11 @@ import { describe, expect, it } from 'vitest'
 import { speechPosterHref } from '@/lib/speechPoster'
 import {
   toSpeechListItemViewModel,
+  toWebSpeechDetailViewModel,
+  toWebSpeechListItemViewModel,
   type SpeechListRecord,
+  type WebSpeechDetailRecord,
+  type WebSpeechListRecord,
 } from '@/utilities/speech/speechViewModels'
 
 const viewModel = (overrides: Partial<SpeechListRecord> = {}) =>
@@ -174,5 +178,95 @@ describe('toSpeechListItemViewModel theme match (C192)', () => {
 
     expect(row.themeMatchTerm).toBe('Farmácia Popular')
     expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(true)
+  })
+})
+
+// C216 — the web speeches view models: platform label, day-only date, the
+// private cover href, the media kind of the detail and the origin attribution.
+describe('web speech view models (C216)', () => {
+  const webListRow = (overrides: Partial<WebSpeechListRecord> = {}) =>
+    toWebSpeechListItemViewModel({
+      speech: {
+        id: 7,
+        speechAt: '2026-09-20T00:00',
+        title: 'Entrevista na rádio',
+        platform: 'radio',
+        durationSeconds: 90,
+        topics: ['saude'],
+        scopes: ['bahia'],
+        ...overrides,
+      },
+      segments: [],
+      query: undefined,
+      themeTerms: [],
+    })
+
+  it('labels the platform and the day-only publication date', () => {
+    const row = webListRow()
+    expect(row.platform).toEqual({ value: 'radio', label: 'Rádio' })
+    expect(row.dateLabel).toBe('20/09/2026')
+    expect(row.durationLabel).toBe('1min30s')
+    expect(row.title).toBe('Entrevista na rádio')
+  })
+
+  it('falls back for a row without a platform or title', () => {
+    const row = webListRow({ platform: null, title: '  ' })
+    expect(row.platform).toEqual({ value: null, label: 'Outra plataforma' })
+    expect(row.title).toBe('Fala da internet #7')
+  })
+
+  it('links the private cover only when the ingestion captured a thumbnail', () => {
+    expect(webListRow().thumbnailUrl).toBeNull()
+    expect(webListRow({ thumbnail: 12 }).thumbnailUrl).toBe(
+      '/campanha/comunicacao/acervo/internet/7/capa',
+    )
+    expect(webListRow({ thumbnail: { id: 12 } }).thumbnailUrl).toBe(
+      '/campanha/comunicacao/acervo/internet/7/capa',
+    )
+  })
+
+  it('builds the detail href with the segment seek and keeps the query', () => {
+    expect(webListRow().watchHref).toBe('/campanha/comunicacao/acervo/internet/7')
+
+    const row = toWebSpeechListItemViewModel({
+      speech: { id: 7, speechAt: '2026-09-20T00:00', title: 'Fala' },
+      segments: [{ startSeconds: 12.7, endSeconds: 15, text: 'A saúde pública importa' }],
+      query: 'saúde',
+    })
+    expect(row.watchHref).toBe('/campanha/comunicacao/acervo/internet/7?t=12&q=sa%C3%BAde')
+    expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(true)
+  })
+
+  it('picks the native control from the stored mime type', () => {
+    const detail = (mirroredMedia: WebSpeechDetailRecord['mirroredMedia']) =>
+      toWebSpeechDetailViewModel({
+        speech: {
+          id: 7,
+          speechAt: '2026-09-20T00:00',
+          title: 'Entrevista na rádio',
+          platform: 'radio',
+          channel: 'Rádio Metrópole',
+          sourceUrl: 'https://radio.example/entrevista',
+          mirroredMedia,
+        },
+        segments: [{ startSeconds: 0, endSeconds: 4, text: 'A saúde pública' }],
+      })
+
+    const audio = detail({ id: 12, mimeType: 'audio/mpeg', filename: 'source.mp3' })
+    expect(audio.mediaKind).toBe('audio')
+    expect(audio.fileHref).toBe('/campanha/comunicacao/acervo/internet/7/arquivo')
+    expect(audio.downloadHref).toBe('/campanha/comunicacao/acervo/internet/7/arquivo?download=1')
+    expect(audio.channel).toBe('Rádio Metrópole')
+    expect(audio.sourceUrl).toBe('https://radio.example/entrevista')
+    expect(audio.dateLabel).toBe('20/09/2026')
+    expect(audio.segments[0]?.startLabel).toBe('00:00')
+
+    const video = detail({ id: 12, mimeType: 'video/mp4', filename: 'source.mp4' })
+    expect(video.mediaKind).toBe('video')
+
+    const missing = detail(null)
+    expect(missing.mediaKind).toBe('video')
+    expect(missing.fileHref).toBeNull()
+    expect(missing.downloadHref).toBeNull()
   })
 })

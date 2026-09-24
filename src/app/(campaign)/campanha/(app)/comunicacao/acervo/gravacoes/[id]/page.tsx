@@ -11,11 +11,11 @@ import { RecordingStatusRefresher } from '@/components/campaign/recording/Record
 import { SetCampaignPageChrome } from '@/components/campaign/shell/CampaignPageChromeContext'
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { Button } from '@/components/ui/button'
+import { buildAcervoSourceHref } from '@/lib/acervoSource'
 import { campaignPageMetadata } from '@/lib/campaignPageChrome'
 import { parseSeekSeconds } from '@/lib/speechClock'
 import { firstValue, strictDecimalInteger } from '@/utilities/campaignListUrl'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
-import { buildAcervoSourceHref } from '@/utilities/recordings/recordingListUrl'
 import {
   loadRecordingDetailPageData,
   loadRecordingTitleForActor,
