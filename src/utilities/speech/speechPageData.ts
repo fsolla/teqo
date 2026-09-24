@@ -91,6 +91,9 @@ const loadSpeechFilterOptions = async (
     depth: 0,
     limit: 0,
     pagination: false,
+    // C215 — options are the Câmara catalog's; the web source (C216) builds
+    // its own options from its rows.
+    where: { origin: { equals: 'camara' } },
     select: { year: true, phase: true, mentionedMunicipalities: true },
     user,
     overrideAccess: false,

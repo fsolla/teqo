@@ -95,7 +95,14 @@ export const findSpeechExcerpts = (ctx: AIToolContext) =>
 
       const speeches = await ctx.payload.find({
         collection: 'speech',
-        where: { and: terms.map((term) => ({ searchText: { like: term } })) },
+        // C215 — the assistant keeps suggesting Câmara excerpts; the web
+        // speeches (C216) are a different source with their own screen.
+        where: {
+          and: [
+            { origin: { equals: 'camara' } },
+            ...terms.map((term) => ({ searchText: { like: term } })),
+          ],
+        },
         depth: 0,
         limit: SPEECH_CANDIDATE_LIMIT,
         page: 1,

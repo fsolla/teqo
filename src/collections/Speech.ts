@@ -6,15 +6,20 @@ import type {
 } from 'payload'
 
 import { SPEECH_CLASSIFICATION_SOURCES, SPEECH_SCOPES, SPEECH_TOPICS } from '@/lib/speechFacets'
+import { INTERNET_SPEECH_MEDIA_SLUG, WEB_SPEECH_PLATFORMS } from '@/lib/webSpeech'
 import { canReadSpeech, canUpdateSpeech, payloadAdminOnly } from '@/utilities/campaignAccess'
 
 /**
- * Speech catalog (C153) — one record per Jorge Solla speech in the Câmara,
- * with the official transcript (taquigrafia), the ASR segments with timestamps
- * (speechSegment), curated facets and extracted mentions.
+ * Speech catalog (C153) — one record per Jorge Solla speech: the Câmara
+ * speeches with the official transcript (taquigrafia), ASR segments with
+ * timestamps (speechSegment), curated facets and extracted mentions, plus the
+ * web speeches (C215) mirrored from the internet with the same facets and
+ * segments.
  *
- * Data provenance: Câmara open data + VOD, CC BY 4.0 — keep the credit.
- * Identity is the API speech (`sourceKey`), never the regenerable VOD URL.
+ * Câmara data provenance: open data + VOD, CC BY 4.0 — keep the credit. Web
+ * rows carry their own origin (platform + URL) and a private mirrored file.
+ * Identity is the source (`sourceKey`): the Câmara API speech or the web
+ * namespace (`web:<platform>:<externalId|url>`), never a regenerable URL.
  */
 
 const FACET_FIELDS = [
@@ -56,8 +61,22 @@ const preserveManualFacets: CollectionBeforeChangeHook = ({
   return data
 }
 
-/** Segments are owned by the speech; Payload relationships do not cascade. */
-const deleteSpeechSegments: CollectionBeforeDeleteHook = async ({ id, req }) => {
+/** Speech assets are owned by the speech; Payload relationships do not cascade. */
+const deleteSpeechAssets: CollectionBeforeDeleteHook = async ({ id, req }) => {
+  const speech = await req.payload.findByID({
+    collection: 'speech',
+    id,
+    depth: 0,
+    select: { mirroredMedia: true, thumbnail: true },
+    req,
+    // Intentional bypass: the cascade is owned by this hook; media access is the
+    // acervo gate and this runs inside the authorized speech delete request.
+    overrideAccess: true,
+  })
+  const mediaIds = [speech?.mirroredMedia, speech?.thumbnail]
+    .map((media) => (typeof media === 'object' && media !== null ? media.id : media))
+    .filter((mediaId): mediaId is number => typeof mediaId === 'number')
+
   await req.payload.delete({
     collection: 'speechSegment',
     where: { speech: { equals: id } },
@@ -66,6 +85,15 @@ const deleteSpeechSegments: CollectionBeforeDeleteHook = async ({ id, req }) => 
     // admin-only and this runs inside the authorized speech delete request.
     overrideAccess: true,
   })
+  if (mediaIds.length > 0) {
+    await req.payload.delete({
+      collection: INTERNET_SPEECH_MEDIA_SLUG,
+      where: { id: { in: mediaIds } },
+      req,
+      // Intentional bypass: same cascade, now over the private mirrored files.
+      overrideAccess: true,
+    })
+  }
 }
 
 export const Speech: CollectionConfig = {
@@ -77,9 +105,9 @@ export const Speech: CollectionConfig = {
   admin: {
     group: 'Comunicação',
     useAsTitle: 'speechAt',
-    defaultColumns: ['speechAt', 'type', 'phase', 'topics', 'classifiedBy'],
+    defaultColumns: ['speechAt', 'origin', 'platform', 'type', 'topics', 'classifiedBy'],
     description:
-      'Acervo de falas do deputado na Câmara. Dados e vídeos da Câmara dos Deputados (CC BY 4.0).',
+      'Acervo de falas do deputado: discursos na Câmara (CC BY 4.0) e falas publicadas na internet (mídia espelhada privada).',
   },
   access: {
     create: payloadAdminOnly,
@@ -90,7 +118,7 @@ export const Speech: CollectionConfig = {
   hooks: {
     beforeValidate: [deriveSpeechYear],
     beforeChange: [preserveManualFacets],
-    beforeDelete: [deleteSpeechSegments],
+    beforeDelete: [deleteSpeechAssets],
   },
   fields: [
     {
@@ -102,7 +130,24 @@ export const Speech: CollectionConfig = {
       index: true,
       admin: {
         readOnly: true,
-        description: 'Identidade da fala na API da Câmara (data/hora + tipo + fase).',
+        description: 'Identidade da fala: API da Câmara ou web:<plataforma>:<id|url>.',
+      },
+    },
+    {
+      // C215 — discriminator of the catalog source. The Câmara surfaces filter
+      // `camara`; the web source is served by C216 with its own list contract.
+      name: 'origin',
+      type: 'select',
+      label: 'Origem',
+      required: true,
+      defaultValue: 'camara',
+      index: true,
+      options: [
+        { label: 'Câmara', value: 'camara' },
+        { label: 'Internet', value: 'web' },
+      ],
+      admin: {
+        description: 'Discurso da Câmara ou fala publicada na internet.',
       },
     },
     {
@@ -266,6 +311,71 @@ export const Speech: CollectionConfig = {
       type: 'text',
       label: 'VOD (baixar)',
       admin: { readOnly: true, description: 'Último link conhecido; regerável pelo VOD.' },
+    },
+    // C215 — web speech origin and mirrored assets (null on Câmara rows).
+    {
+      name: 'platform',
+      type: 'select',
+      label: 'Plataforma',
+      index: true,
+      options: WEB_SPEECH_PLATFORMS.map(({ value, label }) => ({ value, label })),
+      admin: {
+        description: 'Plataforma de origem da fala da internet.',
+      },
+    },
+    {
+      name: 'externalId',
+      type: 'text',
+      label: 'Id externo',
+      admin: {
+        readOnly: true,
+        description: 'Identificador da publicação na plataforma (quando houver).',
+      },
+    },
+    {
+      name: 'sourceUrl',
+      type: 'text',
+      label: 'URL de origem',
+      admin: {
+        readOnly: true,
+        description: 'Link canônico da publicação original.',
+      },
+    },
+    {
+      name: 'title',
+      type: 'text',
+      label: 'Título',
+      admin: {
+        description: 'Título da publicação na plataforma.',
+      },
+    },
+    {
+      name: 'channel',
+      type: 'text',
+      label: 'Canal/autor',
+      admin: {
+        description: 'Quem publicou (canal, rádio, perfil) — texto de origem, não é contato.',
+      },
+    },
+    {
+      name: 'mirroredMedia',
+      type: 'upload',
+      relationTo: INTERNET_SPEECH_MEDIA_SLUG,
+      label: 'Mídia espelhada',
+      admin: {
+        readOnly: true,
+        description: 'Arquivo privado preservado para player, download e cortes.',
+      },
+    },
+    {
+      name: 'thumbnail',
+      type: 'upload',
+      relationTo: INTERNET_SPEECH_MEDIA_SLUG,
+      label: 'Capa',
+      admin: {
+        readOnly: true,
+        description: 'Capa da origem quando capturada; sem ela a lista mostra placeholder.',
+      },
     },
     {
       name: 'topics',

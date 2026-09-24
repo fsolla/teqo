@@ -65,6 +65,7 @@ describe('institution snapshot (C187)', () => {
         collection: 'speech',
         data: {
           sourceKey: `test-inst-${randomUUID()}`,
+          origin: 'camara',
           speechAt: '2024-05-10T17:28',
           type: 'DISCURSO',
           phase: 'Discurso',

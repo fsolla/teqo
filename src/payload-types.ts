@@ -89,6 +89,7 @@ export interface Config {
     speech: Speech;
     speechSegment: SpeechSegment;
     speechCut: SpeechCut;
+    internetSpeechMedia: InternetSpeechMedia;
     reel: Reel;
     reelMedia: ReelMedia;
     contentPiece: ContentPiece;
@@ -143,6 +144,7 @@ export interface Config {
     speech: SpeechSelect<false> | SpeechSelect<true>;
     speechSegment: SpeechSegmentSelect<false> | SpeechSegmentSelect<true>;
     speechCut: SpeechCutSelect<false> | SpeechCutSelect<true>;
+    internetSpeechMedia: InternetSpeechMediaSelect<false> | InternetSpeechMediaSelect<true>;
     reel: ReelSelect<false> | ReelSelect<true>;
     reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
     contentPiece: ContentPieceSelect<false> | ContentPieceSelect<true>;
@@ -938,7 +940,7 @@ export interface MunicipalityUpdate {
   createdAt: string;
 }
 /**
- * Acervo de falas do deputado na Câmara. Dados e vídeos da Câmara dos Deputados (CC BY 4.0).
+ * Acervo de falas do deputado: discursos na Câmara (CC BY 4.0) e falas publicadas na internet (mídia espelhada privada).
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "speech".
@@ -946,9 +948,13 @@ export interface MunicipalityUpdate {
 export interface Speech {
   id: number;
   /**
-   * Identidade da fala na API da Câmara (data/hora + tipo + fase).
+   * Identidade da fala: API da Câmara ou web:<plataforma>:<id|url>.
    */
   sourceKey: string;
+  /**
+   * Discurso da Câmara ou fala publicada na internet.
+   */
+  origin: 'camara' | 'web';
   /**
    * Horário local de Brasília, como publicado pela Câmara.
    */
@@ -988,6 +994,34 @@ export interface Speech {
    * Último link conhecido; regerável pelo VOD.
    */
   vodDownloadUrl?: string | null;
+  /**
+   * Plataforma de origem da fala da internet.
+   */
+  platform?: ('youtube' | 'instagram' | 'radio' | 'audio') | null;
+  /**
+   * Identificador da publicação na plataforma (quando houver).
+   */
+  externalId?: string | null;
+  /**
+   * Link canônico da publicação original.
+   */
+  sourceUrl?: string | null;
+  /**
+   * Título da publicação na plataforma.
+   */
+  title?: string | null;
+  /**
+   * Quem publicou (canal, rádio, perfil) — texto de origem, não é contato.
+   */
+  channel?: string | null;
+  /**
+   * Arquivo privado preservado para player, download e cortes.
+   */
+  mirroredMedia?: (number | null) | InternetSpeechMedia;
+  /**
+   * Capa da origem quando capturada; sem ela a lista mostra placeholder.
+   */
+  thumbnail?: (number | null) | InternetSpeechMedia;
   topics?:
     | (
         | 'saude'
@@ -1021,6 +1055,30 @@ export interface Speech {
   mentionedProjects?: string[] | null;
   updatedAt: string;
   createdAt: string;
+}
+/**
+ * Arquivos privados das falas encontradas na internet (mídia espelhada e capa). Só abrem com login da campanha.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "internetSpeechMedia".
+ */
+export interface InternetSpeechMedia {
+  id: number;
+  /**
+   * Descrição do arquivo para acessibilidade.
+   */
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2053,6 +2111,10 @@ export interface PayloadLockedDocument {
         value: number | SpeechCut;
       } | null)
     | ({
+        relationTo: 'internetSpeechMedia';
+        value: number | InternetSpeechMedia;
+      } | null)
+    | ({
         relationTo: 'reel';
         value: number | Reel;
       } | null)
@@ -2608,6 +2670,7 @@ export interface ActivitySelect<T extends boolean = true> {
  */
 export interface SpeechSelect<T extends boolean = true> {
   sourceKey?: T;
+  origin?: T;
   speechAt?: T;
   year?: T;
   legislature?: T;
@@ -2629,6 +2692,13 @@ export interface SpeechSelect<T extends boolean = true> {
   excerptTMs?: T;
   vodPlaybackUrl?: T;
   vodDownloadUrl?: T;
+  platform?: T;
+  externalId?: T;
+  sourceUrl?: T;
+  title?: T;
+  channel?: T;
+  mirroredMedia?: T;
+  thumbnail?: T;
   topics?: T;
   scopes?: T;
   classifiedBy?: T;
@@ -2672,6 +2742,24 @@ export interface SpeechCutSelect<T extends boolean = true> {
   createdBy?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "internetSpeechMedia_select".
+ */
+export interface InternetSpeechMediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3603,6 +3691,7 @@ export interface TaskCreateCollectionExport {
       | 'speech'
       | 'speechSegment'
       | 'speechCut'
+      | 'internetSpeechMedia'
       | 'reel'
       | 'reelMedia'
       | 'contentPiece'

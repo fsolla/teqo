@@ -27,6 +27,7 @@ const createSpeech = async (
     collection: 'speech',
     data: {
       sourceKey: `test-${randomUUID()}`,
+      origin: 'camara',
       speechAt: '2023-02-07T17:28',
       type: 'BREVES COMUNICAÇÕES',
       phase: 'Breves Comunicações',
@@ -199,6 +200,7 @@ describe('speech catalog (C153)', () => {
         collection: 'speech',
         data: {
           sourceKey: `test-${randomUUID()}`,
+          origin: 'camara',
           speechAt: '2023-02-08T10:00',
           classifiedBy: 'gazetteer',
         },
@@ -223,6 +225,7 @@ describe('speech catalog (C153)', () => {
       collection: 'speech',
       data: {
         sourceKey: `test-${randomUUID()}`,
+        origin: 'camara',
         speechAt: '2023-02-08T10:00',
         classifiedBy: 'gazetteer',
       },

@@ -26,6 +26,7 @@ import { ElectionCandidate } from './collections/ElectionCandidate'
 import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
 import { GoogleCalendarSync } from './collections/GoogleCalendarSync'
+import { InternetSpeechMedia } from './collections/InternetSpeechMedia'
 import { Jingle } from './collections/Jingle'
 import { Leadership } from './collections/Leadership'
 import { Media } from './collections/Media'
@@ -127,6 +128,7 @@ export default buildConfig({
     Speech,
     SpeechSegment,
     SpeechCut,
+    InternetSpeechMedia,
     Reel,
     ReelMedia,
     ContentPiece,
@@ -189,6 +191,8 @@ export default buildConfig({
               recordingMedia: true,
               // C211 — private content-piece files; same failure mode if omitted.
               contentMedia: true,
+              // C215 — private mirrored web-speech files; same failure mode if omitted.
+              internetSpeechMedia: true,
             },
             bucket: mediaStorage.bucket,
             config: {

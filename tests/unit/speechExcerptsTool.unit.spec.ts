@@ -48,7 +48,12 @@ const execute =
     (findSpeechExcerpts(ctxFor(actor, payload)) as unknown as ExecutableTool).execute(args)
 
 const SPEECH_WHERE = {
-  and: [{ searchText: { like: 'hospital' } }, { searchText: { like: 'suburbio' } }],
+  and: [
+    // C215 — the assistant keeps suggesting Câmara excerpts only.
+    { origin: { equals: 'camara' } },
+    { searchText: { like: 'hospital' } },
+    { searchText: { like: 'suburbio' } },
+  ],
 }
 
 const reranked = (index: number, reason = 'Serve à intenção') => ({ index, reason })

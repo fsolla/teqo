@@ -78,6 +78,8 @@ next-env.d.ts
 /data/ai-fill/
 # Câmara pilot media/JSON cache (pnpm camara:pilot — VOD MP4 + report, never commit)
 /data/camara/
+# C215 — web-speech ingestion batch cache + reports (pnpm falas-web:import)
+/data/falas-web/
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 

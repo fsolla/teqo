@@ -25,6 +25,13 @@ export const DEEPINFRA_TRANSCRIBE_URL = 'https://api.deepinfra.com/v1/openai/aud
 const DEEPINFRA_WHISPER_MODEL = 'openai/whisper-large-v3'
 const DEEPINFRA_LANGUAGE = 'pt'
 
+/**
+ * C215 — provider price (~US$ per audio minute, Whisper large-v3 at Deep
+ * Infra) used by the ingestion report to state the ASR cost honestly. The
+ * Câmara CLI keeps its own copy; this is the app-side owner.
+ */
+export const DEEPINFRA_TRANSCRIBE_COST_PER_MINUTE_USD = 0.00045
+
 export type TranscribeAudioResult =
   | { ok: true; text: string }
   | { ok: false; error: string; status: number }

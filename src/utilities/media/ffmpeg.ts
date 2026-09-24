@@ -16,7 +16,12 @@ const FFMPEG_MIN_TIMEOUT_MS = 30_000
 const FFMPEG_MAX_TIMEOUT_MS = 300_000
 const FFMPEG_MAX_BUFFER_BYTES = 8 * 1024 * 1024
 
-const ffmpegBinary = (): string => process.env.FFMPEG_PATH?.trim() || 'ffmpeg'
+/**
+ * The resolved binary (`FFMPEG_PATH` override or `ffmpeg` on PATH). Exported
+ * so callers that must tell another tool where ffmpeg lives (yt-dlp's
+ * `--ffmpeg-location`, C215) read the same resolution instead of the env.
+ */
+export const ffmpegBinary = (): string => process.env.FFMPEG_PATH?.trim() || 'ffmpeg'
 
 /** Last-resort copy when an error carries no message; each job names its own. */
 export const messageOf = (error: unknown, fallback: string): string =>

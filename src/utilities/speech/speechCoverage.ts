@@ -45,6 +45,7 @@ const COVERAGE_QUERY = sql`
     )) AS "with_segments",
     COUNT(*) FILTER (WHERE s."audio_id" IS NULL AND s."youtube_url" IS NOT NULL) AS "fallback_youtube"
   FROM "speech" s
+  WHERE s."origin" = 'camara'
   GROUP BY s."legislature"
   ORDER BY s."legislature" NULLS LAST
 `
