@@ -1283,6 +1283,29 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(html).toContain(`/campanha/comunicacao/acervo/internet/${speech.id}/arquivo`)
       // The audio artifact gets the native audio control (design scene 05).
       expect(html).toContain('<audio')
+      // C217 — the transcript is also the cut picker and the dialog opens from it.
+      expect(html).toContain('Cortar trecho')
+      expect(html).toContain('Selecione na transcrição as frases do trecho.')
+      expect(html).toContain('Toque para selecionar')
+      expect(html).not.toContain('Selecionar trecho')
+    })
+
+    test('a web speech without the mirror offers no cut gesture (C217)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('internetsemcorte')
+      const { speech } = await createWebSpeech(campaign, { marker, withMedia: false })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(`/campanha/comunicacao/acervo/internet/${speech.id}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain('O arquivo espelhado desta fala não está disponível.')
+      expect(html).not.toContain('Cortar trecho')
+      expect(html).not.toContain('Selecione na transcrição')
     })
 
     test('the private file and cover answer only the acervo roles, with range and download', async ({

@@ -14,6 +14,8 @@ type SpeechCutWhatsAppButtonProps = {
   title: string
   variant?: 'default' | 'outline'
   className?: string
+  /** C217 — the library card uses the artifact's short label ("WhatsApp"). */
+  compact?: boolean
 }
 
 /**
@@ -26,6 +28,7 @@ export const SpeechCutWhatsAppButton = ({
   title,
   variant = 'default',
   className,
+  compact = false,
 }: SpeechCutWhatsAppButtonProps) => {
   const share = buildSpeechCutShare({ title, url })
 
@@ -33,7 +36,7 @@ export const SpeechCutWhatsAppButton = ({
     <Button asChild variant={variant} className={cn('min-h-10', className)}>
       <a href={share.whatsAppUrl} target="_blank" rel="noopener noreferrer">
         <WhatsAppIcon data-icon="inline-start" />
-        Compartilhar no WhatsApp
+        {compact ? 'WhatsApp' : 'Compartilhar no WhatsApp'}
       </a>
     </Button>
   )
@@ -44,6 +47,8 @@ type SpeechCutDownloadButtonProps = {
   url: string
   filename?: string | null
   className?: string
+  /** C217 — the library card uses the artifact's short label ("Baixar"). */
+  compact?: boolean
 }
 
 /** C176 — the MP4 download control, extracted for the same reason as the WhatsApp one. */
@@ -51,11 +56,12 @@ export const SpeechCutDownloadButton = ({
   url,
   filename = null,
   className,
+  compact = false,
 }: SpeechCutDownloadButtonProps) => (
   <Button asChild variant="outline" className={cn('min-h-10', className)}>
     <a href={url} download={filename ?? ''}>
       <DownloadIcon data-icon="inline-start" aria-hidden="true" />
-      Baixar arquivo (MP4)
+      {compact ? 'Baixar' : 'Baixar arquivo (MP4)'}
     </a>
   </Button>
 )

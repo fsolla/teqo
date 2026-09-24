@@ -3,18 +3,23 @@ import { describe, expect, it } from 'vitest'
 import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
 import { formatSpeechDate } from '@/lib/speechClock'
 import {
+  buildSpeechCutAudioFfmpegArgs,
   buildSpeechCutFallbackMetadata,
   buildSpeechCutFfmpegArgs,
   buildSpeechCutShare,
   originSpeechIdsOfCuts,
   SPEECH_CUT_FAILURE_GENERATING,
   SPEECH_CUT_FAILURE_INTERRUPTED,
+  SPEECH_CUT_FAILURE_MIRROR_MISSING,
   SPEECH_CUT_FAILURE_SPEECH_GONE,
   SPEECH_CUT_FAILURE_UNAVAILABLE,
   SPEECH_CUT_FAILURE_UNPLAYABLE,
   speechCutFailureMessage,
   speechCutPublicPath,
+  speechCutSourceKind,
+  speechCutStepLabel,
   speechCutStepStates,
+  toSpeechCutLibraryItemViewModel,
   toSpeechCutSummaryViewModel,
   toSpeechCutViewModel,
 } from '@/lib/speechCut'
@@ -69,6 +74,76 @@ describe('buildSpeechCutFfmpegArgs', () => {
   })
 })
 
+describe('buildSpeechCutAudioFfmpegArgs', () => {
+  const args = buildSpeechCutAudioFfmpegArgs({
+    inputPath: '/tmp/source.mp3',
+    outputPath: '/tmp/corte-1-43-130.mp4',
+    startSeconds: 43,
+    endSeconds: 130,
+  })
+
+  it('maps only the audio stream (an audio-only mirror has no video)', () => {
+    expect(args[args.indexOf('-map') + 1]).toBe('0:a:0')
+    expect(args).not.toContain('0:v:0')
+    expect(args).not.toContain('libx264')
+  })
+
+  it('keeps the exact window and the AAC MP4 contract', () => {
+    expect(args.indexOf('-ss')).toBeLessThan(args.indexOf('-i'))
+    expect(args[args.indexOf('-ss') + 1]).toBe('43')
+    expect(args[args.indexOf('-t') + 1]).toBe('87')
+    expect(args).toContain('aac')
+    expect(args).toContain('+faststart')
+    expect(args.at(-1)).toBe('/tmp/corte-1-43-130.mp4')
+  })
+
+  it('rounds seconds and never builds a negative duration', () => {
+    const reversed = buildSpeechCutAudioFfmpegArgs({
+      inputPath: 'in',
+      outputPath: 'out',
+      startSeconds: 130,
+      endSeconds: 43,
+    })
+    expect(reversed[reversed.indexOf('-t') + 1]).toBe('0')
+  })
+})
+
+describe('speechCutSourceKind', () => {
+  it('reads a web speech from its mirrored file', () => {
+    expect(speechCutSourceKind({ origin: 'web', mirroredMedia: 9 })).toBe('web')
+    expect(speechCutSourceKind({ origin: 'web', mirroredMedia: { id: 9 } })).toBe('web')
+  })
+
+  it('never falls back to the Câmara VOD for a web speech without a mirror', () => {
+    expect(
+      speechCutSourceKind({
+        origin: 'web',
+        mirroredMedia: null,
+        vodPlaybackUrl: 'https://cdn.camara.leg.br/trecho.mp4',
+        eventId: 1,
+        audioId: 2,
+        excerptTMs: 3,
+      }),
+    ).toBeNull()
+  })
+
+  it('reads a Câmara speech from the stored VOD coordinates', () => {
+    expect(
+      speechCutSourceKind({
+        origin: 'camara',
+        vodPlaybackUrl: 'https://cdn.camara.leg.br/trecho.mp4',
+        eventId: 1,
+        audioId: 2,
+        excerptTMs: 3,
+      }),
+    ).toBe('camara')
+    expect(speechCutSourceKind({ eventId: 1, audioId: 2, excerptTMs: 3 })).toBeNull()
+    expect(
+      speechCutSourceKind({ vodPlaybackUrl: 'https://cdn.camara.leg.br/trecho.mp4' }),
+    ).toBeNull()
+  })
+})
+
 describe('buildSpeechCutFallbackMetadata', () => {
   it('names the excerpt with the type and the day, and uses the official summary', () => {
     expect(
@@ -100,6 +175,29 @@ describe('buildSpeechCutFallbackMetadata', () => {
     }).description
     expect(description).toHaveLength(2000)
   })
+
+  it('never claims the Câmara when the source is a web speech (C217)', () => {
+    expect(
+      buildSpeechCutFallbackMetadata({
+        speechType: null,
+        dateLabel: '24/09/2026',
+        summary: null,
+        source: 'web',
+      }),
+    ).toEqual({
+      title: 'Trecho de fala — 24/09/2026',
+      description: 'Trecho de fala de 24/09/2026, publicado na internet.',
+    })
+  })
+})
+
+describe('speechCutStepLabel', () => {
+  it('renames only the resolving step on the web source', () => {
+    expect(speechCutStepLabel('resolving')).toBe('Localizando o trecho na Câmara')
+    expect(speechCutStepLabel('resolving', 'camara')).toBe('Localizando o trecho na Câmara')
+    expect(speechCutStepLabel('resolving', 'web')).toBe('Localizando o arquivo da fala')
+    expect(speechCutStepLabel('cutting', 'web')).toBe('Cortando o trecho')
+  })
 })
 
 describe('speechCutStepStates', () => {
@@ -114,6 +212,15 @@ describe('speechCutStepStates', () => {
 
   it('queues every step when there is no current step', () => {
     expect(speechCutStepStates(null).every((entry) => entry.state === 'queued')).toBe(true)
+  })
+
+  it('uses the web label for the resolving step only', () => {
+    expect(speechCutStepStates('cutting', 'web').map((entry) => entry.label)).toEqual([
+      'Localizando o arquivo da fala',
+      'Cortando o trecho',
+      'Gerando título e descrição',
+      'Publicando a página do corte',
+    ])
   })
 })
 
@@ -218,6 +325,78 @@ describe('toSpeechCutSummaryViewModel', () => {
   })
 })
 
+describe('toSpeechCutLibraryItemViewModel origin', () => {
+  const base = {
+    id: 5,
+    status: 'published',
+    title: 'Corte',
+    description: 'Descrição',
+    startSeconds: 10,
+    endSeconds: 40,
+    durationSeconds: 30,
+    createdAt: '2026-09-24T12:00:00.000Z',
+  } as const
+
+  it('keeps the Câmara label and href byte for byte', () => {
+    const view = toSpeechCutLibraryItemViewModel({
+      ...base,
+      speech: {
+        id: 7,
+        type: 'BREVES COMUNICAÇÕES',
+        phase: 'Ordem do Dia',
+        speechAt: '2026-08-11T18:48',
+        origin: 'camara',
+      },
+    })
+    expect(view.origin).toEqual({
+      id: 7,
+      source: 'camara',
+      label: 'BREVES COMUNICAÇÕES · Ordem do Dia · 11/08/2026',
+      platform: null,
+      href: '/campanha/comunicacao/acervo/7',
+    })
+  })
+
+  it('links a web origin to its own detail and carries the platform (C217)', () => {
+    const view = toSpeechCutLibraryItemViewModel({
+      ...base,
+      speech: {
+        id: 42,
+        origin: 'web',
+        platform: 'youtube',
+        title: 'Entrevista na rádio Metrópole',
+        speechAt: '2026-09-20T10:00',
+      },
+    })
+    expect(view.origin).toEqual({
+      id: 42,
+      source: 'web',
+      label: 'Entrevista na rádio Metrópole',
+      platform: 'youtube',
+      href: '/campanha/comunicacao/acervo/internet/42',
+    })
+  })
+
+  it('degrades a web speech without title or platform without breaking the link', () => {
+    const view = toSpeechCutLibraryItemViewModel({
+      ...base,
+      speech: { id: 43, origin: 'web', title: '  ', platform: null },
+    })
+    expect(view.origin).toEqual({
+      id: 43,
+      source: 'web',
+      label: 'Fala da internet #43',
+      platform: null,
+      href: '/campanha/comunicacao/acervo/internet/43',
+    })
+  })
+
+  it('degrades to a null origin when the source speech was deleted', () => {
+    expect(toSpeechCutLibraryItemViewModel({ ...base, speech: null }).origin).toBeNull()
+    expect(toSpeechCutLibraryItemViewModel({ ...base, speech: 7 }).origin).toBeNull()
+  })
+})
+
 describe('originSpeechIdsOfCuts', () => {
   it('dedupes resolved ids and skips null/missing relations', () => {
     expect(
@@ -267,6 +446,9 @@ describe('speechCutFailureMessage', () => {
     expect(speechCutFailureMessage({ error: raw, step: 'resolving' })).toBe(
       'Não foi possível localizar o trecho na Câmara.',
     )
+    expect(speechCutFailureMessage({ error: raw, step: 'resolving', source: 'web' })).toBe(
+      'Não foi possível localizar o arquivo da fala.',
+    )
     expect(speechCutFailureMessage({ error: 'ffmpeg failed', step: 'cutting' })).toBe(
       'Não foi possível cortar o trecho.',
     )
@@ -280,6 +462,13 @@ describe('speechCutFailureMessage', () => {
       'Não foi possível preparar o corte.',
     )
     expect(speechCutFailureMessage({ error: raw, step: 'resolving' })).not.toContain('https://')
+  })
+
+  it('maps the gone mirror literal to itself (C217)', () => {
+    expect(speechCutFailureMessage({ error: SPEECH_CUT_FAILURE_MIRROR_MISSING })).toBe(
+      SPEECH_CUT_FAILURE_MIRROR_MISSING,
+    )
+    expect(SPEECH_CUT_FAILURE_MIRROR_MISSING).not.toContain('Câmara')
   })
 
   it('stays null when the row stored no cause', () => {

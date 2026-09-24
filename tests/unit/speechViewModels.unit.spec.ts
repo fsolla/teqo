@@ -247,6 +247,7 @@ describe('web speech view models (C216)', () => {
           platform: 'radio',
           channel: 'Rádio Metrópole',
           sourceUrl: 'https://radio.example/entrevista',
+          durationSeconds: 87,
           mirroredMedia,
         },
         segments: [{ startSeconds: 0, endSeconds: 4, text: 'A saúde pública' }],
@@ -259,6 +260,8 @@ describe('web speech view models (C216)', () => {
     expect(audio.channel).toBe('Rádio Metrópole')
     expect(audio.sourceUrl).toBe('https://radio.example/entrevista')
     expect(audio.dateLabel).toBe('20/09/2026')
+    expect(audio.durationSeconds).toBe(87)
+    expect(audio.durationLabel).toBe('1min27s')
     expect(audio.segments[0]?.startLabel).toBe('00:00')
 
     const video = detail({ id: 12, mimeType: 'video/mp4', filename: 'source.mp4' })

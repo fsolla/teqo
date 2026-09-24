@@ -5,7 +5,10 @@ import {
   parseWebSpeechBatch,
   parseWebSpeechFinding,
   webSpeechAtFromPublishedAt,
+  webSpeechCreditLabel,
+  webSpeechDisplayTitle,
   webSpeechDownloadFilename,
+  webSpeechMediaKind,
   webSpeechPlatformLabel,
   webSpeechSourceKey,
 } from '@/lib/webSpeech'
@@ -186,5 +189,35 @@ describe('webSpeechDownloadFilename', () => {
   it('falls back to the stored filename when the title leaves nothing readable', () => {
     expect(webSpeechDownloadFilename({ title: '   ', storedFilename: 'source.mp3' })).toBeNull()
     expect(webSpeechDownloadFilename({ title: 'Fala', storedFilename: null })).toBeNull()
+  })
+})
+
+// C217 — the pure web-speech rules the cut shares with the detail/list VMs.
+describe('webSpeechMediaKind', () => {
+  it('reads the mirrored mime: audio gets the native audio control', () => {
+    expect(webSpeechMediaKind('audio/mpeg')).toBe('audio')
+    expect(webSpeechMediaKind('audio/mp4')).toBe('audio')
+    expect(webSpeechMediaKind('video/mp4')).toBe('video')
+    expect(webSpeechMediaKind(null)).toBe('video')
+    expect(webSpeechMediaKind(undefined)).toBe('video')
+  })
+})
+
+describe('webSpeechDisplayTitle', () => {
+  it('prefers the platform title and degrades to the row id', () => {
+    expect(webSpeechDisplayTitle({ id: 9, title: ' Entrevista ' })).toBe('Entrevista')
+    expect(webSpeechDisplayTitle({ id: 9, title: '   ' })).toBe('Fala da internet #9')
+    expect(webSpeechDisplayTitle({ id: 9 })).toBe('Fala da internet #9')
+  })
+})
+
+describe('webSpeechCreditLabel', () => {
+  it('composes the platform with the channel and never claims a missing source', () => {
+    expect(webSpeechCreditLabel({ platform: 'youtube', channel: 'Canal do Solla' })).toBe(
+      'YouTube · Canal do Solla',
+    )
+    expect(webSpeechCreditLabel({ platform: 'radio', channel: '  ' })).toBe('Rádio')
+    expect(webSpeechCreditLabel({ platform: null, channel: 'Canal' })).toBeNull()
+    expect(webSpeechCreditLabel({})).toBeNull()
   })
 })

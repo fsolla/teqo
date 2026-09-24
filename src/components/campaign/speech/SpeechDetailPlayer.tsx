@@ -28,6 +28,7 @@ import {
   initialExcerptRange,
   isExcerptSelectionAvailable,
   MIN_EXCERPT_SECONDS,
+  segmentInExcerpt,
   SPEECH_EXCERPT_REQUEST_EVENT,
   type ExcerptPreviewPhase,
   type ExcerptRange,
@@ -839,6 +840,7 @@ export const SpeechDetailPlayer = ({
           dateLabel={speechDateLabel}
           summary={speechSummary}
           range={selection}
+          speechDurationSeconds={durationSeconds}
           onPublished={setPublishedCut}
         />
       ) : null}
@@ -868,10 +870,7 @@ export const SpeechDetailPlayer = ({
           <ol className="mt-2 space-y-0.5">
             {segments.map((segment, index) => {
               const active = activeStart === segment.startSeconds
-              const inSelection =
-                selection !== null &&
-                segment.endSeconds > selection.startSeconds &&
-                segment.startSeconds < selection.endSeconds
+              const inSelection = selection !== null && segmentInExcerpt(segment, selection)
               return (
                 <li key={segment.startSeconds}>
                   <button

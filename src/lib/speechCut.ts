@@ -4,12 +4,18 @@
  * [start, end] MP4 and the public view model. No I/O and no `server-only`:
  * the dialog (client) and the job (server) share this module.
  */
-import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
+import { CAMPAIGN_COMMUNICATION_ACERVO, campaignInternetSpeechHref } from '@/lib/campaignPaths'
 import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import { buildWhatsAppTextShareUrl } from '@/lib/phone'
+import { relationshipId } from '@/lib/relationship'
 import { SPEECH_VOD_INELIGIBLE_MESSAGE } from '@/lib/schemas/speechVod'
 import { formatSpeechDate, formatSpeechSpan } from '@/lib/speechClock'
-import { parseYoutubeVideoId } from '@/lib/speechVod'
+import {
+  parseYoutubeVideoId,
+  speechVodCoordinates,
+  type SpeechVodCoordinatesSource,
+} from '@/lib/speechVod'
+import { webSpeechDisplayTitle, type WebSpeechPlatform } from '@/lib/webSpeech'
 
 export const SPEECH_CUT_STATUSES = ['processing', 'published', 'unpublished', 'failed'] as const
 export type SpeechCutStatus = (typeof SPEECH_CUT_STATUSES)[number]
@@ -39,8 +45,48 @@ export const speechCutStepLabels: Record<SpeechCutStep, string> = {
   publishing: 'Publicando a página do corte',
 }
 
+/** C217 — the web speech has no Câmara to locate; only this step renames. */
+const WEB_SPEECH_CUT_STEP_LABELS: Record<SpeechCutStep, string> = {
+  ...speechCutStepLabels,
+  resolving: 'Localizando o arquivo da fala',
+}
+
+/**
+ * C217 — which acquisition path a cut uses: the Câmara VOD or the private
+ * mirrored file of a web speech. The predicate is the single owner of the
+ * decision (the action refuses and the job branches through it); `null` means
+ * the speech cannot be cut at all — a web speech without a mirror never falls
+ * back to the Câmara VOD.
+ *
+ * `speechCutOriginKind` is the narrower vocabulary question ("whose speech is
+ * this?") that the copy/prompt paths ask: a web speech without a mirror is
+ * still a web speech, never a Câmara one.
+ */
+export type SpeechCutSourceKind = 'camara' | 'web'
+
+type SpeechCutSourceRecord = SpeechVodCoordinatesSource & {
+  origin?: string | null
+  mirroredMedia?: number | { id: number } | null
+}
+
+export const speechCutOriginKind = (speech: { origin?: string | null }): SpeechCutSourceKind =>
+  speech.origin === 'web' ? 'web' : 'camara'
+
+export const speechCutSourceKind = (speech: SpeechCutSourceRecord): SpeechCutSourceKind | null => {
+  if (speechCutOriginKind(speech) === 'web') {
+    return relationshipId(speech.mirroredMedia) === null ? null : 'web'
+  }
+  return speechVodCoordinates(speech) ? 'camara' : null
+}
+
 const isSpeechCutStep = (value: unknown): value is SpeechCutStep =>
   SPEECH_CUT_STEPS.includes(value as SpeechCutStep)
+
+/** C217 — the step label by source; the Câmara keeps the historical literals. */
+export const speechCutStepLabel = (
+  step: SpeechCutStep,
+  source: SpeechCutSourceKind = 'camara',
+): string => (source === 'web' ? WEB_SPEECH_CUT_STEP_LABELS[step] : speechCutStepLabels[step])
 
 /**
  * C169 — the causes the job and the reaper store in `error` (the operator's
@@ -54,6 +100,9 @@ export const SPEECH_CUT_FAILURE_UNAVAILABLE = 'A Câmara não entregou o arquivo
 export const SPEECH_CUT_FAILURE_UNPLAYABLE =
   'A Câmara não entregou um arquivo jogável deste trecho.'
 export const SPEECH_CUT_FAILURE_INTERRUPTED = 'O corte foi interrompido antes de terminar.'
+/** C217 — the web cut died because the private mirror is gone. */
+export const SPEECH_CUT_FAILURE_MIRROR_MISSING =
+  'O arquivo espelhado desta fala não está mais disponível.'
 
 const SPEECH_CUT_FAILURE_INELIGIBLE_COPY = 'Esta fala não tem trecho de vídeo para cortar.'
 const SPEECH_CUT_FAILURE_UNAVAILABLE_COPY =
@@ -61,6 +110,7 @@ const SPEECH_CUT_FAILURE_UNAVAILABLE_COPY =
 const SPEECH_CUT_FAILURE_UNPLAYABLE_COPY =
   'A Câmara não disponibilizou um arquivo válido deste trecho.'
 const SPEECH_CUT_FAILURE_RESOLVING_COPY = 'Não foi possível localizar o trecho na Câmara.'
+const SPEECH_CUT_FAILURE_MIRROR_RESOLVING_COPY = 'Não foi possível localizar o arquivo da fala.'
 const SPEECH_CUT_FAILURE_CUTTING_COPY = 'Não foi possível cortar o trecho.'
 const SPEECH_CUT_FAILURE_STORING_COPY = 'Não foi possível guardar o arquivo do corte.'
 const SPEECH_CUT_FAILURE_UNKNOWN_COPY = 'Não foi possível preparar o corte.'
@@ -73,9 +123,11 @@ const SPEECH_CUT_FAILURE_UNKNOWN_COPY = 'Não foi possível preparar o corte.'
 export const speechCutFailureMessage = ({
   error,
   step,
+  source = 'camara',
 }: {
   error?: string | null
   step?: SpeechCutStep | null
+  source?: SpeechCutSourceKind
 }): string | null => {
   const stored = error?.trim()
   if (!stored) return null
@@ -86,8 +138,13 @@ export const speechCutFailureMessage = ({
   if (stored === SPEECH_CUT_FAILURE_UNAVAILABLE) return SPEECH_CUT_FAILURE_UNAVAILABLE_COPY
   if (stored === SPEECH_CUT_FAILURE_UNPLAYABLE) return SPEECH_CUT_FAILURE_UNPLAYABLE_COPY
   if (stored === SPEECH_CUT_FAILURE_INTERRUPTED) return SPEECH_CUT_FAILURE_INTERRUPTED
+  if (stored === SPEECH_CUT_FAILURE_MIRROR_MISSING) return SPEECH_CUT_FAILURE_MIRROR_MISSING
 
-  if (step === 'resolving') return SPEECH_CUT_FAILURE_RESOLVING_COPY
+  if (step === 'resolving') {
+    return source === 'web'
+      ? SPEECH_CUT_FAILURE_MIRROR_RESOLVING_COPY
+      : SPEECH_CUT_FAILURE_RESOLVING_COPY
+  }
   if (step === 'cutting') return SPEECH_CUT_FAILURE_CUTTING_COPY
   if (step === 'metadata' || step === 'publishing') return SPEECH_CUT_FAILURE_STORING_COPY
   return SPEECH_CUT_FAILURE_UNKNOWN_COPY
@@ -100,11 +157,14 @@ type SpeechCutStepState = {
 }
 
 /** Step list of a running cut: everything before `current` is done, the rest queued. */
-export const speechCutStepStates = (current: SpeechCutStep | null): SpeechCutStepState[] => {
+export const speechCutStepStates = (
+  current: SpeechCutStep | null,
+  source: SpeechCutSourceKind = 'camara',
+): SpeechCutStepState[] => {
   const currentIndex = current ? SPEECH_CUT_STEPS.indexOf(current) : -1
   return SPEECH_CUT_STEPS.map((step, index) => ({
     step,
-    label: speechCutStepLabels[step],
+    label: speechCutStepLabel(step, source),
     state: index < currentIndex ? 'done' : index === currentIndex ? 'current' : 'queued',
   }))
 }
@@ -125,16 +185,22 @@ export const buildSpeechCutFallbackMetadata = ({
   speechType,
   dateLabel,
   summary,
+  source = 'camara',
 }: {
   speechType: string | null
   dateLabel: string
   summary: string | null
+  /** C217 — the web source never claims the Câmara in the description. */
+  source?: SpeechCutSourceKind
 }): { title: string; description: string } => {
   const type = speechType?.trim() || FALLBACK_SPEECH_TYPE
   return {
     title: clipSpeechCutText(`Trecho de ${type} — ${dateLabel}`, SPEECH_CUT_TITLE_MAX_LENGTH),
     description: clipSpeechCutText(
-      summary?.trim() || `Trecho de ${type} de ${dateLabel}, na Câmara dos Deputados.`,
+      summary?.trim() ||
+        (source === 'web'
+          ? `Trecho de ${type} de ${dateLabel}, publicado na internet.`
+          : `Trecho de ${type} de ${dateLabel}, na Câmara dos Deputados.`),
       SPEECH_CUT_DESCRIPTION_MAX_LENGTH,
     ),
   }
@@ -148,20 +214,13 @@ type SpeechCutFfmpegInput = {
 }
 
 /**
- * Exact-cut command: `-ss` before `-i` seeks fast and the re-encode (no
- * `-c copy`) starts the output exactly at the picked second instead of the
- * previous keyframe. `-t` carries the duration so a timestamp offset in the
- * source cannot shift the end; `+faststart` lets the proxied MP4 play
- * progressively. Args are returned as an array — never a shell string.
+ * The exact-window prefix both cut commands share: `-ss` before `-i` seeks fast
+ * and `-t` carries the duration so a timestamp offset in the source cannot
+ * shift the end. Args are returned as an array — never a shell string.
  */
-export const buildSpeechCutFfmpegArgs = ({
-  inputPath,
-  outputPath,
-  startSeconds,
-  endSeconds,
-}: SpeechCutFfmpegInput): string[] => {
-  const start = Math.max(0, Math.round(startSeconds))
-  const duration = Math.max(0, Math.round(endSeconds) - start)
+const cutWindowArgs = (input: SpeechCutFfmpegInput): string[] => {
+  const start = Math.max(0, Math.round(input.startSeconds))
+  const duration = Math.max(0, Math.round(input.endSeconds) - start)
   return [
     '-nostdin',
     '-hide_banner',
@@ -169,30 +228,68 @@ export const buildSpeechCutFfmpegArgs = ({
     '-ss',
     String(start),
     '-i',
-    inputPath,
+    input.inputPath,
     '-t',
     String(duration),
-    '-map',
-    '0:v:0',
-    '-map',
-    '0:a?',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'veryfast',
-    '-crf',
-    '20',
-    '-pix_fmt',
-    'yuv420p',
-    '-c:a',
-    'aac',
-    '-b:a',
-    '128k',
-    '-movflags',
-    '+faststart',
-    outputPath,
   ]
 }
+
+/**
+ * Exact-cut command: the re-encode (no `-c copy`) starts the output exactly at
+ * the picked second instead of the previous keyframe; `+faststart` lets the
+ * proxied MP4 play progressively.
+ */
+export const buildSpeechCutFfmpegArgs = ({
+  inputPath,
+  outputPath,
+  startSeconds,
+  endSeconds,
+}: SpeechCutFfmpegInput): string[] => [
+  ...cutWindowArgs({ inputPath, outputPath, startSeconds, endSeconds }),
+  '-map',
+  '0:v:0',
+  '-map',
+  '0:a?',
+  '-c:v',
+  'libx264',
+  '-preset',
+  'veryfast',
+  '-crf',
+  '20',
+  '-pix_fmt',
+  'yuv420p',
+  '-c:a',
+  'aac',
+  '-b:a',
+  '128k',
+  '-movflags',
+  '+faststart',
+  outputPath,
+]
+
+/**
+ * C217 — the audio-only variant of the exact cut (radio/direct-audio mirrors):
+ * the same `-ss`/`-t` window, but the input has no video stream to map, so the
+ * output is an audio-only MP4 (AAC + `+faststart`) — the same `.mp4` contract
+ * the library card and the public page already play.
+ */
+export const buildSpeechCutAudioFfmpegArgs = ({
+  inputPath,
+  outputPath,
+  startSeconds,
+  endSeconds,
+}: SpeechCutFfmpegInput): string[] => [
+  ...cutWindowArgs({ inputPath, outputPath, startSeconds, endSeconds }),
+  '-map',
+  '0:a:0',
+  '-c:a',
+  'aac',
+  '-b:a',
+  '128k',
+  '-movflags',
+  '+faststart',
+  outputPath,
+]
 
 /** Public, unlisted page of a cut — the numeric id survives a title edit. */
 export const speechCutPublicPath = (id: number): string => `/corte/${id}`
@@ -223,6 +320,10 @@ type CutSpeechRecord = {
   type?: string | null
   phase?: string | null
   speechAt?: string | null
+  /** C217 — web rows carry their own origin vocabulary and display title. */
+  origin?: string | null
+  platform?: WebSpeechPlatform | null
+  title?: string | null
 }
 type CutDurationRecord = { durationSeconds?: number | null }
 
@@ -293,6 +394,10 @@ const mediaOf = (media: SpeechCutRecordForView['media']): CutMediaRecord | null 
 const youtubeUrlOf = (speech: SpeechCutRecordForView['speech']): string | null =>
   typeof speech === 'object' && speech !== null ? (speech.youtubeUrl ?? null) : null
 
+/** C217 — the source of a cut, read from its origin speech (absent → Câmara). */
+const speechSourceOf = (speech: SpeechCutRecordForView['speech']): SpeechCutSourceKind =>
+  typeof speech === 'object' && speech !== null ? speechCutOriginKind(speech) : 'camara'
+
 /** Stored span when present, else the raw [start, end] fallback, floored at 0. */
 const cutDurationSeconds = (record: SpeechCutSummaryRecord): number =>
   typeof record.durationSeconds === 'number' && Number.isFinite(record.durationSeconds)
@@ -326,7 +431,13 @@ export const toSpeechCutViewModel = (record: SpeechCutRecordForView): SpeechCutV
     youtubeVideoId: parseYoutubeVideoId(youtubeUrlOf(record.speech)),
     publishedAt: record.publishedAt ?? null,
     failureMessage:
-      status === 'failed' ? speechCutFailureMessage({ error: record.error, step }) : null,
+      status === 'failed'
+        ? speechCutFailureMessage({
+            error: record.error,
+            step,
+            source: speechSourceOf(record.speech),
+          })
+        : null,
   }
 }
 
@@ -375,8 +486,12 @@ export const originSpeechIdsOfCuts = (
 /** Origin of a cut in the library: the speech it was cut from, with its link. */
 export type SpeechCutOriginViewModel = {
   id: number
-  /** "Fala · Breves Comunicações · 11/08/2026" — readiness degrades, never empty. */
+  /** C217 — the Câmara link and label stay as they were; the web has its own. */
+  source: SpeechCutSourceKind
+  /** "Fala · Breves Comunicações · 11/08/2026" (Câmara) or the web speech title. */
   label: string
+  /** C217 — the web platform of the origin (drives the pill); null on Câmara rows. */
+  platform: WebSpeechPlatform | null
   href: string
 }
 
@@ -397,10 +512,28 @@ const formatCreatedAtLabel = (createdAt: string | null | undefined): string | nu
 const originOf = (speech: SpeechCutRecordForView['speech']): SpeechCutOriginViewModel | null => {
   if (typeof speech !== 'object' || speech === null || typeof speech.id !== 'number') return null
 
+  // C217 — a web speech links back to its own detail and shows the platform;
+  // the Câmara composition is unchanged byte for byte.
+  if (speech.origin === 'web') {
+    return {
+      id: speech.id,
+      source: 'web',
+      label: webSpeechDisplayTitle({ id: speech.id, title: speech.title }),
+      platform: speech.platform ?? null,
+      href: campaignInternetSpeechHref(speech.id),
+    }
+  }
+
   const dateLabel = speech.speechAt ? formatSpeechDate(speech.speechAt) : null
   const label =
     [speech.type ?? 'Fala', speech.phase, dateLabel].filter(Boolean).join(' · ') || 'Fala'
-  return { id: speech.id, label, href: `${CAMPAIGN_COMMUNICATION_ACERVO}/${speech.id}` }
+  return {
+    id: speech.id,
+    source: 'camara',
+    label,
+    platform: null,
+    href: `${CAMPAIGN_COMMUNICATION_ACERVO}/${speech.id}`,
+  }
 }
 
 /**
