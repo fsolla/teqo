@@ -3,7 +3,7 @@
  * the home section, the `/cards` gallery and the canvas renderer share one
  * catalog (no second editor, no CMS): each entry carries the master asset, the
  * real output size in pixels and, for photo/team models, the transparent window
- * the visitor's photo must cover.
+ * the photo is framed and zoomed over (fully covered under the bounded default).
  *
  * Geometry comes from the master files (pixel-measured, keep in sync with
  * `docs/plans/cards-personalizados-campanha-impl.md` and
@@ -30,6 +30,15 @@ export type CardRect = {
   height: number
 }
 
+/**
+ * S33 — the visitor-adjustment policy of a photo/team model. `bounded` (the
+ * omitted default) pins the photo offsets so the transparent window is always
+ * covered (S13/S14); `free` leaves the offsets untouched in both axes — the
+ * photo may leave the frame and reveal the art behind it — while the zoom keeps
+ * its `[1, 4]` range (human gate of 2026-09-24).
+ */
+export type CardPhotoPosition = 'bounded' | 'free'
+
 export type CardModel = {
   id: CardModelId
   kind: CardModelKind
@@ -37,8 +46,10 @@ export type CardModel = {
   assetSrc: string
   width: number
   height: number
-  /** Photo and team models: the transparent window the photo must cover. */
+  /** Photo and team models: the transparent window the photo is framed over. */
   photoWindow?: CardRect
+  /** Photo/team models: `free` unlocks the position clamp during the adjustment. */
+  photoPosition?: CardPhotoPosition
   /** Team model: the master front overlay drawn above the cutout photo. */
   overlaySrc?: string
   /**
@@ -99,6 +110,7 @@ export const CARD_MODELS: readonly CardModel[] = [
     width: 1080,
     height: 1440,
     photoWindow: { x: 286, y: 439, width: 592, height: 577 },
+    photoPosition: 'free',
   },
   {
     id: 'time-do-estadual',
@@ -115,6 +127,7 @@ export const CARD_MODELS: readonly CardModel[] = [
     width: 1080,
     height: 1440,
     photoWindow: { x: 286, y: 439, width: 592, height: 577 },
+    photoPosition: 'free',
   },
   {
     id: 'minha-colinha',

@@ -289,7 +289,11 @@ export type TeamCardRenderArgs = {
 
 export type TeamCardRenderResult = {
   fit: CardNameFit
-  /** The clamped photo transform; `null` for the silhouette subject. */
+  /**
+   * The normalized photo transform (zoom always in range; S33 — the offsets
+   * follow the model's `photoPosition`, so a `free` model keeps them as sent);
+   * `null` for the silhouette subject.
+   */
   transform: CardPhotoTransform | null
 }
 
@@ -309,9 +313,23 @@ export const renderTeamCard = (
 
   let transform: CardPhotoTransform | null = null
   if (args.subject.kind === 'photo') {
-    const rect = cardPhotoDrawRect(args.subject.transform, args.subject.photoSize, args.window)
+    // S33 — the drawing and the returned transform follow the same policy read
+    // from the model: a `free` team model never re-clamps the visitor position
+    // (that would snap the photo back on the next paint).
+    const options = { position: model.photoPosition ?? 'bounded' }
+    const rect = cardPhotoDrawRect(
+      args.subject.transform,
+      args.subject.photoSize,
+      args.window,
+      options,
+    )
     ctx.drawImage(args.subject.photo, rect.x, rect.y, rect.width, rect.height)
-    transform = clampCardPhotoTransform(args.subject.transform, args.subject.photoSize, args.window)
+    transform = clampCardPhotoTransform(
+      args.subject.transform,
+      args.subject.photoSize,
+      args.window,
+      options,
+    )
   } else {
     drawCardVisitorSilhouette(ctx, args.window)
   }

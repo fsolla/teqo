@@ -2467,3 +2467,59 @@ test.describe('Cards personalizados (S31 — Minha colinha)', () => {
     await expect(dialog.getByRole('button', { name: 'Baixar minha colinha' })).toBeEnabled()
   })
 })
+
+/**
+ * S33 — the two team models are position-free (human gate of 2026-09-24): the
+ * visitor adjustment is not clamped in any axis, so the photo may leave the
+ * window and reveal the art behind it. The S15 auto-framing stays the starting
+ * point and the zoom keeps its [1, 4] range. With the stub cutout (400×300,
+ * full-canvas bbox) the S15 transform lands at offsetX ≈ 197.33, whose old X
+ * ceiling was 286 — eight Shift+→ steps (+48 each = +384) only pass the window
+ * with the clamp gone, and the write-back must never snap it back.
+ */
+test.describe('Cards personalizados (S33 — ajuste livre do time)', () => {
+  const windowPixel = (canvas: Locator, x: number, y: number) =>
+    canvas.evaluate(
+      (element, point) => {
+        const node = element as HTMLCanvasElement
+        return [...node.getContext('2d')!.getImageData(point.x, point.y, 1, 1).data]
+      },
+      { x, y },
+    )
+
+  test('the keyboard moves the photo past the window and it never snaps back', async ({ page }) => {
+    await setCutoutStub(page, 'ok')
+    await page.goto('/cards?model=time-de-voce')
+
+    const dialog = page.getByRole('dialog')
+    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
+    await uploadBustPhoto(dialog)
+    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
+
+    // Harmony OFF reads the raw stub fixture: under the S15 framing the photo
+    // covers x=500, so the probe sees the fixture blue.
+    await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
+    const canvas = dialog.locator('canvas')
+    const probe = () => windowPixel(canvas, 500, 727)
+    await expect.poll(probe).toEqual([30, 120, 200, 255])
+
+    // Eight Shift+→ steps = +384 card pixels — past the old ceiling (197.33 +
+    // 88.67): the photo leaves the window and the art behind it shows there.
+    const group = dialog.getByRole('group', { name: 'Ajuste da foto' })
+    await group.focus()
+    for (let step = 0; step < 8; step += 1) await page.keyboard.press('Shift+ArrowRight')
+
+    // The exact base-art pixel at the probe: stronger than "not the fixture
+    // blue" (a blank or broken canvas would not pass it).
+    const baseArtPixel = [246, 246, 248, 255]
+    await expect.poll(probe).toEqual(baseArtPixel)
+
+    // No snap-back: the render write-back keeps the free position, so the moved
+    // frame stays painted after the effect settles.
+    await page.waitForTimeout(250)
+    expect(await probe()).toEqual(baseArtPixel)
+
+    // The freedom is of the position only: the zoom stays at the cover floor.
+    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBe(1)
+  })
+})

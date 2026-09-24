@@ -100,6 +100,16 @@ describe('card model catalog (S13/S15)', () => {
     expect(getCardModel('time-de-voce')?.stateDeputyPicker).toBeUndefined()
   })
 
+  it('marks only the two team models as free position (S33)', () => {
+    expect(getCardModel('time-de-voce')?.photoPosition).toBe('free')
+    expect(getCardModel('time-do-estadual')?.photoPosition).toBe('free')
+    // S13/S14 and the colinha keep the bounded default (omitted).
+    expect(getCardModel('eu-sou-solla')?.photoPosition).toBeUndefined()
+    expect(getCardModel('perfil-quadrado')?.photoPosition).toBeUndefined()
+    expect(getCardModel('perfil-retangular')?.photoPosition).toBeUndefined()
+    expect(getCardModel('minha-colinha')?.photoPosition).toBeUndefined()
+  })
+
   it('pins the S31 colinha model: new kind, official top assets, picker flag and the approved tile', () => {
     expect(getCardModel('minha-colinha')).toMatchObject({
       kind: 'colinha',
