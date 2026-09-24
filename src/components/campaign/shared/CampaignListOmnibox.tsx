@@ -69,6 +69,14 @@ export const campaignListOmniboxFormClassName =
  * actions) — stays out of the sticky region. Desktop keeps the framed look
  * unchanged via `md:` variants.
  *
+ * C221 (2026-09-24): the clear X is taken OUT of the wrap flow below `md`
+ * (`absolute`, anchored to the field's right edge) and the field reserves
+ * its width with `pr-11` — a long search chip can no longer push the X to a
+ * row of its own; the chip caps at 168px so the fixed `8rem` input shares
+ * the single dense line at the design's 390 target (narrower viewports may
+ * still wrap the input, never the X). Artifact:
+ * `docs/plans/omnibox-limpar-mobile-ui-design.html`.
+ *
  * Keyboard contract mirrors RelationChipCell (ARIA combobox by hand): arrows
  * move the active option, Enter picks it, Escape closes. cmdk is not used —
  * its Root expects an inner CommandInput and would leave this field mouse-only.
@@ -217,7 +225,11 @@ export const CampaignListOmnibox = ({
                 // with NO focus ring — the caret is the focus indicator; the
                 // `md:` variants restore the framed desktop field with its
                 // ring/colored border as the focus affordance.
-                'flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-0 shadow-none',
+                // C221 — `relative` anchors the absolute X below `md`, and the
+                // mobile `pr-11` (44px = 36px target + 8px breathing) is the
+                // X's reserved lane outside the content flow; `md:` returns to
+                // the plain `px-2` frame (the X is `md:hidden`).
+                'relative flex min-h-10 w-full flex-wrap items-center gap-1.5 rounded-lg border-0 bg-transparent px-2 py-0 shadow-none max-md:pr-11',
                 'md:min-h-11 md:border md:border-input md:py-1.5 md:shadow-xs',
                 'md:focus-within:border-ring md:focus-within:ring-3 md:focus-within:ring-ring/50',
               )}
@@ -233,7 +245,14 @@ export const CampaignListOmnibox = ({
                   key={chip.id}
                   data-active={activeChipId === chip.id ? 'true' : undefined}
                   className={cn(
-                    'inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground',
+                    // C221 — below `md` the cap keeps chip + the fixed `8rem`
+                    // input on the single dense line at the 390 target, inside
+                    // the X's reserved lane (168 + 6 + 128 ≤ 306 of content;
+                    // below ~386px viewport the input may wrap again, the X
+                    // never does); the label ellipsizes, the chip identity
+                    // survives. Desktop keeps `max-w-full` (the wrap is the
+                    // desktop frame's own).
+                    'inline-flex max-w-full items-center gap-1 rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground max-md:max-w-[168px]',
                     'data-[active=true]:ring-2 data-[active=true]:ring-ring',
                   )}
                 >
@@ -297,7 +316,11 @@ export const CampaignListOmnibox = ({
                     // B196/B200 — size-9 with the taller field keeps the bar
                     // at ~45px total; the field itself is the real touch
                     // target (the X lives inside it).
-                    'inline-flex size-9 shrink-0 items-center justify-center rounded-full',
+                    // C221 — out of the wrap flow and anchored to the field's
+                    // right edge (centered on its height), so no chip length
+                    // can orphan it on a row of its own; it lives inside the
+                    // `pr-11` lane reserved on the field below `md`.
+                    'absolute right-0 top-1/2 inline-flex size-9 -translate-y-1/2 items-center justify-center rounded-full',
                     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                     'md:hidden',
                     !(hasChips || query.length > 0) && 'invisible pointer-events-none',

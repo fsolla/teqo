@@ -230,6 +230,15 @@ export const E2E_AFFECTED_MANIFEST = [
     ],
   },
   {
+    // C221 — the shared omnibox chassis gets its own cheap, direct pin: the
+    // iOS input-zoom spec reads the field's font-size, and this prefix is the
+    // chassis itself (component + adapter contract). Kept as a dedicated
+    // entry so a municipality-route diff does not pay for the extra spec;
+    // diffs in the chassis still wake the municipality family above.
+    prefixes: ['src/components/campaign/shared/CampaignListOmnibox', 'src/lib/campaignListOmnibox'],
+    specs: ['campaignIosInputZoom'],
+  },
+  {
     prefixes: [
       `${CAMPAIGN_APP}/agenda`,
       `${CAMPAIGN_APP}/atividades`,
