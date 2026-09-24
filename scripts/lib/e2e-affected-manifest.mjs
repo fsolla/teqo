@@ -160,11 +160,15 @@ export const E2E_AFFECTED_MANIFEST = [
     // the kill-switch contract over the C211 listing tag. C213 adds the
     // anonymous beacon endpoint, its vocabulary and the event collection the
     // public page (and the public download) write to.
+    // S39 — the home sample is wired only by the home page and the pure
+    // selection module; the section components live under `components/conteudos`.
     prefixes: [
       'src/app/(frontend)/conteudos',
+      'src/app/(frontend)/(home)',
       'src/app/(frontend)/api/content-events',
       'src/components/conteudos',
       'src/lib/contentPieceCatalog',
+      'src/lib/contentPieceHomeSelection.ts',
       'src/lib/contentPieceShare',
       'src/lib/contentEvents.ts',
       'src/utilities/content/contentPieceReads.ts',

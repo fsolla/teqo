@@ -10,12 +10,11 @@ import {
 } from '../../src/lib/municipalityCatalog.js'
 import {
   featureCentroid,
-  featureContainsPoint,
   haversineKm,
   resolveNearbyMunicipality,
   type GeoPoint,
 } from '../../src/lib/municipalityProximity.js'
-import { featureBounds } from '../helpers/featureBounds.js'
+import { interiorPointOf } from '../helpers/featureBounds.js'
 
 import { expect, test } from './fixtures/campaignE2EFixtures.js'
 
@@ -59,27 +58,6 @@ const visibleText = (scope: Locator, text: string) => scope.getByText(text).last
 
 /** Assertions belong to the card, not to "somewhere on the dashboard". */
 const geoCard = (page: Page) => page.locator('[data-slot="card"]').filter({ hasText: 'Onde estou' })
-
-/**
- * Coarse grid scan for a point that is really inside the polygon — a centroid can
- * fall outside a concave município, and the fixture hands out an arbitrary one.
- */
-const interiorPointOf = (feature: BahiaMunicipalityFeature): GeoPoint => {
-  const { west, east, south, north } = featureBounds(feature)
-  const steps = 24
-
-  for (let row = 1; row < steps; row += 1) {
-    for (let column = 1; column < steps; column += 1) {
-      const point = {
-        lng: west + ((east - west) * column) / steps,
-        lat: south + ((north - south) * row) / steps,
-      }
-      if (featureContainsPoint(feature, point)) return point
-    }
-  }
-
-  throw new Error(`No interior point found for ${feature.properties.name}`)
-}
 
 /**
  * Farthest and nearest other município from a given one, by centroid. The fixture

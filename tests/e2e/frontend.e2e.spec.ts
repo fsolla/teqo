@@ -1778,7 +1778,15 @@ test.describe('Cards personalizados (S14)', () => {
     // conversion block (cards + newsletter) stays last.
     expect(order.indexOf('sound')).toBe(order.indexOf('story') + 1)
     expect(order.indexOf('cards')).toBe(order.indexOf('sound') + 1)
-    expect(order.indexOf('cards')).toBe(order.indexOf('newsletter') - 1)
+    // S39 — the Central sample is conditional (only while pieces are published,
+    // and the serial frontendConteudos spec may publish them mid-run), so the
+    // pin is agnostic: when present it sits between the cards and the newsletter.
+    expect(order.indexOf('cards')).toBeLessThan(order.indexOf('newsletter'))
+    const contentPieces = order.indexOf('content-pieces')
+    if (contentPieces !== -1) {
+      expect(contentPieces).toBeGreaterThan(order.indexOf('cards'))
+      expect(contentPieces).toBeLessThan(order.indexOf('newsletter'))
+    }
 
     const section = page.locator('section#cards')
     await expect(
