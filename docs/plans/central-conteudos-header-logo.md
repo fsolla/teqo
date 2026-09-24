@@ -43,7 +43,7 @@ No header da Central de Conteúdos pública (`/conteudos`), a marca lê muito me
 
 - **Vou apresentar dados?** Não.
 - **Decisões desbloqueadas:** N/A — correção de fidelidade visual; nenhum ator decide com número.
-- **Forma:** *adiada ao plano de implementação* — sem restrição de produto além da referência de peso visual acima.
+- **Forma:** _adiada ao plano de implementação_ — sem restrição de produto além da referência de peso visual acima.
 
 ## Dados da decisão (literais)
 
@@ -96,4 +96,4 @@ No header da Central de Conteúdos pública (`/conteudos`), a marca lê muito me
 3. Persona + job + aceite claros (sem jargão de stack)? 4/5 — aceite fala em peso visual; a aferição exige comparação em staging.
 4. Direção no codebase é hipótese (não contrato técnico)? 5/5 — arquivos e classes são literais de estado atual/evidência, não prescrição.
 5. Zero decisões duras de engenharia no plano? 4/5 — a questão em aberto recomenda decidir no gate; a escolha final (ativo vs compensação) fica para o gate/impl.
-Média: 4,6/5 — ≥4/5.
+   Média: 4,6/5 — ≥4/5.

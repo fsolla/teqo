@@ -6,88 +6,650 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <title>Design — S35 · Cards misturados ao catálogo</title>
     <style type="text/tailwindcss">
-      @theme { --font-sans: Arimo, Arial, sans-serif; }
-      :root { --red:#a21c1c;--kit:#e4102f;--blue:#184e92;--yellow:#ffe607;--cream:#fff8f2;--muted:#6c615e;--line:rgb(0 0 0/.12);--display:'Exo 2','Arial Black',sans-serif; }
-      *{box-sizing:border-box}.display{font-family:var(--display)}
-      .board{background:#e7e3e0;background-image:radial-gradient(rgb(24 78 146/.09) .7px,transparent .7px);background-size:18px 18px}
-      .frame{box-shadow:0 22px 60px rgb(39 25 22/.13)}.desktop{width:1280px}.phone{width:390px;border-radius:28px}.scene:after{content:'';height:1px;flex:1;background:#cfc9c5}
-      .field{min-height:44px;border:1px solid rgb(0 0 0/.18);border-radius:10px;background:#fff;padding:10px 13px;font-size:15px}
-      .chip{display:inline-flex;min-height:36px;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;background:#fff;padding:6px 11px;font-size:12px;font-weight:700}.active{border-color:rgb(24 78 146/.35);background:#eef4fb;color:#184e92}
-      .card{overflow:hidden;border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 8px 24px rgb(71 19 14/.07)}
-      .tag{display:inline-flex;min-height:23px;align-items:center;border-radius:999px;background:#eef4fb;padding:4px 8px;color:#184e92;font-size:11px;font-weight:800}
-      .alias{display:inline-flex;border:1px solid rgb(0 0 0/.1);border-radius:999px;background:#fff;padding:3px 7px;color:#6c615e;font-size:10px;font-weight:700}
-      .btn{display:inline-flex;min-height:44px;align-items:center;justify-content:center;border-radius:10px;border:1.5px solid rgb(162 28 28/.28);background:#fff;padding:9px 13px;color:#a21c1c;font-size:13px;font-weight:800}
-      .art{position:relative;display:grid;place-items:center;overflow:hidden;background:linear-gradient(145deg,#184e92,#0876ac);color:#fff}.art:before{content:'1313';position:absolute;font-family:var(--display);font-size:66px;font-weight:900;color:rgb(255 255 255/.08);transform:rotate(-8deg)}.art-red{background:linear-gradient(145deg,#e4102f,#a21c1c)}.art-light{background:linear-gradient(145deg,#eee9e5,#fff)}
-      .piece-art{display:grid;place-items:center;background:linear-gradient(135deg,#e5e2df,#f7f5f3);color:#6c615e;text-align:center;font-size:10px;font-weight:800;letter-spacing:.04em}
+      @theme {
+        --font-sans: Arimo, Arial, sans-serif;
+      }
+      :root {
+        --red: #a21c1c;
+        --kit: #e4102f;
+        --blue: #184e92;
+        --yellow: #ffe607;
+        --cream: #fff8f2;
+        --muted: #6c615e;
+        --line: rgb(0 0 0/0.12);
+        --display: 'Exo 2', 'Arial Black', sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      .display {
+        font-family: var(--display);
+      }
+      .board {
+        background: #e7e3e0;
+        background-image: radial-gradient(rgb(24 78 146/0.09) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .frame {
+        box-shadow: 0 22px 60px rgb(39 25 22/0.13);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .scene:after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #cfc9c5;
+      }
+      .field {
+        min-height: 44px;
+        border: 1px solid rgb(0 0 0/0.18);
+        border-radius: 10px;
+        background: #fff;
+        padding: 10px 13px;
+        font-size: 15px;
+      }
+      .chip {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 6px 11px;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .active {
+        border-color: rgb(24 78 146/0.35);
+        background: #eef4fb;
+        color: #184e92;
+      }
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgb(71 19 14/0.07);
+      }
+      .tag {
+        display: inline-flex;
+        min-height: 23px;
+        align-items: center;
+        border-radius: 999px;
+        background: #eef4fb;
+        padding: 4px 8px;
+        color: #184e92;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .alias {
+        display: inline-flex;
+        border: 1px solid rgb(0 0 0/0.1);
+        border-radius: 999px;
+        background: #fff;
+        padding: 3px 7px;
+        color: #6c615e;
+        font-size: 10px;
+        font-weight: 700;
+      }
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        border: 1.5px solid rgb(162 28 28/0.28);
+        background: #fff;
+        padding: 9px 13px;
+        color: #a21c1c;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .art {
+        position: relative;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: linear-gradient(145deg, #184e92, #0876ac);
+        color: #fff;
+      }
+      .art:before {
+        content: '1313';
+        position: absolute;
+        font-family: var(--display);
+        font-size: 66px;
+        font-weight: 900;
+        color: rgb(255 255 255/0.08);
+        transform: rotate(-8deg);
+      }
+      .art-red {
+        background: linear-gradient(145deg, #e4102f, #a21c1c);
+      }
+      .art-light {
+        background: linear-gradient(145deg, #eee9e5, #fff);
+      }
+      .piece-art {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #e5e2df, #f7f5f3);
+        color: #6c615e;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
     </style>
   </head>
   <body class="board min-h-screen text-black antialiased">
     <main class="mx-auto max-w-[1480px] space-y-14 px-4 py-12 md:px-8">
       <header class="max-w-3xl">
-        <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white">S35 · revisão do gate</span>
+        <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white"
+          >S35 · revisão do gate</span
+        >
         <h1 class="display mt-4 text-4xl font-black">Cards e peças vivem no mesmo board.</h1>
-        <p class="mt-2 text-sm leading-6 text-[#6c615e]">Cada modelo é um item individual na ordem normal do catálogo. Não existe faixa, cabeçalho ou agrupamento próprio para cards.</p>
+        <p class="mt-2 text-sm leading-6 text-[#6c615e]">
+          Cada modelo é um item individual na ordem normal do catálogo. Não existe faixa, cabeçalho
+          ou agrupamento próprio para cards.
+        </p>
       </header>
 
       <section>
-        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENA 01</span><h2>Board padrão · desktop 1280 · peças e modelos misturados</h2></div>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2>Board padrão · desktop 1280 · peças e modelos misturados</h2>
+        </div>
         <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
-          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10"><div class="h-9 w-44 rounded bg-white/20"></div><b class="text-sm text-white">Central de Conteúdos</b></header>
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <div class="h-9 w-44 rounded bg-white/20"></div>
+            <b class="text-sm text-white">Central de Conteúdos</b>
+          </header>
           <div class="mx-auto max-w-6xl px-10 py-10">
-            <div class="rounded-xl bg-[#fff8f2] p-4"><div class="field text-[#6c615e]">Encontre uma peça por assunto, cidade ou tema…</div><div class="mt-3 flex gap-2"><span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span><span class="chip">Região⌄</span><span class="chip">Tema⌄</span><span class="chip">Instituição⌄</span></div></div>
-            <div class="mt-8"><h2 class="display text-2xl font-black">Escolha, compartilhe e peça voto</h2><p class="mt-1 text-sm text-[#6c615e]">Uma lista só: peças oficiais e convites para criar seu card.</p></div>
-            <div class="mt-5 grid grid-cols-3 gap-6">
-              <article class="card"><div class="piece-art relative aspect-video"><span>NEEDS ASSET · POSTER REAL</span><span class="absolute grid size-12 place-items-center rounded-full bg-[#ffe607] text-xl text-black shadow">▶</span></div><div class="p-4"><span class="tag">Vídeo</span><h3 class="mt-2 font-extrabold">Título da peça publicada</h3><p class="mt-1 text-xs text-[#6c615e]">Tema · Cidade</p><div class="mt-4 grid grid-cols-2 gap-2"><span class="btn">Baixar</span><span class="btn">Compartilhar</span></div></div></article>
-              <article class="card"><div class="art aspect-video"><b class="relative display text-2xl">#SOU ____</b></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Card com seu nome</h3><p class="mt-1 text-xs leading-5 text-[#6c615e]">Coloque seu nome no card oficial.</p><div class="mt-2 flex gap-1"><span class="alias">nome</span></div><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-              <article class="card"><div class="piece-art aspect-video">NEEDS ASSET · FOTO REAL</div><div class="p-4"><span class="tag">Foto</span><h3 class="mt-2 font-extrabold">Outra peça publicada</h3><p class="mt-1 text-xs text-[#6c615e]">Tema da peça</p><div class="mt-4 grid grid-cols-2 gap-2"><span class="btn">Baixar</span><span class="btn">Compartilhar</span></div></div></article>
-              <article class="card"><div class="art aspect-video"><div class="relative text-center"><b class="display block bg-[#e4102f] px-4 py-1 text-lg text-[#ffeb00]">TIME DE</b><b class="display mt-1 block bg-[#0061a5] px-4 py-1 text-2xl">VOCÊ</b></div><span class="absolute right-2 bottom-2 text-[9px] font-black">PLACEHOLDER · ARTE EXISTENTE</span></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Time de você</h3><p class="mt-1 text-xs text-[#6c615e]">Entre para o time com sua foto.</p><div class="mt-2 flex gap-1"><span class="alias">santinho</span></div><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-              <article class="card"><div class="piece-art relative aspect-video"><span>NEEDS ASSET · CAPA REAL</span><span class="absolute grid size-12 place-items-center rounded-full bg-[#ffe607] text-xl text-black shadow">▶</span></div><div class="p-4"><span class="tag">Áudio</span><h3 class="mt-2 font-extrabold">Mensagem para compartilhar</h3><p class="mt-1 text-xs text-[#6c615e]">Campanha</p><div class="mt-4 grid grid-cols-2 gap-2"><span class="btn">Baixar</span><span class="btn">Compartilhar</span></div></div></article>
-              <article class="card border-2 border-[#e4102f]"><div class="art art-red aspect-video"><span class="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#184e92]">NOVO</span><b class="relative display text-xl text-[#ffeb00]">MINHA COLINHA</b><span class="absolute right-2 bottom-2 text-[9px] font-black">PLACEHOLDER · ARTE EXISTENTE</span></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Minha colinha</h3><p class="mt-1 text-xs text-[#6c615e]">Monte sua cola de votação.</p><div class="mt-2 flex gap-1"><span class="alias">santinho</span><span class="alias">colinha</span></div><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
+            <div class="rounded-xl bg-[#fff8f2] p-4">
+              <div class="field text-[#6c615e]">Encontre uma peça por assunto, cidade ou tema…</div>
+              <div class="mt-3 flex gap-2">
+                <span class="chip">Tipo⌄</span><span class="chip">Cidade⌄</span
+                ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+                ><span class="chip">Instituição⌄</span>
+              </div>
             </div>
-            <div class="mt-7 rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4 text-sm leading-6 text-[#184e92]"><b>Regra do gate:</b> a ordem acima mistura itens por relevância/ordem do catálogo. “Card” é apenas o tipo do item — nunca um cabeçalho ou uma seção dentro do board.</div>
+            <div class="mt-8">
+              <h2 class="display text-2xl font-black">Escolha, compartilhe e peça voto</h2>
+              <p class="mt-1 text-sm text-[#6c615e]">
+                Uma lista só: peças oficiais e convites para criar seu card.
+              </p>
+            </div>
+            <div class="mt-5 grid grid-cols-3 gap-6">
+              <article class="card">
+                <div class="piece-art relative aspect-video">
+                  <span>NEEDS ASSET · POSTER REAL</span
+                  ><span
+                    class="absolute grid size-12 place-items-center rounded-full bg-[#ffe607] text-xl text-black shadow"
+                    >▶</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Vídeo</span>
+                  <h3 class="mt-2 font-extrabold">Título da peça publicada</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Tema · Cidade</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <span class="btn">Baixar</span><span class="btn">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art aspect-video">
+                  <b class="relative display text-2xl">#SOU ____</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Card com seu nome</h3>
+                  <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                    Coloque seu nome no card oficial.
+                  </p>
+                  <div class="mt-2 flex gap-1"><span class="alias">nome</span></div>
+                  <a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card">
+                <div class="piece-art aspect-video">NEEDS ASSET · FOTO REAL</div>
+                <div class="p-4">
+                  <span class="tag">Foto</span>
+                  <h3 class="mt-2 font-extrabold">Outra peça publicada</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Tema da peça</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <span class="btn">Baixar</span><span class="btn">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art aspect-video">
+                  <div class="relative text-center">
+                    <b class="display block bg-[#e4102f] px-4 py-1 text-lg text-[#ffeb00]"
+                      >TIME DE</b
+                    ><b class="display mt-1 block bg-[#0061a5] px-4 py-1 text-2xl">VOCÊ</b>
+                  </div>
+                  <span class="absolute right-2 bottom-2 text-[9px] font-black"
+                    >PLACEHOLDER · ARTE EXISTENTE</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Time de você</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Entre para o time com sua foto.</p>
+                  <div class="mt-2 flex gap-1"><span class="alias">santinho</span></div>
+                  <a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card">
+                <div class="piece-art relative aspect-video">
+                  <span>NEEDS ASSET · CAPA REAL</span
+                  ><span
+                    class="absolute grid size-12 place-items-center rounded-full bg-[#ffe607] text-xl text-black shadow"
+                    >▶</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Áudio</span>
+                  <h3 class="mt-2 font-extrabold">Mensagem para compartilhar</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Campanha</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <span class="btn">Baixar</span><span class="btn">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+              <article class="card border-2 border-[#e4102f]">
+                <div class="art art-red aspect-video">
+                  <span
+                    class="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#184e92]"
+                    >NOVO</span
+                  ><b class="relative display text-xl text-[#ffeb00]">MINHA COLINHA</b
+                  ><span class="absolute right-2 bottom-2 text-[9px] font-black"
+                    >PLACEHOLDER · ARTE EXISTENTE</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Minha colinha</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Monte sua cola de votação.</p>
+                  <div class="mt-2 flex gap-1">
+                    <span class="alias">santinho</span><span class="alias">colinha</span>
+                  </div>
+                  <a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+            </div>
+            <div
+              class="mt-7 rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4 text-sm leading-6 text-[#184e92]"
+            >
+              <b>Regra do gate:</b> a ordem acima mistura itens por relevância/ordem do catálogo.
+              “Card” é apenas o tipo do item — nunca um cabeçalho ou uma seção dentro do board.
+            </div>
           </div>
         </div>
       </section>
 
       <section>
-        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENA 02</span><h2>Mobile 390 · board misto e Tipo “Card” ativo</h2></div>
-        <div class="flex flex-wrap justify-center gap-8"><div class="phone frame min-h-[960px] overflow-hidden bg-white"><header class="flex h-14 items-center justify-between bg-[#ae1603] px-4"><div class="h-7 w-32 rounded bg-white/20"></div><span class="text-white">☰</span></header><div class="p-4"><div class="field text-sm text-[#6c615e]">Busque uma peça ou card…</div><div class="mt-3 flex gap-2 overflow-hidden"><span class="chip shrink-0">Tipo⌄</span><span class="chip shrink-0">Cidade⌄</span><span class="chip shrink-0">Tema⌄</span></div><h2 class="display mt-6 text-2xl font-black">Escolha, compartilhe e peça voto</h2><div class="mt-4 space-y-4">
-          <article class="card grid grid-cols-[128px_1fr]"><div class="piece-art min-h-40">NEEDS ASSET<br/>POSTER REAL</div><div class="p-4"><span class="tag">Vídeo</span><h3 class="mt-2 text-sm font-extrabold">Título da peça publicada</h3><a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a></div></article>
-          <article class="card grid grid-cols-[128px_1fr]"><div class="art min-h-40"><b class="relative display text-xl">#SOU</b></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 text-sm font-extrabold">Card com seu nome</h3><span class="alias mt-2">nome</span><a class="mt-3 block text-xs font-bold text-[#a21c1c]">Escolher →</a></div></article>
-          <article class="card grid grid-cols-[128px_1fr]"><div class="piece-art min-h-40">NEEDS ASSET<br/>FOTO REAL</div><div class="p-4"><span class="tag">Foto</span><h3 class="mt-2 text-sm font-extrabold">Outra peça publicada</h3><a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a></div></article>
-          <article class="card grid grid-cols-[128px_1fr]"><div class="art art-red min-h-40"><b class="relative display text-center text-lg text-[#ffeb00]">MINHA<br/>COLINHA</b></div><div class="p-4"><span class="tag">Card · NOVO</span><h3 class="mt-2 text-sm font-extrabold">Minha colinha</h3><div class="mt-2 flex gap-1"><span class="alias">santinho</span><span class="alias">colinha</span></div><a class="mt-3 block text-xs font-bold text-[#a21c1c]">Escolher →</a></div></article>
-        </div><p class="mt-5 text-center text-[11px] leading-4 text-[#6c615e]">Sem divisor “Cards”. A alternância peça → card → peça é intencional.</p></div></div>
-          <div class="phone frame min-h-[960px] overflow-hidden bg-white"><header class="flex h-14 items-center justify-between bg-[#ae1603] px-4"><div class="h-7 w-32 rounded bg-white/20"></div><span class="text-white">☰</span></header><div class="p-4"><div class="field text-sm text-[#6c615e]">Busque um card…</div><div class="mt-3 flex gap-2 overflow-hidden"><span class="chip active shrink-0">Tipo · Card ×</span><span class="chip shrink-0">Tema⌄</span></div><h2 class="display mt-6 text-2xl font-black">Escolha, compartilhe e peça voto</h2><p class="mt-1 text-xs text-[#6c615e]">6 itens com o filtro aplicado.</p><div class="mt-4 space-y-3">
-            <article class="card grid grid-cols-[96px_1fr]"><div class="art min-h-28"><b class="relative display">#SOU</b></div><div class="p-3"><span class="tag">Card</span><h3 class="mt-1 text-sm font-extrabold">Card com seu nome</h3><span class="alias mt-1">nome</span></div></article>
-            <article class="card grid grid-cols-[96px_1fr]"><div class="art art-light min-h-28"><span class="relative text-2xl text-[#a21c1c]">◎</span></div><div class="p-3"><span class="tag">Card</span><h3 class="mt-1 text-sm font-extrabold">Moldura quadrada</h3><span class="alias mt-1">foto de perfil</span></div></article>
-            <article class="card grid grid-cols-[96px_1fr]"><div class="art art-light min-h-28"><span class="relative text-2xl text-[#a21c1c]">▯</span></div><div class="p-3"><span class="tag">Card</span><h3 class="mt-1 text-sm font-extrabold">Moldura vertical</h3><span class="alias mt-1">foto de perfil</span></div></article>
-            <article class="card grid grid-cols-[96px_1fr]"><div class="art min-h-28"><b class="relative display text-center text-xs">TIME DE<br/>VOCÊ</b></div><div class="p-3"><span class="tag">Card</span><h3 class="mt-1 text-sm font-extrabold">Time de você</h3><span class="alias mt-1">santinho</span></div></article>
-            <article class="card grid grid-cols-[96px_1fr]"><div class="art art-red min-h-28"><b class="relative display text-center text-xs text-[#ffeb00]">TIME DO<br/>ESTADUAL</b></div><div class="p-3"><span class="tag">Card</span><h3 class="mt-1 text-sm font-extrabold">Time do estadual</h3><span class="alias mt-1">estadual</span></div></article>
-            <article class="card grid grid-cols-[96px_1fr] border-2 border-[#e4102f]"><div class="art art-red min-h-28"><b class="relative display text-center text-xs text-[#ffeb00]">MINHA<br/>COLINHA</b></div><div class="p-3"><span class="tag">Card · NOVO</span><h3 class="mt-1 text-sm font-extrabold">Minha colinha</h3><div class="mt-1 flex gap-1"><span class="alias">santinho</span><span class="alias">colinha</span></div></div></article>
-          </div></div></div></div>
-      </section>
-
-      <section>
-        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENA 03</span><h2>Tipo “Card” ativo · os 6 modelos, sem cabeçalho próprio</h2></div>
-        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white"><header class="flex h-16 items-center justify-between bg-[#ae1603] px-10"><div class="h-9 w-44 rounded bg-white/20"></div><b class="text-sm text-white">Central de Conteúdos</b></header><div class="mx-auto max-w-6xl px-10 py-10"><div class="rounded-xl bg-[#fff8f2] p-4"><div class="field text-[#6c615e]">Encontre uma peça por assunto, cidade ou tema…</div><div class="mt-3 flex gap-2"><span class="chip active">Tipo · Card ×</span><span class="chip">Cidade⌄</span><span class="chip">Região⌄</span><span class="chip">Tema⌄</span><span class="chip">Instituição⌄</span></div></div><div class="mt-8 flex items-end justify-between"><div><h2 class="display text-2xl font-black">Escolha, compartilhe e peça voto</h2><p class="mt-1 text-sm text-[#6c615e]">Resultados do filtro aplicado.</p></div><span class="text-xs text-[#6c615e]">6 itens</span></div>
-          <div class="mt-5 grid grid-cols-3 gap-6">
-            <article class="card"><div class="art aspect-video"><b class="relative display text-2xl">#SOU ____</b></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Card com seu nome</h3><p class="mt-1 text-xs text-[#6c615e]">Coloque seu nome no card oficial.</p><span class="alias mt-2">nome</span><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-            <article class="card"><div class="art art-light aspect-video"><div class="relative grid size-20 place-items-center rounded-full border-2 border-dashed border-[#a21c1c]/40 text-3xl text-[#a21c1c]">◎</div></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Moldura quadrada</h3><p class="mt-1 text-xs text-[#6c615e]">Foto de perfil quadrada.</p><span class="alias mt-2">foto de perfil</span><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-            <article class="card"><div class="art art-light aspect-video"><div class="relative grid h-24 w-16 place-items-center rounded-lg border-2 border-dashed border-[#a21c1c]/40 text-3xl text-[#a21c1c]">◎</div></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Moldura vertical</h3><p class="mt-1 text-xs text-[#6c615e]">Foto vertical para stories.</p><span class="alias mt-2">foto de perfil</span><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-            <article class="card"><div class="art aspect-video"><b class="relative display text-xl">TIME DE VOCÊ</b></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Time de você</h3><p class="mt-1 text-xs text-[#6c615e]">Entre para o time com sua foto.</p><span class="alias mt-2">santinho</span><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-            <article class="card"><div class="art art-red aspect-video"><b class="relative display text-xl text-[#ffeb00]">TIME DO ESTADUAL</b></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Time do estadual</h3><p class="mt-1 text-xs text-[#6c615e]">Escolha o estadual e personalize.</p><span class="alias mt-2">estadual</span><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
-            <article class="card border-2 border-[#e4102f]"><div class="art art-red aspect-video"><span class="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#184e92]">NOVO</span><b class="relative display text-xl text-[#ffeb00]">MINHA COLINHA</b></div><div class="p-4"><span class="tag">Card</span><h3 class="mt-2 font-extrabold">Minha colinha</h3><p class="mt-1 text-xs text-[#6c615e]">Monte sua cola de votação.</p><div class="mt-2 flex gap-1"><span class="alias">santinho</span><span class="alias">colinha</span></div><a class="btn mt-4 w-full">Escolher este modelo →</a></div></article>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 02</span>
+          <h2>Mobile 390 · board misto e Tipo “Card” ativo</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[960px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4">
+              <div class="h-7 w-32 rounded bg-white/20"></div>
+              <span class="text-white">☰</span>
+            </header>
+            <div class="p-4">
+              <div class="field text-sm text-[#6c615e]">Busque uma peça ou card…</div>
+              <div class="mt-3 flex gap-2 overflow-hidden">
+                <span class="chip shrink-0">Tipo⌄</span><span class="chip shrink-0">Cidade⌄</span
+                ><span class="chip shrink-0">Tema⌄</span>
+              </div>
+              <h2 class="display mt-6 text-2xl font-black">Escolha, compartilhe e peça voto</h2>
+              <div class="mt-4 space-y-4">
+                <article class="card grid grid-cols-[128px_1fr]">
+                  <div class="piece-art min-h-40">NEEDS ASSET<br />POSTER REAL</div>
+                  <div class="p-4">
+                    <span class="tag">Vídeo</span>
+                    <h3 class="mt-2 text-sm font-extrabold">Título da peça publicada</h3>
+                    <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[128px_1fr]">
+                  <div class="art min-h-40"><b class="relative display text-xl">#SOU</b></div>
+                  <div class="p-4">
+                    <span class="tag">Card</span>
+                    <h3 class="mt-2 text-sm font-extrabold">Card com seu nome</h3>
+                    <span class="alias mt-2">nome</span
+                    ><a class="mt-3 block text-xs font-bold text-[#a21c1c]">Escolher →</a>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[128px_1fr]">
+                  <div class="piece-art min-h-40">NEEDS ASSET<br />FOTO REAL</div>
+                  <div class="p-4">
+                    <span class="tag">Foto</span>
+                    <h3 class="mt-2 text-sm font-extrabold">Outra peça publicada</h3>
+                    <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Ver peça →</a>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[128px_1fr]">
+                  <div class="art art-red min-h-40">
+                    <b class="relative display text-center text-lg text-[#ffeb00]"
+                      >MINHA<br />COLINHA</b
+                    >
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Card · NOVO</span>
+                    <h3 class="mt-2 text-sm font-extrabold">Minha colinha</h3>
+                    <div class="mt-2 flex gap-1">
+                      <span class="alias">santinho</span><span class="alias">colinha</span>
+                    </div>
+                    <a class="mt-3 block text-xs font-bold text-[#a21c1c]">Escolher →</a>
+                  </div>
+                </article>
+              </div>
+              <p class="mt-5 text-center text-[11px] leading-4 text-[#6c615e]">
+                Sem divisor “Cards”. A alternância peça → card → peça é intencional.
+              </p>
+            </div>
           </div>
-        </div></div>
+          <div class="phone frame min-h-[960px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4">
+              <div class="h-7 w-32 rounded bg-white/20"></div>
+              <span class="text-white">☰</span>
+            </header>
+            <div class="p-4">
+              <div class="field text-sm text-[#6c615e]">Busque um card…</div>
+              <div class="mt-3 flex gap-2 overflow-hidden">
+                <span class="chip active shrink-0">Tipo · Card ×</span
+                ><span class="chip shrink-0">Tema⌄</span>
+              </div>
+              <h2 class="display mt-6 text-2xl font-black">Escolha, compartilhe e peça voto</h2>
+              <p class="mt-1 text-xs text-[#6c615e]">6 itens com o filtro aplicado.</p>
+              <div class="mt-4 space-y-3">
+                <article class="card grid grid-cols-[96px_1fr]">
+                  <div class="art min-h-28"><b class="relative display">#SOU</b></div>
+                  <div class="p-3">
+                    <span class="tag">Card</span>
+                    <h3 class="mt-1 text-sm font-extrabold">Card com seu nome</h3>
+                    <span class="alias mt-1">nome</span>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[96px_1fr]">
+                  <div class="art art-light min-h-28">
+                    <span class="relative text-2xl text-[#a21c1c]">◎</span>
+                  </div>
+                  <div class="p-3">
+                    <span class="tag">Card</span>
+                    <h3 class="mt-1 text-sm font-extrabold">Moldura quadrada</h3>
+                    <span class="alias mt-1">foto de perfil</span>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[96px_1fr]">
+                  <div class="art art-light min-h-28">
+                    <span class="relative text-2xl text-[#a21c1c]">▯</span>
+                  </div>
+                  <div class="p-3">
+                    <span class="tag">Card</span>
+                    <h3 class="mt-1 text-sm font-extrabold">Moldura vertical</h3>
+                    <span class="alias mt-1">foto de perfil</span>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[96px_1fr]">
+                  <div class="art min-h-28">
+                    <b class="relative display text-center text-xs">TIME DE<br />VOCÊ</b>
+                  </div>
+                  <div class="p-3">
+                    <span class="tag">Card</span>
+                    <h3 class="mt-1 text-sm font-extrabold">Time de você</h3>
+                    <span class="alias mt-1">santinho</span>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[96px_1fr]">
+                  <div class="art art-red min-h-28">
+                    <b class="relative display text-center text-xs text-[#ffeb00]"
+                      >TIME DO<br />ESTADUAL</b
+                    >
+                  </div>
+                  <div class="p-3">
+                    <span class="tag">Card</span>
+                    <h3 class="mt-1 text-sm font-extrabold">Time do estadual</h3>
+                    <span class="alias mt-1">estadual</span>
+                  </div>
+                </article>
+                <article class="card grid grid-cols-[96px_1fr] border-2 border-[#e4102f]">
+                  <div class="art art-red min-h-28">
+                    <b class="relative display text-center text-xs text-[#ffeb00]"
+                      >MINHA<br />COLINHA</b
+                    >
+                  </div>
+                  <div class="p-3">
+                    <span class="tag">Card · NOVO</span>
+                    <h3 class="mt-1 text-sm font-extrabold">Minha colinha</h3>
+                    <div class="mt-1 flex gap-1">
+                      <span class="alias">santinho</span><span class="alias">colinha</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section>
-        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]"><span>CENAS 04–05</span><h2>Busca por apelido · “santinho” e “foto de perfil”</h2></div>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 03</span>
+          <h2>Tipo “Card” ativo · os 6 modelos, sem cabeçalho próprio</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <div class="h-9 w-44 rounded bg-white/20"></div>
+            <b class="text-sm text-white">Central de Conteúdos</b>
+          </header>
+          <div class="mx-auto max-w-6xl px-10 py-10">
+            <div class="rounded-xl bg-[#fff8f2] p-4">
+              <div class="field text-[#6c615e]">Encontre uma peça por assunto, cidade ou tema…</div>
+              <div class="mt-3 flex gap-2">
+                <span class="chip active">Tipo · Card ×</span><span class="chip">Cidade⌄</span
+                ><span class="chip">Região⌄</span><span class="chip">Tema⌄</span
+                ><span class="chip">Instituição⌄</span>
+              </div>
+            </div>
+            <div class="mt-8 flex items-end justify-between">
+              <div>
+                <h2 class="display text-2xl font-black">Escolha, compartilhe e peça voto</h2>
+                <p class="mt-1 text-sm text-[#6c615e]">Resultados do filtro aplicado.</p>
+              </div>
+              <span class="text-xs text-[#6c615e]">6 itens</span>
+            </div>
+            <div class="mt-5 grid grid-cols-3 gap-6">
+              <article class="card">
+                <div class="art aspect-video">
+                  <b class="relative display text-2xl">#SOU ____</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Card com seu nome</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Coloque seu nome no card oficial.</p>
+                  <span class="alias mt-2">nome</span
+                  ><a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art art-light aspect-video">
+                  <div
+                    class="relative grid size-20 place-items-center rounded-full border-2 border-dashed border-[#a21c1c]/40 text-3xl text-[#a21c1c]"
+                  >
+                    ◎
+                  </div>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Moldura quadrada</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Foto de perfil quadrada.</p>
+                  <span class="alias mt-2">foto de perfil</span
+                  ><a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art art-light aspect-video">
+                  <div
+                    class="relative grid h-24 w-16 place-items-center rounded-lg border-2 border-dashed border-[#a21c1c]/40 text-3xl text-[#a21c1c]"
+                  >
+                    ◎
+                  </div>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Moldura vertical</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Foto vertical para stories.</p>
+                  <span class="alias mt-2">foto de perfil</span
+                  ><a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art aspect-video">
+                  <b class="relative display text-xl">TIME DE VOCÊ</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Time de você</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Entre para o time com sua foto.</p>
+                  <span class="alias mt-2">santinho</span
+                  ><a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art art-red aspect-video">
+                  <b class="relative display text-xl text-[#ffeb00]">TIME DO ESTADUAL</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Time do estadual</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Escolha o estadual e personalize.</p>
+                  <span class="alias mt-2">estadual</span
+                  ><a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+              <article class="card border-2 border-[#e4102f]">
+                <div class="art art-red aspect-video">
+                  <span
+                    class="absolute top-2 right-2 rounded-full bg-white px-2 py-1 text-[9px] font-black text-[#184e92]"
+                    >NOVO</span
+                  ><b class="relative display text-xl text-[#ffeb00]">MINHA COLINHA</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h3 class="mt-2 font-extrabold">Minha colinha</h3>
+                  <p class="mt-1 text-xs text-[#6c615e]">Monte sua cola de votação.</p>
+                  <div class="mt-2 flex gap-1">
+                    <span class="alias">santinho</span><span class="alias">colinha</span>
+                  </div>
+                  <a class="btn mt-4 w-full">Escolher este modelo →</a>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENAS 04–05</span>
+          <h2>Busca por apelido · “santinho” e “foto de perfil”</h2>
+        </div>
         <div class="grid gap-8 lg:grid-cols-2">
-          <div class="frame rounded-xl bg-white p-7"><div class="field flex justify-between"><span>santinho</span><b class="text-[#6c615e]">×</b></div><div class="mt-3"><span class="chip active">Busca · “santinho” ×</span></div><h3 class="display mt-7 text-xl font-black">2 itens encontrados</h3><div class="mt-4 grid grid-cols-2 gap-4"><article class="card"><div class="art aspect-video"><b class="relative display text-xl">TIME DE VOCÊ</b></div><div class="p-4"><span class="tag">Card</span><h4 class="mt-2 font-extrabold">Time de você</h4><span class="alias mt-2">santinho</span></div></article><article class="card"><div class="art art-red aspect-video"><b class="relative display text-xl text-[#ffeb00]">MINHA COLINHA</b></div><div class="p-4"><span class="tag">Card</span><h4 class="mt-2 font-extrabold">Minha colinha</h4><div class="mt-2 flex gap-1"><span class="alias">santinho</span><span class="alias">colinha</span></div></div></article></div></div>
-          <div class="frame rounded-xl bg-white p-7"><div class="field flex justify-between"><span>foto de perfil</span><b class="text-[#6c615e]">×</b></div><div class="mt-3"><span class="chip active">Busca · “foto de perfil” ×</span></div><h3 class="display mt-7 text-xl font-black">2 itens encontrados</h3><div class="mt-4 grid grid-cols-2 gap-4"><article class="card"><div class="art art-light aspect-video"><div class="relative grid size-16 place-items-center rounded-full border-2 border-dashed border-[#a21c1c]/40 text-[#a21c1c]">◎</div></div><div class="p-4"><span class="tag">Card</span><h4 class="mt-2 font-extrabold">Moldura quadrada</h4><span class="alias mt-2">foto de perfil</span></div></article><article class="card"><div class="art art-light aspect-video"><div class="relative grid h-20 w-12 place-items-center rounded border-2 border-dashed border-[#a21c1c]/40 text-[#a21c1c]">◎</div></div><div class="p-4"><span class="tag">Card</span><h4 class="mt-2 font-extrabold">Moldura vertical</h4><span class="alias mt-2">foto de perfil</span></div></article></div></div>
+          <div class="frame rounded-xl bg-white p-7">
+            <div class="field flex justify-between">
+              <span>santinho</span><b class="text-[#6c615e]">×</b>
+            </div>
+            <div class="mt-3"><span class="chip active">Busca · “santinho” ×</span></div>
+            <h3 class="display mt-7 text-xl font-black">2 itens encontrados</h3>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <article class="card">
+                <div class="art aspect-video">
+                  <b class="relative display text-xl">TIME DE VOCÊ</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h4 class="mt-2 font-extrabold">Time de você</h4>
+                  <span class="alias mt-2">santinho</span>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art art-red aspect-video">
+                  <b class="relative display text-xl text-[#ffeb00]">MINHA COLINHA</b>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h4 class="mt-2 font-extrabold">Minha colinha</h4>
+                  <div class="mt-2 flex gap-1">
+                    <span class="alias">santinho</span><span class="alias">colinha</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+          <div class="frame rounded-xl bg-white p-7">
+            <div class="field flex justify-between">
+              <span>foto de perfil</span><b class="text-[#6c615e]">×</b>
+            </div>
+            <div class="mt-3"><span class="chip active">Busca · “foto de perfil” ×</span></div>
+            <h3 class="display mt-7 text-xl font-black">2 itens encontrados</h3>
+            <div class="mt-4 grid grid-cols-2 gap-4">
+              <article class="card">
+                <div class="art art-light aspect-video">
+                  <div
+                    class="relative grid size-16 place-items-center rounded-full border-2 border-dashed border-[#a21c1c]/40 text-[#a21c1c]"
+                  >
+                    ◎
+                  </div>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h4 class="mt-2 font-extrabold">Moldura quadrada</h4>
+                  <span class="alias mt-2">foto de perfil</span>
+                </div>
+              </article>
+              <article class="card">
+                <div class="art art-light aspect-video">
+                  <div
+                    class="relative grid h-20 w-12 place-items-center rounded border-2 border-dashed border-[#a21c1c]/40 text-[#a21c1c]"
+                  >
+                    ◎
+                  </div>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Card</span>
+                  <h4 class="mt-2 font-extrabold">Moldura vertical</h4>
+                  <span class="alias mt-2">foto de perfil</span>
+                </div>
+              </article>
+            </div>
+          </div>
         </div>
-        <div class="mt-7 grid gap-4 md:grid-cols-2"><div class="rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4 text-sm leading-6 text-[#184e92]"><b>Faceta geográfica ativa:</b> os seis modelos somem, pois não são territoriais. Uma peça publicada de tipo Card continua seguindo a regra normal das peças.</div><div class="rounded-xl border border-dashed bg-white p-4 text-sm leading-6 text-[#6c615e]"><b class="text-black">Sem convite duplicado:</b> o antigo tile “Card personalizado” foi removido. O estúdio segue acessível por cada modelo e pelo estado vazio já existente.</div></div>
+        <div class="mt-7 grid gap-4 md:grid-cols-2">
+          <div
+            class="rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4 text-sm leading-6 text-[#184e92]"
+          >
+            <b>Faceta geográfica ativa:</b> os seis modelos somem, pois não são territoriais. Uma
+            peça publicada de tipo Card continua seguindo a regra normal das peças.
+          </div>
+          <div
+            class="rounded-xl border border-dashed bg-white p-4 text-sm leading-6 text-[#6c615e]"
+          >
+            <b class="text-black">Sem convite duplicado:</b> o antigo tile “Card personalizado” foi
+            removido. O estúdio segue acessível por cada modelo e pelo estado vazio já existente.
+          </div>
+        </div>
       </section>
     </main>
   </body>
