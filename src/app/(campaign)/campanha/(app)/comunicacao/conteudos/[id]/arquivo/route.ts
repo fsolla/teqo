@@ -17,6 +17,7 @@ import { getCampaignUser } from '@/utilities/campaignAuth'
 import { CAMPAIGN_AUTH_REQUIRED_MESSAGE } from '@/utilities/campaignFormActionError'
 import { campaignJsonMutationErrorResponse } from '@/utilities/campaignJsonMutationRoute'
 import { attachContentPieceMedia } from '@/utilities/content/contentPieceUpload'
+import { loadPrivateMediaForActor } from '@/utilities/privateMedia/privateMediaGate'
 import {
   buildPrivateMediaResponse,
   resolvePrivateMediaStaticDir,
@@ -30,9 +31,10 @@ export const dynamic = 'force-dynamic'
 /**
  * C211 — the only door to a piece file. Lives under `/campanha` because the
  * `campaign-token` cookie is scoped to that path (a `<video>`/`<img>` sends the
- * cookie, never an Authorization header). The gate is the same communication
- * catalog predicate as the collection access, and every denial is a silent
- * `404` so the route never leaks which pieces exist.
+ * cookie, never an Authorization header). The gate is the shared
+ * `loadPrivateMediaForActor` (same communication catalog predicate as the
+ * collection access, no kill switch over the piece status), and every denial is
+ * a silent `404` so the route never leaks which pieces exist.
  *
  * `GET` serves the archived file (range/download). `POST` attaches the original
  * file to a link piece as a RAW body — the "Anexar arquivo original" action,
@@ -55,27 +57,20 @@ export const GET = async (
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ): Promise<Response> => {
-  const user = await getCampaignUser()
-  if (!user || !canReadCommunicationCatalog(user.role)) return notFound()
-
-  const pieceId = await pieceIdFrom(params)
-  if (pieceId === null) return notFound()
-
+  const { id } = await params
   const payload = await getPayload({ config })
-  const piece = await payload
-    .findByID({
-      collection: 'contentPiece',
-      id: pieceId,
-      depth: 1,
-      select: { media: true },
-      user,
-      overrideAccess: false,
-    })
-    .catch(() => null)
-  if (!piece?.media || typeof piece.media !== 'object') return notFound()
+  const found = await loadPrivateMediaForActor({
+    payload,
+    collection: 'contentPiece',
+    id: Number(id),
+    select: { media: true },
+    isServable: () => true,
+    artifactOf: (piece) => piece.media,
+  })
+  if (!found) return notFound()
 
   return buildPrivateMediaResponse({
-    media: piece.media,
+    media: found.media,
     staticDir: resolvePrivateMediaStaticDir(payload, CONTENT_MEDIA_SLUG),
     rangeHeader: request.headers.get('range'),
     download: new URL(request.url).searchParams.get('download') === '1',
