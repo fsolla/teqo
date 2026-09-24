@@ -191,3 +191,50 @@ describe('buildSpeechListWhere theme expansion (C192)', () => {
     expect(buildSpeechListWhere(state, [])).toEqual(buildSpeechListWhere(state))
   })
 })
+
+// C216 — the web source derives `origin: web` from the state and has no Fase
+// facet; the duration-sort gate only exists there.
+describe('buildSpeechListWhere web source (C216)', () => {
+  const web = { origin: { equals: 'web' } }
+
+  it('keeps only the web discriminator without filters', () => {
+    expect(buildSpeechListWhere(parseSpeechListParams({ source: 'internet' }))).toEqual({
+      and: [web],
+    })
+  })
+
+  it('assembles the facet filters and ignores a phase that slipped through', () => {
+    const state = parseSpeechListParams({
+      source: 'internet',
+      year: '2026',
+      topic: ['saude'],
+      municipality: '12',
+      phase: 'Ordem do Dia',
+    })
+
+    expect(buildSpeechListWhere(state)).toEqual({
+      and: [
+        web,
+        { year: { in: [2026] } },
+        { topics: { in: ['saude'] } },
+        { mentionedMunicipalities: { in: [12] } },
+      ],
+    })
+  })
+
+  it('searches the normalized text and the raw keyword branch (the row may have neither)', () => {
+    expect(buildSpeechListWhere(parseSpeechListParams({ source: 'internet', q: 'SUS' }))).toEqual({
+      and: [web, { or: [{ searchText: { like: 'sus' } }, { keywords: { contains: 'SUS' } }] }],
+    })
+  })
+
+  it('gates the duration orders on a measured duration', () => {
+    expect(
+      buildSpeechListWhere(parseSpeechListParams({ source: 'internet', sort: 'duracao_maior' })),
+    ).toEqual({ and: [web, { durationSeconds: { exists: true } }] })
+
+    expect(buildSpeechListWhere(parseSpeechListParams({ source: 'internet' }))).toEqual({
+      and: [web],
+    })
+  })
+})

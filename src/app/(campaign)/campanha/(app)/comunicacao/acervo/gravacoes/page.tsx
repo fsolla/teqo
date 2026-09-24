@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 
-import { buildAcervoSourceHref } from '@/utilities/recordings/recordingListUrl'
+import { buildAcervoSourceHref } from '@/lib/acervoSource'
 
 /**
  * C199 — canonical alias of the recordings source. The list lives on

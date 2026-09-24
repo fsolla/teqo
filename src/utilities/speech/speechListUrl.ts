@@ -5,6 +5,8 @@
  * member equals no filter); year/phase/municipality are data-driven and
  * validated structurally.
  */
+import { acervoSortIsDuration, parseAcervoSort, type AcervoSortKey } from '@/lib/acervoListSort'
+import { ACERVO_SOURCE_INTERNET, parseAcervoSource } from '@/lib/acervoSource'
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
 import {
@@ -59,15 +61,23 @@ export const speechScopeLabels = Object.fromEntries(
 ) as Record<SpeechScope, string>
 
 export type SpeechListState = {
+  /**
+   * C216 — the web speeches source. Absent means the Câmara source; only the
+   * exact `source=internet` value is recognized (fail-closed on the default).
+   */
+  source?: 'internet'
   page: number
   q?: string
   mode?: SpeechSearchMode
   years?: number[]
   topics?: SpeechTopic[]
   scopes?: SpeechScope[]
+  /** Câmara-only facet: `phase` is ignored (and not serialized) for the web. */
   phases?: string[]
   municipalities?: number[]
   durations?: SpeechDurationBucket[]
+  /** C216 — the web list ordering; the Câmara contract has no sort. */
+  sort?: AcervoSortKey
 }
 
 /** Server-loaded filter options (years/phases present, cited municipalities). */
@@ -80,6 +90,9 @@ export type SpeechFilterOptions = {
 type RawSpeechListParams = RawSearchParams
 
 const speechListParamNames = [
+  // C216 — additive params of the web speeches source; the Câmara URL contract
+  // keeps its bytes (they are never serialized without `source=internet`).
+  'source',
   'q',
   'mode',
   'year',
@@ -88,6 +101,7 @@ const speechListParamNames = [
   'phase',
   'municipality',
   'duration',
+  'sort',
   'page',
 ] as const
 
@@ -102,6 +116,10 @@ const parseSpeechSearchMode = (raw: string | string[] | undefined): SpeechSearch
   firstValue(raw) === 'tema' ? 'tema' : undefined
 
 export const parseSpeechListParams = (params: RawSpeechListParams): SpeechListState => {
+  // C216 — the web source is a dimension of the same contract. Unknown source
+  // values fall back to the Câmara (fail-closed); the web source has no Fase
+  // facet, so `phase` is ignored there instead of leaking into its canonical URL.
+  const isWeb = parseAcervoSource(params) === 'internet'
   const rawPage = strictDecimalInteger(firstValue(params.page))
   const rawQ = normalizedText(firstValue(params.q))
   const q = rawQ && isContactSearchQueryReady(rawQ) ? rawQ : undefined
@@ -109,14 +127,18 @@ export const parseSpeechListParams = (params: RawSpeechListParams): SpeechListSt
   const years = parseYearValues(params.year)
   const topics = parseExhaustiveEnumParam<SpeechTopic>(params.topic, speechTopicSet)
   const scopes = parseExhaustiveEnumParam<SpeechScope>(params.scope, speechScopeSet)
-  const phases = allParamValues(params.phase).filter((token) => token.length <= MAX_PHASE_LENGTH)
+  const phases = isWeb
+    ? []
+    : allParamValues(params.phase).filter((token) => token.length <= MAX_PHASE_LENGTH)
   const municipalities = parseMunicipalityValues(params.municipality)
   const durations = parseExhaustiveEnumParam<SpeechDurationBucket>(
     params.duration,
     speechDurationSet,
   )
+  const sort = isWeb ? parseAcervoSort(params.sort) : undefined
 
   return {
+    ...(isWeb ? { source: ACERVO_SOURCE_INTERNET } : {}),
     page: rawPage ?? 1,
     ...(q ? { q } : {}),
     ...(mode ? { mode } : {}),
@@ -126,6 +148,7 @@ export const parseSpeechListParams = (params: RawSpeechListParams): SpeechListSt
     ...(phases.length ? { phases } : {}),
     ...(municipalities.length ? { municipalities } : {}),
     ...(durations.length ? { durations } : {}),
+    ...(sort ? { sort } : {}),
   }
 }
 
@@ -133,6 +156,7 @@ const speechListStateToRawParams = (
   state: SpeechListState,
   page = state.page,
 ): RawSpeechListParams => ({
+  source: state.source,
   page: String(page),
   q: state.q,
   mode: state.mode,
@@ -142,6 +166,7 @@ const speechListStateToRawParams = (
   phase: state.phases,
   municipality: state.municipalities?.map(String),
   duration: state.durations,
+  sort: state.sort,
 })
 
 /** Expects already-canonical state (from parse or a rule-preserving toggle). */
@@ -149,6 +174,9 @@ export const serializeCanonicalSpeechListSearchParams = (
   canonicalState: SpeechListState,
 ): URLSearchParams => {
   const params = new URLSearchParams()
+  // C216 — `source=internet` always serialized: it is what selects the web
+  // source. The Câmara URL keeps its exact bytes (no source, no sort).
+  if (canonicalState.source === 'internet') params.set('source', 'internet')
   if (canonicalState.q) params.set('q', canonicalState.q)
   // `termo` is the default and never serialized; `tema` only makes sense with a
   // query, so a theme param without `q` canonicalizes away.
@@ -161,6 +189,11 @@ export const serializeCanonicalSpeechListSearchParams = (
     params.append('municipality', String(municipality))
   }
   for (const duration of canonicalState.durations ?? []) params.append('duration', duration)
+  // C216 — `recentes` is the default and never serialized; the sort belongs to
+  // the web source only.
+  if (canonicalState.source === 'internet' && canonicalState.sort) {
+    params.set('sort', canonicalState.sort)
+  }
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))
   return params
 }
@@ -175,6 +208,44 @@ export const buildSpeechListHref = (state: SpeechListState, page: number): strin
 
 export const buildSpeechFiltersKey = (state: SpeechListState): string =>
   buildSpeechListSearchParams(state).toString()
+
+/**
+ * C216 — Payload sort order of the web list: the default is the publication
+ * order (`-speechAt`) and a duration order only lists rows with a measured
+ * duration (the `where` gates `durationSeconds exists`; Postgres sorts NULLS
+ * FIRST on DESC).
+ */
+export const webSpeechSortOrder = (state: SpeechListState): string => {
+  switch (state.sort) {
+    case 'duracao_maior':
+      return '-durationSeconds'
+    case 'duracao_menor':
+      return 'durationSeconds'
+    default:
+      return '-speechAt'
+  }
+}
+
+/** C216 — the duration gate of the web list, mirroring the recordings source. */
+export const webSpeechSortIsDuration = (state: SpeechListState): boolean =>
+  state.source === 'internet' && acervoSortIsDuration(state.sort)
+
+/**
+ * C216 — whether the actor narrowed the list (query/mode or any facet). The
+ * empty state uses it to tell "nothing was ever catalogued" from "the filters
+ * hid everything"; `source` and pagination are not filters.
+ */
+export const speechHasActiveFilters = (state: SpeechListState): boolean =>
+  Boolean(
+    state.q ||
+    state.mode ||
+    state.years?.length ||
+    state.topics?.length ||
+    state.scopes?.length ||
+    state.phases?.length ||
+    state.municipalities?.length ||
+    state.durations?.length,
+  )
 
 export const resolveSpeechListUrl = (
   params: RawSpeechListParams,

@@ -122,7 +122,8 @@ export const campaignPageChromeCatalog = {
   },
   acervo: {
     title: 'Acervo de falas',
-    subtitle: 'Busque nas falas da Câmara ou nas gravações da equipe.',
+    subtitle:
+      'Busque nas falas da Câmara, nas gravações da equipe ou nas falas encontradas na internet.',
   },
   gravacoes: {
     title: 'Gravações enviadas',

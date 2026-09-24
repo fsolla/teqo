@@ -1019,6 +1019,349 @@ test.describe('communication vertical (C154/C162)', () => {
     })
   })
 
+  test.describe('web speeches source (C216)', () => {
+    // Real 2x2 JPEG: Payload runs sharp over image uploads.
+    const JPEG_BYTES = Buffer.from(
+      '/9j/2wBDAA0JCgsKCA0LCgsODg0PEyAVExISEyccHhcgLikxMC4pLSwzOko+MzZGNywtQFdBRkxOUlNSMj5aYVpQYEpRUk//2wBDAQ4ODhMREyYVFSZPNS01T09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT09PT0//wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAABAb/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCGACsH/9k=',
+      'base64',
+    )
+
+    const createWebSpeech = async (
+      campaign: { fixtures: CampaignE2EOwnership },
+      input: {
+        marker: string
+        platform?: 'youtube' | 'instagram' | 'radio' | 'audio'
+        title?: string
+        channel?: string
+        sourceUrl?: string
+        speechAt?: string
+        durationSeconds?: number | null
+        topics?: SpeechTopic[]
+        scopes?: SpeechScope[]
+        text?: string
+        withMedia?: boolean
+        withThumbnail?: boolean
+      },
+    ) => {
+      const media = await campaign.fixtures.payload.create({
+        collection: 'internetSpeechMedia',
+        data: { alt: `Mídia ${input.marker}` },
+        file: {
+          data: Buffer.from(`mirror-${input.marker}`),
+          mimetype:
+            input.platform === 'radio' || input.platform === 'audio' ? 'audio/mpeg' : 'video/mp4',
+          name: `${input.marker}.mp4`,
+          size: Buffer.byteLength(`mirror-${input.marker}`),
+        },
+      })
+      const thumbnail = input.withThumbnail
+        ? await campaign.fixtures.payload.create({
+            collection: 'internetSpeechMedia',
+            data: { alt: `Capa ${input.marker}` },
+            file: {
+              data: JPEG_BYTES,
+              mimetype: 'image/jpeg',
+              name: `${input.marker}.jpg`,
+              size: JPEG_BYTES.length,
+            },
+          })
+        : null
+
+      const text = input.text ?? `A fala ${input.marker} na internet`
+      const speech = await campaign.fixtures.payload.create({
+        collection: 'speech',
+        data: {
+          sourceKey: `web:test:${input.marker}`,
+          origin: 'web',
+          platform: input.platform ?? 'youtube',
+          externalId: input.marker,
+          sourceUrl:
+            input.sourceUrl ??
+            `https://www.youtube.com/watch?v=${encodeURIComponent(input.marker)}`,
+          title: input.title ?? `Fala ${input.marker}`,
+          channel: input.channel ?? 'Canal do teste',
+          speechAt: input.speechAt ?? '2026-09-20T00:00',
+          durationSeconds: input.durationSeconds === undefined ? 120 : input.durationSeconds,
+          topics: input.topics ?? ['saude'],
+          scopes: input.scopes ?? ['bahia'],
+          classifiedBy: 'gazetteer',
+          searchText: normalizeForSearch(text),
+          ...(input.withMedia === false ? {} : { mirroredMedia: media.id }),
+          ...(thumbnail ? { thumbnail: thumbnail.id } : {}),
+        },
+        depth: 0,
+      })
+      await campaign.fixtures.payload.create({
+        collection: 'speechSegment',
+        data: {
+          speech: speech.id,
+          order: 1,
+          startSeconds: 12,
+          endSeconds: 20,
+          text,
+          searchText: normalizeForSearch(text),
+        },
+        depth: 0,
+      })
+
+      return { speech, media, thumbnail }
+    }
+
+    test('the third source renders the row, the platform pill and the cover', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('internet')
+      const { speech } = await createWebSpeech(campaign, { marker, withThumbnail: true })
+      const withoutCover = await createWebSpeech(campaign, {
+        marker: `${marker}capa`,
+        platform: 'radio',
+        withThumbnail: false,
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(`/campanha/comunicacao/acervo?source=internet&q=${marker}`)
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain('Falas na internet')
+      expect(html).toContain('aria-current="page"')
+      expect(html).toContain(`Fala ${marker}`)
+      expect(html).toContain('<mark')
+      expect(html).toContain(`/campanha/comunicacao/acervo/internet/${speech.id}?t=12`)
+      expect(html).toContain(`/campanha/comunicacao/acervo/internet/${speech.id}/capa`)
+      // The row without a captured thumbnail renders the neutral placeholder.
+      expect(html).toContain('SEM CAPA')
+
+      // The web row never leaks into the Câmara list nor into its detail route,
+      // and the Câmara row never resolves in the web detail route.
+      const camaraList = rendered(
+        await (await request.get(`/campanha/comunicacao/acervo?q=${marker}`)).text(),
+      )
+      expect(camaraList).not.toContain(`/campanha/comunicacao/acervo/internet/${speech.id}`)
+
+      // The page streams behind the acervo `loading.tsx`, so a `notFound()`
+      // can arrive as a 404 or as the 200 shell carrying the 404 body.
+      const camaraDetail = await request.get(`/campanha/comunicacao/acervo/${speech.id}`)
+      expect([200, 404]).toContain(camaraDetail.status())
+      expect(rendered(await camaraDetail.text())).toContain('This page could not be found')
+
+      const camaraSpeech = await campaign.fixtures.payload.create({
+        collection: 'speech',
+        data: {
+          sourceKey: campaign.fixtures.value('speech'),
+          origin: 'camara',
+          speechAt: '2026-03-10T18:00',
+          classifiedBy: 'gazetteer',
+          searchText: 'fala da camara',
+        },
+        depth: 0,
+      })
+      const webDetail = await request.get(
+        `/campanha/comunicacao/acervo/internet/${camaraSpeech.id}`,
+      )
+      expect([200, 404]).toContain(webDetail.status())
+      expect(rendered(await webDetail.text())).toContain('This page could not be found')
+
+      const miss = await request.get('/campanha/comunicacao/acervo?source=internet&q=zzzznada')
+      expect(rendered(await miss.text())).toContain('Nenhuma fala encontrada')
+      expect(withoutCover.speech.id).toBeGreaterThan(0)
+    })
+
+    test('the filters narrow, order and degrade honestly (C219 parity)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('internetfiltro')
+      const otherMarker = `${marker}b`
+      const { speech: health } = await createWebSpeech(campaign, {
+        marker,
+        speechAt: '2025-04-02T00:00',
+        durationSeconds: 90,
+        topics: ['saude'],
+        text: `A fala sobre a saúde ${marker}`,
+      })
+      const { speech: culture } = await createWebSpeech(campaign, {
+        marker: otherMarker,
+        speechAt: '2023-08-02T00:00',
+        durationSeconds: 400,
+        topics: ['cultura'],
+        text: `A fala sobre a cultura ${otherMarker}`,
+      })
+      const { speech: noDuration } = await createWebSpeech(campaign, {
+        marker: `${marker}c`,
+        durationSeconds: null,
+        text: `A fala sem duração ${marker}`,
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const bar = rendered(
+        await (
+          await request.get(`/campanha/comunicacao/acervo?source=internet&q=${marker}`)
+        ).text(),
+      )
+      for (const label of ['Ano', 'Tema', 'Alcance', 'Município citado', 'Duração']) {
+        expect(bar).toContain(label)
+      }
+      // The web source has no Fase facet.
+      expect(bar).not.toContain('Fase')
+      expect(bar).toContain('Termo exato')
+      expect(bar).toContain('Por tema')
+      expect(bar).toContain('Ordenar por')
+      expect(bar).toContain('Mais recentes')
+
+      const narrowed = rendered(
+        await (
+          await request.get(
+            `/campanha/comunicacao/acervo?source=internet&q=${marker}` +
+              `&year=2025&topic=saude&duration=curta`,
+          )
+        ).text(),
+      )
+      expect(narrowed).toContain(`/acervo/internet/${health.id}?t=12`)
+      expect(narrowed).not.toContain(`/acervo/internet/${culture.id}?t=12`)
+      expect(narrowed).not.toContain(`/acervo/internet/${noDuration.id}?t=12`)
+
+      const empty = rendered(
+        await (
+          await request.get(
+            `/campanha/comunicacao/acervo?source=internet&q=${marker}&year=2023&topic=saude`,
+          )
+        ).text(),
+      )
+      expect(empty).toContain('Nenhuma fala encontrada')
+      expect(empty).toContain('Limpar busca e filtros')
+
+      const longestFirst = rendered(
+        await (
+          await request.get(
+            `/campanha/comunicacao/acervo?source=internet&q=${marker}&sort=duracao_maior`,
+          )
+        ).text(),
+      )
+      const cultureAt = longestFirst.indexOf(`/acervo/internet/${culture.id}?t=12`)
+      const healthAt = longestFirst.indexOf(`/acervo/internet/${health.id}?t=12`)
+      expect(cultureAt).toBeGreaterThan(-1)
+      expect(healthAt).toBeGreaterThan(cultureAt)
+      expect(longestFirst).not.toContain(`/acervo/internet/${noDuration.id}?t=12`)
+      expect(longestFirst).toContain('Falas sem duração aparecem apenas em Mais recentes.')
+    })
+
+    test('the detail renders the private player, the transcript, the download and the origin', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('internetdetalhe')
+      const { speech } = await createWebSpeech(campaign, {
+        marker,
+        platform: 'radio',
+        title: `Entrevista ${marker}`,
+        channel: 'Rádio Metrópole',
+        sourceUrl: 'https://radio.example/entrevista',
+      })
+
+      const user = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(user, user.password)
+
+      const response = await request.get(
+        `/campanha/comunicacao/acervo/internet/${speech.id}?t=12&q=${marker}`,
+      )
+      expect(response.status()).toBe(200)
+      const html = rendered(await response.text())
+      expect(html).toContain(`Entrevista ${marker}`)
+      expect(html).toContain('Rádio')
+      expect(html).toContain('Rádio Metrópole')
+      expect(html).toContain('Publicado em')
+      expect(html).toContain('Abrir na origem')
+      expect(html).toContain('https://radio.example/entrevista')
+      expect(html).toContain('data-start-seconds="12"')
+      expect(html).toContain('<mark')
+      expect(html).toContain('Baixar')
+      expect(html).toContain('Voltar para Falas na internet')
+      expect(html).toContain(`/campanha/comunicacao/acervo/internet/${speech.id}/arquivo`)
+      // The audio artifact gets the native audio control (design scene 05).
+      expect(html).toContain('<audio')
+    })
+
+    test('the private file and cover answer only the acervo roles, with range and download', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('internetarquivo')
+      const { speech, media, thumbnail } = await createWebSpeech(campaign, {
+        marker,
+        title: `Fala privada ${marker}`,
+        withThumbnail: true,
+      })
+
+      const communicator = await campaign.fixtures.createCampaignUser('communicator')
+      const communicatorRequest = await campaignRequest(communicator, communicator.password)
+
+      const full = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/internet/${speech.id}/arquivo`,
+      )
+      expect(full.status()).toBe(200)
+      expect(full.headers()['content-type']).toBe('video/mp4')
+      expect(full.headers()['cache-control']).toBe('private, no-store')
+      expect(Buffer.from(await full.body())).toEqual(Buffer.from(`mirror-${marker}`))
+
+      const partial = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/internet/${speech.id}/arquivo`,
+        { headers: { Range: 'bytes=0-3' } },
+      )
+      expect(partial.status()).toBe(206)
+
+      const download = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/internet/${speech.id}/arquivo?download=1`,
+      )
+      const disposition = download.headers()['content-disposition'] ?? ''
+      expect(disposition).toContain('attachment')
+      // C215 S4 — the download name comes from the speech title, not `source.mp4`
+      // (RFC 5987 encodes the spaces in `filename*`).
+      expect(disposition).toContain('Fala%20privada')
+      expect(disposition).not.toContain('source.mp4')
+
+      const cover = await communicatorRequest.get(
+        `/campanha/comunicacao/acervo/internet/${speech.id}/capa`,
+      )
+      expect(cover.status()).toBe(200)
+      expect(cover.headers()['content-type']).toBe('image/jpeg')
+      expect(Buffer.from(await cover.body())).toEqual(JPEG_BYTES)
+
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const advisorRequest = await campaignRequest(advisor, advisor.password)
+      expect(
+        (
+          await advisorRequest.get(`/campanha/comunicacao/acervo/internet/${speech.id}/arquivo`)
+        ).status(),
+      ).toBe(404)
+      expect(
+        (
+          await advisorRequest.get(`/campanha/comunicacao/acervo/internet/${speech.id}/capa`)
+        ).status(),
+      ).toBe(404)
+
+      // A row without a captured thumbnail answers 404 on the cover route.
+      const { speech: withoutCover } = await createWebSpeech(campaign, {
+        marker: `${marker}semcapa`,
+        withThumbnail: false,
+      })
+      expect(
+        (
+          await communicatorRequest.get(
+            `/campanha/comunicacao/acervo/internet/${withoutCover.id}/capa`,
+          )
+        ).status(),
+      ).toBe(404)
+
+      expect(media.id).toBeGreaterThan(0)
+      expect(thumbnail?.id).toBeGreaterThan(0)
+    })
+  })
+
   test.describe('content pieces (C211)', () => {
     const createPiece = async (
       campaign: { fixtures: CampaignE2EOwnership },

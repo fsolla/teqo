@@ -135,4 +135,26 @@ describe('clearSpeechOmnibox', () => {
       state: { page: 1 },
     })
   })
+
+  // C216 — clearing the web list must not drop the source, or "Limpar" would
+  // land back on the Câmara.
+  it('keeps the web source when clearing', () => {
+    expect(clearSpeechOmnibox(state({ source: 'internet', q: 'SUS' }))).toEqual({
+      kind: 'clear',
+      state: { page: 1, source: 'internet' },
+    })
+  })
+})
+
+// C216 — the facet copy is a parameter so the web source reads "Município
+// citado" while the Câmara keeps its exact "Município".
+describe('municipality facet label (C216)', () => {
+  it('labels the chip with the source copy', () => {
+    const chips = buildSpeechOmniboxChips({
+      state: state({ source: 'internet', municipality: '12' }),
+      municipalityLabelsById: new Map([[12, 'Feira de Santana']]),
+      municipalityLabel: 'Município citado',
+    })
+    expect(chips.map((chip) => chip.label)).toEqual(['Município citado: Feira de Santana'])
+  })
 })

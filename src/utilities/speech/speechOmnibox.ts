@@ -104,9 +104,12 @@ const mutateFacet = (
 export const buildSpeechOmniboxChips = ({
   state,
   municipalityLabelsById,
+  municipalityLabel = 'Município',
 }: {
   state: SpeechListState
   municipalityLabelsById: ReadonlyMap<number, string>
+  /** C216 — the web source labels the facet "Município citado". */
+  municipalityLabel?: string
 }): CampaignListOmniboxChip[] => {
   const chips: CampaignListOmniboxChip[] = []
 
@@ -127,7 +130,7 @@ export const buildSpeechOmniboxChips = ({
     chips.push({
       id: `municipality:${municipality}`,
       label: chipLabel(
-        'Município',
+        municipalityLabel,
         municipalityLabelsById.get(municipality) ?? `Município #${municipality}`,
       ),
     })
@@ -146,10 +149,13 @@ export const buildSpeechOmniboxSuggestionSeeds = ({
   years,
   phases,
   municipalityOptions,
+  municipalityLabel = 'Município',
 }: {
   years: readonly number[]
   phases: readonly string[]
   municipalityOptions: readonly SpeechFilterOption[]
+  /** C216 — the web source labels the facet "Município citado". */
+  municipalityLabel?: string
 }) => {
   const seeds = []
 
@@ -206,7 +212,7 @@ export const buildSpeechOmniboxSuggestionSeeds = ({
     seeds.push(
       createOmniboxSuggestionSeed({
         id: `municipality:${option.value}`,
-        group: 'Município',
+        group: municipalityLabel,
         label: option.label,
         keywords: ['municipio', 'cidade'],
       }),
@@ -271,7 +277,14 @@ export const applySpeechSearchMode = ({
   state: withPageReset({ ...state, mode: mode === 'tema' && state.q ? 'tema' : undefined }),
 })
 
-export const clearSpeechOmnibox = (_state: SpeechListState): SpeechOmniboxAction => ({
+/**
+ * C216 — clearing keeps `source: 'internet'`: the source is what selects the
+ * web list, so dropping it would send "clear" back to the Câmara.
+ */
+export const clearSpeechOmnibox = (state: SpeechListState): SpeechOmniboxAction => ({
   kind: 'clear',
-  state: { page: 1 },
+  state: {
+    page: 1,
+    ...(state.source === 'internet' ? { source: 'internet' as const } : {}),
+  },
 })

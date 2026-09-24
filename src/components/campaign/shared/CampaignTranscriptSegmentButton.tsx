@@ -1,21 +1,33 @@
 'use client'
 
 import { SpeechHighlightParts } from '@/components/campaign/speech/SpeechHighlightParts'
+import type { SpeechHighlightPart } from '@/lib/speechHighlight'
 import { cn } from '@/lib/utils'
-import type { RecordingDetailSegmentViewModel } from '@/utilities/recordings/recordingViewModels'
 
 /**
- * C200 — the clickable transcript line shared by the plain C199 list and the
- * grouped C200 blocks: seeks the player to the segment and renders the search
- * highlight. `variant` keeps the two approved paddings/sizes without a twin.
+ * The only contract a transcript line needs: it is structural on purpose, so
+ * the Câmara/detail VMs of every acervo source (C200 recordings, C216 web
+ * speeches) share one clickable segment without a twin.
  */
-export const RecordingTranscriptSegmentButton = ({
+export type TranscriptSegment = {
+  startSeconds: number
+  startLabel: string
+  parts: readonly SpeechHighlightPart[]
+}
+
+/**
+ * C200 — the clickable transcript line shared by the plain C199 list, the
+ * grouped C200 blocks and the C216 web detail: seeks the player to the segment
+ * and renders the search highlight. `variant` keeps the approved
+ * paddings/sizes without a twin.
+ */
+export const CampaignTranscriptSegmentButton = ({
   segment,
   active,
   variant = 'plain',
   onSeek,
 }: {
-  segment: RecordingDetailSegmentViewModel
+  segment: TranscriptSegment
   active: boolean
   variant?: 'plain' | 'grouped'
   onSeek: (seconds: number) => void

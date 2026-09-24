@@ -16,10 +16,14 @@ import {
   loadSpeechCutOriginSpeechIds,
   loadSpeechCutsForSpeeches,
 } from '@/utilities/speech/speechCutPageData'
-import { buildSpeechListWhereIncludingCutOrigins } from '@/utilities/speech/speechListFilters'
+import {
+  buildSpeechListWhere,
+  buildSpeechListWhereIncludingCutOrigins,
+} from '@/utilities/speech/speechListFilters'
 import {
   resolveSpeechListUrl,
   speechPageSize,
+  webSpeechSortOrder,
   type SpeechFilterOptions,
   type SpeechListState,
 } from '@/utilities/speech/speechListUrl'
@@ -27,10 +31,16 @@ import {
   municipalityIdsOfSpeech,
   toSpeechDetailViewModel,
   toSpeechListItemViewModel,
+  toWebSpeechDetailViewModel,
+  toWebSpeechListItemViewModel,
   type SpeechDetailRecord,
   type SpeechDetailViewModel,
   type SpeechListItemViewModel,
   type SpeechSegmentRecord,
+  type WebSpeechDetailRecord,
+  type WebSpeechDetailViewModel,
+  type WebSpeechListItemViewModel,
+  type WebSpeechListRecord,
 } from '@/utilities/speech/speechViewModels'
 
 type SpeechListSearchParams = Record<string, string | string[] | undefined>
@@ -77,23 +87,24 @@ const municipalityNameMap = (
 ): Map<number, string> => new Map([...labels.entries()].map(([id, entry]) => [id, entry.name]))
 
 /**
- * Options the URL filters offer: the years and phases actually present in the
- * catalog and the municipalities cited by at least one speech (labels resolved
- * through the justified `loadMunicipalityLabelsByIds` bypass — the ids come
- * from speeches the actor was already authorized to read).
+ * Options the URL filters offer: the years (and, for the Câmara, the phases)
+ * actually present in the source's catalog and the municipalities cited by at
+ * least one speech (labels resolved through the justified
+ * `loadMunicipalityLabelsByIds` bypass — the ids come from speeches the actor
+ * was already authorized to read). C216 — the source discriminator keeps the
+ * options of each list over its own rows; the web list has no phase facet.
  */
 const loadSpeechFilterOptions = async (
   payload: Payload,
   user: CampaignUser,
+  origin: 'camara' | 'web' = 'camara',
 ): Promise<SpeechFilterOptions> => {
   const result = await payload.find({
     collection: 'speech',
     depth: 0,
     limit: 0,
     pagination: false,
-    // C215 — options are the Câmara catalog's; the web source (C216) builds
-    // its own options from its rows.
-    where: { origin: { equals: 'camara' } },
+    where: { origin: { equals: origin } },
     select: { year: true, phase: true, mentionedMunicipalities: true },
     user,
     overrideAccess: false,
@@ -104,7 +115,7 @@ const loadSpeechFilterOptions = async (
   const municipalityIds = new Set<number>()
   for (const speech of result.docs) {
     if (typeof speech.year === 'number') years.add(speech.year)
-    if (speech.phase) phases.add(speech.phase)
+    if (origin === 'camara' && speech.phase) phases.add(speech.phase)
     for (const id of municipalityIdsOfSpeech(speech)) municipalityIds.add(id)
   }
 
@@ -121,6 +132,30 @@ const loadSpeechFilterOptions = async (
     phases: [...phases].sort((left, right) => left.localeCompare(right, 'pt-BR')),
     municipalities,
   }
+}
+
+/**
+ * C216 — the shared theme gate of both sources: expands only for an actor who
+ * may read the catalog (the `find` is still the final barrier) and only with a
+ * query. The caller injects the resolver so the tests stay offline.
+ */
+const resolveSpeechThemeTerms = async ({
+  state,
+  role,
+  expandTheme,
+}: {
+  state: SpeechListState
+  role: CampaignUser['role']
+  expandTheme: SpeechThemeExpansionResolver
+}): Promise<{ themeTerms: readonly string[]; themeUnavailable: boolean }> => {
+  const themeRequested = state.mode === 'tema' && Boolean(state.q)
+  if (!themeRequested || !canReadCommunicationCatalog(role)) {
+    return { themeTerms: [], themeUnavailable: false }
+  }
+  const expansion = await expandTheme(state.q ?? '')
+  return expansion
+    ? { themeTerms: expansion.terms, themeUnavailable: false }
+    : { themeTerms: [], themeUnavailable: true }
 }
 
 export const loadSegmentsForSpeeches = async (
@@ -184,14 +219,11 @@ export const loadSpeechAcervoPageData = async (
 
   // C192 — only expand for an actor who may read the catalog (the `find` below
   // is still the final, fail-closed barrier) and only with a query.
-  const themeRequested = state.mode === 'tema' && Boolean(state.q)
-  let themeTerms: readonly string[] = []
-  let themeUnavailable = false
-  if (themeRequested && canReadCommunicationCatalog(user.role)) {
-    const expansion = await expandTheme(state.q ?? '')
-    if (expansion) themeTerms = expansion.terms
-    else themeUnavailable = true
-  }
+  const { themeTerms, themeUnavailable } = await resolveSpeechThemeTerms({
+    state,
+    role: user.role,
+    expandTheme,
+  })
 
   // C174 (option B) — a speech also shows up when one of its cuts matches the
   // term by title/description, even if the speech text itself does not.
@@ -250,6 +282,179 @@ export const loadSpeechAcervoPageData = async (
   }
 }
 
+// ---------------------------------------------------------------------------
+// C216 — "Falas na internet" loaders. Same collection/segments/facets; the row
+// carries the web fields (origin, platform, title, channel, source URL and the
+// mirrored private media) instead of the Câmara VOD coordinates.
+// ---------------------------------------------------------------------------
+
+const webSpeechListSelect = {
+  speechAt: true,
+  title: true,
+  platform: true,
+  durationSeconds: true,
+  topics: true,
+  scopes: true,
+  // The cover href only needs the relation's presence (depth 0 id).
+  thumbnail: true,
+} as const
+
+const webSpeechDetailSelect = {
+  ...webSpeechListSelect,
+  externalId: true,
+  sourceUrl: true,
+  channel: true,
+  mirroredMedia: true,
+} as const
+
+export type WebSpeechAcervoPageData = {
+  rows: WebSpeechListItemViewModel[]
+  state: SpeechListState
+  redirectHref?: string
+  totalDocs: number
+  totalPages: number
+  filterOptions: SpeechFilterOptions
+  /** C216 — true when `mode=tema` was asked but the expansion was unavailable. */
+  themeUnavailable: boolean
+  /** C216 — true when the expansion actually contributed terms. */
+  themeApplied: boolean
+}
+
+/**
+ * The web speeches list ("Falas na internet"). The source is forced here — the
+ * page dispatches on `source=internet`, and forcing it makes the loader
+ * self-contained (an int test calls it directly) and its canonical redirect
+ * always carry the source. Only web rows are read: `buildSpeechListWhere`
+ * derives `origin: web` from the state.
+ */
+export const loadWebSpeechAcervoPageData = async (
+  payload: Payload,
+  user: CampaignUser,
+  searchParams: Promise<SpeechListSearchParams> | SpeechListSearchParams,
+  expandTheme: SpeechThemeExpansionResolver = expandSpeechSearchTheme,
+): Promise<WebSpeechAcervoPageData> => {
+  const rawSearchParams = await searchParams
+  const canonicalUrl = resolveSpeechListUrl({
+    ...rawSearchParams,
+    source: 'internet',
+  })
+  const state = canonicalUrl.state
+
+  const { themeTerms, themeUnavailable } = await resolveSpeechThemeTerms({
+    state,
+    role: user.role,
+    expandTheme,
+  })
+
+  const result = await payload.find({
+    collection: 'speech',
+    depth: 0,
+    limit: speechPageSize,
+    page: state.page,
+    sort: webSpeechSortOrder(state),
+    where: buildSpeechListWhere(state, themeTerms),
+    // The row only needs its normalized text to tell whether it matched the
+    // term itself; the unsearched list does not pay for it.
+    select: state.q ? { ...webSpeechListSelect, searchText: true } : webSpeechListSelect,
+    user,
+    overrideAccess: false,
+  })
+
+  const resolvedUrl = resolveSpeechListUrl(
+    { ...rawSearchParams, source: 'internet' },
+    result.totalPages,
+  )
+  const speeches = result.docs as WebSpeechListRecord[]
+  const speechIds = speeches.map((speech) => speech.id)
+
+  const [segmentsBySpeech, filterOptions] = await Promise.all([
+    loadSegmentsForSpeeches(payload, user, speechIds),
+    loadSpeechFilterOptions(payload, user, 'web'),
+  ])
+
+  return {
+    rows: speeches.map((speech) =>
+      toWebSpeechListItemViewModel({
+        speech,
+        segments: segmentsBySpeech.get(speech.id) ?? [],
+        query: state.q,
+        themeTerms,
+      }),
+    ),
+    state: resolvedUrl.state,
+    redirectHref: resolvedUrl.redirectHref ?? canonicalUrl.redirectHref,
+    totalDocs: result.totalDocs,
+    totalPages: result.totalPages,
+    filterOptions,
+    themeUnavailable,
+    themeApplied: themeTerms.length > 0,
+  }
+}
+
+/**
+ * Title-only read for `generateMetadata`: never loads the transcript of a long
+ * recording just to title the tab (same shape as the recordings detail).
+ */
+export const loadWebSpeechTitleForActor = async (
+  payload: Payload,
+  user: CampaignUser,
+  speechId: number,
+): Promise<string | null> => {
+  const result = await payload.find({
+    collection: 'speech',
+    where: { and: [{ id: { equals: speechId } }, { origin: { equals: 'web' } }] },
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    select: { title: true },
+    user,
+    overrideAccess: false,
+  })
+  return result.docs[0]?.title ?? null
+}
+
+export const loadWebSpeechDetailPageData = async (
+  payload: Payload,
+  user: CampaignUser,
+  speechId: number,
+  query?: string,
+): Promise<WebSpeechDetailViewModel> => {
+  const result = await payload.find({
+    collection: 'speech',
+    where: { and: [{ id: { equals: speechId } }, { origin: { equals: 'web' } }] },
+    depth: 1,
+    limit: 1,
+    pagination: false,
+    select: webSpeechDetailSelect,
+    user,
+    overrideAccess: false,
+  })
+  const speech = result.docs[0]
+  if (!speech) throw new SpeechNotFoundError()
+
+  const segments = await payload.find({
+    collection: 'speechSegment',
+    where: { speech: { equals: speechId } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    sort: 'order',
+    select: segmentSelect,
+    user,
+    overrideAccess: false,
+  })
+
+  return toWebSpeechDetailViewModel({
+    speech: speech as WebSpeechDetailRecord,
+    segments: segments.docs.map((segment) => ({
+      startSeconds: segment.startSeconds,
+      endSeconds: segment.endSeconds,
+      text: segment.text,
+    })),
+    query,
+  })
+}
+
 /**
  * Resolves the broadcast start (ISO) of a session video. The default reads the
  * cached YouTube anchor (C172); tests inject their own to stay offline.
@@ -265,7 +470,10 @@ export const loadSpeechDetailPageData = async (
 ): Promise<SpeechDetailViewModel> => {
   const result = await payload.find({
     collection: 'speech',
-    where: { id: { equals: speechId } },
+    // C216 — this detail is the Câmara's: a web row has its own route and
+    // player, so an id of the other origin is an honest 404 here (and the
+    // reverse holds in the web loader).
+    where: { and: [{ id: { equals: speechId } }, { origin: { equals: 'camara' } }] },
     depth: 0,
     limit: 1,
     pagination: false,

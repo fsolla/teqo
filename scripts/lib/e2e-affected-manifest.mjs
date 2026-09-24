@@ -451,6 +451,11 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/reels',
       // C199 — the uploaded recordings source and its private media owner.
       'src/components/campaign/recording',
+      // C216 — the shared acervo shells the source switcher reuses: the
+      // switcher itself, the ordering control and the transcript segment line.
+      'src/components/campaign/shared/AcervoSourceToggle',
+      'src/components/campaign/shared/AcervoSortSelect',
+      'src/components/campaign/shared/CampaignTranscriptSegmentButton',
       // C219 — the recording collection owns the facet/provenance hooks the
       // recordings list filters on (the PR is high-risk anyway; the entry keeps
       // the mapping honest for the curated/local paths).
@@ -471,6 +476,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/webSpeech',
       'src/collections/Speech.ts',
       'src/collections/InternetSpeechMedia.ts',
+      // C216 — the source and ordering vocabularies shared by the acervo.
+      'src/lib/acervoSource',
+      'src/lib/acervoListSort',
       'src/lib/reel',
       'src/lib/recording',
       'src/lib/contentPiece',

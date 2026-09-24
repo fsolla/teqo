@@ -4,10 +4,8 @@ import { describe, expect, it } from 'vitest'
 
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
 import {
-  buildAcervoSourceHref,
   buildRecordingFiltersKey,
   buildRecordingListHref,
-  parseAcervoSource,
   parseRecordingListParams,
   parseRecordingPeople,
   recordingHasActiveFilters,
@@ -20,13 +18,6 @@ import {
 import { SPEECH_DURATION_BUCKETS } from '@/utilities/speech/speechListUrl'
 
 describe('recording list URL (C199)', () => {
-  it('detects the enviadas source and defaults everything else to the Câmara', () => {
-    expect(parseAcervoSource({ source: 'enviadas' })).toBe('enviadas')
-    expect(parseAcervoSource({ source: 'camara' })).toBe('camara')
-    expect(parseAcervoSource({ source: 'gravacoes' })).toBe('camara')
-    expect(parseAcervoSource({})).toBe('camara')
-  })
-
   it('parses the canonical state and rejects an unready query', () => {
     expect(parseRecordingListParams({ source: 'enviadas', q: 'merenda', page: '3' })).toEqual({
       source: 'enviadas',
@@ -71,11 +62,6 @@ describe('recording list URL (C199)', () => {
     expect(buildRecordingListHref({ source: 'enviadas', page: 2 }, 1)).toBe(
       '/campanha/comunicacao/acervo?source=enviadas',
     )
-  })
-
-  it('builds the switcher hrefs (the Câmara side is the bare acervo)', () => {
-    expect(buildAcervoSourceHref('enviadas')).toBe('/campanha/comunicacao/acervo?source=enviadas')
-    expect(buildAcervoSourceHref('camara')).toBe('/campanha/comunicacao/acervo')
   })
 
   it('parses repeated `person` values: trim, oversized drop, case-insensitive dedupe', () => {

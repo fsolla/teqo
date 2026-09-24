@@ -22,8 +22,13 @@ const WEB_SPEECH_PLATFORM_VALUES = WEB_SPEECH_PLATFORMS.map((platform) => platfo
   ...WebSpeechPlatform[],
 ]
 
-export const webSpeechPlatformLabel = (value: WebSpeechPlatform): string =>
-  WEB_SPEECH_PLATFORMS.find((platform) => platform.value === value)?.label ?? value
+/** The honest label of a row without a known platform (C216 list/detail pill). */
+const WEB_SPEECH_PLATFORM_UNKNOWN_LABEL = 'Outra plataforma'
+
+export const webSpeechPlatformLabel = (value: WebSpeechPlatform | null | undefined): string => {
+  if (!value) return WEB_SPEECH_PLATFORM_UNKNOWN_LABEL
+  return WEB_SPEECH_PLATFORMS.find((platform) => platform.value === value)?.label ?? value
+}
 
 /** Owner of the private upload collection slug (collection, config and S3). */
 export const INTERNET_SPEECH_MEDIA_SLUG = 'internetSpeechMedia' as const
@@ -134,6 +139,40 @@ export const webSpeechSourceKey = ({
 export const isCompleteWebSpeechState = (
   state: { segmentCount: number; mirroredMedia: number | null } | null,
 ): boolean => state !== null && state.segmentCount > 0 && state.mirroredMedia !== null
+
+const DOWNLOAD_FILENAME_MAX_LENGTH = 120
+
+/**
+ * C216 (closes the C215 S4 defer) — the legible download name of a mirrored
+ * file: the speech title keeps the stored extension, control characters and
+ * path separators become spaces, dots/dashes stop trailing and the length is
+ * capped. Returns null when the stored file has no name or the title leaves
+ * nothing readable, so the caller falls back to the stored filename. The final
+ * `Content-Disposition` sanitization belongs to `privateMediaContentDisposition`.
+ */
+export const webSpeechDownloadFilename = ({
+  title,
+  storedFilename,
+}: {
+  title?: string | null
+  storedFilename?: string | null
+}): string | null => {
+  const stored = storedFilename?.trim()
+  if (!stored) return null
+
+  const lastDot = stored.lastIndexOf('.')
+  const extension = lastDot > 0 ? stored.slice(lastDot).toLowerCase() : ''
+  const base = (title ?? '')
+    .normalize('NFC')
+    .replace(/[\p{Cc}"\\/:*?<>|]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  if (!base) return null
+
+  const maxBaseLength = Math.max(1, DOWNLOAD_FILENAME_MAX_LENGTH - extension.length)
+  const capped = base.slice(0, maxBaseLength).replace(/[.\s]+$/, '')
+  return capped ? `${capped}${extension}` : null
+}
 
 const PUBLISHED_AT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}))?$/
 const TIMEZONE_SUFFIX = /(?:Z|[+-]\d{2}:?\d{2})$/

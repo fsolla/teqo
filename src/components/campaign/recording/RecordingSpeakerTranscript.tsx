@@ -3,7 +3,7 @@
 import { InfoIcon, UserIcon } from 'lucide-react'
 
 import { RecordingSpeakerDialog } from '@/components/campaign/recording/RecordingSpeakerDialog'
-import { RecordingTranscriptSegmentButton } from '@/components/campaign/recording/RecordingTranscriptSegmentButton'
+import { CampaignTranscriptSegmentButton } from '@/components/campaign/shared/CampaignTranscriptSegmentButton'
 import {
   RECORDING_SPEAKER_BANNER_BODY,
   RECORDING_SPEAKER_BANNER_DROPPED,
@@ -88,7 +88,7 @@ export const RecordingSpeakerTranscript = ({
           </header>
 
           {group.segments.map((segment) => (
-            <RecordingTranscriptSegmentButton
+            <CampaignTranscriptSegmentButton
               key={`${segment.startSeconds}-${segment.startLabel}`}
               segment={segment}
               active={activeStart === segment.startSeconds}

@@ -64,7 +64,8 @@ describe('campaignPageChrome', () => {
     })
     expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo', 'communicator')).toEqual({
       title: 'Acervo de falas',
-      subtitle: 'Busque nas falas da Câmara ou nas gravações da equipe.',
+      subtitle:
+        'Busque nas falas da Câmara, nas gravações da equipe ou nas falas encontradas na internet.',
     })
     expect(resolveCampaignPageChrome('/campanha/comunicacao/acervo/42', 'communicator')).toBeNull()
     // C199 — the recordings alias has its own entry BEFORE the generic detail
@@ -74,6 +75,11 @@ describe('campaignPageChrome', () => {
     ).toEqual({ title: 'Gravações enviadas' })
     expect(
       resolveCampaignPageChrome('/campanha/comunicacao/acervo/gravacoes/7', 'communicator'),
+    ).toBeNull()
+    // C216 — the web detail has two path segments under the acervo, so the
+    // generic one-segment regex does not swallow it: the page sets its chrome.
+    expect(
+      resolveCampaignPageChrome('/campanha/comunicacao/acervo/internet/7', 'communicator'),
     ).toBeNull()
   })
 

@@ -5,6 +5,7 @@ import {
   parseWebSpeechBatch,
   parseWebSpeechFinding,
   webSpeechAtFromPublishedAt,
+  webSpeechDownloadFilename,
   webSpeechPlatformLabel,
   webSpeechSourceKey,
 } from '@/lib/webSpeech'
@@ -143,5 +144,47 @@ describe('webSpeechPlatformLabel', () => {
   it('owns the pt-BR labels the acervo shows', () => {
     expect(webSpeechPlatformLabel('youtube')).toBe('YouTube')
     expect(webSpeechPlatformLabel('radio')).toBe('Rádio')
+  })
+
+  // C216 — the pill of a row without a known platform is honest, not blank.
+  it('falls back for a missing or unknown platform (C216)', () => {
+    expect(webSpeechPlatformLabel(null)).toBe('Outra plataforma')
+    expect(webSpeechPlatformLabel(undefined)).toBe('Outra plataforma')
+  })
+})
+
+// C216 (closes the C215 S4 defer) — the download name of the mirrored file.
+describe('webSpeechDownloadFilename', () => {
+  it('keeps the stored extension and the title in the download name', () => {
+    expect(
+      webSpeechDownloadFilename({
+        title: 'Entrevista sobre a saúde pública',
+        storedFilename: 'source.mp4',
+      }),
+    ).toBe('Entrevista sobre a saúde pública.mp4')
+  })
+
+  it('strips control characters and path separators', () => {
+    expect(
+      webSpeechDownloadFilename({
+        title: 'Fala "sobre"\n o SUS/educação',
+        storedFilename: 'source.mp3',
+      }),
+    ).toBe('Fala sobre o SUS educação.mp3')
+  })
+
+  it('caps the length and never leaves a trailing dot', () => {
+    const filename = webSpeechDownloadFilename({
+      title: `${'a'.repeat(300)}.`,
+      storedFilename: 'source.mp4',
+    })
+    expect(filename).not.toBeNull()
+    expect(filename?.endsWith('.mp4')).toBe(true)
+    expect(filename?.length).toBeLessThanOrEqual(120)
+  })
+
+  it('falls back to the stored filename when the title leaves nothing readable', () => {
+    expect(webSpeechDownloadFilename({ title: '   ', storedFilename: 'source.mp3' })).toBeNull()
+    expect(webSpeechDownloadFilename({ title: 'Fala', storedFilename: null })).toBeNull()
   })
 })

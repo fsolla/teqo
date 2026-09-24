@@ -54,6 +54,19 @@ export const campaignSpeechCutRetryHref = (id: number): string =>
 export const CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES =
   `${CAMPAIGN_COMMUNICATION_ACERVO}/gravacoes` as const
 
+/** C216 — "Falas na internet" detail (the list stays at `?source=internet`). */
+const CAMPAIGN_COMMUNICATION_ACERVO_INTERNET = `${CAMPAIGN_COMMUNICATION_ACERVO}/internet` as const
+
+export const campaignInternetSpeechHref = (id: number): string =>
+  `${CAMPAIGN_COMMUNICATION_ACERVO_INTERNET}/${id}`
+
+/** C216 — the authenticated private media routes of one web speech. */
+export const campaignInternetSpeechFileHref = (id: number, download = false): string =>
+  `${campaignInternetSpeechHref(id)}/arquivo${download ? '?download=1' : ''}`
+
+export const campaignInternetSpeechCoverHref = (id: number): string =>
+  `${campaignInternetSpeechHref(id)}/capa`
+
 /** C211 — internal Central de Conteúdos (list + `/<id>` ficha). */
 export const CAMPAIGN_COMMUNICATION_CONTEUDOS = '/campanha/comunicacao/conteudos' as const
 

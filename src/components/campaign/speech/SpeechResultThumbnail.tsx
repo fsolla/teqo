@@ -18,11 +18,14 @@ export const SpeechResultThumbnail = ({
   src,
   label,
   fullWidthOnMobile = false,
+  className,
 }: {
   href: string
   src: string
   label: string
   fullWidthOnMobile?: boolean
+  /** C216 — the web card's slot (152px desktop, full width on mobile). */
+  className?: string
 }) => {
   const [settled, setSettled] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
@@ -39,6 +42,7 @@ export const SpeechResultThumbnail = ({
       className={cn(
         'relative block shrink-0 overflow-hidden rounded-lg border bg-muted',
         fullWidthOnMobile ? 'h-28 w-full md:h-20 md:w-32' : 'h-20 w-32',
+        className,
       )}
     >
       {settled ? null : <Skeleton className="absolute inset-0 rounded-lg" />}
