@@ -10,7 +10,7 @@
 | Severidade          | alta (fluxo editorial da Central e capas públicas do Instagram na home)                                                      |
 | Ambiente            | prod                                                                                                                         |
 | Issue(s)            | sem Issue — continuação do relato do worktree `fix/10` (post-mortem anterior: `2026-09-24-instagram-link-sem-early-stop.md`) |
-| PR do fix           | a preencher (o retry no resolver); a rede foi corrigida direto no stack do homeserver (fora do repo)                         |
+| PR do fix           | #1349 (o retry no resolver); a rede foi corrigida direto no stack do homeserver (fora do repo)                               |
 | Detectado por       | humano (testes em prod: reels com `Instagram indisponível no momento`)                                                       |
 
 ## Timeline
