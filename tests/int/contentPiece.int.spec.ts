@@ -981,6 +981,74 @@ describe('content pieces (C211)', () => {
       expect(row.media).toBe(resolution.media?.id)
     })
 
+    it('stops at page 1 when the pasted post is there, even if deeper cursors fail', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        title: 'Reel recém-publicado',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/RECENTE1/',
+      })
+      const calls: string[] = []
+
+      const resolution = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          // No injected `loadFeed`: the real pagination owner is under test.
+          fetchImpl: async (input) => {
+            calls.push(input)
+            if (input.includes('cdn.example')) {
+              return new Response(Buffer.from('reel-bytes'), { status: 200 })
+            }
+            if (input.includes('/media')) {
+              // The deeper cursor is broken on this edge (C212); the page-1
+              // match must never depend on asking it.
+              if (input.includes('after=')) {
+                return new Response(
+                  JSON.stringify({ error: { message: 'cursor não suportado' } }),
+                  {
+                    status: 400,
+                  },
+                )
+              }
+              return new Response(
+                JSON.stringify({
+                  data: [
+                    {
+                      id: 'media-1',
+                      caption: 'Legenda oficial',
+                      media_type: 'REEL',
+                      media_url: 'https://cdn.example/reel.mp4',
+                      permalink: 'https://www.instagram.com/reel/RECENTE1/',
+                      timestamp: '2026-09-01T10:00:00+00:00',
+                    },
+                  ],
+                  paging: { cursors: { after: 'CURSOR-1' } },
+                }),
+                { status: 200 },
+              )
+            }
+            if (input.includes('/refresh_access_token')) {
+              return new Response(JSON.stringify({ access_token: 'refreshed-token' }), {
+                status: 200,
+              })
+            }
+            return new Response(JSON.stringify({ username: 'depjorgesolla' }), { status: 200 })
+          },
+        }),
+      )
+
+      expect(resolution.linkFailureReason).toBeNull()
+      expect(resolution.media).toBeTruthy()
+      if (resolution.media) createdMediaIds.add(resolution.media.id)
+      // The typical paste costs one media call; the broken deeper cursor is
+      // never requested (a page-1 match cannot become `indisponivel`).
+      expect(calls.filter((call) => call.includes('/media'))).toHaveLength(1)
+      expect(calls.some((call) => call.includes('after='))).toBe(false)
+    })
+
     it('reports nao-encontrado when the post is not in the window', async () => {
       await setInstagramSettings(true)
       const { piece } = await createPiece({
