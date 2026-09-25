@@ -10,7 +10,7 @@
 | Severidade          | alta (bloqueia uploads de mídia em produção)                                  |
 | Ambiente            | prod (sintoma e diagnóstico read-only) + dev/worktree (reprodução e correção) |
 | Issue(s)            | sem Issue                                                                     |
-| PR do fix           | pendente                                                                      |
+| PR do fix           | #1354                                                                         |
 | Detectado por       | humano                                                                        |
 
 ## Timeline
@@ -20,7 +20,7 @@
 | Início provável    | não apurado                  | A introdução exata é não apurada. O sintoma foi reportado contra a UI da versão S29, com múltiplos destinos.         |
 | Detecção           | 2026-09-25, hora não apurada | O humano relatou que o envio da capa permanecia em "Enviando..." até desistir no admin de Links de compartilhamento. |
 | Diagnóstico        | 2026-09-25                   | Diagnóstico read-only em produção associou o bloqueio à rota S3 do container.                                        |
-| Correção mergeada  | pendente                     | Correção implementada no worktree `fix/13`; PR e CI pendentes.                                                       |
+| Correção mergeada  | pendente                     | Correção implementada e PR #1354 aberto; CI e merge pendentes.                                                       |
 | Deploy             | pendente                     | O merge dispara o deploy; staging é automático e produção depende de aprovação humana.                               |
 | Verificado em prod | pendente — aprovação humana  | CI, PR, deploy e confirmação do comportamento em produção estão pendentes.                                           |
 
@@ -55,7 +55,7 @@ Depois do healthcheck, o endpoint é sondado de dentro do container em execuçã
 - Teste de regressão: `tests/unit/mediaEndpoint.unit.spec.ts`, 3/3; no HEAD pré-fix, o novo import de `scripts/lib/mediaEndpoint.mjs` não existia, e o spec passa com a correção.
 - Regressão do deploy: `tests/unit/deployScript.unit.spec.ts`, "repairs a broken S3 host gateway before migration and verifies the live route"; falha no estado pré-fix e passa com a correção.
 - Suíte: `pnpm gate:fast` verde, 424 arquivos e 4698 testes; integração de ShareLink 25/25; `frontendShareLink` e2e 6/6; `pnpm format:check`, `pnpm check:cycles`, `pnpm knip` e `bash -n` verdes.
-- CI: pendente; o PR ainda não foi criado.
+- CI: pendente no PR #1354.
 - Deploy: pendente de PR, CI e merge; a produção ainda depende de aprovação humana.
 - verificado em prod: pendente — aprovação humana.
 
