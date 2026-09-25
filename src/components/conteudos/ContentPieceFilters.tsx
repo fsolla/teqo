@@ -1,3 +1,4 @@
+import { ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 
 import {
@@ -22,7 +23,20 @@ const FIELD_CLASS =
   'min-h-11 w-full rounded-[10px] border border-black/18 bg-white py-2.5 pr-10 pl-3 text-[15px] text-black placeholder:text-(--campaign-muted) focus-visible:border-(--pt-red) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red) [&::-webkit-search-cancel-button]:hidden'
 
 const DROPDOWN_LINK =
-  'flex min-h-9 items-center rounded-lg px-2.5 text-sm font-medium text-black hover:bg-(--campaign-band) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red)'
+  'flex min-h-10 items-center rounded-lg px-3 text-sm font-medium text-black hover:bg-(--campaign-band) focus-visible:outline-[3px] focus-visible:outline-offset-[2px] focus-visible:outline-(--pt-red)'
+
+/**
+ * S27 — the facet menu chevron (artefato: cena 03): a real icon centered by
+ * `inline-flex + items-center`, never the text glyph `⌄` (whose ink sits at the
+ * bottom of the line box and reads as a subscript). It flips on the open menu.
+ */
+const FACET_CHEVRON = (
+  <ChevronDown
+    aria-hidden="true"
+    strokeWidth={2.5}
+    className="size-3.5 shrink-0 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+  />
+)
 
 /**
  * S37 — the active-filter chip is shared with the results header (design scene
@@ -126,18 +140,23 @@ export const ContentPieceFilters = ({
 
           {CONTENT_PIECE_CATALOG_FACETS.map((facet) =>
             params[facet] || facets[facet].length === 0 ? null : (
-              <details key={facet} className="relative max-sm:open:w-full">
+              // S27 — one shared `name` makes the empty facet menus an
+              // exclusive accordion: opening a filter closes the previous one
+              // (native `<details>`, no JS).
+              <details
+                key={facet}
+                name="content-facet"
+                className="group relative max-sm:open:w-full"
+              >
                 <summary
-                  className={`${CONTENT_PIECE_CHIP} cursor-pointer list-none [&::-webkit-details-marker]:hidden`}
+                  className={`${CONTENT_PIECE_CHIP} cursor-pointer list-none group-open:border-[#184e92]/35 group-open:text-[#184e92] [&::-webkit-details-marker]:hidden`}
                 >
                   {contentPieceCatalogFacetLabels[facet]}
-                  <span aria-hidden="true" className="text-base leading-none">
-                    ⌄
-                  </span>
+                  {FACET_CHEVRON}
                 </summary>
                 <ul
-                  className={`absolute z-20 mt-1 max-h-72 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1 shadow-[0_12px_30px_rgb(0_0_0/15%)] max-sm:static max-sm:mt-2 max-sm:w-full max-sm:min-w-0 max-sm:p-2 ${
-                    facet === 'lideranca' ? 'sm:w-64' : 'min-w-44'
+                  className={`absolute z-20 mt-2 max-h-72 list-none overflow-y-auto rounded-xl border border-(--campaign-line) bg-white p-1.5 shadow-[0_14px_34px_rgb(0_0_0/16%)] max-sm:static max-sm:mt-2 max-sm:w-full max-sm:min-w-0 max-sm:p-2 ${
+                    facet === 'lideranca' ? 'sm:w-64' : 'min-w-48'
                   }`}
                 >
                   {facet === 'lideranca' ? (

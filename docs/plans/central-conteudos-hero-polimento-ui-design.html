@@ -1,0 +1,943 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — Central de Conteúdos · hero e filtros</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: Arimo, Arial, sans-serif;
+      }
+
+      :root {
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --campaign-muted: #6c615e;
+        --pt-red: #a21c1c;
+        --pt-yellow: #ffe607;
+        --pt-yellow-ink: #000000;
+        --kit-red: #e4102f;
+        --kit-blue: #184e92;
+        --display: 'Exo 2', 'Arial Black', Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arimo, Arial, sans-serif;
+      }
+
+      .display {
+        font-family: var(--display);
+      }
+
+      .design-board {
+        background-color: #e8e4e1;
+        background-image: radial-gradient(rgb(24 78 146 / 10%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+
+      .frame {
+        box-shadow: 0 24px 70px rgb(47 31 27 / 15%);
+      }
+
+      .desktop {
+        width: 1280px;
+      }
+
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+
+      .hero-surface {
+        background:
+          radial-gradient(circle at 70% 5%, rgb(255 230 7 / 14%), transparent 25%),
+          linear-gradient(116deg, #e4102f 0%, #c10b2b 49%, #6b2758 70%, #184e92 100%);
+      }
+
+      .hero-pattern {
+        background-image: url('../../public/campaign-kit/pattern-shapes.png');
+        background-position: center 5%;
+        background-repeat: no-repeat;
+        background-size: 100% auto;
+        opacity: 0.13;
+      }
+
+      .search-field {
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid rgb(0 0 0 / 18%);
+        border-radius: 10px;
+        background: white;
+        padding: 10px 40px 10px 12px;
+        color: var(--campaign-ink);
+        font-size: 15px;
+      }
+
+      .filter-chip {
+        display: inline-flex;
+        min-height: 36px;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: 1px solid var(--campaign-line);
+        border-radius: 999px;
+        background: white;
+        padding: 0 12px;
+        color: black;
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 1;
+      }
+
+      .filter-chip svg {
+        display: block;
+        flex: none;
+      }
+
+      details[open] > summary .chevron {
+        transform: rotate(180deg);
+      }
+
+      .active-chip {
+        border-color: rgb(24 78 146 / 35%);
+        background: #eef4fb;
+        color: #184e92;
+      }
+
+      .scene-label::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #c8c1bd;
+      }
+
+      summary::-webkit-details-marker {
+        display: none;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="design-board min-h-screen text-(--campaign-ink) antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white">
+          POLIMENTO VISUAL · GATE
+        </span>
+        <h1 class="display mt-4 text-4xl leading-tight font-black tracking-[-0.02em]">
+          Central mais viva, sem competir com as peças
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-(--campaign-muted)">
+          O 1313 passa a ser protagonista também no celular; a busca continua sendo a próxima ação
+          óbvia. Abaixo, hero e filtros em 1280 px e 390 px — o board não está sendo redesenhado.
+        </p>
+      </header>
+
+      <section aria-labelledby="scene-01-title">
+        <div
+          class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-(--campaign-muted)"
+        >
+          <span>CENA 01</span>
+          <h2 id="scene-01-title">Desktop 1280 · hero de campanha + barra fechada</h2>
+        </div>
+
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#b91908] px-10">
+            <img
+              src="../../public/campaign-kit/jorge-solla-negativo.png"
+              class="h-9 w-auto"
+              alt="Jorge Solla"
+            />
+            <span class="text-sm font-bold text-white">Central de Conteúdos</span>
+          </header>
+
+          <section class="hero-surface relative isolate min-h-[316px] overflow-hidden text-white">
+            <div class="hero-pattern absolute inset-y-0 right-0 -z-10 w-[48%]"></div>
+            <div
+              class="absolute inset-y-0 right-0 -z-10 w-[43%] bg-[linear-gradient(90deg,transparent,rgb(11_38_78/42%))]"
+            ></div>
+            <div class="absolute inset-x-0 bottom-0 h-1 bg-(--pt-yellow)"></div>
+
+            <div
+              class="mx-auto grid min-h-[316px] max-w-6xl grid-cols-[1fr_330px] items-center gap-14 px-10 py-10"
+            >
+              <div>
+                <p class="m-0 text-sm font-black tracking-[0.1em] text-(--pt-yellow) uppercase">
+                  Peça voto pra Solla 1313
+                </p>
+                <h3
+                  class="display mt-3 max-w-2xl text-[42px] leading-[1.02] font-black tracking-[-0.025em] text-balance"
+                >
+                  Uma mensagem sua pode conquistar mais um voto.
+                </h3>
+                <p class="mt-4 max-w-xl text-base leading-6 text-white/90">
+                  Escolha uma peça, mande para alguém que você conhece e peça o voto no 1313.
+                </p>
+                <div class="mt-6 flex items-center gap-2 text-xs font-bold text-white/75">
+                  <span class="h-px w-8 bg-(--pt-yellow)"></span>
+                  <span>Peças oficiais para baixar e compartilhar</span>
+                </div>
+              </div>
+
+              <div class="relative flex h-48 items-center justify-center">
+                <div
+                  class="absolute inset-0 rotate-[-3deg] rounded-[28px] border border-white/12 bg-[#0e3978]/42 shadow-[0_22px_45px_rgb(9_22_56/22%)]"
+                ></div>
+                <img
+                  src="../../public/campaign-kit/numero-negativo.png"
+                  class="relative w-[272px] drop-shadow-[0_10px_22px_rgb(7_20_51/30%)]"
+                  alt="1313 — Mais Saúde, Mais Futuro"
+                />
+              </div>
+            </div>
+          </section>
+
+          <div class="mx-auto max-w-6xl px-10 py-10">
+            <div class="grid grid-cols-[1fr_300px] gap-3 rounded-xl bg-(--campaign-cream) p-4">
+              <div class="self-end">
+                <div class="search-field text-(--campaign-muted)">
+                  Encontre uma peça por assunto, cidade ou pessoa…
+                </div>
+              </div>
+              <fieldset>
+                <legend class="mb-1 text-xs font-bold text-(--campaign-muted)">Buscar por:</legend>
+                <div class="grid grid-cols-2 rounded-[10px] bg-(--campaign-band) p-1">
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] bg-white px-2.5 text-[13px] font-extrabold text-[#184e92] shadow-[0_1px_4px_rgb(0_0_0/12%)]"
+                  >
+                    Termo exato
+                  </span>
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] px-2.5 text-[13px] font-extrabold text-[#3f3937]"
+                  >
+                    ✦ Por tema
+                  </span>
+                </div>
+              </fieldset>
+
+              <div class="col-span-2 flex flex-wrap items-center gap-2">
+                <button class="filter-chip" type="button">
+                  Tipo
+                  <svg
+                    class="chevron size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Cidade
+                  <svg
+                    class="chevron size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Região
+                  <svg
+                    class="chevron size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Tema
+                  <svg
+                    class="chevron size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Instituição
+                  <svg
+                    class="chevron size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Lideranças
+                  <svg
+                    class="chevron size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-9 border-t border-(--campaign-line) pt-7">
+              <h3 class="display text-2xl font-black tracking-[-0.02em]">
+                Escolha, compartilhe e peça voto
+              </h3>
+              <p class="mt-1 text-sm text-(--campaign-muted)">
+                O board existente começa aqui, sem mudanças.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="scene-02-title">
+        <div
+          class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-(--campaign-muted)"
+        >
+          <span>CENA 02</span>
+          <h2 id="scene-02-title">Mobile 390 · o 1313 deixa de desaparecer</h2>
+        </div>
+
+        <div class="phone frame mx-auto overflow-hidden bg-white">
+          <header class="flex h-14 items-center justify-between bg-[#b91908] px-5">
+            <img
+              src="../../public/campaign-kit/jorge-solla-negativo.png"
+              class="h-7 w-auto"
+              alt="Jorge Solla"
+            />
+            <span class="text-sm font-bold text-white">Central de Conteúdos</span>
+          </header>
+
+          <section
+            class="hero-surface relative isolate min-h-[318px] overflow-hidden px-5 py-7 text-white"
+          >
+            <div
+              class="hero-pattern absolute -right-20 bottom-0 -z-10 h-[210px] w-[330px] bg-[center_top] opacity-[0.11]"
+            ></div>
+            <div
+              class="absolute inset-x-0 bottom-0 -z-10 h-28 bg-[linear-gradient(0deg,rgb(10_43_94/72%),transparent)]"
+            ></div>
+            <div class="absolute inset-x-0 bottom-0 h-1 bg-(--pt-yellow)"></div>
+
+            <p class="m-0 text-xs font-black tracking-[0.1em] text-(--pt-yellow) uppercase">
+              Peça voto pra Solla 1313
+            </p>
+            <h3
+              class="display mt-3 text-[34px] leading-[0.98] font-black tracking-[-0.025em] text-balance"
+            >
+              Mande uma peça.<br />Peça mais um voto.
+            </h3>
+            <p class="mt-3 max-w-[335px] text-sm leading-5 text-white/90">
+              Escolha alguém, compartilhe e peça o voto no 1313.
+            </p>
+
+            <div class="absolute right-5 bottom-5 flex items-end gap-3">
+              <span class="mb-2 h-px w-10 bg-white/45"></span>
+              <img
+                src="../../public/campaign-kit/numero-negativo.png"
+                class="w-[154px] drop-shadow-[0_8px_18px_rgb(7_20_51/28%)]"
+                alt="1313 — Mais Saúde, Mais Futuro"
+              />
+            </div>
+          </section>
+
+          <div class="p-5">
+            <div class="rounded-xl bg-(--campaign-cream) p-4">
+              <div class="search-field truncate text-(--campaign-muted)">
+                Encontre uma peça por assunto, cidade ou pessoa…
+              </div>
+
+              <fieldset class="mt-3">
+                <legend class="mb-1 text-xs font-bold text-(--campaign-muted)">Buscar por:</legend>
+                <div class="grid grid-cols-2 rounded-[10px] bg-(--campaign-band) p-1">
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] bg-white px-2.5 text-[13px] font-extrabold text-[#184e92] shadow-[0_1px_4px_rgb(0_0_0/12%)]"
+                    >Termo exato</span
+                  >
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] px-2.5 text-[13px] font-extrabold text-[#3f3937]"
+                    >✦ Por tema</span
+                  >
+                </div>
+              </fieldset>
+
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <button class="filter-chip" type="button">
+                  Tipo
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Cidade
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Região
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Tema
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Instituição
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Lideranças
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="mt-8 border-t border-(--campaign-line) pt-6">
+              <h3 class="display text-xl leading-tight font-black">
+                Escolha, compartilhe e peça voto
+              </h3>
+              <p class="mt-1 text-sm text-(--campaign-muted)">O board existente começa aqui.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="scene-03-title">
+        <div
+          class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-(--campaign-muted)"
+        >
+          <span>CENA 03</span>
+          <h2 id="scene-03-title">Dropdown aberto · chevron correto e exclusividade nativa</h2>
+        </div>
+
+        <div class="desktop frame mx-auto min-h-[410px] overflow-visible rounded-xl bg-white p-10">
+          <div class="grid grid-cols-[1fr_300px] gap-3 rounded-xl bg-(--campaign-cream) p-4">
+            <div class="self-end">
+              <div class="search-field text-(--campaign-muted)">
+                Encontre uma peça por assunto, cidade ou pessoa…
+              </div>
+            </div>
+            <fieldset>
+              <legend class="mb-1 text-xs font-bold text-(--campaign-muted)">Buscar por:</legend>
+              <div class="grid grid-cols-2 rounded-[10px] bg-(--campaign-band) p-1">
+                <span
+                  class="flex min-h-[42px] items-center justify-center rounded-[7px] bg-white text-[13px] font-extrabold text-[#184e92] shadow-[0_1px_4px_rgb(0_0_0/12%)]"
+                  >Termo exato</span
+                >
+                <span
+                  class="flex min-h-[42px] items-center justify-center rounded-[7px] text-[13px] font-extrabold"
+                  >✦ Por tema</span
+                >
+              </div>
+            </fieldset>
+
+            <div class="col-span-2 flex flex-wrap items-start gap-2">
+              <details name="content-facet" class="relative" open>
+                <summary
+                  class="filter-chip cursor-pointer list-none border-[#184e92]/35 text-[#184e92]"
+                >
+                  Tipo
+                  <svg
+                    class="chevron size-3.5 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+                <ul
+                  class="absolute z-20 mt-2 min-w-48 list-none rounded-xl border border-(--campaign-line) bg-white p-1.5 shadow-[0_14px_34px_rgb(0_0_0/16%)]"
+                >
+                  <li>
+                    <a
+                      href="#"
+                      class="flex min-h-10 items-center rounded-lg bg-[#eef4fb] px-3 text-sm font-bold text-[#184e92] no-underline"
+                      >Vídeo</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium text-black no-underline"
+                      >Áudio</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium text-black no-underline"
+                      >Card</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium text-black no-underline"
+                      >Foto</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      href="#"
+                      class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium text-black no-underline"
+                      >Texto</a
+                    >
+                  </li>
+                </ul>
+              </details>
+
+              <details name="content-facet" class="relative">
+                <summary class="filter-chip cursor-pointer list-none">
+                  Cidade
+                  <svg
+                    class="chevron size-3.5 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+                <ul
+                  class="absolute z-20 mt-2 min-w-48 list-none rounded-xl border border-(--campaign-line) bg-white p-1.5 shadow-[0_14px_34px_rgb(0_0_0/16%)]"
+                >
+                  <li class="flex min-h-10 items-center rounded-lg px-3 text-sm">Salvador</li>
+                  <li class="flex min-h-10 items-center rounded-lg px-3 text-sm">
+                    Feira de Santana
+                  </li>
+                </ul>
+              </details>
+
+              <details name="content-facet" class="relative">
+                <summary class="filter-chip cursor-pointer list-none">
+                  Região
+                  <svg
+                    class="chevron size-3.5 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+              </details>
+              <details name="content-facet" class="relative">
+                <summary class="filter-chip cursor-pointer list-none">
+                  Tema
+                  <svg
+                    class="chevron size-3.5 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+              </details>
+              <details name="content-facet" class="relative">
+                <summary class="filter-chip cursor-pointer list-none">
+                  Instituição
+                  <svg
+                    class="chevron size-3.5 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+              </details>
+              <details name="content-facet" class="relative">
+                <summary class="filter-chip cursor-pointer list-none">
+                  Lideranças
+                  <svg
+                    class="chevron size-3.5 transition-transform"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </summary>
+              </details>
+            </div>
+          </div>
+
+          <div
+            class="mt-36 flex items-center gap-3 border-t border-(--campaign-line) pt-5 text-sm text-(--campaign-muted)"
+          >
+            <span
+              class="grid size-7 place-items-center rounded-full bg-[#eef4fb] font-black text-[#184e92]"
+              >1</span
+            >
+            <p>
+              Somente um <code class="rounded bg-stone-100 px-1.5 py-0.5">details</code> do grupo
+              permanece aberto.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="scene-04-title">
+        <div
+          class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-(--campaign-muted)"
+        >
+          <span>CENA 04</span>
+          <h2 id="scene-04-title">Filtros ativos · desktop e mobile</h2>
+        </div>
+
+        <div class="grid items-start gap-8 xl:grid-cols-[1fr_390px]">
+          <div class="frame min-w-0 rounded-xl bg-white p-8">
+            <p class="mb-4 text-xs font-black tracking-[0.08em] text-(--campaign-muted) uppercase">
+              Desktop
+            </p>
+            <div class="grid grid-cols-[1fr_300px] gap-3 rounded-xl bg-(--campaign-cream) p-4">
+              <div class="relative self-end">
+                <div class="search-field pr-12">saúde pública</div>
+                <button
+                  class="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-lg leading-none text-(--campaign-muted)"
+                  aria-label="Limpar busca"
+                >
+                  ×
+                </button>
+              </div>
+              <fieldset>
+                <legend class="mb-1 text-xs font-bold text-(--campaign-muted)">Buscar por:</legend>
+                <div class="grid grid-cols-2 rounded-[10px] bg-(--campaign-band) p-1">
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] bg-white text-[13px] font-extrabold text-[#184e92] shadow-[0_1px_4px_rgb(0_0_0/12%)]"
+                    >Termo exato</span
+                  >
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] text-[13px] font-extrabold"
+                    >✦ Por tema</span
+                  >
+                </div>
+              </fieldset>
+              <div class="col-span-2 flex flex-wrap items-center gap-2">
+                <span class="filter-chip active-chip"
+                  >Tipo · Vídeo <b class="text-base leading-none">×</b></span
+                >
+                <span class="filter-chip active-chip"
+                  >Cidade · Salvador <b class="text-base leading-none">×</b></span
+                >
+                <button class="filter-chip" type="button">
+                  Região
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Tema
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+                <button class="filter-chip" type="button">
+                  Instituição
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <div
+              class="mt-8 flex flex-wrap items-end justify-between gap-3 border-t border-(--campaign-line) pt-6"
+            >
+              <div>
+                <h3 class="display text-2xl font-black tracking-[-0.02em]">
+                  Peças com Maria Silva
+                </h3>
+                <p class="mt-1 text-sm text-(--campaign-muted)">
+                  O filtro combina com cidade, tema e os demais recortes.
+                </p>
+              </div>
+              <span class="filter-chip active-chip"
+                >Lideranças · Maria Silva <b class="text-base leading-none">×</b></span
+              >
+            </div>
+          </div>
+
+          <div class="phone frame overflow-hidden bg-white p-5">
+            <p class="mb-4 text-xs font-black tracking-[0.08em] text-(--campaign-muted) uppercase">
+              Mobile
+            </p>
+            <div class="rounded-xl bg-(--campaign-cream) p-4">
+              <div class="relative">
+                <div class="search-field truncate pr-12">saúde pública</div>
+                <button
+                  class="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-lg leading-none text-(--campaign-muted)"
+                  aria-label="Limpar busca"
+                >
+                  ×
+                </button>
+              </div>
+              <fieldset class="mt-3">
+                <legend class="mb-1 text-xs font-bold text-(--campaign-muted)">Buscar por:</legend>
+                <div class="grid grid-cols-2 rounded-[10px] bg-(--campaign-band) p-1">
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] bg-white text-[13px] font-extrabold text-[#184e92] shadow-[0_1px_4px_rgb(0_0_0/12%)]"
+                    >Termo exato</span
+                  >
+                  <span
+                    class="flex min-h-[42px] items-center justify-center rounded-[7px] text-[13px] font-extrabold"
+                    >✦ Por tema</span
+                  >
+                </div>
+              </fieldset>
+              <div class="mt-3 flex flex-wrap items-center gap-2">
+                <span class="filter-chip active-chip"
+                  >Tipo · Vídeo <b class="text-base leading-none">×</b></span
+                >
+                <span class="filter-chip active-chip"
+                  >Cidade · Salvador <b class="text-base leading-none">×</b></span
+                >
+                <span class="filter-chip active-chip"
+                  >Lideranças · Maria Silva <b class="text-base leading-none">×</b></span
+                >
+                <button class="filter-chip" type="button">
+                  Tema
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="m6 9 6 6 6-6"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="mt-7 border-t border-(--campaign-line) pt-5">
+              <h3 class="display text-xl font-black">Peças com Maria Silva</h3>
+              <p class="mt-1 text-sm leading-5 text-(--campaign-muted)">
+                No mobile, Lideranças permanece na barra.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="notes-title" class="frame rounded-2xl bg-white p-6 md:p-8">
+        <h2 id="notes-title" class="display text-2xl font-black">Notas para aprovação e port</h2>
+        <div class="mt-5 grid gap-6 text-sm leading-6 md:grid-cols-2">
+          <div>
+            <h3 class="font-extrabold text-[#a21c1c]">O que mudou em relação ao S27</h3>
+            <ul class="mt-2 list-disc space-y-2 pl-5 text-(--campaign-muted)">
+              <li>
+                O hero ganhou profundidade com o pattern oficial, uma placa azul translúcida e o
+                número 1313 em escala maior.
+              </li>
+              <li>
+                No mobile, o ativo <strong class="text-black">numero-negativo.png</strong> passa a
+                aparecer sem aumentar demais a altura do hero.
+              </li>
+              <li>A faixa amarela inferior fecha o hero e separa a marca da tarefa de busca.</li>
+              <li>
+                A barra mantém a geometria e a escala atuais; o polimento corrige apenas ícones,
+                estados e legibilidade.
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-[#184e92]">Contratos visuais a respeitar</h3>
+            <ul class="mt-2 list-disc space-y-2 pl-5 text-(--campaign-muted)">
+              <li>
+                Usar <strong class="text-black">Lucide ChevronDown</strong> em 14 px, centralizado
+                por <code class="rounded bg-stone-100 px-1">inline-flex + items-center</code>; nunca
+                o glifo textual <code class="rounded bg-stone-100 px-1">⌄</code>.
+              </li>
+              <li>
+                Todos os filtros vazios compartilham o mesmo grupo exclusivo de
+                <code class="rounded bg-stone-100 px-1">details</code>; abrir um fecha o anterior.
+              </li>
+              <li>
+                O chip ativo de Lideranças fica no cabeçalho dos resultados no desktop e dentro da
+                barra no mobile.
+              </li>
+              <li>
+                O “×” da busca fica dentro do campo; chips ativos mantêm label, valor e remoção
+                explícitos.
+              </li>
+              <li>
+                Ativos usados: <strong class="text-black">numero-negativo.png</strong>,
+                <strong class="text-black">pattern-shapes.png</strong> e o lockup já existente no
+                cabeçalho (<strong class="text-black">jorge-solla-negativo.png</strong>).
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div
+          class="mt-6 rounded-xl border border-[#184e92]/18 bg-[#eef4fb] p-4 text-sm leading-6 text-[#173b69]"
+        >
+          <strong>Copy:</strong> nenhuma mudança de contrato. O título desktop continua “Uma
+          mensagem sua pode conquistar mais um voto.” e a variante mobile continua “Mande uma peça.
+          Peça mais um voto.”
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

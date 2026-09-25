@@ -133,7 +133,7 @@ export default async function ConteudosPage({
             themeUnavailable={themeUnavailable}
           />
 
-          <div className="mt-9">
+          <div className="mt-8 border-t border-(--campaign-line) pt-6 sm:mt-9 sm:pt-7">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
                 <h2 className="border-0 pb-0 font-[family-name:var(--font-exo2)] text-xl font-black tracking-[-0.02em] sm:text-2xl">
