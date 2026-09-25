@@ -17,6 +17,10 @@ import { institutionCatalog, institutionSpellings } from '@/lib/institutionCatal
 import { type SpeechTopic } from '@/lib/speechFacets'
 import { matchMunicipalityMentions, type SpeechFacetInput } from '@/lib/speechGazetteer'
 import { normalizeForSearch } from '@/lib/speechSearch'
+import {
+  DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+  DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
+} from '@/utilities/ai/deepseekFlashDefaults'
 import { classifySpeech } from '@/utilities/speech/speechClassifier'
 
 /**
@@ -30,7 +34,6 @@ import { classifySpeech } from '@/utilities/speech/speechClassifier'
 
 const SUGGESTION_TIMEOUT_MS = 8000
 const MAX_EXCERPT_CHARS = 2000
-const MAX_OUTPUT_TOKENS = 500
 
 export type ContentPieceCatalogResult = {
   title?: string
@@ -133,7 +136,8 @@ const suggestContentPieceMetadata: ContentPieceSuggester = async ({
         .filter((line): line is string => line !== null)
         .join('\n'),
       temperature: 0.3,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+      providerOptions: DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
       abortSignal: AbortSignal.timeout(SUGGESTION_TIMEOUT_MS),
     })
 

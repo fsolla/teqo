@@ -1,7 +1,12 @@
 // @vitest-environment node
 
 import type { Payload } from 'payload'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+const { generateObjectMock } = vi.hoisted(() => ({ generateObjectMock: vi.fn() }))
+
+vi.mock('ai', () => ({ generateObject: generateObjectMock }))
+vi.mock('@ai-sdk/deepseek', () => ({ deepSeek: vi.fn(() => 'mock-model') }))
 
 import type { SpeechTopic } from '@/lib/speechFacets'
 import {
@@ -38,6 +43,15 @@ const classifierOf = (topics: SpeechTopic[]) => vi.fn(async () => ({ facets: { t
 
 const suggesterOf = (title: string, description: string) =>
   vi.fn(async () => ({ title, description, source: 'ai' as const }))
+
+beforeEach(() => {
+  process.env.DEEPSEEK_API_KEY = 'test-deepseek-key'
+  generateObjectMock.mockReset()
+})
+
+afterEach(() => {
+  delete process.env.DEEPSEEK_API_KEY
+})
 
 describe('resolveContentPieceMunicipalityId', () => {
   it('resolves a single unambiguous city mention', async () => {
@@ -192,5 +206,28 @@ describe('catalogContentPiece', () => {
 
     expect(result.source).toBe('ai')
     expect(result.topics).toBeUndefined()
+  })
+
+  it('desliga o thinking e mantém teto de saída acima do orçamento de raciocínio', async () => {
+    generateObjectMock.mockReset()
+    generateObjectMock.mockResolvedValue({
+      object: { title: 'Título sugerido', description: 'Descrição sugerida.' },
+    })
+
+    const result = await catalogContentPiece({
+      payload: fakePayload(),
+      type: 'video',
+      title: 'Peça',
+      transcript: 'Uma fala qualquer sobre saúde.',
+      classify: classifierOf([]),
+    })
+
+    expect(result.source).toBe('ai')
+    const call = generateObjectMock.mock.calls[0]![0] as {
+      maxOutputTokens?: number
+      providerOptions?: unknown
+    }
+    expect(call.providerOptions).toEqual({ deepseek: { thinking: { type: 'disabled' } } })
+    expect(call.maxOutputTokens).toBeGreaterThanOrEqual(1000)
   })
 })

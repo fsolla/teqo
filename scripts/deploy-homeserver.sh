@@ -276,6 +276,40 @@ for _ in $(seq 1 30); do
 done
 [ "$health" = "healthy" ] || rollback "container not healthy after 300s (status: $health)"
 
+# --- feature env audit (non-fatal) --------------------------------------
+# A missing feature key never fails the boot: the capability degrades
+# silently (AI theme search/titles/transcription, forgot-password e-mail,
+# push). The audit reads the RUNNING container env — the compose env_file is
+# the source of truth, not what the script sourced — and annotates what is
+# missing so the operator sees the capability loss in this very deploy. It
+# never fails the deploy: which feature keys are set is the human's call.
+# The list mirrors the app predicates (`isCampaignEmailConfigured`,
+# `resolveVapidConfig` and the DeepSeek/Deep Infra guards).
+
+FEATURE_ENV_KEYS=(
+  DEEPSEEK_API_KEY
+  DEEPINFRA_API_KEY
+  RESEND_API_KEY
+  CAMPAIGN_EMAIL_FROM
+  VAPID_PUBLIC_KEY
+  VAPID_PRIVATE_KEY
+)
+
+warn_missing_feature_envs() {
+  local container_env missing=() name
+  container_env="$(docker inspect -f '{{range .Config.Env}}{{println .}}{{end}}' "$TEQO_CONTAINER" 2>/dev/null || true)"
+  for name in "${FEATURE_ENV_KEYS[@]}"; do
+    printf '%s\n' "$container_env" | grep -q "^${name}=." || missing+=("$name")
+  done
+  if [ "${#missing[@]}" -gt 0 ]; then
+    say "WARNING: $TEQO_CONTAINER is missing feature envs: ${missing[*]}"
+    printf '::warning::%s is missing feature envs: %s (those capabilities degrade silently)\n' \
+      "$TEQO_CONTAINER" "${missing[*]}"
+  fi
+}
+
+warn_missing_feature_envs
+
 # --- smoke --------------------------------------------------------------
 
 base="$TEQO_SMOKE_BASE"

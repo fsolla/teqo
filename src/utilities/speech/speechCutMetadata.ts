@@ -9,12 +9,15 @@ import {
   clipSpeechCutText,
   type SpeechCutSourceKind,
 } from '@/lib/speechCut'
+import {
+  DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+  DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
+} from '@/utilities/ai/deepseekFlashDefaults'
 
 const SUGGESTION_TIMEOUT_MS = 6000
 const MAX_EXCERPT_CHARS = 1200
 const MAX_TITLE_LENGTH = 120
 const MAX_DESCRIPTION_LENGTH = 600
-const MAX_OUTPUT_TOKENS = 400
 
 type SpeechCutMetadataSource = 'ai' | 'fallback'
 
@@ -139,7 +142,8 @@ export const suggestSpeechCutMetadata = async ({
               `Trecho (transcrição automática): "${excerpt}"`,
             ]),
       temperature: 0.3,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+      providerOptions: DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
       abortSignal: AbortSignal.timeout(SUGGESTION_TIMEOUT_MS),
     })
 

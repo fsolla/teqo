@@ -466,6 +466,38 @@ Desconectar no Teqo apaga o refresh token daquele lado; para revogar o acesso
 de fato, revogue o app em `myaccount.google.com/permissions` (a UI orienta o
 passo).
 
+## Busca por tema e demais capacidades de IA — envs do app
+
+As chamadas de IA do app (busca por tema do acervo e da Central, título de
+demanda, metadados de corte, catalogação de peças, reranking do Sollinha e
+transcrição de voz) rodam no **runtime do container** e leem as chaves do
+`env_file` do compose (`~/stack/teqo-1313.env` / `~/stack/teqo-staging.env`).
+O `~/stack/.env` do homeserver (que o `deploy-homeserver.sh` sourceia para
+registry e BuildKit secrets) **não** chega ao runtime. Chave ausente não
+derruba o boot: a capacidade degrada em silêncio — a busca por tema mostra
+"indisponível agora" e o título cai no fallback determinístico (incidente
+2026-09-24; post-mortem em
+`docs/postmortems/2026-09-24-busca-por-tema-indisponivel.md`).
+
+Pré-requisitos de produção e staging: `DEEPSEEK_API_KEY` (busca por tema,
+Sollinha, título/metadados) e `DEEPINFRA_API_KEY` (transcrição de voz). O
+`~/stack/.env` do homeserver já tem as duas; copie as linhas para o env file
+do app (idempotente):
+
+```bash
+ssh homeserver
+for f in ~/stack/teqo-1313.env ~/stack/teqo-staging.env; do
+  grep -q '^DEEPSEEK_API_KEY=' "$f" || grep '^DEEPSEEK_API_KEY=' ~/stack/.env >> "$f"
+  grep -q '^DEEPINFRA_API_KEY=' "$f" || grep '^DEEPINFRA_API_KEY=' ~/stack/.env >> "$f"
+done
+```
+
+O deploy seguinte recria o container com as chaves. Desde o incidente, o
+`deploy-homeserver.sh` audita o env do container recém-saído do healthcheck e
+anota no run (`::warning::`) qualquer chave de feature ausente — não falha o
+deploy (quais chaves existem é decisão humana), mas a perda de capacidade
+aparece no próprio run.
+
 ## OPS79 — última migração da plataforma antiga → nova (vertical campanha)
 
 Operação de dados executada em 2026-08-23. Ver assistência lógica completa:

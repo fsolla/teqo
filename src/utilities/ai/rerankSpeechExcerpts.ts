@@ -4,10 +4,14 @@ import { deepSeek } from '@ai-sdk/deepseek'
 import { generateObject } from 'ai'
 import { z } from 'zod'
 
+import {
+  DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+  DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
+} from '@/utilities/ai/deepseekFlashDefaults'
+
 const RERANK_TIMEOUT_MS = 6000
 const MAX_REASON_LENGTH = 140
 const MAX_CITATION_CHARS = 700
-const MAX_OUTPUT_TOKENS = 400
 
 export type SpeechExcerptRerankCandidate = {
   /** Pool index the tool maps back to the excerpt. */
@@ -88,7 +92,8 @@ export const rerankSpeechExcerpts = async ({
         ),
       ].join('\n'),
       temperature: 0.2,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+      providerOptions: DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
       abortSignal: AbortSignal.timeout(RERANK_TIMEOUT_MS),
     })
 

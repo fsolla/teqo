@@ -126,4 +126,17 @@ describe('rerankSpeechExcerpts (C158)', () => {
     expect(call.prompt).not.toContain('y'.repeat(701))
     expect(call.abortSignal).toBeInstanceOf(AbortSignal)
   })
+
+  it('desliga o thinking e mantém teto de saída acima do orçamento de raciocínio', async () => {
+    generateObjectMock.mockResolvedValue({ object: { choices: [{ index: 0, reason: 'ok' }] } })
+
+    await rerank()
+
+    const call = generateObjectMock.mock.calls[0]![0] as {
+      maxOutputTokens?: number
+      providerOptions?: unknown
+    }
+    expect(call.providerOptions).toEqual({ deepseek: { thinking: { type: 'disabled' } } })
+    expect(call.maxOutputTokens).toBeGreaterThanOrEqual(1000)
+  })
 })
