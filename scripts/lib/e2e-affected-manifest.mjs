@@ -170,6 +170,11 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/app/(frontend)/api/content-events',
       'src/components/conteudos',
       'src/lib/contentPieceCatalog',
+      // C226 — the still of a video piece: the public route, the generation job
+      // and these pure rules. (`src/lib/contentPiece` below is a campaign prefix
+      // that also matches this file, so the public entry names it explicitly.)
+      'src/lib/contentPieceFrame',
+      'src/utilities/content/contentPieceFrameJob.ts',
       'src/lib/contentPieceHomeSelection.ts',
       'src/lib/contentPieceShare',
       // S37 — the catalog behind the public "Lideranças" names.

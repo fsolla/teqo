@@ -43,6 +43,15 @@ export const contentPiecePublicPath = (slug: string): string =>
 export const contentPieceMediaPath = (slug: string): string =>
   `${contentPiecePublicPath(slug)}/midia`
 
+/**
+ * C226 — the still of a video piece, served as an image by the same gate as the
+ * file (`/conteudos/<slug>/midia` is its sibling). It is a request for a
+ * lightweight preview, never for the video: the element that would fetch the
+ * file only mounts after the play gesture.
+ */
+export const contentPieceFramePath = (slug: string): string =>
+  `${contentPiecePublicPath(slug)}/frame`
+
 export const CONTENT_PIECE_CATALOG_FACETS = [
   'tipo',
   'cidade',
@@ -384,6 +393,14 @@ export type ContentPiecePublicItem = {
   publicPath: string
   /** The archived file, or null on a link piece — never partially populated. */
   file: ContentPiecePublicFile | null
+  /**
+   * C226 — where the still of a video piece is asked for, or null when the
+   * piece has no archived file to take one from (audio, photo, text, card,
+   * link piece). Declared by ELIGIBILITY, not by the existence of the derived
+   * row: the frame heals itself on the first request, so the cached listing
+   * never depends on a write and no tag has to be busted when one lands.
+   */
+  framePath: string | null
 }
 
 type ContentPiecePublicFile = {
@@ -702,6 +719,14 @@ export const toContentPiecePublicItem = (
     .filter(Boolean)
     .join(' · ')
   const isLink = media === null && sourceUrl !== null
+  const file: ContentPiecePublicFile | null = media
+    ? {
+        id: media.id,
+        path: contentPieceMediaPath(slug),
+        mimeType: media.mimeType,
+        downloadFilename: contentPieceDownloadFilename(slug, media.filename),
+      }
+    : null
 
   return {
     id: record.id,
@@ -728,13 +753,13 @@ export const toContentPiecePublicItem = (
     searchText: record.searchText ?? '',
     themeMatch: contentPieceThemeMatch(record, themeTerms),
     publicPath: contentPiecePublicPath(slug),
-    file: media
-      ? {
-          id: media.id,
-          path: contentPieceMediaPath(slug),
-          mimeType: media.mimeType,
-          downloadFilename: contentPieceDownloadFilename(slug, media.filename),
-        }
-      : null,
+    file,
+    // C226 — only a video with an archived file has a still to take. The same
+    // `contentPieceMediaKind` that decides how the card renders decides it, so
+    // the card can never ask for a frame the piece cannot produce.
+    framePath:
+      file && contentPieceMediaKind({ isLink, file, type }) === 'video'
+        ? contentPieceFramePath(slug)
+        : null,
   }
 }

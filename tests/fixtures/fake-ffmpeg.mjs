@@ -7,6 +7,11 @@
  * command writes. `FAKE_FFMPEG_FAIL=1` makes it exit 1; `FAKE_FFMPEG_LOG=<path>`
  * records argv. The real binary is exercised by the `skipIf(!hasFfmpeg())`
  * block (CI).
+ *
+ * `FAKE_FFMPEG_FAIL_STILL=1` (C226) fails only the still command — the one
+ * carrying `-frames:v 1` — so a spec can pin a pipeline that ingests perfectly
+ * and then fails to produce a frame, which `FAKE_FFMPEG_FAIL` cannot express
+ * (it would fail the audio extraction too).
  */
 import { copyFileSync, writeFileSync } from 'node:fs'
 import { argv, env, exit } from 'node:process'
@@ -19,6 +24,11 @@ if (env.FAKE_FFMPEG_LOG) {
 
 if (env.FAKE_FFMPEG_FAIL === '1') {
   process.stderr.write('fake-ffmpeg: forced failure\n')
+  exit(1)
+}
+
+if (env.FAKE_FFMPEG_FAIL_STILL === '1' && args.includes('-frames:v')) {
+  process.stderr.write('fake-ffmpeg: forced still failure\n')
   exit(1)
 }
 

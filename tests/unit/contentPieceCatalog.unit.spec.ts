@@ -9,6 +9,7 @@ import {
   contentPieceCatalogActiveFilters,
   contentPieceCatalogFacets,
   contentPieceDownloadFilename,
+  contentPieceFramePath,
   contentPieceMediaKind,
   contentPieceMediaPath,
   contentPiecePublicPath,
@@ -487,6 +488,29 @@ describe('content piece public view model', () => {
     expect(view.file).toBeNull()
   })
 
+  it('declares a frame only for a video with an archived file (C226)', () => {
+    expect(item().framePath).toBe('/conteudos/fim-da-escala-6x1/frame')
+    // Same decision as the card's own media kind, so a piece can never be asked
+    // for a frame it cannot produce.
+    expect(item({ media: { id: 7, mimeType: 'video/mp4' }, type: 'texto' }).framePath).toBe(
+      '/conteudos/fim-da-escala-6x1/frame',
+    )
+    // Everything else keeps the neutral slot.
+    expect(item({ media: { id: 7, mimeType: 'audio/mpeg' }, type: 'audio' }).framePath).toBeNull()
+    expect(item({ media: { id: 7, mimeType: 'image/png' }, type: 'foto' }).framePath).toBeNull()
+    expect(item({ media: { id: 7, mimeType: 'text/plain' }, type: 'texto' }).framePath).toBeNull()
+    expect(
+      item({ media: { id: 7, mimeType: 'application/pdf' }, type: 'card' }).framePath,
+    ).toBeNull()
+    // Unknown MIME with a non-video editorial type: the type decides, as everywhere.
+    expect(item({ media: { id: 7 }, type: 'foto' }).framePath).toBeNull()
+    // A link piece never has an archived file, so it never has a frame.
+    expect(
+      item({ media: null, sourceUrl: 'https://www.instagram.com/reel/ABC/', type: 'video' })
+        .framePath,
+    ).toBeNull()
+  })
+
   it('resolves the media kind from the stored MIME with a type fallback', () => {
     expect(contentPieceMediaKind(item({ media: { id: 7, mimeType: 'video/mp4' } }))).toBe('video')
     expect(contentPieceMediaKind(item({ media: { id: 7, mimeType: 'audio/mpeg' } }))).toBe('audio')
@@ -550,5 +574,6 @@ describe('content piece public view model', () => {
     )
     expect(contentPiecePublicPath('x')).toBe('/conteudos/x')
     expect(contentPieceMediaPath('x')).toBe('/conteudos/x/midia')
+    expect(contentPieceFramePath('x')).toBe('/conteudos/x/frame')
   })
 })
