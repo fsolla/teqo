@@ -91,6 +91,10 @@ export const campaignContentPieceRetryHref = (id: number): string =>
 export const campaignContentPiecePublicationHref = (id: number): string =>
   `${campaignContentPieceDetailHref(id)}/publicacao`
 
+/** C222 — JSON endpoint the list and the ficha call to delete a piece for good. */
+export const campaignContentPieceDeleteHref = (id: number): string =>
+  `${campaignContentPieceDetailHref(id)}/apagar`
+
 const campaignRecordingDetailHref = (id: number): string =>
   `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/${id}`
 

@@ -63,6 +63,12 @@ export type ContentPieceCirculationView =
 
 export type ContentPieceRowViewModel = ContentPieceViewModel & {
   circulation: ContentPieceCirculationView
+  /**
+   * C222 — the public path of the piece (`/conteudos/<slug>`), or null when it
+   * never got a slug. Computed by the page-data loader from the row's `slug`;
+   * the delete confirmation names it only when the piece is published.
+   */
+  publicPath: string | null
 }
 
 /**

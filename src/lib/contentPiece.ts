@@ -501,6 +501,8 @@ export type ContentPieceViewModel = {
 type ContentPieceViewRecord = {
   id: number
   title?: string | null
+  /** The public slug (C222): only a once-published piece has one. */
+  slug?: string | null
   type?: string | null
   status?: string | null
   processingStatus?: string | null

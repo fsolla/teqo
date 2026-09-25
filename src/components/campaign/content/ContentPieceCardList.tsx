@@ -1,6 +1,7 @@
 import Link from 'next/link'
 
 import { ContentPieceCirculationCounters } from '@/components/campaign/content/ContentPieceCirculationCounters'
+import { ContentPieceDeleteDialog } from '@/components/campaign/content/ContentPieceDeleteDialog'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
 import {
   ContentPieceProcessingBadge,
@@ -16,7 +17,8 @@ import type { ContentPieceRowViewModel } from '@/lib/contentPieceCirculation'
  * the single "Abrir" (or "Reprocessar" when it failed). A link piece also
  * carries the neutral "Peça-link" label — the honest reason lives on the ficha,
  * never on the list (C220 D7). C213 adds the piece's circulation counters (2×2
- * grid) right above the action.
+ * grid) right above the action. C222 adds "Apagar" beside the routine action
+ * (below it when the piece can be reprocessed), per the approved scene B.
  */
 export const ContentPieceCardList = ({
   rows,
@@ -73,11 +75,26 @@ export const ContentPieceCardList = ({
           />
 
           {piece.canRetry ? (
-            <ContentPieceRetryButton contentPieceId={piece.id} className="mt-3" />
+            <>
+              <ContentPieceRetryButton contentPieceId={piece.id} className="mt-3" />
+              <ContentPieceDeleteDialog
+                contentPieceId={piece.id}
+                status={piece.status}
+                publicPath={piece.publicPath}
+                triggerClassName="mt-2 w-full"
+              />
+            </>
           ) : (
-            <Button asChild variant="outline" className="mt-3 min-h-11 w-full">
-              <Link href={piece.detailHref}>Abrir</Link>
-            </Button>
+            <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
+              <Button asChild variant="outline" className="min-h-11">
+                <Link href={piece.detailHref}>Abrir</Link>
+              </Button>
+              <ContentPieceDeleteDialog
+                contentPieceId={piece.id}
+                status={piece.status}
+                publicPath={piece.publicPath}
+              />
+            </div>
           )}
         </article>
       )

@@ -1780,5 +1780,82 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(list).toContain('Peça-link')
       expect(list).not.toContain('Carrossel: sem arquivo único para baixar')
     })
+
+    test('deletes a piece over HTTP (public link and private file die) and denies the non-vertical roles (C222)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecaapagar')
+      const { piece, media } = await createPiece(campaign, { marker, status: 'publicado' })
+      const slug = piece.slug!
+      const title = `Peça ${marker}`
+
+      const communicator = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(communicator, communicator.password)
+
+      // The list and the ficha offer the irreversible action on a published piece.
+      const list = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${marker}`)).text(),
+      )
+      expect(list).toContain(title)
+      expect(list).toContain('Apagar')
+      const ficha = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos/${piece.id}`)).text(),
+      )
+      expect(ficha).toContain('Apagar')
+
+      const publicBefore = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+      try {
+        expect((await publicBefore.get(`/conteudos/${slug}`)).status()).toBe(200)
+        expect((await publicBefore.get(`/conteudos/${slug}/midia`)).status()).toBe(200)
+      } finally {
+        await publicBefore.dispose()
+      }
+
+      // Fail-closed: an advisor cannot delete the piece through the route.
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const deniedRequest = await campaignRequest(advisor, advisor.password)
+      const denied = await deniedRequest.delete(
+        `/campanha/comunicacao/conteudos/${piece.id}/apagar`,
+      )
+      expect(denied.status()).toBe(400)
+      expect(((await denied.json()) as { message: string }).message).toContain(
+        'não tem acesso à Central de Conteúdos',
+      )
+
+      const deleted = await request.delete(`/campanha/comunicacao/conteudos/${piece.id}/apagar`)
+      expect(deleted.status()).toBe(200)
+      expect(await deleted.json()).toEqual({ status: 'success', deleted: true })
+
+      const afterList = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${marker}`)).text(),
+      )
+      expect(afterList).not.toContain(title)
+
+      // The authenticated private file is gone too (the row no longer exists).
+      expect(
+        (await request.get(`/campanha/comunicacao/conteudos/${piece.id}/arquivo`)).status(),
+      ).toBe(404)
+
+      const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+      try {
+        expect((await anonymous.get(`/conteudos/${slug}`)).status()).toBe(404)
+        expect((await anonymous.get(`/conteudos/${slug}/midia`)).status()).toBe(404)
+      } finally {
+        await anonymous.dispose()
+      }
+
+      // The row is really gone, media included (the cleanup runs after commit).
+      await expect
+        .poll(
+          async () =>
+            campaign.fixtures.payload
+              .findByID({ collection: 'contentMedia', id: media!.id, depth: 0 })
+              .then(() => false)
+              .catch(() => true),
+          { timeout: 10_000 },
+        )
+        .toBe(true)
+    })
   })
 })

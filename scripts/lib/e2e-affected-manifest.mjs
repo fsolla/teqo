@@ -471,6 +471,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/campaign/shared/AcervoSourceToggle',
       'src/components/campaign/shared/AcervoSortSelect',
       'src/components/campaign/shared/CampaignTranscriptSegmentButton',
+      // C222 — the shared delete-confirmation machine of the vertical (cut,
+      // recording and content piece adapters ride the same specs).
+      'src/components/campaign/shared/CampaignDeleteDialog',
       // C219 — the recording collection owns the facet/provenance hooks the
       // recordings list filters on (the PR is high-risk anyway; the entry keeps
       // the mapping honest for the curated/local paths).

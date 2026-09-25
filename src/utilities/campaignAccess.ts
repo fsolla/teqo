@@ -187,6 +187,7 @@ export {
 
 export {
   canCreateContentPiece,
+  canDeleteContentPiece,
   canReadContentPiece,
   canUpdateContentPiece,
 } from '@/utilities/access/contentPieces'
