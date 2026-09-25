@@ -1,4 +1,22 @@
-import { describe, expect, it } from 'vitest'
+// @vitest-environment node
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+
+type ExecFileArgs = [
+  file: string,
+  args: string[],
+  options: { env?: NodeJS.ProcessEnv },
+  callback: (error: Error | null, stdout: string, stderr: string) => void,
+]
+
+const execFileMock = vi.fn((...args: ExecFileArgs) => {
+  const [, , , callback] = args
+  callback(null, '{}', '')
+})
+
+vi.mock('node:child_process', () => ({
+  execFile: (...args: ExecFileArgs) => execFileMock(...args),
+}))
 
 import {
   downloadWithYtDlp,
@@ -141,5 +159,29 @@ describe('downloadWithYtDlp', () => {
         run: failing,
       }),
     ).rejects.toThrow(/unable to download/)
+  })
+})
+
+const WRAPPER_NODE_OPTIONS = '--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs'
+
+describe('defaultRunner env', () => {
+  beforeEach(() => {
+    execFileMock.mockClear()
+    vi.stubEnv('NODE_OPTIONS', WRAPPER_NODE_OPTIONS)
+  })
+
+  afterEach(() => {
+    vi.unstubAllEnvs()
+  })
+
+  it('drops the repo NODE_OPTIONS for yt-dlp and forwards the rest of the environment', async () => {
+    expect(process.env.NODE_OPTIONS).toContain('--import=tsx/esm')
+
+    await readYtDlpMetadata({ bin: '/bin/yt-dlp', url: 'https://www.youtube.com/watch?v=x' })
+
+    expect(execFileMock).toHaveBeenCalledTimes(1)
+    const options = execFileMock.mock.calls[0][2]
+    expect(options.env?.NODE_OPTIONS).toBeUndefined()
+    expect(options.env?.PATH).toBe(process.env.PATH)
   })
 })
