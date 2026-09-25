@@ -773,8 +773,29 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
       page.locator('article[data-content-piece]').getByText(leaderName, { exact: true }),
     ).toBeVisible()
 
-    // The one "Lideranças" facet unions the leader name and the curated figure.
+    // Central polimento — the empty facet menus are one exclusive accordion
+    // with a real centered chevron (artefato
+    // `central-conteudos-hero-polimento-ui-design.html`): the icon sits on the
+    // chip's vertical center (never the text glyph `⌄` at the baseline) and the
+    // next menu opened closes the previous one.
+    const tipoSummary = page.locator('summary').filter({ hasText: 'Tipo' }).first()
+    await tipoSummary.click()
+    await expect(page.locator('details[open]')).toHaveCount(1)
+    await expect(page.locator('details[open] summary')).toContainText('Tipo')
+    const chevron = tipoSummary.locator('svg')
+    await expect(chevron).toBeVisible()
+    const summaryBox = await tipoSummary.boundingBox()
+    const chevronBox = await chevron.boundingBox()
+    if (!summaryBox || !chevronBox) throw new Error('Sem as caixas do chip e do chevron.')
+    const summaryCenter = summaryBox.y + summaryBox.height / 2
+    const chevronCenter = chevronBox.y + chevronBox.height / 2
+    expect(Math.abs(chevronCenter - summaryCenter)).toBeLessThanOrEqual(1)
+
+    // The one "Lideranças" facet unions the leader name and the curated figure;
+    // opening it closes the previous menu (same native group).
     await page.locator('summary').filter({ hasText: 'Lideranças' }).first().click()
+    await expect(page.locator('details[open]')).toHaveCount(1)
+    await expect(page.locator('details[open] summary')).toContainText('Lideranças')
     await expect(
       page.getByText('Em peças publicadas').filter({ visible: true }).first(),
     ).toBeVisible()
