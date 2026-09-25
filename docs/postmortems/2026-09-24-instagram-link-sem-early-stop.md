@@ -15,14 +15,14 @@
 
 ## Timeline
 
-| Momento            | Data/hora                  | Evento                                                                                                                              |
-| ------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| Início provável    | 2026-09-24 ~03:19 BRT      | Commit `8f311831` "fix(C220): link do proprio Instagram baixa e cataloga a peca" (PR #1314) introduz a janela de 500 sem early-stop |
-| C220 em produção   | 2026-09-24 12:56–13:07 UTC | Deploy run 35966535233 (SHA `8f311831`), job "deploy production"                                                                    |
-| Detecção           | 2026-09-24 ~22:09 BRT      | Relato do humano na sessão `/bug-fix`                                                                                               |
-| Correção mergeada  | pendente                   | Em andamento no PR #1332 (merge pendente do CI/auto-merge)                                                                          |
-| Deploy             | pendente                   | Merge em `main` dispara deploy; staging automático; produção só com approve humano no environment `production` (não feito ainda)    |
-| Verificado em prod | pendente                   | Aguardando confirmação do humano (nunca declarar corrigido em prod antes disso)                                                     |
+| Momento            | Data/hora                  | Evento                                                                                                                                                |
+| ------------------ | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Início provável    | 2026-09-24 ~03:19 BRT      | Commit `8f311831` "fix(C220): link do proprio Instagram baixa e cataloga a peca" (PR #1314) introduz a janela de 500 sem early-stop                   |
+| C220 em produção   | 2026-09-24 12:56–13:07 UTC | Deploy run 35966535233 (SHA `8f311831`), job "deploy production"                                                                                      |
+| Detecção           | 2026-09-24 ~22:09 BRT      | Relato do humano na sessão `/bug-fix`                                                                                                                 |
+| Correção mergeada  | 2026-09-25 ~02:00 UTC      | PR #1332 (merge `9f43cbb2`); em produção no deploy do SHA `3cdd1cd8` (~03:34 UTC)                                                                     |
+| Deploy             | 2026-09-25 ~03:34 UTC      | Deploy run 36087193017 (SHA `3cdd1cd8`), job "deploy production"                                                                                      |
+| Verificado em prod | 2026-09-25                 | O sintoma **persistiu** após o merge: a causa residual era o caminho de rede até o CDN do Instagram — ver `2026-09-25-instagram-cdn-ipv4-instavel.md` |
 
 ## O bug
 
@@ -42,7 +42,7 @@ Resultado: o caso típico (post recém-publicado, na página 1) ficava refém de
 
 **Por que os testes não pegaram:** o unit do feed usava cursor fabricado; os testes int do resolver injetavam `loadFeed` fake (nunca o dono real); o e2e do motivo gravava `linkFailureReason` direto no banco e não esperava o job. Nenhum teste exercia o `loadInstagramFeed` real através do resolver.
 
-**Observação honesta:** a API real com a credencial de produção não foi acessada (proibido); a forma exata da paginação da edge segue **não apurada**. A hipótese H2 (API omitir `media_url` em Reels com áudio licenciado, documentada no C212) permanece **não apurada** e pode afetar reels específicos — nesse caso o motivo honesto `indisponivel` continua correto, mas não há via oficial de baixar o arquivo.
+**Observação honesta:** na ocasião, a API real com a credencial de produção não foi acessada; no diagnóstico seguinte (autorizado pelo dono, read-only) ela foi consultada e a hipótese H2 foi **descartada** para os reels testados (`media_url` presente, sem copyright). A causa residual era de rede — ver `2026-09-25-instagram-cdn-ipv4-instavel.md`. A forma da paginação da edge além da 1ª página segue **não apurada**.
 
 ## Correção
 
