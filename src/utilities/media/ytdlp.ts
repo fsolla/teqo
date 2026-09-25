@@ -9,6 +9,13 @@ import { execFile } from 'node:child_process'
  * YouTube and Instagram only; direct radio/audio files are fetched by
  * `downloadToFile`.
  *
+ * C224 — the child environment is `process.env` without `NODE_OPTIONS`. The
+ * repo wrapper (`--import=tsx/esm --import=./scripts/seed-loader.mjs`) is a
+ * loader for this app, not for the JS runtime yt-dlp spawns to solve the
+ * YouTube challenge; inheriting it kills the challenge with a misleading
+ * `Requested format is not available`. Every other variable (PATH, HOME,
+ * YTDLP_PATH, proxies) is forwarded untouched.
+ *
  * There is no packaged yt-dlp: the operator installs it and the tests inject a
  * fake through `YTDLP_PATH`. The format cap keeps the mirrored artifact enough
  * for transcription, player and cut — never the master.
@@ -42,10 +49,11 @@ export type YtDlpRunner = (
 
 const defaultRunner: YtDlpRunner = (bin, args, { timeoutMs } = {}) =>
   new Promise((resolve) => {
+    const { NODE_OPTIONS: _nodeOptions, ...childEnv } = process.env
     execFile(
       bin,
       args,
-      { timeout: timeoutMs, maxBuffer: MAX_BUFFER_BYTES },
+      { timeout: timeoutMs, maxBuffer: MAX_BUFFER_BYTES, env: childEnv },
       (error, stdout, stderr) => {
         if (!error) {
           resolve({ ok: true, stdout: stdout ?? '', stderr: stderr ?? '' })
