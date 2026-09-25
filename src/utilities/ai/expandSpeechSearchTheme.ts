@@ -10,9 +10,12 @@ import {
   MIN_SPEECH_THEME_TERMS,
   normalizeSpeechThemeTerms,
 } from '@/lib/speechThemeTerms'
+import {
+  DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+  DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
+} from '@/utilities/ai/deepseekFlashDefaults'
 
 const EXPAND_TIMEOUT_MS = 4000
-const MAX_OUTPUT_TOKENS = 200
 const MAX_THEME_LENGTH = 200
 
 const EXPAND_SUBJECT_BY_CORPUS: Record<ThemeSearchCorpus, string> = {
@@ -119,7 +122,8 @@ export const expandSearchTheme = async (
       // Deterministic as the provider allows: pages 2+ of the same search must
       // not be built from a different expansion.
       temperature: 0,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+      providerOptions: DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
       abortSignal: AbortSignal.timeout(EXPAND_TIMEOUT_MS),
     })
 

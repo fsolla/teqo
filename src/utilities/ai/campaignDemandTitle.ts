@@ -5,6 +5,10 @@ import { generateText } from 'ai'
 
 import { isUsableDemandTitle } from '@/lib/demandTitle'
 import { campaignDemandKindLabels, type CampaignDemandKind } from '@/lib/schemas/campaignDemand'
+import {
+  DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+  DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
+} from '@/utilities/ai/deepseekFlashDefaults'
 
 const DEMAND_TITLE_SYSTEM_PROMPT =
   'Você resume pedidos de campanha eleitoral em títulos curtos e objetivos para uma lista de demandas. ' +
@@ -34,7 +38,8 @@ export const deriveDemandTitle = async (
         ? `Tipo: ${campaignDemandKindLabels[kind]}\nPedido: ${description}`
         : description,
       temperature: 0.3,
-      maxOutputTokens: 120,
+      maxOutputTokens: DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
+      providerOptions: DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
       abortSignal: AbortSignal.timeout(DEMAND_TITLE_TIMEOUT_MS),
     })
     return isUsableDemandTitle(text) ? text.trim() : null

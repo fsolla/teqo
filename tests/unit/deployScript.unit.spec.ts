@@ -97,6 +97,34 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     }
   })
 
+  it('audits the running container feature envs after the healthcheck, non-fatally', () => {
+    // Incident 2026-09-24: prod/staging ran without DEEPSEEK_API_KEY and every
+    // AI-backed feature degraded silently (theme search showed the unavailable
+    // notice). The audit reads the CONTAINER env — the compose env_file is the
+    // truth — and annotates what is missing; it must never fail the deploy
+    // (which feature keys are set is the human's call).
+    for (const fragment of [
+      'warn_missing_feature_envs',
+      'DEEPSEEK_API_KEY',
+      'DEEPINFRA_API_KEY',
+      'RESEND_API_KEY',
+      'CAMPAIGN_EMAIL_FROM',
+      'VAPID_PUBLIC_KEY',
+      'VAPID_PRIVATE_KEY',
+      '::warning::',
+    ]) {
+      expect(script, fragment).toContain(fragment)
+    }
+
+    const definitionIndex = script.indexOf('warn_missing_feature_envs() {')
+    const callIndex = script.indexOf('warn_missing_feature_envs\n')
+    const healthIndex = script.indexOf('waiting for the healthcheck')
+    const smokeIndex = script.indexOf('# --- smoke')
+    expect(definitionIndex).toBeGreaterThan(healthIndex)
+    expect(callIndex).toBeGreaterThan(definitionIndex)
+    expect(callIndex).toBeLessThan(smokeIndex)
+  })
+
   it('never echoes secret values (no set -x, passwords only via stdin/secrets)', () => {
     expect(script).not.toMatch(/^set -x\b/m)
     expect(script).not.toContain('echo "$DATABASE_URL"')

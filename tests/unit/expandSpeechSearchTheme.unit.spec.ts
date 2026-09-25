@@ -71,6 +71,19 @@ describe('expandSpeechSearchTheme (C192)', () => {
     expect(call.prompt).toBe('defesa do SUS')
     expect(call.abortSignal).toBeInstanceOf(AbortSignal)
   })
+
+  it('desliga o thinking e mantém teto de saída acima do orçamento de raciocínio', async () => {
+    generateObjectMock.mockResolvedValue({ object: { terms: ['SUS'] } })
+
+    await expandSpeechSearchTheme('defesa do SUS')
+
+    const call = generateObjectMock.mock.calls[0]![0] as {
+      maxOutputTokens?: number
+      providerOptions?: unknown
+    }
+    expect(call.providerOptions).toEqual({ deepseek: { thinking: { type: 'disabled' } } })
+    expect(call.maxOutputTokens).toBeGreaterThanOrEqual(1000)
+  })
 })
 
 describe('expandSearchTheme (S28 — corpus)', () => {
