@@ -15,16 +15,18 @@
 
 ## Timeline
 
-| Momento                 | Data/hora                   | Evento                                                                                                                                                     |
-| ----------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Início provável         | não apurado                 | A rota IPv4 da rede até o CDN do Instagram degradar; o container (IPv4-only) depende dela desde sempre                                                     |
-| C220-FOLLOWUP em prod   | 2026-09-25 ~03:34 UTC       | Deploy do SHA `3cdd1cd8` (inclui o early-stop do PR #1332); o sintoma persistiu                                                                            |
-| Detecção                | 2026-09-24 ~22:09 BRT       | Relato do humano; a causa residual só foi isolada com o diagnóstico read-only de 2026-09-25                                                                |
-| Diagnóstico (read-only) | 2026-09-25 ~08:30–09:30 BRT | API devolve `media_url` presente; otimizador de imagem de prod → 500; host e container com ~3/8 de sucesso no IPv4 e 100% no IPv6; container sem rota IPv6 |
-| Correção de infra       | 2026-09-25 ~09:35 BRT       | Rede `teqo-ipv6` (enable_ipv6, ULA) anexada a `teqo-1313`/`teqo-staging` no compose do homeserver + recreate; verificação 10/10 e otimizador 200           |
-| Correção de código (PR) | pendente                    | Retry com teto de conexão no download do resolver (`contentPieceLink.ts`) — a preencher número                                                             |
-| Deploy (código)         | pendente                    | Merge em `main` dispara deploy; produção só com approve humano no environment `production`                                                                 |
-| Verificado em prod      | pendente                    | Aguardando o reteste do humano na Central (a rede já está corrigida em prod)                                                                               |
+| Momento                 | Data/hora                   | Evento                                                                                                                                                                                                                           |
+| ----------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Início provável         | não apurado                 | A rota IPv4 da rede até o CDN do Instagram degradar; o container (IPv4-only) depende dela desde sempre                                                                                                                           |
+| C220-FOLLOWUP em prod   | 2026-09-25 ~03:34 UTC       | Deploy do SHA `3cdd1cd8` (inclui o early-stop do PR #1332); o sintoma persistiu                                                                                                                                                  |
+| Detecção                | 2026-09-24 ~22:09 BRT       | Relato do humano; a causa residual só foi isolada com o diagnóstico read-only de 2026-09-25                                                                                                                                      |
+| Diagnóstico (read-only) | 2026-09-25 ~08:30–09:30 BRT | API devolve `media_url` presente; otimizador de imagem de prod → 500; host e container com ~3/8 de sucesso no IPv4 e 100% no IPv6; container sem rota IPv6                                                                       |
+| Correção de infra       | 2026-09-25 ~09:35 BRT       | Rede `teqo-ipv6` (enable_ipv6, ULA) anexada a `teqo-1313`/`teqo-staging` no compose do homeserver + recreate; verificação 10/10 e otimizador 200                                                                                 |
+| Efeito colateral do S3  | 2026-09-25 ~09:50 BRT       | A rede nova assumiu o `host-gateway` (`10.0.0.1`) e o default route do container (fonte `10.0.13.x`), fora do allow do ufw do Garage (`10.0.11.0/24`): upload da peça falhou com `connect ETIMEDOUT 10.0.0.1:3900`               |
+| Correção do S3          | 2026-09-25 ~10:35 BRT       | Sub-redes fixadas no compose (`10.0.13.0/24` + `fd00:1313:1313::/64`) e ufw `allow`/`route allow` de `10.0.13.0/24` → 3900 (INPUT + FWD), espelhando o padrão do `10.0.11.0/24`; Garage, ffmpeg e serving de mídia reverificados |
+| Correção de código (PR) | 2026-09-25 ~10:00 BRT       | PR #1349 mergeado (retry com teto de conexão no download do resolver)                                                                                                                                                            |
+| Deploy (código)         | pendente                    | Merge em `main` dispara deploy; produção só com approve humano no environment `production`                                                                                                                                       |
+| Verificado em prod      | pendente                    | Aguardando o reteste do humano na Central (a rede já está corrigida em prod)                                                                                                                                                     |
 
 ## O bug
 
@@ -52,15 +54,15 @@ O container de produção é **IPv4-only** (Docker sem `ipv6`; `/proc/net/if_ine
 
 ## Correção
 
-- **Infra (fora do repo):** rede `teqo-ipv6` (`enable_ipv6: true`, subnet ULA `fd00:1313:1313::/64`) no `~/stack/docker-compose.yml` do homeserver, anexada a `teqo-1313` e `teqo-staging` (mantendo a `default`). Backup do compose em `docker-compose.yml.pre-ipv6-<stamp>`; containers recriados (`docker compose up -d teqo-1313 teqo-staging`). Rollback: restaurar o backup e `docker compose up -d teqo-1313 teqo-staging`.
-- **Código (este PR):** `downloadContentPieceMedia` em `src/utilities/content/contentPieceLink.ts` — até 6 tentativas com teto de 15 s para a fase de conexão/cabeçalhos (o corpo de uma resposta conectada mantém o orçamento de 3 min). Um `fetch` perdido deixa de perder a peça; tentativas esgotadas continuam virando `indisponivel`, e resposta não-2xx não é repetida.
+- **Infra (fora do repo):** rede `teqo-ipv6` (`enable_ipv6: true`, sub-redes fixadas `10.0.13.0/24` + ULA `fd00:1313:1313::/64`) no `~/stack/docker-compose.yml` do homeserver, anexada a `teqo-1313` e `teqo-staging` (mantendo a `default`). Backup do compose em `docker-compose.yml.pre-ipv6-<stamp>`; containers recriados (`docker compose up -d teqo-1313 teqo-staging`). **Efeito colateral corrigido:** com duas redes, o `host-gateway` (`host.docker.internal` → `10.0.0.1`) e o default route passaram a sair pela sub-rede nova (`10.0.13.x`), que o ufw não liberava para o Garage — o upload da peça estourava em `10.0.0.1:3900`; a correção fixa as sub-redes no compose e libera `10.0.13.0/24` no 3900 (INPUT + FWD). Rollback: restaurar o backup, reverter as regras de ufw novas e `docker compose up -d teqo-1313 teqo-staging`.
+- **Código (PR #1349):** `downloadContentPieceMedia` em `src/utilities/content/contentPieceLink.ts` — até 6 tentativas com teto de 15 s para a fase de conexão/cabeçalhos (o corpo de uma resposta conectada mantém o orçamento de 3 min). Um `fetch` perdido deixa de perder a peça; tentativas esgotadas continuam virando `indisponivel`, e resposta não-2xx não é repetida.
 
 ## Verificação
 
 - Teste de regressão: `tests/int/contentPiece.int.spec.ts` — "retries a stranded media download and still extracts the piece" — falha sem o fix (1 tentativa → `indisponivel`) e passa com (4 tentativas → mídia criada)
 - Suíte: int contentPiece 39/39; `pnpm gate:fast` verde (lint/typecheck/unit full 4669)
-- Infra em prod: 10/10 downloads do CDN dentro do container `teqo-1313`; `/_next/image` de capa IG → `200` (3/3)
-- CI: pendente no PR; Prod: pendente do reteste do humano na Central
+- Infra em prod: 10/10 downloads do CDN dentro do container `teqo-1313`; `/_next/image` de capa IG → `200` (3/3); Garage TCP/HTTP OK do container e serving de mídia (`/api/media/file/...`) → `200` (7,3 MB); vídeo real do reel com H.264+AAC e ffmpeg do container extraindo chunk MP3 (520 KB); chaves `DEEPINFRA_API_KEY`/`DEEPSEEK_API_KEY` presentes
+- CI do PR #1349: verde; Prod: pendente do reteste do humano na Central
 
 ## Prevenção
 
@@ -83,3 +85,4 @@ O container de produção é **IPv4-only** (Docker sem `ipv6`; `/proc/net/if_ine
 - **Diagnóstico de rede precisa dos dois lados:** medir host × container e IPv4 × IPv6 com repetição revelou o padrão que uma única tentativa não mostra.
 - **"A API entrega o arquivo" não significa "o arquivo chega":** `media_url` presente, `copyright` ausente e o download falhando por rota.
 - **O CDN muda de host/edge sem aviso:** o post-mortem de 2026-09-11 já tinha visto `cdninstagram` → `fbcdn`; desta vez o edge IPv4 novo é que não é alcançável de forma confiável.
+- **Rede adicional muda o caminho de saída do container:** com duas redes, o `host-gateway` e o default route migraram para a rede nova — a regra de firewall por sub-rede do Garage (3900) deixou de casar e o upload passou a estourar. Fixar as sub-redes no compose e espelhar o allow no ufw mantém o caminho estável; qualquer rede nova no stack precisa revisar as regras por sub-rede.
