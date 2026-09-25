@@ -147,6 +147,31 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(callIndex).toBeLessThan(smokeIndex)
   })
 
+  it('repairs a broken S3 host gateway before migration and verifies the live route', () => {
+    for (const fragment of [
+      'ensure_media_endpoint',
+      'probe_media_endpoint',
+      'docker network inspect',
+      '--add-host "host.docker.internal:$host"',
+      'docker compose -f "$STACK_DIR/docker-compose.yml" -f "$override" config --quiet',
+      'docker-compose.media-$TEQO_ENV.yml',
+      'export COMPOSE_FILE=',
+      'smoke_media_endpoint',
+    ]) {
+      expect(script, fragment).toContain(fragment)
+    }
+
+    const ensureCall = script.indexOf('ensure_media_endpoint\nbackup=')
+    const migrateCall = script.indexOf('docker compose --profile maintenance run --rm')
+    const healthCall = script.indexOf('[ "$health" = "healthy" ]')
+    const smokeCall = script.indexOf('\nsmoke_media_endpoint\n')
+    expect(ensureCall).toBeGreaterThan(-1)
+    expect(ensureCall).toBeLessThan(migrateCall)
+    expect(smokeCall).toBeGreaterThan(healthCall)
+    expect(script).not.toContain('10.0.11.1')
+    expect(script).not.toContain('10.0.0.1')
+  })
+
   it('never echoes secret values (no set -x, passwords only via stdin/secrets)', () => {
     expect(script).not.toMatch(/^set -x\b/m)
     expect(script).not.toContain('echo "$DATABASE_URL"')
