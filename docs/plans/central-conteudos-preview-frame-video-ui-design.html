@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C226 · Frame estático para vídeos com arquivo</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: Arimo, Arial, sans-serif;
+        --color-kit-red: #e4102f;
+        --color-kit-blue: #184e92;
+        --color-kit-yellow: #ffeb00;
+      }
+
+      :root {
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --pt-yellow-ink: #000000;
+        --campaign-cream: #fff8f2;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --site-header: #ae1603;
+        --display: 'Exo 2', 'Arial Black', Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arimo, Arial, sans-serif;
+      }
+
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .display {
+        font-family: var(--display);
+      }
+
+      .board {
+        background: #e7e3e0;
+        background-image: radial-gradient(rgb(24 78 146 / 9%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+
+      .artboard {
+        box-shadow: 0 22px 60px rgb(39 25 22 / 13%);
+      }
+
+      .desktop {
+        width: 1280px;
+      }
+
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+
+      .scene-heading::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #cfc9c5;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--campaign-line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgb(71 19 14 / 7%);
+      }
+
+      .tag {
+        display: inline-flex;
+        border-radius: 999px;
+        background: #eef4fb;
+        padding: 4px 8px;
+        color: #184e92;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 10px;
+        padding: 9px 14px;
+        font-family: var(--display);
+        font-size: 13px;
+        font-weight: 800;
+      }
+
+      .btn-outline {
+        border: 1.5px solid rgb(162 28 28 / 28%);
+        background: #fff;
+        color: var(--pt-red);
+      }
+
+      .btn-primary {
+        background: var(--pt-yellow);
+        color: var(--pt-yellow-ink);
+        box-shadow: 0 4px 0 #cfb900;
+      }
+
+      .play-button {
+        display: grid;
+        width: 64px;
+        height: 64px;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--pt-yellow);
+        color: var(--pt-yellow-ink);
+        box-shadow: 0 6px 0 #cfb900, 0 12px 26px rgb(0 0 0 / 28%);
+      }
+
+      .play-triangle {
+        width: 0;
+        height: 0;
+        margin-left: 4px;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-left: 16px solid currentColor;
+      }
+
+      .asset-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px dashed rgb(255 255 255 / 60%);
+        border-radius: 999px;
+        background: rgb(0 0 0 / 58%);
+        padding: 5px 9px;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .generic-frame {
+        position: relative;
+        overflow: hidden;
+        background:
+          linear-gradient(90deg, transparent 49.75%, rgb(255 255 255 / 20%) 50%, transparent 50.25%),
+          linear-gradient(transparent 49.75%, rgb(255 255 255 / 20%) 50%, transparent 50.25%),
+          radial-gradient(circle at 50% 44%, #8e949a 0 12%, transparent 12.5%),
+          linear-gradient(145deg, #4b555f 0%, #77828c 46%, #3d474f 100%);
+      }
+
+      .generic-frame::before {
+        content: '';
+        position: absolute;
+        right: 7%;
+        bottom: -24%;
+        left: 7%;
+        height: 58%;
+        border-radius: 50% 50% 0 0;
+        background: rgb(24 78 146 / 24%);
+      }
+
+      .neutral-slot {
+        background:
+          radial-gradient(circle at 20% 15%, rgb(24 78 146 / 7%) 0 18%, transparent 18.5%),
+          radial-gradient(circle at 88% 88%, rgb(228 16 47 / 7%) 0 23%, transparent 23.5%),
+          linear-gradient(135deg, #e5e2df, #f7f5f3);
+      }
+
+      .player-surface {
+        background:
+          radial-gradient(circle at 50% 43%, #495057 0 12%, transparent 12.5%),
+          linear-gradient(145deg, #171717, #343434 50%, #111);
+      }
+
+      .logo-window {
+        width: 146px;
+        height: 54px;
+        overflow: hidden;
+      }
+
+      .logo-window img {
+        width: 188px;
+        max-width: none;
+        transform: translate(-21px, -29px);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-black antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="rounded-full bg-kit-red px-3 py-1 text-xs font-bold text-white"
+          >C226 · design para o gate</span
+        >
+        <h1 class="display mt-4 text-4xl font-black leading-tight">
+          Reconheça o vídeo antes de apertar play.
+        </h1>
+        <p class="mt-3 max-w-2xl text-sm leading-6 text-[#6c615e]">
+          O frame é uma pista visual leve. O arquivo de vídeo só entra depois do gesto; quando o
+          frame não existe, o card continua íntegro e honesto.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-xs font-bold text-[#514945]">
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >Antes do play · só imagem</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >Depois do play · player no mesmo slot</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >Falha · sem imagem quebrada</span
+          >
+        </div>
+      </header>
+
+      <section aria-labelledby="desktop-title">
+        <div class="scene-heading mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2 id="desktop-title">Desktop 1280 · frame e fallback lado a lado no catálogo</h2>
+        </div>
+        <div class="overflow-x-auto pb-5">
+          <div class="desktop artboard mx-auto overflow-hidden rounded-xl bg-white">
+            <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+              <div class="logo-window" aria-label="Jorge Solla">
+                <img src="../../public/campaign-kit/jorge-solla-negativo.png" alt="Jorge Solla" />
+              </div>
+              <span class="text-sm font-bold text-white">Central de Conteúdos</span>
+            </header>
+
+            <div class="bg-[linear-gradient(120deg,#e4102f,#b60825_60%,#184e92)] text-white">
+              <div class="mx-auto flex max-w-6xl items-center justify-between px-10 py-8">
+                <div>
+                  <p class="text-xs font-black tracking-[0.12em] text-[#ffeb00]">
+                    PEÇA VOTO PRA SOLLA 1313
+                  </p>
+                  <h3 class="display mt-2 text-3xl font-black">Escolha uma peça para compartilhar.</h3>
+                </div>
+                <img
+                  src="../../public/campaign-kit/numero-negativo.png"
+                  class="h-20"
+                  alt="1313 Deputado Federal"
+                />
+              </div>
+            </div>
+
+            <div class="mx-auto max-w-6xl px-10 py-9">
+              <div class="flex items-end justify-between gap-6">
+                <div>
+                  <h3 class="display text-2xl font-black">Vídeos para ver e enviar</h3>
+                  <p class="mt-1 text-sm text-[#6c615e]">
+                    Escolha pelo frame. O vídeo só carrega quando você apertar play.
+                  </p>
+                </div>
+                <span class="rounded-full bg-[#fff3c4] px-3 py-2 text-xs font-bold text-[#6b5100]"
+                  >Conexão preservada antes do play</span
+                >
+              </div>
+
+              <div class="mt-5 grid grid-cols-3 gap-6">
+                <article class="card">
+                  <div class="generic-frame relative aspect-video">
+                    <span class="asset-label absolute top-3 left-3 z-10">NEEDS ASSET · FRAME REAL</span>
+                    <button
+                      class="play-button absolute inset-0 z-10 m-auto"
+                      aria-label="Reproduzir Título da peça em vídeo"
+                    >
+                      <span class="play-triangle" aria-hidden="true"></span>
+                    </button>
+                    <span
+                      class="absolute right-3 bottom-3 z-10 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white"
+                      >Duração</span
+                    >
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Vídeo</span>
+                    <h4 class="mt-2 text-base font-extrabold">Título da peça em vídeo</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Tema · Local</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <button class="btn btn-outline">↓ Baixar</button>
+                      <button class="btn btn-outline">↗ Compartilhar</button>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="card">
+                  <div class="neutral-slot relative grid aspect-video place-items-center">
+                    <div class="absolute top-3 left-3 flex items-center gap-2 text-[10px] font-black tracking-[0.1em] text-[#6c615e]">
+                      <span class="grid size-6 place-items-center rounded-full border border-black/10 bg-white" aria-hidden="true"
+                        >×</span
+                      >
+                      FRAME INDISPONÍVEL
+                    </div>
+                    <button
+                      class="play-button relative z-10"
+                      aria-label="Reproduzir outro vídeo"
+                    >
+                      <span class="play-triangle" aria-hidden="true"></span>
+                    </button>
+                    <span
+                      class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white"
+                      >Duração</span
+                    >
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Vídeo</span>
+                    <h4 class="mt-2 text-base font-extrabold">Outro título de vídeo</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Tema · Local</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <button class="btn btn-outline">↓ Baixar</button>
+                      <button class="btn btn-outline">↗ Compartilhar</button>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="card flex items-center gap-4 self-start p-3">
+                  <div class="neutral-slot grid h-24 w-32 shrink-0 place-items-center rounded-lg px-3 text-center">
+                    <span class="text-[10px] font-black tracking-[0.08em] text-[#6c615e]"
+                      >CONTEÚDO SEM VÍDEO</span
+                    >
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <span class="tag">Foto</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Título de outra peça</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Contexto da grade preservado</p>
+                    <button class="btn btn-outline mt-3 min-h-9 px-3">Compartilhar</button>
+                  </div>
+                </article>
+              </div>
+
+              <div class="mt-6 grid grid-cols-2 gap-6 text-xs leading-5">
+                <p class="rounded-lg border border-[#184e92]/15 bg-[#f9faff] p-3 text-[#514945]">
+                  <b class="text-[#184e92]">Com frame:</b> a imagem ocupa todo o slot de mídia e o
+                  play continua sendo o ponto de maior contraste.
+                </p>
+                <p class="rounded-lg border border-black/10 bg-[#faf9f8] p-3 text-[#514945]">
+                  <b>Sem frame:</b> nenhuma tentativa de simular conteúdo; play, duração e informações
+                  da peça permanecem disponíveis.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="mobile-title">
+        <div class="scene-heading mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 02</span>
+          <h2 id="mobile-title">Mobile 390 · frame antes do play, sem crowding</h2>
+        </div>
+        <div class="phone artboard mx-auto min-h-[800px] overflow-hidden bg-white">
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4">
+            <div class="logo-window scale-90 origin-left" aria-label="Jorge Solla">
+              <img src="../../public/campaign-kit/jorge-solla-negativo.png" alt="Jorge Solla" />
+            </div>
+            <span class="grid size-11 place-items-center rounded-lg text-xl text-white" aria-label="Menu"
+              >☰</span
+            >
+          </header>
+          <div class="bg-[linear-gradient(145deg,#e4102f,#184e92)] px-5 py-6 text-white">
+            <p class="text-xs font-black tracking-[0.1em] text-[#ffeb00]">CENTRAL DE CONTEÚDOS</p>
+            <h3 class="display mt-1 text-2xl font-black leading-tight">
+              Escolha pelo frame.<br />Dê play quando quiser.
+            </h3>
+          </div>
+          <div class="p-4">
+            <p class="mb-3 text-xs leading-5 text-[#6c615e]">
+              Antes do gesto · imagem leve, sem arquivo de vídeo carregado.
+            </p>
+            <article class="card">
+              <div class="generic-frame relative aspect-video">
+                <span class="asset-label absolute top-3 left-3 z-10">NEEDS ASSET · FRAME REAL</span>
+                <button
+                  class="play-button absolute inset-0 z-10 m-auto size-[68px]"
+                  aria-label="Reproduzir Título da peça em vídeo"
+                >
+                  <span class="play-triangle" aria-hidden="true"></span>
+                </button>
+                <span
+                  class="absolute right-3 bottom-3 z-10 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white"
+                  >Duração</span
+                >
+              </div>
+              <div class="p-4">
+                <div class="flex items-center justify-between gap-3">
+                  <span class="tag">Vídeo</span>
+                  <span class="text-[11px] font-bold text-[#6c615e]">Ainda não carregado</span>
+                </div>
+                <h4 class="mt-2 text-lg font-extrabold leading-6">Título da peça em vídeo</h4>
+                <p class="mt-1 text-xs text-[#6c615e]">Tema · Local</p>
+                <p class="mt-3 rounded-lg bg-[#f5f5f4] px-3 py-2 text-xs leading-5 text-[#514945]">
+                  Toque no play para carregar só este vídeo.
+                </p>
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                  <button class="btn btn-outline">↓ Baixar</button>
+                  <button class="btn btn-outline">↗ Compartilhar</button>
+                </div>
+                <a class="mt-3 block min-h-11 py-3 text-center text-xs font-bold text-[#a21c1c]" href="#"
+                  >Ver detalhes da peça →</a
+                >
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="after-play-title">
+        <div class="scene-heading mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 03</span>
+          <h2 id="after-play-title">Depois do play · o player ocupa exatamente o mesmo encaixe</h2>
+        </div>
+        <div class="grid gap-8 lg:grid-cols-[390px_1fr] lg:items-start lg:justify-center">
+          <div class="phone artboard mx-auto overflow-hidden bg-white lg:mx-0">
+            <div class="border-b border-black/10 px-4 py-4">
+              <p class="text-[10px] font-black tracking-[0.12em] text-[#a21c1c]">ESTADO APÓS O GESTO</p>
+              <p class="mt-1 text-sm font-bold">O arquivo de vídeo pode carregar agora.</p>
+            </div>
+            <article class="card m-4">
+              <div class="player-surface relative aspect-video text-white">
+                <div class="absolute inset-0 grid place-items-center">
+                  <button
+                    class="grid size-14 place-items-center rounded-full bg-white/95 text-lg font-black text-black shadow-lg"
+                    aria-label="Pausar vídeo"
+                  >
+                    Ⅱ
+                  </button>
+                </div>
+                <div class="absolute inset-x-3 bottom-3">
+                  <div class="h-1.5 overflow-hidden rounded-full bg-white/35">
+                    <div class="h-full w-[28%] bg-[#ffeb00]"></div>
+                  </div>
+                  <div class="mt-1 flex items-center justify-between text-[10px] font-bold">
+                    <span>0:00</span>
+                    <div class="flex items-center gap-3">
+                      <span aria-hidden="true">◖))</span><span aria-hidden="true">⛶</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="p-4">
+                <span class="tag">Vídeo · em reprodução</span>
+                <h4 class="mt-2 text-lg font-extrabold">Título da peça em vídeo</h4>
+                <p class="mt-1 text-xs text-[#6c615e]">Tema · Local</p>
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                  <button class="btn btn-outline">↓ Baixar</button>
+                  <button class="btn btn-outline">↗ Compartilhar</button>
+                </div>
+              </div>
+            </article>
+          </div>
+
+          <aside class="artboard max-w-xl rounded-xl bg-white p-6 lg:mt-20">
+            <p class="text-xs font-black tracking-[0.12em] text-[#184e92]">CONTINUIDADE VISUAL</p>
+            <h3 class="display mt-2 text-2xl font-black">O card não salta nem muda de hierarquia.</h3>
+            <ul class="mt-4 space-y-3 text-sm leading-6 text-[#514945]">
+              <li class="flex gap-3">
+                <span class="mt-1 grid size-5 shrink-0 place-items-center rounded-full bg-[#eef4fb] text-[11px] font-black text-[#184e92]">1</span>
+                O player substitui apenas o frame dentro do mesmo aspecto 16:9.
+              </li>
+              <li class="flex gap-3">
+                <span class="mt-1 grid size-5 shrink-0 place-items-center rounded-full bg-[#eef4fb] text-[11px] font-black text-[#184e92]">2</span>
+                Título, metadados e ações permanecem no mesmo lugar.
+              </li>
+              <li class="flex gap-3">
+                <span class="mt-1 grid size-5 shrink-0 place-items-center rounded-full bg-[#eef4fb] text-[11px] font-black text-[#184e92]">3</span>
+                Os controles deixam evidente que este estado só existe depois do play.
+              </li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section aria-labelledby="fallback-title">
+        <div class="scene-heading mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 04</span>
+          <h2 id="fallback-title">Frame ausente · fallback neutro, sem imagem quebrada</h2>
+        </div>
+        <div class="artboard mx-auto max-w-5xl rounded-xl bg-white p-6 md:p-8">
+          <div class="grid gap-8 md:grid-cols-[360px_1fr] md:items-center">
+            <article class="card">
+              <div class="neutral-slot relative grid aspect-video place-items-center">
+                <div class="absolute top-3 left-3 flex items-center gap-2">
+                  <span
+                    class="grid size-7 place-items-center rounded-full border border-black/10 bg-white text-sm font-bold text-[#6c615e]"
+                    aria-hidden="true"
+                    >×</span
+                  >
+                  <span class="text-[10px] font-black tracking-[0.1em] text-[#6c615e]"
+                    >FRAME INDISPONÍVEL</span
+                  >
+                </div>
+                <button class="play-button" aria-label="Reproduzir Título da peça em vídeo">
+                  <span class="play-triangle" aria-hidden="true"></span>
+                </button>
+                <span
+                  class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs font-bold text-white"
+                  >Duração</span
+                >
+              </div>
+              <div class="p-4">
+                <span class="tag">Vídeo</span>
+                <h4 class="mt-2 text-base font-extrabold">Título da peça em vídeo</h4>
+                <p class="mt-1 text-xs text-[#6c615e]">Tema · Local</p>
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                  <button class="btn btn-outline">↓ Baixar</button>
+                  <button class="btn btn-outline">↗ Compartilhar</button>
+                </div>
+              </div>
+            </article>
+
+            <div>
+              <span class="rounded-full bg-[#f5f5f4] px-3 py-1.5 text-xs font-extrabold text-[#514945]"
+                >Falha segura</span
+              >
+              <h3 class="display mt-4 text-3xl font-black leading-tight">
+                A falta do frame não parece erro da página.
+              </h3>
+              <p class="mt-3 max-w-xl text-sm leading-6 text-[#6c615e]">
+                O slot usa uma superfície neutra, sem ícone de imagem quebrada e sem fingir que há uma
+                cena disponível. A pessoa ainda pode reproduzir o vídeo e reconhecer a peça pelo título
+                e pelos metadados.
+              </p>
+              <div class="mt-5 rounded-xl border border-[#a21c1c]/15 bg-[#fff8f2] p-4">
+                <p class="text-xs font-black tracking-[0.1em] text-[#a21c1c]">NÃO FAZER</p>
+                <p class="mt-1 text-sm leading-6 text-[#514945]">
+                  Não mostrar miniatura de plataforma externa, não prometer um timestamp e não ocultar o
+                  card quando a imagem faltar.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
