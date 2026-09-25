@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto'
+import { join } from 'node:path'
 
 import type { APIRequestContext, Page } from '@playwright/test'
+import sharp from 'sharp'
 
 import { loadMunicipalityGeometryModule } from '../../src/lib/bahiaGeometries.js'
 import { getMunicipalityCatalogEntry } from '../../src/lib/municipalityCatalog.js'
@@ -797,5 +799,63 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await page.goto('/conteudos')
     await waitForSettledPage(page)
     await expect(page.locator('summary').filter({ hasText: 'Lideranças' })).toHaveCount(0)
+  })
+
+  /**
+   * S36 regression (production report 2026-09-25): the negative lockup ships
+   * with a transparent frame and the header crops it with a fixed window. A
+   * window with a different aspect ratio than the ink clips the base of
+   * "SOLLA" (that was the shipped S36: a 188x50 window over a 187.4x67.6 ink,
+   * 18px lost at the bottom). The real asset is measured with sharp and the
+   * rendered ink box must fit inside the crop window at both breakpoints.
+   */
+  test('keeps the whole brand ink inside the header crop, both breakpoints (S36)', async ({
+    page,
+  }) => {
+    const assetPath = join(process.cwd(), 'public/campaign-kit/jorge-solla-negativo.png')
+    const canvas = await sharp(assetPath).metadata()
+    const { info: ink } = await sharp(assetPath).trim().toBuffer({ resolveWithObject: true })
+    const assetInk = {
+      canvasWidth: canvas.width!,
+      left: -ink.trimOffsetLeft!,
+      top: -ink.trimOffsetTop!,
+      width: ink.width,
+      height: ink.height,
+    }
+
+    const measureAt = async (viewport: { width: number; height: number }) => {
+      await page.setViewportSize(viewport)
+      await page.goto('/conteudos')
+      await waitForSettledPage(page)
+      const logo = page.locator('header img[alt="Jorge Solla"]')
+      await expect(logo).toBeVisible()
+      return logo.evaluate((node, box) => {
+        const image = node as HTMLImageElement
+        const crop = image.parentElement!.getBoundingClientRect()
+        const rendered = image.getBoundingClientRect()
+        const scale = rendered.width / box.canvasWidth
+        return {
+          crop: { top: crop.top, right: crop.right, bottom: crop.bottom, left: crop.left },
+          ink: {
+            top: rendered.top + box.top * scale,
+            right: rendered.left + (box.left + box.width) * scale,
+            bottom: rendered.top + (box.top + box.height) * scale,
+            left: rendered.left + box.left * scale,
+          },
+        }
+      }, assetInk)
+    }
+
+    for (const viewport of [
+      { width: 1280, height: 900 },
+      { width: 390, height: 844 },
+    ]) {
+      const { crop, ink: renderedInk } = await measureAt(viewport)
+      const at = `@${viewport.width}px`
+      expect(renderedInk.top, `ink top clipped ${at}`).toBeGreaterThanOrEqual(crop.top - 0.5)
+      expect(renderedInk.left, `ink left clipped ${at}`).toBeGreaterThanOrEqual(crop.left - 0.5)
+      expect(renderedInk.bottom, `ink bottom clipped ${at}`).toBeLessThanOrEqual(crop.bottom + 0.5)
+      expect(renderedInk.right, `ink right clipped ${at}`).toBeLessThanOrEqual(crop.right + 0.5)
+    }
   })
 })

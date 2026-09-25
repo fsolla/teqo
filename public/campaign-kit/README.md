@@ -36,6 +36,13 @@ nos reels.
   **fundos claros** (plate do chrome sobre o site capturado).
 - **`jorge-solla-negativo.png`** — lockup do nome em branco, para fundos
   escuros.
+- **Moldura transparente:** os lockups têm uma moldura grande no canvas e a
+  tinta visível é menor que o arquivo. Quem recorta por janela CSS
+  (`overflow-hidden`) deriva a janela da **caixa da tinta**, nunca do canvas:
+  meça com `sharp(asset).trim()` (`trimOffsetLeft/Top` + tamanho) e trave a
+  janela com o teste e2e `frontendConteudos` ("keeps the whole brand ink inside
+  the header crop"). O `jorge-solla-negativo.png` é canvas 1037×595 com tinta
+  790×285 em (123, 162) — razão 2,77, não a da moldura.
 
 ### Número
 
