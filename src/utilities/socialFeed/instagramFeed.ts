@@ -32,6 +32,15 @@ export type LoadInstagramFeedArgs = {
   accessToken: string
   userId: string
   maxResults: number
+  /**
+   * Lookup opt-in (C220): stop walking cursor pages as soon as this returns
+   * true for a post of the page just fetched. The caller still matches the post
+   * it wants in the returned feed — this only bounds the walk, so the typical
+   * pasted-link search costs ONE call and never depends on deeper pages. The
+   * board/sync omit it: their all-or-nothing contract and one-page default stay
+   * untouched.
+   */
+  shouldStopAt?: (post: InstagramPost) => boolean
   fetchImpl?: (input: string, init?: RequestInit) => Promise<Response>
   baseUrl?: string
   /** Deadline for the Graph API calls (hook-triggered sync must not hang a save). */
@@ -234,16 +243,18 @@ const jsonFrom = async (response: Response): Promise<unknown> => response.json()
  * of posts: up to `INSTAGRAM_MAX_RESULTS_CAP` per page, walking the
  * `paging.cursors.after` cursor while the window is not filled — so a caller
  * asking for 50 makes exactly one call (the board's contract is untouched) and
- * a deeper window is an explicit opt-in. On any failure it attempts one token
- * refresh (`refresh_access_token` — only mints/refreshes Instagram Login
- * tokens; page tokens from Facebook Login error out and the caller falls back
- * to the snapshot) and retries once. Throws when the retry also fails so the
- * cached wrapper can fail closed.
+ * a deeper window is an explicit opt-in. The lookup opt-in (`shouldStopAt`)
+ * bounds the walk at the page that carries the wanted post. On any failure it
+ * attempts one token refresh (`refresh_access_token` — only mints/refreshes
+ * Instagram Login tokens; page tokens from Facebook Login error out and the
+ * caller falls back to the snapshot) and retries once. Throws when the retry
+ * also fails so the cached wrapper can fail closed.
  */
 export const loadInstagramFeed = async ({
   accessToken,
   userId,
   maxResults,
+  shouldStopAt,
   fetchImpl = fetch,
   baseUrl = INSTAGRAM_API_BASE_URL,
   signal,
@@ -277,6 +288,9 @@ export const loadInstagramFeed = async ({
       const parsed = parseInstagramMediaPage(await jsonFrom(mediaResponse))
       posts.push(...parsed.posts)
       if (posts.length >= maxResults || !parsed.nextCursor) break
+      // Lookup mode: the wanted post already arrived; deeper pages are never
+      // requested (a failing cursor past the answer cannot poison the result).
+      if (shouldStopAt && parsed.posts.some(shouldStopAt)) break
       after = parsed.nextCursor
     }
 

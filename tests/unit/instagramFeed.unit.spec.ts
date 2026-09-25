@@ -339,6 +339,62 @@ describe('loadInstagramFeed', () => {
     expect(mediaCalls[1]).toContain('limit=3')
   })
 
+  it('stops at the page that holds the searched post and never asks a deeper cursor', async () => {
+    calls.length = 0
+    const result = await loadInstagramFeed({
+      ...args,
+      maxResults: 500,
+      shouldStopAt: (post) => post.id === 'post2',
+      fetchImpl: async (input) => {
+        calls.push(input)
+        if (input.includes('/media')) {
+          // A deeper page exists and would fail loudly: the lookup must never ask.
+          if (input.includes('after=')) throw new Error('deeper page must not be requested')
+          return fakeResponse({
+            data: [MEDIA_ITEM('post1'), MEDIA_ITEM('post2')],
+            paging: { cursors: { after: 'cursor-1' } },
+          })
+        }
+        return fakeResponse({ username: 'depjorgesolla' })
+      },
+    })
+
+    expect(result.posts.map((post) => post.id)).toEqual(['post1', 'post2'])
+    const mediaCalls = calls.filter((call) => call.includes('/media'))
+    expect(mediaCalls).toHaveLength(1)
+    expect(calls.some((call) => call.includes('after='))).toBe(false)
+  })
+
+  it('keeps walking when the searched post is deeper in the window', async () => {
+    calls.length = 0
+    const result = await loadInstagramFeed({
+      ...args,
+      maxResults: 500,
+      shouldStopAt: (post) => post.id === 'post3',
+      fetchImpl: async (input) => {
+        calls.push(input)
+        if (input.includes('/media')) {
+          if (input.includes('after=cursor-1')) {
+            return fakeResponse({
+              data: [MEDIA_ITEM('post3')],
+              paging: { cursors: { after: 'cursor-2' } },
+            })
+          }
+          return fakeResponse({
+            data: [MEDIA_ITEM('post1'), MEDIA_ITEM('post2')],
+            paging: { cursors: { after: 'cursor-1' } },
+          })
+        }
+        return fakeResponse({ username: 'depjorgesolla' })
+      },
+    })
+
+    expect(result.posts.map((post) => post.id)).toEqual(['post1', 'post2', 'post3'])
+    const mediaCalls = calls.filter((call) => call.includes('/media'))
+    expect(mediaCalls).toHaveLength(2)
+    expect(calls.some((call) => call.includes('after=cursor-2'))).toBe(false)
+  })
+
   it('refreshes once and refetches the whole window when a later page fails', async () => {
     calls.length = 0
     let mediaCalls = 0

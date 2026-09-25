@@ -65,6 +65,19 @@ type FeedLoader = typeof loadInstagramFeed
  */
 export const CONTENT_PIECE_LINK_INSTAGRAM_WINDOW = 500
 
+/**
+ * The identity of a Graph API post for the pasted link: the shortcode (the
+ * kind is presentation, so a `/p/ABC/` paste matches a reel's permalink too).
+ * The same predicate drives the pagination early stop and the final match, so
+ * the walk never continues past the answer.
+ */
+const matchesInstagramShortcode =
+  (shortcode: string) =>
+  (post: { permalink: string }): boolean => {
+    const parsed = parseContentPieceLink(post.permalink)
+    return parsed?.origin === 'instagram' && parsed.shortcode === shortcode
+  }
+
 /** A hung Graph API must not hold the piece `processando` until the 1 h reaper. */
 const CONTENT_PIECE_LINK_FEED_TIMEOUT_MS = 30_000
 
@@ -176,6 +189,10 @@ export const resolveContentPieceSource = async ({
       accessToken: settings.instagramAccessToken as string,
       userId: settings.instagramUserId as string,
       maxResults: CONTENT_PIECE_LINK_INSTAGRAM_WINDOW,
+      // Early stop: the page that carries the pasted post ends the walk, so the
+      // typical paste costs ONE call and a failing deeper cursor can never turn
+      // a page-1 match into `indisponivel`.
+      shouldStopAt: matchesInstagramShortcode(link.shortcode),
       fetchImpl,
       signal: AbortSignal.timeout(CONTENT_PIECE_LINK_FEED_TIMEOUT_MS),
     })
@@ -194,10 +211,7 @@ export const resolveContentPieceSource = async ({
   // The shortcode is the identity; the kind (`p` × `reel`) is presentation, so
   // a `/p/ABC/` paste matches a reel's permalink too. Matching inside the OWN
   // profile feed is also what guarantees a third-party link never downloads.
-  const matched = feed.posts.find((post) => {
-    const parsed = parseContentPieceLink(post.permalink)
-    return parsed?.origin === 'instagram' && parsed.shortcode === link.shortcode
-  })
+  const matched = feed.posts.find(matchesInstagramShortcode(link.shortcode))
   if (!matched) {
     return linkOnly('nao-encontrado')
   }
