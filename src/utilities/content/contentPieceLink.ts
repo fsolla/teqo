@@ -81,8 +81,55 @@ const matchesInstagramShortcode =
 /** A hung Graph API must not hold the piece `processando` until the 1 h reaper. */
 const CONTENT_PIECE_LINK_FEED_TIMEOUT_MS = 30_000
 
-/** Same deadline for the media CDN (the speech pipeline precedent is 180 s). */
+/** Overall budget of one download attempt: a connected body may stream this long. */
 const CONTENT_PIECE_LINK_DOWNLOAD_TIMEOUT_MS = 3 * 60_000
+
+/**
+ * Connect/headers ceiling per attempt. The production path to the Instagram CDN
+ * is not stable from every origin (host IPv4 edges can strand a connect while
+ * the IPv6 route works); a lost connect is retried, never fatal.
+ */
+const CONTENT_PIECE_LINK_DOWNLOAD_CONNECT_TIMEOUT_MS = 15_000
+
+/** Bounded attempts: 6 × 15 s worst case stays inside the old single-attempt budget. */
+const CONTENT_PIECE_LINK_DOWNLOAD_ATTEMPTS = 6
+
+type ContentPieceFetch = (input: string, init?: RequestInit) => Promise<Response>
+
+/**
+ * One media download with a bounded retry: each attempt caps the
+ * connect/headers phase (a stranded connect aborts and the next attempt
+ * follows), while the body of a connected response keeps the full budget. An
+ * exhausted retry returns `null` and the caller keeps the honest
+ * `indisponivel`; a non-2xx answer is definitive and never retried.
+ */
+const downloadContentPieceMedia = async (
+  fetchImpl: ContentPieceFetch,
+  url: string,
+): Promise<Response | null> => {
+  for (let attempt = 0; attempt < CONTENT_PIECE_LINK_DOWNLOAD_ATTEMPTS; attempt += 1) {
+    const connect = new AbortController()
+    const connectTimer = setTimeout(
+      () => connect.abort(),
+      CONTENT_PIECE_LINK_DOWNLOAD_CONNECT_TIMEOUT_MS,
+    )
+    try {
+      const response = await fetchImpl(url, {
+        signal: AbortSignal.any([
+          AbortSignal.timeout(CONTENT_PIECE_LINK_DOWNLOAD_TIMEOUT_MS),
+          connect.signal,
+        ]),
+      })
+      if (!response.ok) return null
+      return response
+    } catch {
+      // Transport failure: another attempt follows while attempts remain.
+    } finally {
+      clearTimeout(connectTimer)
+    }
+  }
+  return null
+}
 
 /**
  * Our own ceiling, not the platform's: it must stay distinguishable from a
@@ -227,15 +274,8 @@ export const resolveContentPieceSource = async ({
     return linkOnly('indisponivel', matched.caption)
   }
 
-  let response: Response
-  try {
-    response = await fetchImpl(matched.mediaUrl, {
-      signal: AbortSignal.timeout(CONTENT_PIECE_LINK_DOWNLOAD_TIMEOUT_MS),
-    })
-  } catch {
-    return linkOnly('indisponivel', matched.caption)
-  }
-  if (!response.ok) {
+  const response = await downloadContentPieceMedia(fetchImpl, matched.mediaUrl)
+  if (!response) {
     return linkOnly('indisponivel', matched.caption)
   }
 

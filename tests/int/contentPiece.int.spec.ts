@@ -1233,6 +1233,44 @@ describe('content pieces (C211)', () => {
       expect(calls.some((call) => call.includes('after='))).toBe(false)
     })
 
+    it('retries a stranded media download and still extracts the piece', async () => {
+      await setInstagramSettings(true)
+      const { piece } = await createPiece({
+        title: 'Reel com rede instável',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: 'https://www.instagram.com/reel/INSTAVEL1/',
+      })
+      let downloadAttempts = 0
+
+      const resolution = await withTempDir((tempDir) =>
+        resolveContentPieceSource({
+          payload,
+          piece: pieceInput(piece),
+          tempDir,
+          loadFeed: async () => ({
+            username: 'depjorgesolla',
+            posts: [instagramPost({ permalink: 'https://www.instagram.com/reel/INSTAVEL1/' })],
+          }),
+          fetchImpl: async (input) => {
+            if (input.includes('cdn.example')) {
+              downloadAttempts += 1
+              // The stranded-connect shape: undici throws before any response.
+              if (downloadAttempts <= 3) throw new TypeError('fetch failed')
+              return new Response(Buffer.from('reel-bytes'), { status: 200 })
+            }
+            return new Response(null, { status: 200 })
+          },
+        }),
+      )
+
+      // The lost connects are retried; the fourth attempt extracts the piece.
+      expect(downloadAttempts).toBe(4)
+      expect(resolution.linkFailureReason).toBeNull()
+      expect(resolution.media).toBeTruthy()
+      if (resolution.media) createdMediaIds.add(resolution.media.id)
+    })
+
     it('reports nao-encontrado when the post is not in the window', async () => {
       await setInstagramSettings(true)
       const { piece } = await createPiece({
