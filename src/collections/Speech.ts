@@ -6,6 +6,7 @@ import type {
 } from 'payload'
 
 import { SPEECH_CLASSIFICATION_SOURCES, SPEECH_SCOPES, SPEECH_TOPICS } from '@/lib/speechFacets'
+import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 import { INTERNET_SPEECH_MEDIA_SLUG, WEB_SPEECH_PLATFORMS } from '@/lib/webSpeech'
 import { canReadSpeech, canUpdateSpeech, payloadAdminOnly } from '@/utilities/campaignAccess'
 
@@ -212,6 +213,7 @@ export const Speech: CollectionConfig = {
       name: 'officialTranscript',
       type: 'textarea',
       label: 'Transcrição oficial',
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
       admin: { readOnly: true },
     },
     {
@@ -238,6 +240,7 @@ export const Speech: CollectionConfig = {
       name: 'searchText',
       type: 'textarea',
       label: 'Texto normalizado (busca)',
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
       // Optional on purpose: a speech without ASR segments legitimately has no
       // search text, and Payload's `required` rejects the empty string.
       defaultValue: '',

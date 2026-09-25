@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { matchMunicipalityMentions } from '@/lib/speechGazetteer'
+import { normalizeForSearch } from '@/lib/speechSearch'
 import { INTERNET_SPEECH_MEDIA_SLUG, type WebSpeechFinding } from '@/lib/webSpeech'
 import type { Speech } from '@/payload-types'
 import config from '@/payload.config'
@@ -45,6 +46,8 @@ const TEST_SOURCE_KEYS = [
   'web:youtube:https://www.youtube.com/watch?v=thumb-keep',
   'web:youtube:broken',
   'web:youtube:https://www.youtube.com/watch?v=broken',
+  'web:youtube:long',
+  'web:youtube:https://www.youtube.com/watch?v=long',
   'web:youtube:semvoz',
   'web:youtube:https://www.youtube.com/watch?v=semvoz',
   'web:radio:https://radio.example/entrevista',
@@ -188,6 +191,72 @@ describe('ingestWebSpeech (C215)', () => {
     // The metadata-only refresh must never wipe the stored duration/media.
     expect(again?.durationSeconds).toBe(3)
     expect(await countSegments(again?.id ?? 0)).toBe(1)
+  })
+
+  it('ingests and re-runs a long transcript without truncating it', async () => {
+    acquireCalls.length = 0
+    const marker = 'long-final-marker'
+    const longText = 'a'.repeat(20_000)
+    const longSegments = [
+      { start: 0, end: 120, text: `${longText} primeiro` },
+      { start: 120, end: 240, text: `${longText} segundo` },
+      { start: 240, end: 360, text: `${longText} ${marker}` },
+    ]
+    const longSearchText = normalizeForSearch(longSegments.map((segment) => segment.text).join(' '))
+    const current = finding({
+      externalId: 'long',
+      url: 'https://www.youtube.com/watch?v=long',
+    })
+    const longTranscriber: WebSpeechTranscriber = async () => ({
+      ok: true,
+      segments: longSegments,
+      durationSeconds: 3_600,
+    })
+
+    const first = await ingestWebSpeech(payload, current, {
+      deps: deps({ transcribe: longTranscriber }),
+    })
+    expect(first).toMatchObject({ status: 'created', stage: null, error: null })
+
+    const speech = await findBySourceKey('web:youtube:long')
+    expect(speech?.searchText).toBe(longSearchText)
+    const mirroredMedia = speech?.mirroredMedia
+    const mediaId = mirroredMedia && typeof mirroredMedia === 'object' ? mirroredMedia.id : null
+    expect(mediaId).not.toBeNull()
+    const segments = await payload.find({
+      collection: 'speechSegment',
+      where: { speech: { equals: speech?.id } },
+      depth: 0,
+      sort: 'order',
+      overrideAccess: true,
+    })
+    expect(segments.docs.map((segment) => segment.text)).toEqual(
+      longSegments.map((segment) => segment.text),
+    )
+    expect(await countSegments(speech?.id ?? 0)).toBe(3)
+    expect(acquireCalls).toHaveLength(1)
+
+    const second = await ingestWebSpeech(payload, current, {
+      deps: deps({ transcribe: longTranscriber }),
+    })
+    expect(second).toMatchObject({ status: 'skipped', stage: null, error: null })
+    const again = await findBySourceKey('web:youtube:long')
+    expect(again?.id).toBe(speech?.id)
+    expect(again?.searchText).toBe(longSearchText)
+    const againMedia = again?.mirroredMedia
+    expect(againMedia && typeof againMedia === 'object' ? againMedia.id : null).toBe(mediaId)
+    const againSegments = await payload.find({
+      collection: 'speechSegment',
+      where: { speech: { equals: again?.id } },
+      depth: 0,
+      sort: 'order',
+      overrideAccess: true,
+    })
+    expect(againSegments.docs.map((segment) => segment.text)).toEqual(
+      longSegments.map((segment) => segment.text),
+    )
+    expect(await countSegments(speech?.id ?? 0)).toBe(3)
+    expect(acquireCalls).toHaveLength(1)
   })
 
   it('reprocesses on demand and removes the replaced artifact', async () => {

@@ -5,6 +5,7 @@ import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { matchMunicipalityMentions } from '@/lib/speechGazetteer'
+import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 import config from '@/payload.config'
 import {
   findSpeechImportState,
@@ -55,6 +56,15 @@ describe('upsertSpeechBundle (C153)', () => {
     }
   })
 
+  it('keeps the global text cap and unrelated fields unchanged', () => {
+    expect(payload.config.defaultMaxTextLength).toBe(40_000)
+    expect(TRANSCRIPT_TEXT_MAX_LENGTH).toBe(Number.MAX_SAFE_INTEGER)
+    const summary = payload.collections.speech.config.fields.find(
+      (field) => 'name' in field && field.name === 'summary',
+    )
+    expect(summary && 'maxLength' in summary ? summary.maxLength : undefined).toBeUndefined()
+  })
+
   it('creates once and replaces segments on re-run without duplicating', async () => {
     const bundle = baseBundle()
 
@@ -103,6 +113,28 @@ describe('upsertSpeechBundle (C153)', () => {
     )
     const preserved = await findBySourceKey(bundle.sourceKey)
     expect(preserved?.searchText).toBe('a saude publica baiana educacao em feira de santana')
+  })
+
+  it('preserves a long raw transcript and its normalized text', async () => {
+    const officialTranscript = 'transcrição oficial '.repeat(4_000)
+    const segmentText = 'texto do segmento '.repeat(4_000)
+    const bundle = baseBundle({
+      officialTranscript,
+      segments: [{ startSeconds: 0, endSeconds: 120, text: segmentText }],
+    })
+
+    await upsertSpeechBundle(payload, bundle)
+    const speech = await findBySourceKey(bundle.sourceKey)
+    const segments = await payload.find({
+      collection: 'speechSegment',
+      where: { speech: { equals: speech?.id } },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    expect(speech?.officialTranscript).toBe(officialTranscript)
+    expect(speech?.searchText).toBe(segmentText.trim())
+    expect(segments.docs[0]?.text).toBe(segmentText)
   })
 
   it('preserves manual facets and skips facet writes', async () => {

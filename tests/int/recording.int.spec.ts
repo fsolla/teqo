@@ -402,6 +402,30 @@ describe('uploaded recordings (C199)', () => {
     expect(rows.docs).toHaveLength(0)
   })
 
+  it('preserves a long recording transcript and its search text', async () => {
+    const longText = 'texto da gravação '.repeat(3_000)
+    const { recording } = await createRecording({
+      segments: [{ startSeconds: 0, endSeconds: 120, text: longText }],
+    })
+
+    const updated = await payload.findByID({
+      collection: 'recording',
+      id: recording.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    const segments = await payload.find({
+      collection: 'recordingSegment',
+      where: { recording: { equals: recording.id } },
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    expect(updated.searchText).toBe(normalizeForSearch(longText))
+    expect(segments.docs[0]?.text).toBe(longText)
+    expect(segments.docs[0]?.searchText).toBe(normalizeForSearch(longText))
+  })
+
   it('runs the transcription job end to end with merged timestamps', async () => {
     const { recording } = await createRecording({
       status: 'processing',

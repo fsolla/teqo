@@ -445,6 +445,21 @@ describe('content pieces (C211)', () => {
     expect(scheduled).toEqual([id])
   })
 
+  it('preserves a long content-piece transcript and its search text', async () => {
+    const longText = 'texto da peça '.repeat(3_000)
+    const { piece } = await createPiece({ transcript: longText })
+
+    const updated = await payload.findByID({
+      collection: 'contentPiece',
+      id: piece.id,
+      depth: 0,
+      overrideAccess: true,
+    })
+
+    expect(updated.transcript).toBe(longText)
+    expect(updated.searchText).toContain(normalizeForSearch(longText))
+  })
+
   it('attaches the original file to a link piece and refuses a second attachment', async () => {
     getCampaignUserMock.mockResolvedValue(communicator)
     const piece = await addContentPieceByLinkForActor({

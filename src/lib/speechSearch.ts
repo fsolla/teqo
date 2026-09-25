@@ -5,6 +5,8 @@
  * `contains` query, so accent/case variants match the trigram index.
  */
 
+export const TRANSCRIPT_TEXT_MAX_LENGTH = Number.MAX_SAFE_INTEGER
+
 /** NFD-strips accents, lowercases and collapses whitespace. */
 export const normalizeForSearch = (value: string): string =>
   value
