@@ -498,6 +498,35 @@ anota no run (`::warning::`) qualquer chave de feature ausente — não falha o
 deploy (quais chaves existem é decisão humana), mas a perda de capacidade
 aparece no próprio run.
 
+### Egress até o provedor — proxy na tailnet
+
+A rota do homeserver (Vivo) até `api.deepseek.com` (CloudFront) é
+intermitente — medido em 2026-09-25: 1/3 de connect, enquanto a estação de
+trabalho (que sai pelo exit node `mail-relay` da tailnet) dava 3/3. Para não
+depender dessa rota, o egress do app passa por um **proxy HTTP na estação**
+(`100.94.122.26:3128`), que usa o exit node:
+
+- **Onde roda:** container Docker `teqo-egress-proxy` na estação
+  (`--network host`, `--restart unless-stopped`, imagem `node:24-alpine`),
+  com o script `scripts/egress-proxy.mjs` deste repo (cópia operacional em
+  `~/teqo-egress-proxy/proxy.mjs`). Bind só na IP da tailnet e allowlist de
+  cliente = o homeserver (`100.119.220.31`); só túneis `CONNECT` para 443.
+- **Como o app usa:** `NODE_USE_ENV_PROXY=1` + `HTTPS_PROXY=http://100.94.122.26:3128`
+  - `NO_PROXY` (internos) nos env files de produção e staging. O Node 24 honra
+    o proxy no `fetch()` — zero mudança de código.
+- **Subir/atualizar:**
+  `docker run -d --name teqo-egress-proxy --restart unless-stopped --network host -e PROXY_HOST=100.94.122.26 -e PROXY_PORT=3128 -e PROXY_ALLOWED_CLIENTS=100.119.220.31,127.0.0.1,::1 -v ~/teqo-egress-proxy:/app:ro node:24-alpine node /app/proxy.mjs`
+- **Limite conhecido:** a estação é ponto único — desligada, as capacidades
+  de IA degradam (fail-safe) e o probe de egress do deploy avisa. Se um dia o
+  `mail-relay` (sempre ligado) tiver acesso SSH, mover o proxy para lá é a
+  evolução natural.
+- **Diagnóstico:** `docker logs teqo-egress-proxy`; do container,
+  `docker exec teqo-1313 node -e "fetch('https://api.deepseek.com/').then(r=>console.log(r.status)).catch(e=>console.log(e.cause?.code))"`.
+
+Desde 2026-09-25 o `deploy-homeserver.sh` também **probe o egress de IA de
+dentro do container** (após o healthcheck, antes do smoke) e emite
+`::warning::` se `api.deepseek.com` não responder — não falha o deploy.
+
 ## OPS79 — última migração da plataforma antiga → nova (vertical campanha)
 
 Operação de dados executada em 2026-08-23. Ver assistência lógica completa:

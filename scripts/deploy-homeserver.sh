@@ -310,6 +310,27 @@ warn_missing_feature_envs() {
 
 warn_missing_feature_envs
 
+# --- AI egress probe (non-fatal) ----------------------------------------
+# The AI keys can be present and the capability still dead: the homeserver's
+# route to api.deepseek.com (CloudFront) is intermittently unreachable (incident
+# 2026-09-25), and the app's egress is a tailnet proxy that can be down. Probe
+# the ACTUAL container path (it honors NODE_USE_ENV_PROXY/HTTPS_PROXY) and warn
+# (never fail: the app degrades to its fallbacks).
+
+warn_ai_egress() {
+  docker exec "$TEQO_CONTAINER" node -e "
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
+    fetch('https://api.deepseek.com/', { signal: controller.signal })
+      .then((response) => { clearTimeout(timer); process.exit(0) })
+      .catch(() => process.exit(1))
+  " >/dev/null 2>&1 && return 0
+  say "WARNING: $TEQO_CONTAINER cannot reach api.deepseek.com — AI features degrade to their fallbacks"
+  printf '::warning::%s cannot reach api.deepseek.com (AI capabilities degrade silently)\n' "$TEQO_CONTAINER"
+}
+
+warn_ai_egress
+
 # --- smoke --------------------------------------------------------------
 
 base="$TEQO_SMOKE_BASE"
