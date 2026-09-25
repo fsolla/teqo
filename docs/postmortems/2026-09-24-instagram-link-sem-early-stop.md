@@ -10,7 +10,7 @@
 | Severidade          | alta (fluxo editorial de produção prometido não funcionava; sem perda de dados)                                               |
 | Ambiente            | prod (sintoma) + dev/worktree (diagnóstico e fix)                                                                             |
 | Issue(s)            | sem Issue — o item anterior, C220 (#1302), já estava fechado/in-prod; o residual não gerou Issue (o post-mortem é o registro) |
-| PR do fix           | a preencher                                                                                                                   |
+| PR do fix           | #1332                                                                                                                         |
 | Detectado por       | humano (relato do usuário na sessão `/bug-fix` do worktree `fix/10`, 2026-09-24 ~22:09 BRT)                                   |
 
 ## Timeline
@@ -20,7 +20,7 @@
 | Início provável    | 2026-09-24 ~03:19 BRT      | Commit `8f311831` "fix(C220): link do proprio Instagram baixa e cataloga a peca" (PR #1314) introduz a janela de 500 sem early-stop |
 | C220 em produção   | 2026-09-24 12:56–13:07 UTC | Deploy run 35966535233 (SHA `8f311831`), job "deploy production"                                                                    |
 | Detecção           | 2026-09-24 ~22:09 BRT      | Relato do humano na sessão `/bug-fix`                                                                                               |
-| Correção mergeada  | pendente                   | Em andamento neste PR (a preencher número)                                                                                          |
+| Correção mergeada  | pendente                   | Em andamento no PR #1332 (merge pendente do CI/auto-merge)                                                                          |
 | Deploy             | pendente                   | Merge em `main` dispara deploy; staging automático; produção só com approve humano no environment `production` (não feito ainda)    |
 | Verificado em prod | pendente                   | Aguardando confirmação do humano (nunca declarar corrigido em prod antes disso)                                                     |
 
