@@ -44,7 +44,8 @@ export const OPENCODE_PRESET_MODEL =
  * Per-invocation model map — fixed menu of named flags (OPS93; values
  * corrected in OPS95 after the OPS93 delivery shipped wrong IDs; OPS100 adds
  * `--glm` and `--free`). OPS112 corrects `--go` → DeepSeek V4.1 Flash and
- * `--zen` → Muse Spark 1.3 Free.
+ * `--zen` → Muse Spark 1.3 Free. OPS129 updates `--zen` → Space Bunny Free
+ * and `--free` → Space Bunny Alpha.
  * The directive picks `WORKTREE_MODEL_MAP[flag]` when
  * a single flag is present, otherwise falls back to `OPENCODE_PRESET_MODEL`.
  * No `--variant` is emitted in the directive (the TUI yargs rejects the flag —
@@ -55,11 +56,11 @@ export const OPENCODE_PRESET_MODEL =
 export const WORKTREE_MODEL_MAP = {
   cheap: 'cheapestinference/deepseek-v4-flash',
   pro: 'deepseek/deepseek-v4-pro',
-  zen: 'opencode/muse-spark-1.3-contributor-free',
+  zen: 'opencode/space-bunny-free',
   go: 'opencode-go/deepseek-v4.1-flash',
   alibaba: 'alibaba-token-plan/deepseek-v4-flash',
   glm: 'opencode-go/glm-5.3-flash',
-  free: 'openrouter/openrouter/free',
+  free: 'openrouter/stealth/space-bunny-alpha',
 }
 
 /** Set of flag names that select a model (keys of WORKTREE_MODEL_MAP). */

@@ -22,10 +22,10 @@
 # — ela vai no body do `POST /session` e no argv do `opencode run` do
 # driver/headless (o TUI anexado herda), nunca na linha do launch. Modelo por invocação: `--cheap`
 # (cheapestinference/deepseek-v4-flash), `--pro` (deepseek/deepseek-v4-pro),
-# `--zen` (opencode/muse-spark-1.3-contributor-free), `--go` (opencode-go/deepseek-v4.1-flash), `--alibaba`
+# `--zen` (opencode/space-bunny-free), `--go` (opencode-go/deepseek-v4.1-flash), `--alibaba`
 # (alibaba-token-plan/deepseek-v4-flash), `--glm` (opencode-go/glm-5.3-flash),
-# `--free` (openrouter/openrouter/free) no mapa fixo `WORKTREE_MODEL_MAP`
-# (OPS93 menu; valores OPS95; `--go`/`--zen` OPS112); sem flag o preset `deepseek/deepseek-flash`
+# `--free` (openrouter/stealth/space-bunny-alpha) no mapa fixo `WORKTREE_MODEL_MAP`
+# (OPS93 menu; valores OPS95; `--go`/`--zen` OPS112; `--zen`/`--free` OPS129); sem flag o preset `deepseek/deepseek-flash`
 # permanece. Sem `exec` de propósito: ao sair do opencode, o terminal volta ao
 # shell dentro do worktree. Presets são constantes em scripts/lib/worktree.mjs;
 # o ciclo de vida das sessões vive em scripts/agent-session.mjs. O marcador
