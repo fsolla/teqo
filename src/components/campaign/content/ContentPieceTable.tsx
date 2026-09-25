@@ -2,6 +2,7 @@ import { FilmIcon, ImageIcon, LinkIcon, MicIcon, TypeIcon } from 'lucide-react'
 import Link from 'next/link'
 
 import { ContentPieceCirculationCounters } from '@/components/campaign/content/ContentPieceCirculationCounters'
+import { ContentPieceDeleteDialog } from '@/components/campaign/content/ContentPieceDeleteDialog'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
 import {
   ContentPieceProcessingBadge,
@@ -34,6 +35,8 @@ const metaLine = (piece: ContentPieceViewModel): string =>
  * C211 — one piece of the Central list (approved design scene 1): thumbnail,
  * title and the type/city/duration line, the honest processing state, the
  * publication state and one action ("Abrir" or "Reprocessar" when it failed).
+ * C222 adds the irreversible "Apagar" beside that next action (ghost
+ * destructive), on every state.
  */
 export const ContentPieceTable = ({
   rows,
@@ -46,8 +49,10 @@ export const ContentPieceTable = ({
 }) => (
   // C213 (design critique): from xl up the five columns share the width by
   // fixed percentages, so the mandatory "Próxima ação" is never pushed out of
-  // frame by the new "Circulação" column. Below xl the table keeps its natural
-  // layout and the shell's horizontal scroll (unchanged behavior).
+  // frame. C222 rebalanced them to the approved design scene A (23/14/12/25/26)
+  // so the action column fits "Abrir|Reprocessar" plus the delete trigger.
+  // Below xl the table keeps its natural layout and the shell's horizontal
+  // scroll (unchanged behavior).
   <CampaignTable
     className="hidden md:block xl:[&_table]:table-fixed"
     caption="Uma linha por peça da Central de Conteúdos. Rascunhos não aparecem na Central pública."
@@ -60,7 +65,7 @@ export const ContentPieceTable = ({
         id: 'piece',
         label: 'Peça',
         mandatory: true,
-        head: <CampaignTableHead className="xl:w-[25%]">Peça</CampaignTableHead>,
+        head: <CampaignTableHead className="xl:w-[23%]">Peça</CampaignTableHead>,
         cellClassName: 'xl:whitespace-normal',
         cell: (piece) => {
           const Icon = TYPE_ICON[piece.type]
@@ -88,7 +93,7 @@ export const ContentPieceTable = ({
       {
         id: 'processing',
         label: 'Processamento',
-        head: <CampaignTableHead className="xl:w-[13%]">Processamento</CampaignTableHead>,
+        head: <CampaignTableHead className="xl:w-[14%]">Processamento</CampaignTableHead>,
         cell: (piece) => (
           <div>
             <ContentPieceProcessingBadge status={piece.processingStatus} />
@@ -105,13 +110,13 @@ export const ContentPieceTable = ({
       {
         id: 'publication',
         label: 'Publicação',
-        head: <CampaignTableHead className="xl:w-[11%]">Publicação</CampaignTableHead>,
+        head: <CampaignTableHead className="xl:w-[12%]">Publicação</CampaignTableHead>,
         cell: (piece) => <ContentPiecePublicationBadge status={piece.status} />,
       },
       {
         id: 'circulation',
         label: 'Circulação',
-        head: <CampaignTableHead className="xl:w-[39%]">Circulação</CampaignTableHead>,
+        head: <CampaignTableHead className="xl:w-[25%]">Circulação</CampaignTableHead>,
         cell: (piece) => (
           <ContentPieceCirculationCounters
             circulation={piece.circulation}
@@ -125,23 +130,31 @@ export const ContentPieceTable = ({
         label: 'Próxima ação',
         mandatory: true,
         head: (
-          <CampaignTableHead align="right" className="xl:w-[12%]">
+          <CampaignTableHead align="right" className="xl:w-[26%]">
             Próxima ação
           </CampaignTableHead>
         ),
         cellClassName: 'text-right',
-        cell: (piece) =>
-          piece.canRetry ? (
-            <ContentPieceRetryButton
+        cell: (piece) => (
+          <div className="flex items-center justify-end gap-2">
+            {piece.canRetry ? (
+              <ContentPieceRetryButton
+                contentPieceId={piece.id}
+                label="Reprocessar"
+                className="inline-block"
+              />
+            ) : (
+              <Button asChild variant="outline" className="min-h-11">
+                <Link href={piece.detailHref}>Abrir</Link>
+              </Button>
+            )}
+            <ContentPieceDeleteDialog
               contentPieceId={piece.id}
-              label="Reprocessar"
-              className="inline-block"
+              status={piece.status}
+              publicPath={piece.publicPath}
             />
-          ) : (
-            <Button asChild variant="outline" className="min-h-11">
-              <Link href={piece.detailHref}>Abrir</Link>
-            </Button>
-          ),
+          </div>
+        ),
       },
     ]}
   />

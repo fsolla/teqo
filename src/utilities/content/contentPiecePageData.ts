@@ -3,6 +3,7 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import { toContentPieceViewModel } from '@/lib/contentPiece'
+import { contentPiecePublicPath } from '@/lib/contentPieceCatalog'
 import {
   contentPieceCirculationFromRows,
   resolveContentPieceCirculation,
@@ -33,6 +34,9 @@ import { createEntityNotFoundError } from '@/utilities/entityNotFound'
  */
 const contentPieceListSelect = {
   title: true,
+  // C222 — the delete confirmation names the public link; only a piece that was
+  // ever published has a slug.
+  slug: true,
   type: true,
   status: true,
   processingStatus: true,
@@ -51,7 +55,6 @@ const contentPieceListSelect = {
 /** Everything the ficha renders, including the editable catalogue. */
 const contentPieceDetailSelect = {
   ...contentPieceListSelect,
-  slug: true,
   description: true,
   transcript: true,
   institution: true,
@@ -117,6 +120,9 @@ const toContentPieceRow = (
   lookup: ContentPieceCirculationLookup,
 ): ContentPieceRowViewModel => ({
   ...toContentPieceViewModel(record),
+  // C222 — the row carries the public path the delete dialog names; a piece
+  // that never got a slug (never published) resolves to null.
+  publicPath: record.slug ? contentPiecePublicPath(record.slug) : null,
   circulation: resolveContentPieceCirculation({
     counts: lookup.ok ? lookup.byPieceId.get(record.id) : undefined,
     hasBeenPublished: Boolean(record.publishedAt),

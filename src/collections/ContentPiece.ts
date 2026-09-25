@@ -1,5 +1,6 @@
 import type {
   CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
   CollectionBeforeChangeHook,
   CollectionBeforeValidateHook,
   CollectionConfig,
@@ -33,9 +34,9 @@ import {
 import { normalizeContentPiecePublicFigures } from '@/lib/publicFigureCatalog'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
-import { payloadAdminOnly } from '@/utilities/access/shared'
 import {
   canCreateContentPiece,
+  canDeleteContentPiece,
   canReadContentPiece,
   canSetCampaignSystemField,
   canUpdateContentPiece,
@@ -88,6 +89,17 @@ const LINK_FAILURE_REASON_OPTIONS = CONTENT_PIECE_LINK_FAILURE_REASONS.map((valu
  * so a new write path cannot forget it.
  */
 const revalidateContentPieceListing: CollectionAfterChangeHook = ({ doc }) => {
+  revalidateContentPiecesListing()
+  return doc
+}
+
+/**
+ * C222 — the other half of the S27 seam: a deleted piece must leave the public
+ * listing tag too, or the public Central would keep serving a ghost from a
+ * cache with no TTL. Hook, not a per-caller line, so the admin delete and any
+ * future path cannot forget it (same reason as the `afterChange` above).
+ */
+const revalidateContentPieceListingAfterDelete: CollectionAfterDeleteHook = ({ doc }) => {
   revalidateContentPiecesListing()
   return doc
 }
@@ -243,10 +255,10 @@ export const ContentPiece: CollectionConfig = {
     create: canCreateContentPiece,
     read: canReadContentPiece,
     update: canUpdateContentPiece,
-    // C211 has no delete surface in the Central: only the Payload admin removes
-    // a row (the S27/support path), so campaign roles never lose a file by
-    // accident.
-    delete: payloadAdminOnly,
+    // C211 kept no delete surface in the Central; C222 reopens that anti-goal
+    // on purpose: the same vertical that writes publishes can now remove a
+    // piece for good, warned by the confirmation dialog. The admin keeps it.
+    delete: canDeleteContentPiece,
   },
   hooks: {
     beforeValidate: [deriveContentPieceCatalogIndex],
@@ -256,6 +268,7 @@ export const ContentPiece: CollectionConfig = {
       stampCampaignCreatedBy,
     ],
     afterChange: [revalidateContentPieceListing],
+    afterDelete: [revalidateContentPieceListingAfterDelete],
   },
   fields: [
     {

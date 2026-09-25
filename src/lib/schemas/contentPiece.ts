@@ -109,6 +109,11 @@ export const contentPieceRetryRequestSchema = z.object({
   contentPieceId: z.number().int().positive(),
 })
 
+/** Delete one piece for good (row + its private media file). */
+export const contentPieceDeleteRequestSchema = z.object({
+  contentPieceId: z.number().int().positive(),
+})
+
 /** Poll the statuses of the visible pieces (bounded batch). */
 export const contentPieceStatusRequestSchema = z.object({
   contentPieceIds: z.array(z.number().int().positive()).min(1).max(50),

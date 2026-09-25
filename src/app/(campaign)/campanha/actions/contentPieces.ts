@@ -4,6 +4,7 @@ import type { Payload } from 'payload'
 
 import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import {
+  CONTENT_MEDIA_SLUG,
   contentPieceLinkTitle,
   isContentPieceTopic,
   parseContentPieceLink,
@@ -18,6 +19,7 @@ import {
   CONTENT_PIECE_LINK_INVALID_MESSAGE,
   CONTENT_PIECE_NOT_FOUND_MESSAGE,
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
+  contentPieceDeleteRequestSchema,
   contentPieceLinkRequestSchema,
   contentPiecePublicationRequestSchema,
   contentPieceRetryRequestSchema,
@@ -35,7 +37,7 @@ import {
   type ContentPieceLeaderOption,
 } from '@/utilities/content/contentPieceLeaderOptions'
 import { startContentPieceJobInBackground } from '@/utilities/content/contentPieceScheduler'
-import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import { onPayloadTransactionCommit, withPayloadTransaction } from '@/utilities/payloadTransaction'
 
 /**
  * C211 — mutations of the Central de Conteúdos: edit one piece's catalogue,
@@ -211,6 +213,58 @@ export const retryContentPieceForActor = async (input: {
 
   startContentPieceJobInBackground(piece.id)
   return toContentPieceViewModel(piece)
+}
+
+/**
+ * C222 — hard-deletes one piece: the row goes inside the transaction (the
+ * collection access is the final barrier); the private media row is removed
+ * after commit, best-effort, so a storage hiccup cannot fail the delete the
+ * person asked for (same shape as the C199 recording delete). The media id is
+ * read from the doc the delete returned — reading it in the delete itself
+ * closes the window in which the pipeline could have attached a file between a
+ * pre-read and the commit. Deleting a `processando` row is deliberate: it is
+ * how the assessoria cancels a stuck piece, and the job tolerates the row
+ * disappearing.
+ */
+export const deleteContentPieceForActor = async (input: {
+  contentPieceId: number
+}): Promise<{ deleted: true }> => {
+  const parsed = contentPieceDeleteRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+
+  const current = await loadContentPieceForActor(payload, actor, parsed.contentPieceId)
+  if (!current) throw new Error(CONTENT_PIECE_NOT_FOUND_MESSAGE)
+
+  await withPayloadTransaction(payload, async ({ transactionID, req }) => {
+    const deleted = await payload.delete({
+      collection: 'contentPiece',
+      id: parsed.contentPieceId,
+      depth: 0,
+      select: { media: true },
+      user: actor,
+      overrideAccess: false,
+      req,
+    })
+
+    const mediaId = typeof deleted.media === 'number' ? deleted.media : (deleted.media?.id ?? null)
+    if (mediaId !== null) {
+      onPayloadTransactionCommit(transactionID, () => {
+        void payload
+          .delete({
+            collection: CONTENT_MEDIA_SLUG,
+            id: mediaId,
+            // Intentional admin bypass: cleanup of the file that belonged to
+            // the piece this actor was authorized to delete.
+            overrideAccess: true,
+          })
+          .catch(() => undefined)
+      })
+    }
+  })
+
+  return { deleted: true }
 }
 
 /**

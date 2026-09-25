@@ -29,3 +29,8 @@ export type ContentPiecePublicationResponse =
 export type ContentPieceAttachResponse =
   | { status: 'success'; piece: ContentPieceViewModel }
   | { status: 'error'; message: string }
+
+/** Wire contract of `DELETE .../conteudos/[id]/apagar` (C222) — hard delete. */
+export type ContentPieceDeleteResponse =
+  | { status: 'success'; deleted: true }
+  | { status: 'error'; message: string }

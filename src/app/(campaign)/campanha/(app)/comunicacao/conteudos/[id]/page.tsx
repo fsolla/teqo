@@ -7,6 +7,7 @@ import { getPayload } from 'payload'
 import { searchContentPieceLeaderOptionsForActor } from '@/app/(campaign)/campanha/actions/contentPieces'
 import { ContentPieceAttachFileButton } from '@/components/campaign/content/ContentPieceAttachFileButton'
 import { ContentPieceCirculationPanel } from '@/components/campaign/content/ContentPieceCirculationPanel'
+import { ContentPieceDeleteDialog } from '@/components/campaign/content/ContentPieceDeleteDialog'
 import { ContentPieceForm } from '@/components/campaign/content/ContentPieceForm'
 import { ContentPiecePublicationButton } from '@/components/campaign/content/ContentPiecePublicationButton'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
@@ -118,7 +119,20 @@ export default async function ContentPieceDetailPage({ params }: ContentPieceDet
               <ContentPiecePublicationBadge status={piece.status} />
             </div>
           </div>
-          <ContentPiecePublicationButton contentPieceId={piece.id} status={piece.status} />
+          <div className="flex max-md:w-full shrink-0 flex-wrap items-center justify-end gap-2">
+            <ContentPiecePublicationButton
+              contentPieceId={piece.id}
+              status={piece.status}
+              className="max-md:w-full"
+            />
+            <ContentPieceDeleteDialog
+              contentPieceId={piece.id}
+              status={piece.status}
+              publicPath={piece.publicPath}
+              redirectTo={CAMPAIGN_COMMUNICATION_CONTEUDOS}
+              triggerClassName="max-md:w-full"
+            />
+          </div>
         </div>
       </div>
 

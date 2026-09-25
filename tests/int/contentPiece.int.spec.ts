@@ -5,13 +5,14 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
+import { revalidateTag } from 'next/cache'
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('next/cache', () => ({
   revalidatePath: () => undefined,
-  revalidateTag: () => undefined,
+  revalidateTag: vi.fn(),
   unstable_cache: (fn: unknown) => fn,
 }))
 
@@ -31,6 +32,7 @@ vi.mock('@/utilities/campaignAuth', () => ({
 import { GET } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/[id]/arquivo/route'
 import {
   addContentPieceByLinkForActor,
+  deleteContentPieceForActor,
   getContentPieceStatusesForActor,
   retryContentPieceForActor,
   searchContentPieceLeaderOptionsForActor,
@@ -47,12 +49,13 @@ import {
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
+  CONTENT_PIECE_NOT_FOUND_MESSAGE,
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
 } from '@/lib/schemas/contentPiece'
 import { slugify } from '@/lib/slug'
 import type { SpeechTopic } from '@/lib/speechFacets'
 import { normalizeForSearch } from '@/lib/speechSearch'
-import type { CampaignUser, ContentMedia } from '@/payload-types'
+import type { CampaignUser, ContentMedia, User } from '@/payload-types'
 import config from '@/payload.config'
 import {
   CONTENT_PIECE_STALE_MS,
@@ -76,6 +79,7 @@ import {
   attachContentPieceMedia,
   receiveContentPieceUpload,
 } from '@/utilities/content/contentPieceUpload'
+import { getCollectionListingTag } from '@/utilities/documents'
 import type { InstagramPost } from '@/utilities/socialFeed/instagramFeed'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -585,6 +589,171 @@ describe('content pieces (C211)', () => {
     await expect(retryContentPieceForActor({ contentPieceId: piece.id })).rejects.toThrow(
       CONTENT_PIECE_FORBIDDEN_MESSAGE,
     )
+  })
+
+  describe('delete a piece (C222)', () => {
+    const mediaGone = async (mediaId: number): Promise<boolean> => {
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        const gone = await payload
+          .findByID({ collection: 'contentMedia', id: mediaId, overrideAccess: true })
+          .then(() => false)
+          .catch(() => true)
+        if (gone) return true
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+      return false
+    }
+
+    it('deletes a piece on the collection only with the communication roles and the admin', async () => {
+      const admin = await campaignFixtures().createAdminUser()
+
+      const deleteAs = async (user?: CampaignUser | User) => {
+        const { piece } = await createPiece({ title: `Acesso ${Date.now()}` })
+        const deleted = await payload
+          .delete({
+            collection: 'contentPiece',
+            id: piece.id,
+            ...(user ? { user } : {}),
+            overrideAccess: false,
+          })
+          .then(() => true)
+          .catch(() => false)
+        if (deleted) createdPieceIds.delete(piece.id)
+        return deleted
+      }
+
+      // Fail-closed: anonymous, advisor and leader are denied.
+      expect(await deleteAs()).toBe(false)
+      expect(await deleteAs(advisor)).toBe(false)
+      expect(await deleteAs(leader)).toBe(false)
+      // The vertical that writes/publicizes removes; the admin keeps the path.
+      expect(await deleteAs(communicator)).toBe(true)
+      expect(await deleteAs(coordinator)).toBe(true)
+      expect(await deleteAs(candidate)).toBe(true)
+      expect(await deleteAs(admin)).toBe(true)
+    })
+
+    it('hard deletes the piece with its private media and leaves the circulation events', async () => {
+      const marker = Date.now().toString(36)
+      const { piece, media } = await createPiece({
+        title: `Peça para apagar ${marker}`,
+        status: 'publicado',
+      })
+      const event = await payload.create({
+        collection: 'contentEvent',
+        data: { type: 'abertura', subjectType: 'peca', subjectId: String(piece.id) },
+        overrideAccess: true,
+      })
+      const publicSlug = piece.slug!
+      expect(await getPublishedContentPieceBySlug(publicSlug)).not.toBeNull()
+
+      getCampaignUserMock.mockResolvedValue(communicator)
+      await expect(deleteContentPieceForActor({ contentPieceId: piece.id })).resolves.toEqual({
+        deleted: true,
+      })
+      createdPieceIds.delete(piece.id)
+
+      await expect(
+        payload.findByID({ collection: 'contentPiece', id: piece.id, overrideAccess: true }),
+      ).rejects.toThrow()
+      expect(await getPublishedContentPieceBySlug(publicSlug)).toBeNull()
+
+      if (media) {
+        // The media cleanup runs after commit, best-effort; poll for it.
+        expect(await mediaGone(media.id)).toBe(true)
+        createdMediaIds.delete(media.id)
+      }
+
+      // C213 contract: the anonymous counters are inert history, never cascaded.
+      const survivor = await payload.findByID({
+        collection: 'contentEvent',
+        id: event.id,
+        overrideAccess: true,
+      })
+      expect(survivor.subjectId).toBe(String(piece.id))
+      await payload.delete({ collection: 'contentEvent', id: event.id, overrideAccess: true })
+    })
+
+    it('refuses the delete from a denied role, keeps the piece and 404s an unknown id', async () => {
+      const { piece } = await createPiece()
+      getCampaignUserMock.mockResolvedValue(advisor)
+
+      await expect(deleteContentPieceForActor({ contentPieceId: piece.id })).rejects.toThrow(
+        CONTENT_PIECE_FORBIDDEN_MESSAGE,
+      )
+      expect(
+        await payload.findByID({ collection: 'contentPiece', id: piece.id, overrideAccess: true }),
+      ).toMatchObject({ id: piece.id })
+
+      getCampaignUserMock.mockResolvedValue(communicator)
+      await expect(
+        deleteContentPieceForActor({ contentPieceId: piece.id + 100_000 }),
+      ).rejects.toThrow(CONTENT_PIECE_NOT_FOUND_MESSAGE)
+    })
+
+    it('deletes a piece in any state and never trips the running worker', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+
+      for (const [status, processingStatus] of [
+        ['rascunho', 'pronto'],
+        ['publicado', 'pronto'],
+        ['rascunho', 'falhou'],
+        ['rascunho', 'processando'],
+      ] as const) {
+        const { piece } = await createPiece({ status, processingStatus })
+        await deleteContentPieceForActor({ contentPieceId: piece.id })
+        createdPieceIds.delete(piece.id)
+        await expect(
+          payload.findByID({ collection: 'contentPiece', id: piece.id, overrideAccess: true }),
+        ).rejects.toThrow()
+      }
+
+      // A job still scheduled for a deleted `processando` row finds nothing and
+      // resolves: the row is gone, no failure and no media is recreated.
+      const { piece } = await createPiece({ processingStatus: 'processando' })
+      await deleteContentPieceForActor({ contentPieceId: piece.id })
+      createdPieceIds.delete(piece.id)
+
+      await expect(runContentPieceJob(payload, piece.id)).resolves.toBeUndefined()
+      const resurrected = await payload.find({
+        collection: 'contentPiece',
+        where: { id: { equals: piece.id } },
+        limit: 0,
+        pagination: false,
+        overrideAccess: true,
+      })
+      // The worker cannot attach media to a row that no longer exists.
+      expect(resurrected.docs).toHaveLength(0)
+    })
+
+    it('busts the public listing tag when a piece is deleted', async () => {
+      const tag = getCollectionListingTag('contentPiece')
+
+      const { piece } = await createPiece({ title: `Cache ${Date.now()}` })
+      // The create's own afterChange also busts the tag; clear it AFTER the
+      // create so the assertion pins the afterDelete hook alone.
+      vi.mocked(revalidateTag).mockClear()
+      await payload.delete({ collection: 'contentPiece', id: piece.id, overrideAccess: true })
+      createdPieceIds.delete(piece.id)
+
+      expect(revalidateTag).toHaveBeenCalledWith(tag)
+    })
+
+    it('carries the public path on the row for the delete warning', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+      const publishedPiece = await createPiece({ status: 'publicado', title: `VM ${Date.now()}` })
+      const draftPiece = await createPiece({
+        status: 'rascunho',
+        title: `VM rascunho ${Date.now()}`,
+      })
+
+      const data = await loadContentPieceListPageData(payload, communicator, {})
+      const publishedRow = data.rows.find((row) => row.id === publishedPiece.piece.id)
+      const draftRow = data.rows.find((row) => row.id === draftPiece.piece.id)
+
+      expect(publishedRow?.publicPath).toBe(`/conteudos/${publishedPiece.piece.slug}`)
+      expect(draftRow?.publicPath).toBeNull()
+    })
   })
 
   it('reaps a stale processing row to failed and reports the repaired status', async () => {

@@ -43,3 +43,16 @@ export const canUpdateContentPiece: Access = async ({ req }) => {
   const currentUser = await getFreshCampaignUser(req)
   return currentUser ? canReadCommunicationCatalog(currentUser.role) : false
 }
+
+/**
+ * Who may delete a piece for good (C222). The same vertical gate plus the
+ * Payload admin — and its own predicate, never an alias of the update one: a
+ * future widening of the edit surface must not silently grant an irreversible
+ * delete. The confirmation dialog is the brake, not a narrower role.
+ */
+export const canDeleteContentPiece: Access = async ({ req }) => {
+  if (isPayloadAdmin(req.user)) return true
+
+  const currentUser = await getFreshCampaignUser(req)
+  return currentUser ? canReadCommunicationCatalog(currentUser.role) : false
+}
