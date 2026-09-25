@@ -1,4 +1,4 @@
-const BAHIA_TIME_ZONE = 'America/Bahia'
+export const BAHIA_TIME_ZONE = 'America/Bahia'
 
 type CivilDateTime = {
   year: number
@@ -100,6 +100,12 @@ export const formatIsoAsBahiaDateTimeInput = (iso: string): string => {
   const { year, month, day, hour, minute } = getZonedParts(new Date(iso))
 
   return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}`
+}
+
+export const formatBahiaCalendarDateTime = (date: Date): string => {
+  const { year, month, day, hour, minute, second } = getZonedParts(date)
+
+  return `${year}${pad(month)}${pad(day)}T${pad(hour)}${pad(minute)}${pad(second)}`
 }
 
 const bahiaDateTimeDisplayFormatter = new Intl.DateTimeFormat('pt-BR', {

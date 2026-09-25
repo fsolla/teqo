@@ -4,6 +4,7 @@ import {
   civilDateDaysBetween,
   civilDateToUtcMidnightIso,
   floorToMinuteStep,
+  formatBahiaCalendarDateTime,
   formatBahiaCivilDate,
   formatBahiaCivilDateTimeLabel,
   formatBahiaEventDateLabel,
@@ -30,6 +31,12 @@ describe('Bahia civil date helpers (B57)', () => {
     const today = formatBahiaCivilDate(new Date('2026-08-08T15:00:00.000Z'))
     expect(today).toBe('2026-08-08')
     expect(subtractBahiaCivilDays(today, 7)).toBe('2026-08-01')
+  })
+
+  it('formats a calendar instant as Bahia local time with seconds', () => {
+    expect(formatBahiaCalendarDateTime(new Date('2026-10-03T22:00:00.000Z'))).toBe(
+      '20261003T190000',
+    )
   })
 })
 

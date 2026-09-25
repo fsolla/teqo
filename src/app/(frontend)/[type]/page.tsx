@@ -8,7 +8,6 @@ import {
   normalizeShareLinkDescription,
   resolveLiveShareLinkDestination,
   resolveShareLinkMode,
-  shareLinkPath,
   type ShareLinkLiveTarget,
 } from '@/lib/shareLink'
 import { buildShareLinkAnnouncementView } from '@/lib/shareLinkAnnouncement'
@@ -19,6 +18,7 @@ import { POST_TYPE_LABELS, getVisiblePosts, isPostType } from '@/utilities/posts
 import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import {
   getCachedPublishedShareLinkBySlug,
+  resolveShareLinkCanonicalUrl,
   resolveShareLinkOgImageUrl,
 } from '@/utilities/shareLinkReads'
 import type { Metadata } from 'next'
@@ -60,8 +60,8 @@ const loadPublishedShareLink = async (slug: string): Promise<ResolvedShareLink |
 
 const resolveShareLinkMetadata = async (link: ShareLink): Promise<Metadata> => {
   const globalMetadata = await getCachedGlobal('metadata')()
-  const { siteUrl, siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
-  const canonicalUrl = absoluteSitePath(siteUrl, shareLinkPath(link.slug))
+  const { siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
+  const canonicalUrl = await resolveShareLinkCanonicalUrl(link.slug)
   const description = normalizeShareLinkDescription(link.description)
   const imageUrl = await resolveShareLinkOgImageUrl(link)
   const images = imageUrl ? [{ url: imageUrl, alt: link.title }] : []
@@ -139,8 +139,13 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     // The rendered page uses the media proxy path (same origin); the absolute
     // deployment-origin URL is only for the OG card in `resolveShareLinkMetadata`.
     const image = typeof link.image === 'object' ? link.image : null
+    const canonicalUrl = await resolveShareLinkCanonicalUrl(link.slug)
     const showJingles = await hasPublishedJingles()
-    const view = buildShareLinkAnnouncementView({ link, imageUrl: image?.url ?? null })
+    const view = buildShareLinkAnnouncementView({
+      link,
+      imageUrl: image?.url ?? null,
+      canonicalUrl: canonicalUrl ?? null,
+    })
 
     return <ShareLinkAnnouncement view={view} showJingles={showJingles} />
   }

@@ -49,6 +49,7 @@ import config from '@/payload.config'
 import {
   getCachedPublishedShareLinkBySlug,
   loadPublishedShareLinkLiveTarget,
+  resolveShareLinkCanonicalUrl,
   resolveShareLinkOgImageUrl,
 } from '@/utilities/shareLinkReads'
 
@@ -145,6 +146,25 @@ describe('shareLink', () => {
     for (const id of createdMediaIds) {
       await payload.delete({ collection: 'media', id }).catch(() => undefined)
     }
+  })
+
+  it('resolves the canonical announcement URL from metadata before the environment fallback', async () => {
+    getCachedGlobalMock.mockReturnValue(async () => ({ URL: 'https://canonical.example/' }))
+
+    expect(await resolveShareLinkCanonicalUrl('plenaria-saude')).toBe(
+      'https://canonical.example/plenaria-saude',
+    )
+  })
+
+  it('uses the environment fallback and omits the canonical URL when neither source exists', async () => {
+    getCachedGlobalMock.mockReturnValue(async () => ({ URL: null }))
+
+    expect(await resolveShareLinkCanonicalUrl('plenaria-saude')).toBe(
+      'https://site.test/plenaria-saude',
+    )
+
+    delete process.env.NEXT_PUBLIC_SITE_URL
+    expect(await resolveShareLinkCanonicalUrl('plenaria-saude')).toBeUndefined()
   })
 
   it('creates a draft by default and busts the shareLinks tag', async () => {
