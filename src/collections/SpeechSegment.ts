@@ -1,6 +1,6 @@
 import type { CollectionBeforeValidateHook, CollectionConfig } from 'payload'
 
-import { normalizeForSearch } from '@/lib/speechSearch'
+import { normalizeForSearch, TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 import { canReadSpeech, payloadAdminOnly } from '@/utilities/campaignAccess'
 
 /**
@@ -69,12 +69,14 @@ export const SpeechSegment: CollectionConfig = {
       type: 'textarea',
       label: 'Texto',
       required: true,
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
     },
     {
       name: 'searchText',
       type: 'text',
       label: 'Texto normalizado (busca)',
       required: true,
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
       admin: {
         readOnly: true,
         description: 'Derivado do texto (sem acentos, minúsculas) para a busca por palavra.',

@@ -16,6 +16,7 @@ import {
 } from '@/lib/recording'
 import { speakerNamesFromLabels } from '@/lib/recordingDiarization'
 import { SPEECH_CLASSIFICATION_SOURCES, SPEECH_SCOPES, SPEECH_TOPICS } from '@/lib/speechFacets'
+import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 import {
   canDeleteRecording,
   canReadRecording,
@@ -200,6 +201,7 @@ export const Recording: CollectionConfig = {
       name: 'searchText',
       type: 'textarea',
       label: 'Texto normalizado (busca)',
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
       admin: {
         readOnly: true,
         description: 'Concatenação normalizada dos segmentos (sem acentos, minúsculas).',

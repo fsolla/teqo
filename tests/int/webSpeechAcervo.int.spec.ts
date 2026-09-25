@@ -181,6 +181,24 @@ describe('web speech acervo (C216)', () => {
     expect(camara.rows.map((row) => row.id)).toEqual([camaraId])
   })
 
+  it('finds a web speech by a term in a transcript over 40,000 characters', async () => {
+    const marker = `long-final-${randomUUID().slice(0, 8)}`
+    const longText = 'palavra '.repeat(3_000)
+    const id = await createWebSpeech({
+      segments: [
+        { startSeconds: 0, endSeconds: 120, text: `${longText} primeiro` },
+        { startSeconds: 120, endSeconds: 240, text: `${longText} segundo` },
+        { startSeconds: 240, endSeconds: 360, text: `${longText} ${marker}` },
+      ],
+    })
+
+    const { communicator } = await createUsers()
+    const data = await loadWebSpeechAcervoPageData(payload, communicator, { q: marker })
+
+    expect(data.totalDocs).toBe(1)
+    expect(data.rows.map((row) => row.id)).toEqual([id])
+  })
+
   it('filters by topic, year, duration and cited municipality over the web catalog', async () => {
     const id = await createWebSpeech({
       speechAt: '2021-04-12T00:00',

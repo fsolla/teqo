@@ -27,6 +27,7 @@ import {
   sanitizeContentPieceFilename,
   toContentPieceViewModel,
 } from '@/lib/contentPiece'
+import { contentPieceUpdateRequestSchema } from '@/lib/schemas/contentPiece'
 import {
   buildContentPieceListWhere,
   parseContentPieceListParams,
@@ -53,6 +54,18 @@ describe('content piece vocabulary', () => {
     expect(isContentPieceLinkFailureReason('falhou')).toBe(false)
     expect(isContentPieceTopic('saude')).toBe(true)
     expect(isContentPieceTopic('nao-existe')).toBe(false)
+  })
+
+  it('accepts a long transcript in the update schema', () => {
+    const transcript = 'texto da peça '.repeat(25_000)
+    expect(() =>
+      contentPieceUpdateRequestSchema.parse({
+        contentPieceId: 1,
+        title: 'Peça longa',
+        type: 'video',
+        transcript,
+      }),
+    ).not.toThrow()
   })
 
   it('labels the four peça-link reasons verbatim (gate copy)', () => {

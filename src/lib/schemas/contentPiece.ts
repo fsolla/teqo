@@ -11,6 +11,7 @@ import {
   CONTENT_PIECE_TYPES,
 } from '@/lib/contentPiece'
 import { trimmedNullableText } from '@/lib/schemas/primitives'
+import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 
 /** The Central gate refused the actor — one literal shared with the vertical. */
 export const CONTENT_PIECE_FORBIDDEN_MESSAGE = 'Seu perfil não tem acesso à Central de Conteúdos.'
@@ -92,7 +93,7 @@ export const contentPieceUpdateRequestSchema = z.object({
   topics: z.array(z.string()).max(32).optional(),
   municipalityId: z.number().int().positive().nullable().optional(),
   institution: trimmedNullableText(CONTENT_PIECE_INSTITUTION_MAX_LENGTH),
-  transcript: trimmedNullableText(200_000),
+  transcript: trimmedNullableText(TRANSCRIPT_TEXT_MAX_LENGTH),
   // S37 — who appears in the piece: the leader relation ids and the curated
   // public figures. The action canonicalizes the figures against the catalog.
   leaderIds: z.array(z.number().int().positive()).max(CONTENT_PIECE_LEADERS_MAX).optional(),

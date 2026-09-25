@@ -34,6 +34,7 @@ import {
 import { normalizeContentPiecePublicFigures } from '@/lib/publicFigureCatalog'
 import { uniqueRelationshipIds } from '@/lib/relationship'
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
+import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 import {
   canCreateContentPiece,
   canDeleteContentPiece,
@@ -402,6 +403,7 @@ export const ContentPiece: CollectionConfig = {
       name: 'transcript',
       type: 'textarea',
       label: 'Transcrição / texto',
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
       admin: {
         description: 'Transcrição do áudio/vídeo ou texto extraído. Editável pela assessoria.',
       },
@@ -496,6 +498,7 @@ export const ContentPiece: CollectionConfig = {
       name: 'searchText',
       type: 'textarea',
       label: 'Texto normalizado (busca)',
+      maxLength: TRANSCRIPT_TEXT_MAX_LENGTH,
       admin: {
         readOnly: true,
         description:
