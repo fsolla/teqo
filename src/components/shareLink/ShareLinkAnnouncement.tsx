@@ -221,6 +221,7 @@ export const ShareLinkAnnouncement = ({
                     title={view.title}
                     description={view.description}
                     location={view.location}
+                    canonicalUrl={view.canonicalUrl}
                     startsAt={view.startsAt}
                     endsAt={view.endsAt}
                   />

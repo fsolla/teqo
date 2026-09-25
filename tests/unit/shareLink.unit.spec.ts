@@ -6,6 +6,7 @@ import {
   isReservedShareLinkSlug,
   isValidShareLinkDestination,
   isValidShareLinkSlug,
+  normalizeAbsoluteHttpUrl,
   normalizeShareLinkDescription,
   resolveLiveShareLinkDestination,
   resolveShareLinkMode,
@@ -83,9 +84,15 @@ describe('shareLink destination', () => {
     'mailto:x@example.com',
     'http:foo',
     'https:example.com',
+    'https://example.com/path\nX-Injected: yes',
     '',
   ])('rejects %s', (value) => {
     expect(isValidShareLinkDestination(value)).toBe(false)
+  })
+
+  it('normalizes absolute HTTP URLs and rejects control characters', () => {
+    expect(normalizeAbsoluteHttpUrl(' https://example.com/path ')).toBe('https://example.com/path')
+    expect(normalizeAbsoluteHttpUrl('https://example.com/path\r\nX-Injected: yes')).toBeNull()
   })
 })
 

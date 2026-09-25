@@ -14,6 +14,7 @@ describe('buildShareLinkAnnouncementView', () => {
         location: '  Online  ',
       },
       imageUrl: '/api/media/file/plenaria.jpg',
+      canonicalUrl: 'https://jorgesolla1313.com.br/plenaria-saude',
     })
 
     expect(view).toEqual({
@@ -26,6 +27,7 @@ describe('buildShareLinkAnnouncementView', () => {
       location: 'Online',
       startsAt: '2026-10-03T22:00:00.000Z',
       endsAt: '2026-10-04T00:00:00.000Z',
+      canonicalUrl: 'https://jorgesolla1313.com.br/plenaria-saude',
     })
   })
 
@@ -39,6 +41,7 @@ describe('buildShareLinkAnnouncementView', () => {
         location: '   ',
       },
       imageUrl: null,
+      canonicalUrl: null,
     })
 
     expect(view.imageAlt).toBe('Foto do encontro')
@@ -47,6 +50,7 @@ describe('buildShareLinkAnnouncementView', () => {
     expect(view.location).toBeNull()
     expect(view.startsAt).toBeNull()
     expect(view.endsAt).toBeNull()
+    expect(view.canonicalUrl).toBeNull()
   })
 
   it('hides the event label when the date cannot be parsed', () => {
@@ -58,6 +62,7 @@ describe('buildShareLinkAnnouncementView', () => {
         startsAt: 'lixo',
       },
       imageUrl: null,
+      canonicalUrl: null,
     })
 
     expect(view.eventLabel).toBeNull()

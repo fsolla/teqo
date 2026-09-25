@@ -104,17 +104,32 @@ export const isValidShareLinkSlug = (value: string): boolean => SHARE_LINK_SLUG_
 export const isReservedShareLinkSlug = (value: string): boolean =>
   (SHARE_LINK_RESERVED_SLUGS as readonly string[]).includes(value)
 
-/** Only `http`/`https` absolute URLs are accepted; anything else fails closed. */
-export const isValidShareLinkDestination = (value: string): boolean => {
-  if (!/^https?:\/\//i.test(value)) return false
+export const normalizeAbsoluteHttpUrl = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') return null
+  if (
+    [...value].some((character) => {
+      const code = character.charCodeAt(0)
+      return code < 32 || code === 127
+    })
+  ) {
+    return null
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) return null
 
   try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
+    const url = new URL(trimmed)
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+    return url.href
   } catch {
-    return false
+    return null
   }
 }
+
+/** Only `http`/`https` absolute URLs are accepted; anything else fails closed. */
+export const isValidShareLinkDestination = (value: string): boolean =>
+  normalizeAbsoluteHttpUrl(value) !== null
 
 /** Collapse whitespace so the value is safe inside a single-line meta tag. */
 export const normalizeShareLinkDescription = (value: string): string =>

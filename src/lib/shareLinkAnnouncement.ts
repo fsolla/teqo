@@ -31,6 +31,7 @@ export type ShareLinkAnnouncementView = {
   location: string | null
   startsAt: string | null
   endsAt: string | null
+  canonicalUrl: string | null
 }
 
 const isMedia = (
@@ -40,9 +41,11 @@ const isMedia = (
 export const buildShareLinkAnnouncementView = ({
   link,
   imageUrl,
+  canonicalUrl,
 }: {
   link: ShareLinkAnnouncementSource
   imageUrl: string | null
+  canonicalUrl: string | null
 }): ShareLinkAnnouncementView => {
   const mediaAlt = isMedia(link.image) ? link.image.alt?.trim() : null
   const location = link.location?.trim()
@@ -57,5 +60,6 @@ export const buildShareLinkAnnouncementView = ({
     location: location || null,
     startsAt: link.startsAt ?? null,
     endsAt: link.endsAt ?? null,
+    canonicalUrl: canonicalUrl ?? null,
   }
 }

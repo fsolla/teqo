@@ -1,6 +1,9 @@
 import { buildCalendarEventIcs } from '@/lib/calendarEvent'
 import { shareLinkIcsUid } from '@/lib/shareLink'
-import { getCachedPublishedShareLinkBySlug } from '@/utilities/shareLinkReads'
+import {
+  getCachedPublishedShareLinkBySlug,
+  resolveShareLinkCanonicalUrl,
+} from '@/utilities/shareLinkReads'
 
 type RouteParams = { type: string }
 
@@ -16,11 +19,13 @@ export async function GET(_request: Request, { params }: { params: Promise<Route
   const link = await getCachedPublishedShareLinkBySlug(slug, 0)()
   if (!link) return new Response(null, { status: 404 })
 
+  const canonicalUrl = await resolveShareLinkCanonicalUrl(slug)
   const body = buildCalendarEventIcs({
     uid: shareLinkIcsUid(slug),
     title: link.title,
     description: link.description,
     location: link.location,
+    url: canonicalUrl,
     startsAt: link.startsAt,
     endsAt: link.endsAt,
     updatedAt: link.updatedAt,

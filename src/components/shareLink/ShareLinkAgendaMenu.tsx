@@ -13,6 +13,7 @@ type ShareLinkAgendaMenuProps = {
   title: string
   description: string
   location: string | null
+  canonicalUrl: string | null
   startsAt: string | null
   endsAt: string | null
 }
@@ -27,13 +28,21 @@ export const ShareLinkAgendaMenu = ({
   title,
   description,
   location,
+  canonicalUrl,
   startsAt,
   endsAt,
 }: ShareLinkAgendaMenuProps) => {
   const [open, setOpen] = useState(false)
 
   const googleUrl = startsAt
-    ? buildGoogleCalendarEventUrl({ title, description, location, startsAt, endsAt })
+    ? buildGoogleCalendarEventUrl({
+        title,
+        description,
+        location,
+        url: canonicalUrl,
+        startsAt,
+        endsAt,
+      })
     : null
   if (!googleUrl) return null
 

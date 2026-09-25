@@ -5,11 +5,11 @@ import { request as playwrightRequest } from '@playwright/test'
 import { Client } from 'pg'
 
 import {
+  formatBahiaCalendarDateTime,
   formatBahiaCivilDate,
   formatBahiaEventDateLabel,
   parseBahiaDateTimeInput,
 } from '../../src/lib/campaignTime.js'
-import { formatICalDate } from '../../src/lib/ical.js'
 import { adminHeaders } from '../helpers/adminApi'
 import { metaContent } from '../helpers/metaContent'
 import { seedTestUser } from '../helpers/seedUser'
@@ -44,6 +44,9 @@ const ANNOUNCEMENT_STARTS_AT = (() => {
   if (!startsAt) throw new Error('Falha ao montar a data da fixture de anúncio.')
   return startsAt
 })()
+
+const TWO_HOURS_MS = 2 * 60 * 60 * 1000
+const unfold = (value: string): string => value.replace(/\r\n /g, '')
 
 // 1×1 opaque PNG — enough for the upload (no dimensions are enforced on purpose).
 const TEST_PNG = Buffer.from(
@@ -313,7 +316,8 @@ test.describe('Frontend share-link announcement (S29)', () => {
     return { id, slug }
   }
 
-  test('serves the announcement page (disabled Entrar, Bahia date, .ics) pre-broadcast', async ({
+  test('serves the announcement page with the signed, Bahia-time calendar event', async ({
+    page,
     request,
   }) => {
     const headers = await adminHeaders(request, BASE_URL)
@@ -324,27 +328,54 @@ test.describe('Frontend share-link announcement (S29)', () => {
       const response = await anonymous.get(`/${slug}`)
       expect(response.status()).toBe(200)
       const html = await response.text()
+      const canonicalUrl = html.match(/<link rel="canonical" href="([^"]*)"/)?.[1] ?? ''
 
-      // The OG card is the same as S19, always noindex, and no interstice.
       expect(metaContent(html, 'property', 'og:title')).toBe('Plenária da saúde')
       expect(metaContent(html, 'name', 'robots')).toBe('noindex, nofollow')
       expect(metaContent(html, 'http-equiv', 'refresh')).toBeNull()
       expect(html).not.toContain('window.location.replace')
-
-      // Honest pre-broadcast state: visible but disabled, with the warning.
+      expect(canonicalUrl).toMatch(new RegExp(`^https?://[^/]+/${slug}$`))
       expect(html).toContain('A transmissão ainda não começou.')
       expect(html).toMatch(/<button[^>]*disabled[^>]*>[\s\S]*?Entrar/)
       expect(html).toContain(formatBahiaEventDateLabel(ANNOUNCEMENT_STARTS_AT))
       expect(html).toContain('Horário da Bahia')
       expect(html).toContain('Online')
 
+      await page.goto(`/${slug}`)
+      await expect(page.getByRole('heading', { name: 'Plenária da saúde' })).toHaveText(
+        'Plenária da saúde',
+      )
+      await page.getByRole('button', { name: 'Adicionar à agenda' }).click()
+      const googleHref = await page
+        .getByRole('link', { name: /Google Agenda/ })
+        .getAttribute('href')
+      const googleParams = new URL(googleHref ?? '').searchParams
+      const startsAt = new Date(ANNOUNCEMENT_STARTS_AT)
+      const endsAt = new Date(startsAt.getTime() + TWO_HOURS_MS)
+      const localStart = formatBahiaCalendarDateTime(startsAt)
+      const localEnd = formatBahiaCalendarDateTime(endsAt)
+
+      expect(googleParams.get('text')).toBe('Plenária da saúde - Jorge Solla 1313')
+      expect(googleParams.get('dates')).toBe(`${localStart}/${localEnd}`)
+      expect(googleParams.get('ctz')).toBe('America/Bahia')
+      expect(googleParams.get('details')).toBe(
+        `Encontro online da campanha.\n\nPágina do evento: ${canonicalUrl}`,
+      )
+
       const ics = await anonymous.get(`/${slug}/evento.ics`)
       expect(ics.status()).toBe(200)
       expect(ics.headers()['content-type']).toContain('text/calendar')
       expect(ics.headers()['content-disposition']).toContain(`filename="${slug}.ics"`)
-      const body = await ics.text()
-      expect(body).toContain('BEGIN:VEVENT')
-      expect(body).toContain(`DTSTART:${formatICalDate(ANNOUNCEMENT_STARTS_AT)}`)
+      const body = unfold(await ics.text())
+      expect(body).toContain('BEGIN:VTIMEZONE')
+      expect(body).toContain('TZID:America/Bahia')
+      expect(body).toContain(`DTSTART;TZID=America/Bahia:${localStart}`)
+      expect(body).toContain(`DTEND;TZID=America/Bahia:${localEnd}`)
+      expect(body).toContain('SUMMARY:Plenária da saúde - Jorge Solla 1313')
+      expect(body).toContain(
+        `DESCRIPTION:Encontro online da campanha.\\n\\nPágina do evento: ${canonicalUrl}`,
+      )
+      expect(body).toContain(`URL:${canonicalUrl}`)
       expect(body).toContain(`UID:${slug}@teqo.jorgesolla.com.br`)
     } finally {
       await anonymous.dispose()

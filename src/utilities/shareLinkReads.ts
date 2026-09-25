@@ -1,8 +1,15 @@
 import 'server-only'
 
-import { resolveLiveShareLinkDestination, type ShareLinkLiveTarget } from '@/lib/shareLink'
+import {
+  normalizeAbsoluteHttpUrl,
+  resolveLiveShareLinkDestination,
+  shareLinkPath,
+  type ShareLinkLiveTarget,
+} from '@/lib/shareLink'
 import { getCollectionListingTag } from '@/utilities/documents'
+import { getCachedGlobal } from '@/utilities/globalReads'
 import { resolveOgImage } from '@/utilities/ogImageReads'
+import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
@@ -42,6 +49,12 @@ export const getCachedPublishedShareLinkBySlug = (slug: string, depth = 1) =>
       tags: [getCollectionListingTag('shareLink')],
     },
   )
+
+export const resolveShareLinkCanonicalUrl = async (slug: string): Promise<string | undefined> => {
+  const globalMetadata = await getCachedGlobal('metadata')()
+  const { siteUrl } = resolveSiteMetadata(globalMetadata)
+  return normalizeAbsoluteHttpUrl(absoluteSitePath(siteUrl, shareLinkPath(slug))) ?? undefined
+}
 
 /**
  * S29 — the fresh read behind the announcement page's activation poll. It must
