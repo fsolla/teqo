@@ -39,6 +39,7 @@ export type ContentPieceHomeItem = Pick<
   | 'metaLabel'
   | 'publicPath'
   | 'file'
+  | 'framePath'
 >
 
 /** Field-by-field on purpose: a new public-item field never leaks by spread. */
@@ -58,6 +59,7 @@ export const toContentPieceHomeItem = (item: ContentPiecePublicItem): ContentPie
   metaLabel: item.metaLabel,
   publicPath: item.publicPath,
   file: item.file,
+  framePath: item.framePath,
 })
 
 /**

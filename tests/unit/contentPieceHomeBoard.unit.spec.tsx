@@ -68,6 +68,7 @@ const item = (id: number, patch: Partial<ContentPieceHomeItem> = {}): ContentPie
     mimeType: 'image/png',
     downloadFilename: `peca-${id}.png`,
   },
+  framePath: null,
   ...patch,
 })
 

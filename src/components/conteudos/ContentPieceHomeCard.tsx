@@ -47,6 +47,11 @@ export const ContentPieceHomeCard = ({
       playing={playing}
       onToggle={onToggle}
       onEnded={onEnded}
+      // C226 — below `sm` this card's media slot is the 124px thumb of the
+      // design's cena 05 (the compact play/duration, no marker); from `sm` up
+      // the card becomes a full block and the media slot goes back to the
+      // catalogue treatment.
+      variant="home-thumb"
       className="aspect-video self-start"
     />
     <div className="p-4">

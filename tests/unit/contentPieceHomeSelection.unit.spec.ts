@@ -89,6 +89,7 @@ describe('content piece home selection', () => {
         'durationLabel',
         'excerpt',
         'file',
+        'framePath',
         'id',
         'isLink',
         'metaLabel',
@@ -104,6 +105,27 @@ describe('content piece home selection', () => {
       expect('searchText' in item).toBe(false)
       expect('description' in item).toBe(false)
       expect('topics' in item).toBe(false)
+    })
+
+    it('carries the frame of a video piece into the home card (C226)', () => {
+      // The field-by-field map is what stops a new public field from leaking by
+      // spread, so the copy is pinned here on purpose.
+      expect(
+        homeItem({
+          id: 3,
+          slug: 'peca-video',
+          type: 'video',
+          media: { id: 7, filename: 'video.mp4', mimeType: 'video/mp4' },
+        }).framePath,
+      ).toBe('/conteudos/peca-video/frame')
+      expect(
+        homeItem({
+          id: 4,
+          slug: 'peca-foto',
+          type: 'foto',
+          media: { id: 8, filename: 'foto.png', mimeType: 'image/png' },
+        }).framePath,
+      ).toBeNull()
     })
 
     it('keeps a link piece with no archived file — the platform handoff', () => {

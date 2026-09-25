@@ -191,6 +191,40 @@ const mediaRequests = (page: Page) => {
 }
 
 /**
+ * C226 — the still is a separate door (`/frame`, a sibling of `/midia`), so the
+ * S27 pin above keeps meaning "no file before the play" while this one means
+ * "the image is asked for before the play".
+ */
+const frameRequests = (page: Page) => {
+  const requests: string[] = []
+  page.on('request', (request) => {
+    if (/\/conteudos\/.+\/frame/.test(request.url())) requests.push(request.url())
+  })
+  return requests
+}
+
+/**
+ * C226 — the still door is stubbed like the other third-party routes: what
+ * depends on ffmpeg (the extraction) would otherwise decide whether this spec
+ * sees a rendered frame or the honest neutral slot, differently on a developer
+ * machine and in CI. The server contract (200 vs 404, the kill switch) is
+ * pinned where it belongs, in the int spec; here the card's own behavior —
+ * asking for the still before the play and dropping it after — is the subject.
+ */
+const stubContentPieceFrames = async (page: Page): Promise<void> => {
+  // A real 16:9 JPEG (the browser rejects a truncated one, and the card's own
+  // fallback would then hide a bug this spec is here to catch).
+  const still = await sharp({
+    create: { width: 320, height: 180, channels: 3, background: { r: 24, g: 78, b: 146 } },
+  })
+    .jpeg()
+    .toBuffer()
+  await page.route('**/conteudos/*/frame', (route) =>
+    route.fulfill({ body: still, contentType: 'image/jpeg' }),
+  )
+}
+
+/**
  * C106/S28 — dynamic pages stream a transient hidden `S:` copy of the shell in
  * the production build (the theme path reads `next/headers`, and any heavy
  * render can defer behind `loading.tsx`). Wait for the stream to be collected
@@ -223,6 +257,13 @@ const waitForHomeSection = async (
 }
 
 test.describe.configure({ mode: 'serial' })
+
+// C226 — the still of a video piece is asked for before the play and answers
+// 404 until the self-heal lands (the fixtures here are not decodifiable video,
+// and the extraction needs ffmpeg). The browser logs that refusal, so the spec
+// declares the door: the frame's own 200/404 contract is pinned in the int spec
+// and the rendered still in the lazy test below.
+test.use({ expectedRequestFailurePaths: [/\/conteudos\/.+\/frame$/] })
 
 test.afterAll(async ({ request }) => {
   const headers = await adminHeaders(request, BASE_URL).catch(() => null)
@@ -260,9 +301,11 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     const videoTitle = `Fim da escala ${uniqueMarker()}`
     const photoTitle = `Solla no SUS ${uniqueMarker()}`
     const video = await createPiece(request, headers, { title: videoTitle, type: 'video' })
-    await createPiece(request, headers, { title: photoTitle, type: 'foto' })
+    const photo = await createPiece(request, headers, { title: photoTitle, type: 'foto' })
 
     const media = mediaRequests(page)
+    const frames = frameRequests(page)
+    await stubContentPieceFrames(page)
 
     const response = await page.goto('/conteudos')
     expect(response?.status()).toBe(200)
@@ -294,10 +337,27 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(page.locator('audio')).toHaveCount(0)
     expect(media.filter((url) => url.includes(video.slug))).toHaveLength(0)
 
-    // Play mounts only the tapped piece and fetches only its media.
+    // C226 — the still is a lightweight image asked for BEFORE the play, and it
+    // is a different door from the file: a photo piece never asks for one.
+    const still = page.locator('article[data-content-piece] img[src$="/frame"]')
+    await expect(still).toHaveCount(1)
+    await expect
+      .poll(() => frames.filter((url) => url.includes(video.slug)).length)
+      .toBeGreaterThan(0)
+    expect(frames.filter((url) => url.includes(photo.slug))).toHaveLength(0)
+    // The still really rendered (a card never shows a broken image) and the
+    // play button is still the point of highest contrast over it.
+    await expect
+      .poll(() => still.evaluate((image: HTMLImageElement) => image.naturalWidth))
+      .toBeGreaterThan(0)
+    await expect(page.getByRole('button', { name: `Reproduzir ${videoTitle}` })).toBeVisible()
+
+    // Play mounts only the tapped piece and fetches only its media. The still
+    // leaves the slot: the player takes the same 16:9 box (cena 03).
     await page.getByRole('button', { name: `Reproduzir ${videoTitle}` }).click()
     await expect(page.locator('video')).toHaveCount(1)
     await expect.poll(() => media.filter((url) => url.includes(video.slug)).length).toBe(1)
+    await expect(page.locator('article[data-content-piece] img[src$="/frame"]')).toHaveCount(0)
 
     // The download carries the legible name built from the slug.
     await expect(page.getByRole('link', { name: `Baixar ${videoTitle}` })).toHaveAttribute(
@@ -656,6 +716,11 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     const unpublished = await request.get(`/conteudos/${piece.slug}`)
     expect(unpublished.status()).toBe(404)
     expect(await unpublished.text()).toContain('Esta peça não está disponível')
+
+    // C226 — the still door closes with the file door: an unpublished piece
+    // stops exposing its derived frame exactly the same way.
+    expect((await request.get(`/conteudos/${piece.slug}/midia`)).status()).toBe(404)
+    expect((await request.get(`/conteudos/${piece.slug}/frame`)).status()).toBe(404)
 
     await setPieceStatus(request, headers, piece.id, 'publicado')
     await page.goto('/conteudos')

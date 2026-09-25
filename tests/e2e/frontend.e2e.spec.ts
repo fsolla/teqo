@@ -76,6 +76,13 @@ const expectCardNameLeftAligned = async (canvas: Locator) => {
     .toBe(true)
 }
 
+// C226 — the home sample renders the same card as the catalogue, so a video
+// piece asks the Central for its still before the play; the door answers 404
+// until the self-heal lands and the browser logs that refusal. Declared here
+// because the sample is conditional (the serial frontendConteudos spec may
+// publish a video piece mid-run) and this spec must not depend on it.
+test.use({ expectedRequestFailurePaths: [/\/conteudos\/.+\/frame$/] })
+
 test.describe('Frontend', () => {
   test('can go on homepage', async ({ page }) => {
     await page.goto('/')

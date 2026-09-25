@@ -1,6 +1,8 @@
 // @vitest-environment node
 
-import { mkdtemp, rm } from 'node:fs/promises'
+import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync, rmSync } from 'node:fs'
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -39,6 +41,7 @@ import {
   setContentPiecePublishedForActor,
   updateContentPieceForActor,
 } from '@/app/(campaign)/campanha/actions/contentPieces'
+import { GET as getPublicPieceFrame } from '@/app/(frontend)/conteudos/[slug]/frame/route'
 import { GET as getPublicPieceMedia } from '@/app/(frontend)/conteudos/[slug]/midia/route'
 import type { ContentPieceCuratedField } from '@/lib/contentPiece'
 import {
@@ -46,6 +49,12 @@ import {
   type ContentCatalogItem,
   type ContentPiecePublicItem,
 } from '@/lib/contentPieceCatalog'
+import {
+  buildContentPieceFrameFfmpegArgs,
+  CONTENT_PIECE_FRAME_MAX_SOURCE_BYTES,
+  CONTENT_PIECE_FRAME_SEEK_ATTEMPTS,
+  contentPieceFrameFilename,
+} from '@/lib/contentPieceFrame'
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
@@ -57,6 +66,10 @@ import type { SpeechTopic } from '@/lib/speechFacets'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import type { CampaignUser, ContentMedia, User } from '@/payload-types'
 import config from '@/payload.config'
+import {
+  ensureContentPieceFrame,
+  findContentPieceFrameMedia,
+} from '@/utilities/content/contentPieceFrameJob'
 import {
   CONTENT_PIECE_STALE_MS,
   reapStaleContentPiece,
@@ -80,13 +93,28 @@ import {
   receiveContentPieceUpload,
 } from '@/utilities/content/contentPieceUpload'
 import { getCollectionListingTag } from '@/utilities/documents'
+import { runFfmpeg } from '@/utilities/media/ffmpeg'
 import type { InstagramPost } from '@/utilities/socialFeed/instagramFeed'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
 const FAKE_FFMPEG = fileURLToPath(new URL('../fixtures/fake-ffmpeg.mjs', import.meta.url))
 
+const hasFfmpeg = spawnSync('ffmpeg', ['-version']).status === 0
+
 const VIDEO_BYTES = Buffer.from('fixture-content-piece-bytes')
+
+/**
+ * C226 — the fake ffmpeg copies the source to the still, and Payload measures
+ * the dimensions of an image upload, so the source of a frame test has to be a
+ * real (1x1) JPEG. Production always extracts one; the double cannot.
+ */
+const FRAME_SOURCE_BYTES = Buffer.from(
+  '/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0a' +
+    'HBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/wAALCAABAAEBAREA/8QAFAABAAAAAAAA' +
+    'AAAAAAAAAAAAACf/EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AKp//2Q==',
+  'base64',
+)
 
 let payload: Payload
 const createdPieceIds = new Set<number>()
@@ -107,6 +135,23 @@ const withEnv = (key: string, value: string | undefined): (() => void) => {
     if (previous === undefined) delete process.env[key]
     else process.env[key] = previous
   }
+}
+
+/**
+ * C226 — every derived still row, by the deterministic name the job uses. The
+ * suite owns the whole set (the job generates on its own), so both the
+ * assertions and the cleanup read it from here.
+ */
+const frameRows = async (): Promise<ContentMedia[]> => {
+  const found = await payload.find({
+    collection: 'contentMedia',
+    where: { filename: { like: 'content-piece-frame-%' } },
+    depth: 0,
+    limit: 0,
+    pagination: false,
+    overrideAccess: true,
+  })
+  return found.docs
 }
 
 const createMedia = async (
@@ -131,6 +176,8 @@ const createPiece = async ({
   processingStatus = 'pronto',
   origin = 'arquivo',
   withMedia = true,
+  mediaMimetype,
+  mediaData,
   transcript,
   topics,
   institution,
@@ -143,13 +190,24 @@ const createPiece = async ({
   processingStatus?: 'processando' | 'pronto' | 'falhou'
   origin?: 'arquivo' | 'instagram' | 'youtube'
   withMedia?: boolean
+  /** The stored MIME decides how the card renders, so a photo piece needs a real one. */
+  mediaMimetype?: string
+  /** The uploaded bytes (a frame fixture needs a real image, see FRAME_SOURCE_BYTES). */
+  mediaData?: Buffer
   transcript?: string
   topics?: SpeechTopic[]
   institution?: string
   sourceUrl?: string
   curatedFields?: ContentPieceCuratedField[]
 } = {}) => {
-  const media = withMedia ? await createMedia(`${title}.mp4`) : null
+  const extension = mediaMimetype === 'image/png' ? 'png' : 'mp4'
+  const media = withMedia
+    ? await createMedia(
+        `${title}.${extension}`,
+        mediaData ?? VIDEO_BYTES,
+        mediaMimetype ?? 'video/mp4',
+      )
+    : null
   const piece = await payload.create({
     collection: 'contentPiece',
     data: {
@@ -298,6 +356,13 @@ describe('content pieces (C211)', () => {
     for (const id of createdPieceIds) {
       await payload
         .delete({ collection: 'contentPiece', id, overrideAccess: true })
+        .catch(() => undefined)
+    }
+    // C226 — the job generates the still on its own, so those rows are not in
+    // `createdMediaIds`; the derived cache never outlives the suite.
+    for (const frame of await frameRows()) {
+      await payload
+        .delete({ collection: 'contentMedia', id: frame.id, overrideAccess: true })
         .catch(() => undefined)
     }
     for (const id of createdMediaIds) {
@@ -1980,5 +2045,321 @@ describe('content pieces (C211)', () => {
 
     const byType = await loadContentPieceCatalogSearch({ rawSearchParams: { tipo: 'card' } })
     expect(byType.items.filter(isCardCatalogItem)).toHaveLength(6)
+  })
+
+  describe('C226 — the video still before the play', () => {
+    const publish = async (pieceId: number): Promise<string> => {
+      await payload.update({
+        collection: 'contentPiece',
+        id: pieceId,
+        data: { status: 'publicado' },
+        overrideAccess: true,
+      })
+      return (
+        await payload.findByID({
+          collection: 'contentPiece',
+          id: pieceId,
+          depth: 0,
+          overrideAccess: true,
+        })
+      ).slug!
+    }
+
+    const callFrame = (slug: string): Promise<Response> =>
+      getPublicPieceFrame(new Request(`http://localhost/conteudos/${slug}/frame`), {
+        params: Promise.resolve({ slug }),
+      })
+
+    it('generates the still once, stores it privately and reuses the row', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      try {
+        const { piece } = await createPiece({
+          title: `Frame ${Date.now()}`,
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+
+        const generated = await ensureContentPieceFrame(payload, piece.id)
+        if (!generated) throw new Error('the still was not generated')
+        expect(generated.filename).toBe(contentPieceFrameFilename(piece.id))
+        // The row has to carry the MIME: without it the private-media contract
+        // degrades to `application/octet-stream` and forces a download.
+        expect(generated.mimeType).toBe('image/jpeg')
+        expect(generated.alt).toContain(piece.title)
+        const before = (await frameRows()).length
+
+        // The deterministic name is the cache key: a second call probes, it does
+        // not generate again.
+        const again = await ensureContentPieceFrame(payload, piece.id)
+        expect(again?.id).toBe(generated.id)
+        expect(await frameRows()).toHaveLength(before)
+      } finally {
+        restoreFfmpeg()
+      }
+    })
+
+    it('shares one generation between concurrent requests (single flight)', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      try {
+        const { piece } = await createPiece({
+          title: `Frame concorrência ${Date.now()}`,
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+
+        const [first, second] = await Promise.all([
+          ensureContentPieceFrame(payload, piece.id),
+          ensureContentPieceFrame(payload, piece.id),
+        ])
+
+        expect(second?.id).toBe(first?.id)
+        const rows = (await frameRows()).filter(
+          (row) => row.filename === contentPieceFrameFilename(piece.id),
+        )
+        expect(rows).toHaveLength(1)
+      } finally {
+        restoreFfmpeg()
+      }
+    })
+
+    it('memoizes a failure instead of extracting the still on every view', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      const restoreFail = withEnv('FAKE_FFMPEG_FAIL', '1')
+      try {
+        const { piece } = await createPiece({
+          title: `Frame falha ${Date.now()}`,
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+
+        expect(await ensureContentPieceFrame(payload, piece.id)).toBeNull()
+        expect(await findContentPieceFrameMedia(payload, piece.id)).toBeNull()
+
+        // Second view: the failure is remembered, so nothing is created and the
+        // card keeps its neutral slot.
+        expect(await ensureContentPieceFrame(payload, piece.id)).toBeNull()
+        expect(await findContentPieceFrameMedia(payload, piece.id)).toBeNull()
+      } finally {
+        restoreFail()
+        restoreFfmpeg()
+      }
+    })
+
+    it('never caches a still for a piece with no archived file or an unknown id', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      const argvLog = join(tmpdir(), `frame-argv-${Date.now()}.json`)
+      const restoreLog = withEnv('FAKE_FFMPEG_LOG', argvLog)
+      try {
+        const { piece } = await createPiece({
+          title: `Frame sem arquivo ${Date.now()}`,
+          withMedia: false,
+          sourceUrl: 'https://www.instagram.com/reel/SEMARQUIVO/',
+        })
+        const before = (await frameRows()).length
+
+        expect(await ensureContentPieceFrame(payload, piece.id)).toBeNull()
+        expect(await ensureContentPieceFrame(payload, -1)).toBeNull()
+        expect(await ensureContentPieceFrame(payload, Number.NaN)).toBeNull()
+        expect(await frameRows()).toHaveLength(before)
+        // A peça-link has no file to read: ffmpeg is never even spawned.
+        expect(existsSync(argvLog)).toBe(false)
+      } finally {
+        rmSync(argvLog, { force: true })
+        restoreLog()
+        restoreFfmpeg()
+      }
+    })
+
+    it('skips a source the self-heal would have to download whole', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      try {
+        const { piece, media } = await createPiece({
+          title: `Frame gigante ${Date.now()}`,
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+        if (!media) throw new Error('fixture media was not created')
+        await payload.update({
+          collection: 'contentMedia',
+          id: media.id,
+          data: { filesize: CONTENT_PIECE_FRAME_MAX_SOURCE_BYTES + 1 },
+          overrideAccess: true,
+        })
+
+        // The heal path is capped: a full-length recording is not worth a
+        // visitor's connection. The refusal is remembered like a failure, so a
+        // later view does not re-download it either.
+        expect(await ensureContentPieceFrame(payload, piece.id)).toBeNull()
+        expect(await ensureContentPieceFrame(payload, piece.id)).toBeNull()
+        expect(await findContentPieceFrameMedia(payload, piece.id)).toBeNull()
+      } finally {
+        restoreFfmpeg()
+      }
+    })
+
+    it('extracts the still from the file the job already has, whatever its size', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      try {
+        const { piece, media } = await createPiece({
+          title: `Frame local ${Date.now()}`,
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+        if (!media) throw new Error('fixture media was not created')
+        await payload.update({
+          collection: 'contentMedia',
+          id: media.id,
+          data: { filesize: CONTENT_PIECE_FRAME_MAX_SOURCE_BYTES + 1 },
+          overrideAccess: true,
+        })
+
+        // The cap is about the cost of the DOWNLOAD, and the job path has
+        // nothing to download: the C211 pipeline already wrote that file.
+        await withTempDir(async (tempDir) => {
+          const local = join(tempDir, 'source.mp4')
+          await writeFile(local, FRAME_SOURCE_BYTES)
+          const generated = await ensureContentPieceFrame(payload, piece.id, { localPath: local })
+          expect(generated?.filename).toBe(contentPieceFrameFilename(piece.id))
+        })
+      } finally {
+        restoreFfmpeg()
+      }
+    })
+
+    it('serves the still of a published video and 404s everything else', async () => {
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      try {
+        const marker = `frame-rota-${Date.now()}`
+        const published = await createPiece({
+          title: `Frame pública ${marker}`,
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+        const photo = await createPiece({
+          title: `Frame foto ${marker}`,
+          type: 'foto',
+          mediaMimetype: 'image/png',
+          mediaData: FRAME_SOURCE_BYTES,
+        })
+        const link = await createPiece({
+          title: `Frame link ${marker}`,
+          withMedia: false,
+          origin: 'instagram',
+          sourceUrl: `https://www.instagram.com/reel/ROTA${Date.now()}/`,
+        })
+
+        const publishedSlug = await publish(published.piece.id)
+        const photoSlug = await publish(photo.piece.id)
+        const linkSlug = await publish(link.piece.id)
+
+        const served = await callFrame(publishedSlug)
+        expect(served.status).toBe(200)
+        expect(served.headers.get('Content-Type')).toBe('image/jpeg')
+        // The derived object is as private as the video it comes from.
+        expect(served.headers.get('Cache-Control')).toBe('private, no-store')
+        expect(Buffer.from(await served.arrayBuffer())).toEqual(FRAME_SOURCE_BYTES)
+
+        // A photo, a link piece and an unknown slug never reach the generation.
+        expect((await callFrame(photoSlug)).status).toBe(404)
+        expect((await callFrame(linkSlug)).status).toBe(404)
+        expect((await callFrame(`nao-existe-${marker}`)).status).toBe(404)
+
+        // The kill switch closes the frame door with the video door.
+        await payload.update({
+          collection: 'contentPiece',
+          id: published.piece.id,
+          data: { status: 'rascunho' },
+          overrideAccess: true,
+        })
+        expect((await callFrame(publishedSlug)).status).toBe(404)
+      } finally {
+        restoreFfmpeg()
+      }
+    })
+
+    it('declares the frame in the public projection only for a video with a file', async () => {
+      const video = await createPiece({
+        title: `Frame projeção vídeo ${Date.now()}`,
+        mediaData: FRAME_SOURCE_BYTES,
+      })
+      const photo = await createPiece({
+        title: `Frame projeção foto ${Date.now()}`,
+        type: 'foto',
+        mediaMimetype: 'image/png',
+        mediaData: FRAME_SOURCE_BYTES,
+      })
+      await publish(video.piece.id)
+      await publish(photo.piece.id)
+
+      const byId = async (pieceId: number) =>
+        (await getPublishedContentPieceItems()).find((item) => item.id === pieceId)
+
+      expect((await byId(video.piece.id))?.framePath).toBe(
+        `/conteudos/${(await byId(video.piece.id))?.slug}/frame`,
+      )
+      expect((await byId(photo.piece.id))?.framePath).toBeNull()
+    })
+
+    it('leaves the piece ready when the still cannot be extracted (failure isolation)', async () => {
+      const { piece } = await createPiece({
+        processingStatus: 'processando',
+        title: 'Frame com ffmpeg quebrado',
+        mediaData: FRAME_SOURCE_BYTES,
+      })
+      // The encoder works; only the still extraction fails.
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', FAKE_FFMPEG)
+      const restoreSegments = withEnv('FAKE_FFMPEG_SEGMENTS', '1')
+      const restoreStill = withEnv('FAKE_FFMPEG_FAIL_STILL', '1')
+      try {
+        await runContentPieceJob(payload, piece.id, {
+          transcribe: transcribeOk,
+          catalog: catalogStub,
+        })
+      } finally {
+        restoreStill()
+        restoreSegments()
+        restoreFfmpeg()
+      }
+
+      const updated = await payload.findByID({
+        collection: 'contentPiece',
+        id: piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(updated.processingStatus).toBe('pronto')
+      expect(updated.error).toBeNull()
+      expect(updated.step).toBeNull()
+      // A frame is a cache entry: the ingestion result never depends on it.
+      expect(await findContentPieceFrameMedia(payload, piece.id)).toBeNull()
+    })
+
+    it.skipIf(!hasFfmpeg)('extracts a real JPEG one second into the video', async () => {
+      const dir = join(tmpdir(), 'content-piece-frame-real')
+      const restoreFfmpeg = withEnv('FFMPEG_PATH', undefined)
+      try {
+        await rm(dir, { recursive: true, force: true })
+        await mkdir(dir, { recursive: true })
+        const source = join(dir, 'source.mp4')
+        const output = join(dir, contentPieceFrameFilename(1))
+        const encoded = spawnSync('ffmpeg', [
+          '-nostdin',
+          '-hide_banner',
+          '-y',
+          '-f',
+          'lavfi',
+          '-i',
+          'testsrc=size=320x240:rate=10:duration=4',
+          source,
+        ])
+        expect(encoded.status).toBe(0)
+
+        for (const atSeconds of CONTENT_PIECE_FRAME_SEEK_ATTEMPTS) {
+          await runFfmpeg(
+            buildContentPieceFrameFfmpegArgs({ inputPath: source, outputPath: output, atSeconds }),
+            4,
+          )
+          expect(readFileSync(output).subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]))
+          await rm(output, { force: true })
+        }
+      } finally {
+        restoreFfmpeg()
+        await rm(dir, { recursive: true, force: true })
+      }
+    })
   })
 })

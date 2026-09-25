@@ -24,6 +24,7 @@ import {
   type TranscribeSegmentsResult,
 } from '@/utilities/ai/deepInfraTranscribe'
 import { catalogContentPiece } from '@/utilities/content/contentPieceCataloging'
+import { ensureContentPieceFrame } from '@/utilities/content/contentPieceFrameJob'
 import { resolveContentPieceSource } from '@/utilities/content/contentPieceLink'
 import { messageOf, runFfmpeg } from '@/utilities/media/ffmpeg'
 import {
@@ -110,8 +111,11 @@ const chunkFilesIn = async (tempDir: string): Promise<string[]> => {
 
 /**
  * The audio half of the pipeline: extract/split the archived media and
- * transcribe every chunk. Returns the transcript and the measured duration, or
- * a failure message the caller stores.
+ * transcribe every chunk. Returns the transcript, the measured duration and the
+ * local file ffmpeg actually read — or a failure message the caller stores.
+ *
+ * C226 hands that `inputPath` on: the still is extracted from the same bytes,
+ * so the frame never re-downloads a file this pass already has on disk.
  */
 const transcribeContentPieceMedia = async ({
   payload,
@@ -128,7 +132,7 @@ const transcribeContentPieceMedia = async ({
   tempDir: string
   transcribe: ChunkTranscriber
 }): Promise<
-  | { transcript: string; durationSeconds: number }
+  | { transcript: string; durationSeconds: number; inputPath: string }
   | { failure: { message: string; step: ContentPieceStep } }
 > => {
   const inputPath = localPath ?? join(tempDir, 'source')
@@ -189,6 +193,7 @@ const transcribeContentPieceMedia = async ({
       .join(' ')
       .trim(),
     durationSeconds: Math.round(measured),
+    inputPath,
   }
 }
 
@@ -228,6 +233,9 @@ export const runContentPieceJob = async (
     const effectiveType = suggestedType ?? piece.type
     let transcript = piece.transcript?.trim() ?? ''
     let durationSeconds: number | null = null
+    // The local file ffmpeg read (downloaded here when the piece arrived by
+    // link), so the C226 still is extracted from the same bytes.
+    let mediaInputPath: string | null = null
 
     if (!transcript && source.caption) transcript = source.caption.trim()
 
@@ -245,9 +253,24 @@ export const runContentPieceJob = async (
         return
       }
       transcript = result.transcript
+      mediaInputPath = result.inputPath
       // Only what the provider measured: a zero/absent measurement never
       // becomes a duration the ficha would present as real.
       durationSeconds = result.durationSeconds > 0 ? result.durationSeconds : null
+    }
+
+    // C226 — the still of a video piece, taken here because the file is already
+    // on disk (a free `-ss`). Deliberately isolated in its own try/catch: a
+    // missing ffmpeg or an unreadable frame must never turn a `pronto` piece
+    // into `falhou` — the card's neutral slot is the honest answer.
+    if (effectiveType === 'video' && source.media) {
+      try {
+        await ensureContentPieceFrame(payload, contentPieceId, { localPath: mediaInputPath })
+      } catch (error) {
+        console.warn(
+          `[content-piece-frame] peça ${contentPieceId}: ${messageOf(error, 'Frame indisponível.')}`,
+        )
+      }
     }
 
     await markStep('catalogando')

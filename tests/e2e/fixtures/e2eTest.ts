@@ -27,8 +27,13 @@ type E2EFailureGuardFixtures = {
    * failure in any other spec a failure. It is an option so a spec declares it
    * once with `test.use`, instead of pushing at exactly the right moment
    * mid-test.
+   *
+   * A `RegExp` is accepted for a door whose path carries an id (C226: the still
+   * of a piece is `/conteudos/<slug>/frame` and answers 404 until the self-heal
+   * lands, so any spec rendering a video card would trip the guard). A literal
+   * is still the default, and a pattern still has to name one surface.
    */
-  expectedRequestFailurePaths: string[]
+  expectedRequestFailurePaths: (string | RegExp)[]
 }
 
 const loadFailurePrefix = 'Failed to load resource'
@@ -50,7 +55,7 @@ const consoleDetail = (message: ConsoleMessage): string => {
 const isAllowedConsoleError = (
   message: ConsoleMessage,
   origin: string | null,
-  expectedRequestFailurePaths: string[],
+  expectedRequestFailurePaths: (string | RegExp)[],
 ): boolean => {
   const { url } = message.location()
   if (!url || origin === null) return false
@@ -58,13 +63,22 @@ const isAllowedConsoleError = (
   const location = new URL(url)
   if (location.origin !== origin) return false
 
+  if (message.text().startsWith(loadFailurePrefix)) {
+    // The declared paths come FIRST: every 404 carries the exact same browser
+    // message as the missing favicon, so a favicon-shaped early return would
+    // swallow a refusal the spec declared on purpose.
+    const declared = expectedRequestFailurePaths.some((expected) =>
+      expected instanceof RegExp
+        ? expected.test(location.pathname)
+        : expected === location.pathname,
+    )
+    if (declared) return true
+  }
+
   // The app intentionally has no /favicon.ico asset yet.
   if (message.text() === missingFaviconConsoleError) return location.pathname === '/favicon.ico'
 
-  return (
-    message.text().startsWith(loadFailurePrefix) &&
-    expectedRequestFailurePaths.includes(location.pathname)
-  )
+  return false
 }
 
 export const test = base.extend<E2EFailureGuardFixtures>({
