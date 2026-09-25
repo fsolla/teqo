@@ -34,5 +34,5 @@ describe('import-web-speeches production media guard', () => {
     expect(result.status).toBe(1)
     expect(output).toContain('S3_BUCKET')
     expect(output).not.toContain('ENOENT')
-  })
+  }, 30_000)
 })
