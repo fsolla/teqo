@@ -125,6 +125,28 @@ describe('scripts/deploy-homeserver.sh (OPS53 deploy pipeline)', () => {
     expect(callIndex).toBeLessThan(smokeIndex)
   })
 
+  it('probes the container AI egress non-fatally (route/proxy breakage incident 2026-09-25)', () => {
+    // The keys can be present and the capability still dead: the homeserver's
+    // route to api.deepseek.com is intermittent and the app egresses through a
+    // tailnet proxy. The probe runs INSIDE the container (honoring
+    // NODE_USE_ENV_PROXY/HTTPS_PROXY) and only warns — a broken provider path
+    // must never fail an otherwise good deploy.
+    for (const fragment of [
+      'warn_ai_egress',
+      'docker exec "$TEQO_CONTAINER" node -e',
+      'api.deepseek.com',
+    ]) {
+      expect(script, fragment).toContain(fragment)
+    }
+    const probeIndex = script.indexOf('warn_ai_egress() {')
+    const callIndex = script.indexOf('warn_ai_egress\n')
+    const healthIndex = script.indexOf('waiting for the healthcheck')
+    const smokeIndex = script.indexOf('# --- smoke')
+    expect(probeIndex).toBeGreaterThan(healthIndex)
+    expect(callIndex).toBeGreaterThan(probeIndex)
+    expect(callIndex).toBeLessThan(smokeIndex)
+  })
+
   it('never echoes secret values (no set -x, passwords only via stdin/secrets)', () => {
     expect(script).not.toMatch(/^set -x\b/m)
     expect(script).not.toContain('echo "$DATABASE_URL"')
