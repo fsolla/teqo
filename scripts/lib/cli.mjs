@@ -194,6 +194,13 @@ export const requiresWriteConfirm = ({
   allowRemoteDb = isRemoteDbOverrideSet(),
 } = {}) => nodeEnv === 'production' || allowRemoteDb || !isLocalDatabaseUrl(databaseUrl)
 
+export const mirroredMediaRequired = ({
+  nodeEnv = process.env.NODE_ENV,
+  databaseUrl = process.env.DATABASE_URL,
+  allowRemoteDb = isRemoteDbOverrideSet(),
+  s3Enabled = false,
+} = {}) => requiresWriteConfirm({ nodeEnv, databaseUrl, allowRemoteDb }) && s3Enabled !== true
+
 /** Human label of the write target for the guard messages (`host/name`). */
 export const databaseTarget = () => {
   const url = process.env.DATABASE_URL

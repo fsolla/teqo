@@ -107,11 +107,11 @@ aprovação, produção.
 
 ## Onde roda cada coisa
 
-| Máquina                    | Papel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **GitHub hosted** (ubuntu) | CI de PR (`ci-pr.yml`, job `checks`) e job `verify` do `deploy.yml` (suíte full). Nunca toca o homeserver.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| **homeserver** (8c/16GB)   | todo o stack (`~/stack/docker-compose.yml`): postgres `teqo_1313`, forgejo, registry `localhost:5000`, cloudflared, `teqo-1313` na 127.0.0.1:1313 e `teqo-staging` na 127.0.0.1:1314 (OPS103; DB `teqo_staging`, env `~/stack/teqo-staging.env`, bucket `teqo-media-staging`); **runner self-hosted do GitHub** (labels `self-hosted`, `homeserver`; instalado 2026-08-19 — Issue #113 OPS71-INFRA; `~/actions-runner` v2.336.0, systemd user `actions.runner.fsolla-teqo.teqo-1313-runner.service` — `systemctl --user status/restart`); workspace `~/teqo-deploy` (clone de `github.com/fsolla/teqo`, público) |
-| **workstation**            | dev/agentes apenas — o runner do Forgejo foi **desligado** no cutover (o schedule do `ci.yml` antigo não tem mais razão; religar é reversível)                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Máquina                    | Papel                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **GitHub hosted** (ubuntu) | CI de PR (`ci-pr.yml`, job `checks`) e job `verify` do `deploy.yml` (suíte full). Nunca toca o homeserver.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **homeserver** (8c/16GB)   | todo o stack (`~/stack/docker-compose.yml`): postgres `teqo_1313`, forgejo, registry `localhost:5000`, cloudflared, `teqo-1313` na 127.0.0.1:1313 e `teqo-staging` na 127.0.0.1:1314 (OPS103; DB `teqo_staging`, env `~/stack/teqo-staging.env`, bucket `teqo-media-staging`); **runner self-hosted do GitHub** (labels `self-hosted`, `homeserver`; instalado 2026-08-19 — Issue #113 OPS71-INFRA; `~/actions-runner` v2.336.0, systemd user `actions.runner.fsolla-teqo.teqo-1313-runner.service` — `systemctl --user status/restart`); workspace `~/teqo-deploy` (clone de `github.com/fsolla/teqo`, público); o clone operacional da C225 `~/teqo-falas-web` é separado e guarda somente código/dependências, com estado durável em `~/falas-web` |
+| **workstation**            | dev/agentes apenas — o runner do Forgejo foi **desligado** no cutover (o schedule do `ci.yml` antigo não tem mais razão; religar é reversível)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 Segredos **não** ficam no GitHub: o script sourceia o env file do ambiente
 (`~/stack/teqo-1313.env` em produção, `~/stack/teqo-staging.env` em staging) e
@@ -766,6 +766,371 @@ DELETE FROM "speech" WHERE "legislature" = '55';
 
 Para desfazer o acervo inteiro: `DELETE FROM "speech_segment"; DELETE FROM "speech";`
 (a cobertura `--coverage` volta a zero). Reexecutar `--all` reconstrói.
+
+## C225 — rodada de falas da internet no acervo de produção
+
+A fonte **Falas na internet** do acervo (C216) já tem busca, player, transcrição e
+origem, mas a produção só recebe fala web quando alguém executa esta operação.
+A ingestão é a esteira do C215 (`pnpm falas-web:import`); a descoberta e a
+curadoria são do C218. Esta seção é o procedimento manual, repetível e
+reversível para rodar um lote contra `teqo_1313` e o bucket privado
+`teqo-media`. O guard `FALAS_WEB_IMPORT_CONFIRM=1` continua sendo um ato
+humano: nenhum agente, workflow ou skill o exporta.
+
+**Estado desta entrega (2026-09-25):** o guard e este runbook foram entregues;
+esta entrega não executou a rodada de produção. A data, o lote, os criados,
+pulados, falhas, custos e o caminho dos relatórios são preenchidos por quem
+operar depois do merge.
+
+### Responsabilidades e limites
+
+- A descoberta/curadoria pode ser feita na workstation, mas a cópia do lote e o
+  estado operacional devem terminar no diretório durável do homeserver. O
+  `last-run.json` do host é a fonte de verdade da próxima janela.
+- O CLI é a única etapa que baixa, transcreve, classifica, espelha e deduplica.
+  Não crie cron, fila, collection de estado, migration ou uma segunda esteira.
+- O acervo da Câmara (`origin = camara`, 997 discursos no baseline registrado em
+  2026-09-13/14) não é reprocessado por esta rodada.
+- O download temporário pode existir durante o processamento em `/tmp`; o
+  destino da mídia espelhada é o bucket privado. O temp é removido pelo `finally`
+  do pipeline. Não use um diretório local como fila de upload.
+- `internetSpeechMedia` continua privada e servida pelo acervo autenticado. Não
+  copie a URL do bucket para um canal público.
+
+### Pré-requisitos
+
+1. O commit que contém C215, C216, C218, C223, C224 e C225 está em produção.
+2. No homeserver há Node 24 (`source ~/.nvm/nvm.sh`), `pnpm`, acesso ao GitHub,
+   `flock`, `curl`, `psql` e espaço para o clone e os temporários do download.
+3. `~/stack/.env` contém `DEEPINFRA_API_KEY` e `DEEPSEEK_API_KEY`; a primeira
+   chave faz a transcrição e a segunda a classificação. `~/stack/teqo-1313.env`
+   contém `DATABASE_URL`, `PAYLOAD_SECRET`, `NODE_ENV=production` e as quatro
+   variáveis `S3_*` do bucket. Não copie esses arquivos para o repositório.
+4. O `yt-dlp` instalado funciona no host e tem `yt-dlp-ejs` disponível. A
+   resolução do CLI usa `YTDLP_PATH → PATH`; o CLI também valida `ffmpeg` e usa
+   o binário empacotado do projeto como fallback.
+5. A pessoa responsável tem um arquivo de cookies Netscape revogável para as
+   plataformas que exigirem sessão. O arquivo nunca é commitado, impresso nem
+   enviado ao Issue.
+
+### Workspace e estado durável
+
+Use dois diretórios diferentes:
+
+- `~/teqo-falas-web`: clone descartável, pinado no SHA que será executado; não é
+  o workspace do runner (`~/teqo-deploy`) e não guarda o watermark.
+- `~/falas-web`: estado, lotes, descobertas, relatórios e logs duráveis da
+  operação, fora do clone e do diretório gitignored da workstation.
+
+```bash
+set -euo pipefail
+export WORKTREE="$HOME/teqo-falas-web"
+export FALAS_WEB_DIR="$HOME/falas-web"
+export EXPECTED_SHA="<SHA-do-merge>"
+install -d -m 700 "$FALAS_WEB_DIR" "$FALAS_WEB_DIR/reports" "$FALAS_WEB_DIR/runs"
+if [ ! -d "$WORKTREE/.git" ]; then
+  git clone https://github.com/fsolla/teqo.git "$WORKTREE"
+fi
+cd "$WORKTREE"
+git fetch origin
+git checkout --detach "$EXPECTED_SHA"
+test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+pnpm install --frozen-lockfile
+```
+
+Se o C218 for executado dentro desse clone, aponte o diretório gitignored para o
+estado durável uma única vez, sem apagar um diretório existente sem inspeção:
+
+```bash
+set -euo pipefail
+if [ -L "$WORKTREE/data/falas-web" ]; then
+  test "$(readlink -f "$WORKTREE/data/falas-web")" = "$(readlink -f "$FALAS_WEB_DIR")"
+elif [ -e "$WORKTREE/data/falas-web" ]; then
+  printf '%s\n' 'data/falas-web existe e não é o symlink durável esperado.' >&2
+  exit 1
+else
+  mkdir -p "$WORKTREE/data"
+  ln -s "$FALAS_WEB_DIR" "$WORKTREE/data/falas-web"
+fi
+```
+
+Se a descoberta ocorrer na workstation, copie para `~/falas-web` apenas o
+artefato `discovery-*.json` e o lote `batch-*.json`. O `last-run.json` do host é
+o dono do estado: não sobrescreva o watermark dele com uma cópia mais antiga da
+workstation. Se o host ainda não tiver estado, a primeira rodada é a varredura
+inicial; caso já exista, o operador incorpora somente o lote pendente ao estado
+durável. Não use `data/falas-web` local da workstation como estado de produção.
+O contrato do estado é o do C218: `lastRunAt` só avança depois de uma importação
+com exit 0; falhas ficam em `pending` com `attempts`; itens duvidosos ficam em
+`review`. A gravação é atômica (arquivo temporário + `mv`) e deve ocorrer por
+último, depois de ler o relatório JSON do C215.
+
+### Cookies e yt-dlp
+
+O C215 não recebe cookies por argumento. Crie um wrapper fora do repo que
+aponta para o binário real e habilita somente o runtime JavaScript disponível
+na máquina. `--no-js-runtimes` evita que um Deno instalado, mas não preparado,
+vença o Node; `--cookies` aplica a sessão somente à rodada. O arquivo deve ter
+permissão `600` e ser removível sem tocar no clone.
+
+```bash
+set -euo pipefail
+install -d -m 700 "$FALAS_WEB_DIR/bin"
+YTDLP_REAL="$(command -v yt-dlp)"
+test -n "$YTDLP_REAL"
+test -r "$FALAS_WEB_DIR/cookies.txt"
+cat > "$FALAS_WEB_DIR/bin/yt-dlp" <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+exec "$YTDLP_REAL" --no-js-runtimes --js-runtimes node --cookies "$FALAS_WEB_DIR/cookies.txt" "\$@"
+EOF
+chmod 700 "$FALAS_WEB_DIR/bin/yt-dlp"
+chmod 600 "$FALAS_WEB_DIR/cookies.txt"
+export YTDLP_PATH="$FALAS_WEB_DIR/bin/yt-dlp"
+```
+
+O preflight usa uma URL real do lote, sem baixar o vídeo:
+
+```bash
+"$YTDLP_PATH" --dump-json --no-playlist --no-warnings --skip-download '<url-do-lote>'
+```
+
+A saída deve ser JSON e o log não deve indicar runtime JavaScript ausente,
+`yt-dlp-ejs` ausente ou cookie inválido. Para revogar a sessão, apague apenas
+`~/falas-web/cookies.txt` e `~/falas-web/bin/yt-dlp`; não apague o lote nem o
+histórico de relatórios. A skill C218 continua sem receber `YTDLP_PATH`,
+cookies ou a flag de produção.
+
+### Sessão de produção e preflight
+
+O env file preserva os hosts da rede do compose; a sessão no host precisa dos
+endpoints loopback. Não edite `~/stack/teqo-1313.env`: reescreva as variáveis
+somente depois de `source`.
+
+```bash
+source ~/.nvm/nvm.sh
+cd "$WORKTREE"
+set -a
+source "$HOME/stack/.env"
+source "$HOME/stack/teqo-1313.env"
+set +a
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+export S3_ENDPOINT="${S3_ENDPOINT/host.docker.internal/127.0.0.1}"
+export FALAS_WEB_DIR
+export YTDLP_PATH="$FALAS_WEB_DIR/bin/yt-dlp"
+```
+
+Antes de qualquer escrita, confira o alvo exato, as dependências e o acesso ao bucket:
+
+```bash
+set -euo pipefail
+test "$NODE_ENV" = production
+case "$DATABASE_URL" in
+  *@127.0.0.1:5433/teqo_1313) ;;
+  *) printf '%s\n' 'DATABASE_URL não é o alvo de produção esperado.' >&2; exit 1 ;;
+esac
+test "${S3_ENDPOINT%/}" = 'http://127.0.0.1:3900'
+test "$S3_BUCKET" = 'teqo-media'
+for name in PAYLOAD_SECRET DEEPINFRA_API_KEY DEEPSEEK_API_KEY S3_BUCKET S3_ENDPOINT S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
+  test -n "${!name:-}" || { printf 'falta %s\n' "$name" >&2; exit 1; }
+done
+test "$(psql "$DATABASE_URL" -Atqc 'select current_database()')" = 'teqo_1313'
+node --input-type=module <<'NODE'
+import { HeadBucketCommand, S3Client } from '@aws-sdk/client-s3'
+
+const client = new S3Client({
+  region: process.env.S3_REGION || 'garage',
+  endpoint: process.env.S3_ENDPOINT,
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY_ID,
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+  },
+})
+await client.send(new HeadBucketCommand({ Bucket: process.env.S3_BUCKET }))
+NODE
+```
+
+O `HeadBucket` precisa responder com sucesso; não imprima a resposta nem as
+credenciais. O proxy de build `teqo-1313-build-proxy` em `127.0.0.1:5433` deve
+existir. Se o preflight de download, o Postgres ou o Garage falhar, pare: não
+troque o alvo para um banco remoto da workstation e não contorne as guardas.
+
+### Rodada manual
+
+Escolha um lote curado em `~/falas-web/batch-<stamp>.json`. A primeira execução
+é um smoke; não rode a varredura inteira de uma vez. Mantenha o lock pelo
+processo inteiro, inclusive leitura do relatório e gravação de `last-run.json`:
+uma segunda invocação do C218 ou do import não pode começar enquanto este
+shell estiver aberto.
+
+```bash
+set -euo pipefail
+export RUN_ID="$(date -u +%Y%m%dT%H%M%SZ)"
+exec 9>"$FALAS_WEB_DIR/.lock"
+flock -n 9 || { printf '%s\n' 'já existe uma rodada web' >&2; exit 1; }
+```
+
+1. **Planejar, sem escrita e sem flag:**
+
+   ```bash
+   export FINDINGS="$FALAS_WEB_DIR/batch-<stamp>.json"
+   pnpm falas-web:import --findings "$FINDINGS" --out "$FALAS_WEB_DIR" --dry-run
+   ```
+
+   Leia o relatório em `~/falas-web/reports/`. `invalid` e `duplicates` devem
+   ser zero. Confira cada `plannedEntries[].sourceKey` e `action`; um `create`
+   para uma URL que já entrou exige corrigir a curadoria antes de ingerir.
+
+2. **Smoke, dentro do lock:**
+
+   ```bash
+   if FALAS_WEB_IMPORT_CONFIRM=1 pnpm falas-web:import \
+     --findings "$FINDINGS" --limit 1 --out "$FALAS_WEB_DIR" 2>&1 |
+     tee -a "$FALAS_WEB_DIR/runs/$RUN_ID.log"; then
+     :
+   else
+     exit 1
+   fi
+   ```
+
+   O relatório deve mostrar a entrada processada, o estágio e o resultado. A
+   mídia espelhada deve aparecer no bucket `teqo-media`; o player e a rota de
+   mídia do acervo são a prova de leitura, não uma URL pública. A cauda do lote
+   permanece no próprio `batch-<stamp>.json`.
+
+3. **Lote curado completo:** rode o mesmo comando sem `--limit` e no mesmo lock:
+
+   ```bash
+   if FALAS_WEB_IMPORT_CONFIRM=1 pnpm falas-web:import \
+     --findings "$FINDINGS" --out "$FALAS_WEB_DIR" 2>&1 |
+     tee -a "$FALAS_WEB_DIR/runs/$RUN_ID.log"; then
+     :
+   else
+     exit 1
+   fi
+   ```
+
+   Exit 0 pode representar sucesso total ou parcial; leia `created`, `updated`,
+   `skipped`, `failures`, `asrSeconds`, `asrCostUsd`, `llmCostUsd` e
+   `durationMs` no JSON. Exit 1 significa que nenhum achado entrou e exige
+   retentativa, não um recibo verde.
+
+4. **Prova de idempotência:** repita o lote completo sem `--reprocess`, ainda
+   com o lock:
+
+   ```bash
+   if FALAS_WEB_IMPORT_CONFIRM=1 pnpm falas-web:import --findings "$FINDINGS" --out "$FALAS_WEB_DIR" 2>&1 |
+     tee -a "$FALAS_WEB_DIR/runs/$RUN_ID.log"; then
+     :
+   else
+     exit 1
+   fi
+   ```
+
+   O relatório deve mostrar `skipped` para itens completos, nenhum download/ASR
+   novo e nenhum objeto adicional no bucket. A segunda rodada deve usar a
+   mesma identidade `web:<plataforma>:<externalId|url canônica>`; não use uma
+   URL alternativa para "forçar" o resultado.
+
+5. **Inventário e fonte da rodada:** registre o relatório, o lote e o estado em
+   `~/falas-web`; atualize `last-run.json` por último. Uma falha vira `pending`
+   com o estágio e a tentativa, e só uma importação com exit 0 avança
+   `lastRunAt`. Não marque a janela como coberta por memória da sessão. Mantenha
+   o FD 9 aberto até essa gravação; só depois execute `exec 9>&-`.
+
+6. **Ensaio de rollback:** antes de encerrar a primeira rodada, escolha uma
+   fala de teste, registre o `id`/`sourceKey`, peça confirmação humana para a
+   exclusão e remova pelo admin. Confirme no inventário e no Garage que a fala,
+   os segmentos e o objeto espelhado sumiram. Remova o `sourceKey` de qualquer
+   `pending`/`review` que ainda o referencie. Se essa prova não for feita, a
+   rodada fica bloqueada para aprovação operacional.
+
+### Inventário read-only
+
+As consultas abaixo não escrevem no banco:
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+SELECT origin, platform, count(*) AS total
+FROM speech
+GROUP BY origin, platform
+ORDER BY origin, platform;
+
+SELECT id, "sourceKey", "speechAt", platform, origin
+FROM speech
+WHERE origin = 'web'
+ORDER BY "speechAt" DESC;
+
+SELECT count(*) AS web_total,
+       count(*) FILTER (WHERE "mirroredMedia" IS NOT NULL) AS web_with_media
+FROM speech
+WHERE origin = 'web';
+SQL
+```
+
+Compare a contagem de `origin = 'camara'` com o baseline antes da rodada e
+confirme que ela não diminuiu. Para o bucket, use o cliente S3/Garage aprovado
+pela operação e confira o objeto pelo identificador da mídia, sem imprimir a
+chave de acesso ou o segredo. Depois abra
+`/campanha/comunicacao/acervo` → **Falas na internet** com uma sessão de
+campanha e confirme player, transcrição, data e origem de uma fala da rodada.
+
+### Rollback
+
+Não copie o `DELETE` SQL do C155 para esta entrega. A remoção de uma fala web
+deve passar pelo Payload, porque o hook `deleteSpeechAssets` remove segmentos e
+registros de `internetSpeechMedia`, e o plugin de storage remove o objeto do
+bucket:
+
+1. Faça o inventário read-only e anote o `id`/`sourceKey` exato.
+2. No admin autenticado, exclua uma fala `origin = web` da rodada de teste.
+3. Confirme no inventário que a linha e os segmentos sumiram e, no Garage,
+   que o objeto associado sumiu.
+4. Repita para outras falas somente com identificação e confirmação humanas.
+
+Não apague diretamente a tabela `speech`, `speech_segment` ou
+`internet_speech_media`; isso pode deixar relações e objetos órfãos. Remoção em
+massa é uma operação destrutiva nova e precisa de item, flag, teste e runbook
+próprios.
+
+### Falhas e decisões
+
+- **Runtime JS/YouTube:** o wrapper usa Node; se o binário não tiver
+  `yt-dlp-ejs`, a aquisição falha no estágio `acquisition`. Atualize o yt-dlp e
+  reinstale o componente pela via oficial; não coloque arquivos remotos no repo.
+- **Cookies expirados:** a falha fica no relatório e em `pending`; atualize o
+  arquivo revogável e repita o lote. Nunca registre o conteúdo do cookie.
+- **Egress do homeserver:** a rota para APIs/CDNs pode ser intermitente. O
+  preflight é um gate: se `--dump-json` ou o Garage falhar, a rodada não começa.
+  Não silencie a falha nem troque o banco de produção por um alvo remoto.
+- **S3 ausente ou endpoint errado:** o novo guard recusa escrita não-local sem
+  as quatro `S3_*`; um erro de conectividade aparece no relatório. O env file do
+  container não deve ser editado para acomodar o host.
+- **Espaço ou lock:** o `flock` serializa rodadas; um lock ocupado encerra o
+  comando. O diretório do clone e o diretório durável precisam de espaço para
+  dependências, lotes, relatórios e o temporário de cada download.
+- **Fim da rodada:** registrar o resultado medido no changelog e o
+  `last-run.json` durável é parte da operação, não uma tarefa opcional.
+
+### Resultado registrado
+
+Preencher após uma execução real, sem apagar o histórico anterior:
+
+```text
+data/hora:
+lote:
+sourceKeys/resultados:
+criados/atualizados/pulados/falhas:
+custo/tempo:
+bucket e estado durável:
+idempotência:
+falhas/pendências:
+```
+
+O resultado da primeira rodada e a prova da segunda são a evidência de que a
+fonte web foi realmente carregada em produção; o merge deste runbook, sozinho,
+não representa uma rodada concluída.
 
 ## C160 — reparo do link oficial do acervo (PDF direto do Diário)
 
