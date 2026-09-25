@@ -9,6 +9,7 @@ import {
   isLocalDatabaseUrl,
   isRemoteDbOverrideSet,
   isTruthyEnv,
+  mirroredMediaRequired,
   requiresWriteConfirm,
 } from '../../scripts/lib/cli.mjs'
 
@@ -77,6 +78,72 @@ describe('databaseHostname / isLocalDatabaseUrl (C155)', () => {
     expect(isLocalDatabaseUrl('postgresql://teqo:teqo@postgres:5432/teqo_1313')).toBe(true)
     expect(isLocalDatabaseUrl('postgresql://teqo:teqo@db.example.com:5432/teqo_1313')).toBe(false)
     expect(isLocalDatabaseUrl(undefined)).toBe(false)
+  })
+})
+
+describe('mirroredMediaRequired (C225 production media guard)', () => {
+  it('requires mirrored media for a production target without S3', () => {
+    expect(
+      mirroredMediaRequired({
+        nodeEnv: 'production',
+        databaseUrl: 'postgresql://teqo:teqo@127.0.0.1:5433/teqo_1313',
+        allowRemoteDb: false,
+        s3Enabled: false,
+      }),
+    ).toBe(true)
+  })
+
+  it('allows a production target when S3 is enabled', () => {
+    expect(
+      mirroredMediaRequired({
+        nodeEnv: 'production',
+        databaseUrl: 'postgresql://teqo:teqo@127.0.0.1:5433/teqo_1313',
+        allowRemoteDb: false,
+        s3Enabled: true,
+      }),
+    ).toBe(false)
+  })
+
+  it('does not require mirrored media for a local development target', () => {
+    expect(
+      mirroredMediaRequired({
+        nodeEnv: 'development',
+        databaseUrl: 'postgresql://teqo:teqo@localhost:5432/teqo_wt155',
+        allowRemoteDb: false,
+        s3Enabled: false,
+      }),
+    ).toBe(false)
+  })
+
+  it('does not trust a non-boolean S3 capability value', () => {
+    const options = {
+      nodeEnv: 'production' as const,
+      databaseUrl: 'postgresql://teqo:teqo@127.0.0.1:5433/teqo_1313',
+      allowRemoteDb: false,
+      s3Enabled: false,
+    }
+    Object.assign(options, { s3Enabled: 'false' })
+
+    expect(mirroredMediaRequired(options)).toBe(true)
+  })
+
+  it('requires mirrored media for remote and override targets', () => {
+    expect(
+      mirroredMediaRequired({
+        nodeEnv: 'development',
+        databaseUrl: 'postgresql://teqo:teqo@db.example.com:5432/teqo_1313',
+        allowRemoteDb: false,
+        s3Enabled: false,
+      }),
+    ).toBe(true)
+    expect(
+      mirroredMediaRequired({
+        nodeEnv: 'development',
+        databaseUrl: 'postgresql://teqo:teqo@localhost:5432/teqo_wt155',
+        allowRemoteDb: true,
+        s3Enabled: false,
+      }),
+    ).toBe(true)
   })
 })
 

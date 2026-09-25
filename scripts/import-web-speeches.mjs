@@ -26,7 +26,13 @@ import { dirname, join } from 'node:path'
 import { getPayload } from 'payload'
 
 import { assertLocalDatabase } from './assert-local-database.mjs'
-import { assertWriteConfirm, databaseTarget, dieWithLabel, loadCliEnv } from './lib/cli.mjs'
+import {
+  assertWriteConfirm,
+  databaseTarget,
+  dieWithLabel,
+  loadCliEnv,
+  mirroredMediaRequired,
+} from './lib/cli.mjs'
 import { resolveFfmpeg } from './lib/mediaBinaries.mjs'
 import {
   formatWebSpeechReport,
@@ -42,6 +48,7 @@ loadCliEnv()
 const die = dieWithLabel('falas-web:import')
 
 const config = (await import('../src/payload.config.ts')).default
+const { resolveS3StorageEnv } = await import('../src/utilities/mediaStorage.ts')
 const { parseWebSpeechBatch } = await import('../src/lib/webSpeech.ts')
 const { findSpeechImportState } = await import('../src/utilities/speech/speechImport.ts')
 const { ingestWebSpeech } = await import('../src/utilities/speech/webSpeechIngest.ts')
@@ -105,8 +112,9 @@ Opções:
 Sucesso parcial sai com código 0 (as falhas ficam no relatório); código 1
 quando nenhum achado entrou no catálogo.
 
-Escrita em alvo não-local ou com NODE_ENV=production exige
-${WRITE_CONFIRM_FLAG}=1. O binário do yt-dlp vem de YTDLP_PATH ou do PATH;
+Escrita em alvo não-local, com NODE_ENV=production ou com ALLOW_REMOTE_DB exige
+${WRITE_CONFIRM_FLAG}=1 e as quatro variáveis S3_* para que a mídia seja
+espelhada no bucket. O binário do yt-dlp vem de YTDLP_PATH ou do PATH;
 instale com \`pipx install yt-dlp\` (o ffmpeg empacotado é usado se não houver
 no PATH).
 `
@@ -153,6 +161,12 @@ async function main() {
       'falas-web:import',
       `A ingestão escreve no acervo; produção exige ${WRITE_CONFIRM_FLAG}=1.`,
     )
+    const storage = resolveS3StorageEnv(process.env)
+    if (mirroredMediaRequired({ s3Enabled: storage.enabled })) {
+      die(
+        `escrita em produção, override ou alvo não-local (${databaseTarget()}) exige mídia espelhada: configure S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID e S3_SECRET_ACCESS_KEY; sem elas o Payload usaria disco local.`,
+      )
+    }
   }
   console.log(
     `[falas-web:import] alvo: ${databaseTarget()} | modo: ${options.dryRun ? 'dry-run (read-only)' : options.reprocess ? 'import (--reprocess)' : 'import'}`,

@@ -180,6 +180,11 @@ item inválido para o C215 não se resolve por `aprovar`):
   fora do escopo do C215);
 - metadados que o agente não conseguiu confirmar.
 
+Para `youtube` e `instagram`, confirme sempre `externalId` no lote curado. A
+identidade do C215 usa `web:<plataforma>:<externalId|url canônica>`; sem esse
+campo, a mesma URL pode abrir uma chave diferente em outra rodada. Confira o
+`sourceKey` no relatório do `--dry-run` antes de ingerir.
+
 O que está em `review` não é ingerido até confirmação (`aprovar`).
 
 Modes (numeração única da listagem de `revisar` — `pending` primeiro, depois
