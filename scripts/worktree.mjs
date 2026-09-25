@@ -23,10 +23,10 @@
  *                              escolhe o modelo por invocação no mapa fixo
  *                              `WORKTREE_MODEL_MAP` (cheap=cheapestinference/
  *                              deepseek-v4-flash, pro=deepseek/deepseek-v4-pro,
- *                              zen=opencode/muse-spark-1.3-contributor-free, go=opencode-go/deepseek-v4.1-flash,
+ *                              zen=opencode/space-bunny-free, go=opencode-go/deepseek-v4.1-flash,
  *                              alibaba=alibaba-token-plan/deepseek-v4-flash,
- *                              glm=opencode-go/glm-5.3-flash, free=openrouter/
- *                              openrouter/free; OPS95 + OPS100 + OPS112) — sem flag o preset
+ *                              glm=opencode-go/glm-5.3-flash, free=openrouter/stealth/space-bunny-alpha;
+ *                              OPS95 + OPS100 + OPS112 + OPS129) — sem flag o preset
  *                              `deepseek/deepseek-flash` permanece.
  *                              Chamado do terminal interativo (com
  *                              `TEQO_WORKTREE_TERMINAL=1`, que só a função shell

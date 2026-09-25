@@ -466,16 +466,16 @@ describe('opencodeHeadlessArgs + headlessDirective (OPS106 auto-unblock)', () =>
   })
 })
 
-describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values, OPS100 glm/free, OPS112 go/zen)', () => {
+describe('resolveWorktreeModel + WORKTREE_MODEL_MAP (OPS93 menu, OPS95 values, OPS100 glm/free, OPS112 go/zen, OPS129 zen/free)', () => {
   it('pins the 7-flag map — cheap/pro/zen/go/alibaba/glm/free', () => {
     expect(WORKTREE_MODEL_MAP).toEqual({
       cheap: 'cheapestinference/deepseek-v4-flash',
       pro: 'deepseek/deepseek-v4-pro',
-      zen: 'opencode/muse-spark-1.3-contributor-free',
+      zen: 'opencode/space-bunny-free',
       go: 'opencode-go/deepseek-v4.1-flash',
       alibaba: 'alibaba-token-plan/deepseek-v4-flash',
       glm: 'opencode-go/glm-5.3-flash',
-      free: 'openrouter/openrouter/free',
+      free: 'openrouter/stealth/space-bunny-alpha',
     })
     expect(WORKTREE_MODEL_FLAGS).toEqual(
       new Set(['cheap', 'pro', 'zen', 'go', 'alibaba', 'glm', 'free']),
