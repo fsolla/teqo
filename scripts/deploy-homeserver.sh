@@ -63,6 +63,87 @@ fatal() {
   exit 1
 }
 
+probe_media_endpoint() {
+  local image="$1"
+  local endpoint="$2"
+  local host="${3:-}"
+  local -a args=(--rm --network stack_default)
+  if [ -n "$host" ]; then
+    args+=(--add-host "host.docker.internal:$host")
+  fi
+  docker run "${args[@]}" \
+    --env "S3_PROBE_ENDPOINT=$endpoint" \
+    --entrypoint node \
+    "$image" \
+    -e 'fetch(process.env.S3_PROBE_ENDPOINT, { signal: AbortSignal.timeout(5000) }).then(() => process.exit(0)).catch(() => process.exit(1))' \
+    >/dev/null 2>&1
+}
+
+media_gateways() {
+  docker network inspect -f '{{range .IPAM.Config}}{{println .Gateway}}{{end}}' stack_default 2>/dev/null
+}
+
+ensure_media_endpoint() {
+  local image="$TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA"
+  local override="$STACK_DIR/docker-compose.media-$TEQO_ENV.yml"
+
+  if [ -z "${S3_BUCKET:-}" ] || [ -z "${S3_ENDPOINT:-}" ] || [ -z "${S3_ACCESS_KEY_ID:-}" ] || [ -z "${S3_SECRET_ACCESS_KEY:-}" ]; then
+    rm -f "$override"
+    unset COMPOSE_FILE
+    return 0
+  fi
+
+  if ! node "$WORKSPACE_DIR/scripts/lib/mediaEndpoint.mjs" is-host-gateway --endpoint "$S3_ENDPOINT"; then
+    if probe_media_endpoint "$image" "$S3_ENDPOINT" ""; then
+      rm -f "$override"
+      unset COMPOSE_FILE
+      return 0
+    fi
+    fatal "configured S3 endpoint is unreachable from the Docker network"
+  fi
+
+  if probe_media_endpoint "$image" "$S3_ENDPOINT" "host-gateway"; then
+    rm -f "$override"
+    unset COMPOSE_FILE
+    return 0
+  fi
+
+  local gateway
+  while IFS= read -r gateway; do
+    if [[ ! "$gateway" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+      continue
+    fi
+    if probe_media_endpoint "$image" "$S3_ENDPOINT" "$gateway"; then
+      if ! node "$WORKSPACE_DIR/scripts/lib/mediaEndpoint.mjs" \
+        --container "$TEQO_CONTAINER" \
+        --migrate-service "$TEQO_MIGRATE_SERVICE" \
+        --endpoint "$S3_ENDPOINT" \
+        --gateway "$gateway" >"$override"; then
+        rm -f "$override"
+        fatal "failed to render media endpoint override"
+      fi
+      if ! docker compose -f "$STACK_DIR/docker-compose.yml" -f "$override" config --quiet; then
+        rm -f "$override"
+        fatal "media endpoint override is invalid"
+      fi
+      export COMPOSE_FILE="$STACK_DIR/docker-compose.yml:$override"
+      say "repairing S3 route for $TEQO_CONTAINER with the reachable stack gateway"
+      return 0
+    fi
+  done < <(media_gateways)
+
+  fatal "no reachable IPv4 gateway for the configured S3 endpoint"
+}
+
+smoke_media_endpoint() {
+  if [ -z "${S3_BUCKET:-}" ] || [ -z "${S3_ENDPOINT:-}" ] || [ -z "${S3_ACCESS_KEY_ID:-}" ] || [ -z "${S3_SECRET_ACCESS_KEY:-}" ]; then
+    return 0
+  fi
+  docker exec "$TEQO_CONTAINER" node -e \
+    'fetch(process.env.S3_ENDPOINT, { signal: AbortSignal.timeout(5000) }).then(() => process.exit(0)).catch(() => process.exit(1))' \
+    >/dev/null 2>&1 || rollback "S3 endpoint missing or unreachable from $TEQO_CONTAINER"
+}
+
 # --- environment map (OPS103) -------------------------------------------
 # Production values are the pre-OPS103 literals: the canonical invocation
 # `bash scripts/deploy-homeserver.sh <sha>` (no TEQO_ENV) behaves exactly as
@@ -207,6 +288,7 @@ docker push "$TEQO_REGISTRY/$TEQO_IMAGE_REPO-migrator:$SHA"
 # --- compose swap (backup first; failures from here roll back) ----------
 
 compose="$STACK_DIR/docker-compose.yml"
+ensure_media_endpoint
 backup="$compose.pre-$SHA"
 cp "$compose" "$backup"
 # Image lines: the env-specific repo names cannot touch the other
@@ -275,6 +357,8 @@ for _ in $(seq 1 30); do
   sleep 10
 done
 [ "$health" = "healthy" ] || rollback "container not healthy after 300s (status: $health)"
+
+smoke_media_endpoint
 
 # --- feature env audit (non-fatal) --------------------------------------
 # A missing feature key never fails the boot: the capability degrades

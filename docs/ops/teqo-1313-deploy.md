@@ -120,6 +120,40 @@ clone do workspace não precisa de credencial. No GitHub ficam apenas os
 secrets de integração: `FORGEJO_API_TOKEN` (flips pós-merge) e
 `CURSOR_API_KEY` (archive helper, dormente).
 
+## Garage e uploads de mídia
+
+O runtime usa o endpoint S3 do arquivo de ambiente. O endpoint documentado
+`http://host.docker.internal:3900` depende do gateway da rede Docker; depois de
+uma alteração nas redes, o alias `host-gateway` pode resolver para um gateway
+que não alcança o Garage. Nesse caso, o upload do Payload fica esperando o
+`PutObject` e a interface permanece em **Enviando...**, embora o PostgreSQL e o
+resto do site estejam saudáveis.
+
+O `scripts/deploy-homeserver.sh` trata esse caminho antes das migrations: ele
+sonda o endpoint a partir da imagem migrator, testa os gateways IPv4 da rede
+`stack_default` quando o alias falha e gera um override operacional por
+ambiente (`~/stack/docker-compose.media-production.yml` ou
+`~/stack/docker-compose.media-staging.yml`). O override altera somente
+`S3_ENDPOINT` nos dois serviços do ambiente selecionado; credenciais e arquivos
+de ambiente não são reescritos. Depois do rollout, o mesmo endpoint é sondado de
+dentro do container e uma falha executa o rollback.
+
+O probe é fail-closed: se nenhum gateway responder, o deploy para antes de
+aplicar migrations. O override é um artefato operacional do stack, não um
+arquivo versionado. Para diagnosticar o estado atual:
+
+```bash
+ssh homeserver
+cd ~/stack
+set -a; source ~/stack/teqo-1313.env; set +a
+docker network inspect -f '{{range .IPAM.Config}}{{println .Gateway}}{{end}}' stack_default
+docker exec teqo-1313 node -e "fetch(process.env.S3_ENDPOINT, {signal: AbortSignal.timeout(5000)}).then(r => console.log(r.status)).catch(e => { console.error(e); process.exit(1) })"
+```
+
+O comando `docker exec` deve concluir em poucos segundos, mesmo que o Garage
+responda `403` à raiz; timeout ou `ENETUNREACH` significa que o caminho do
+container ainda não alcança o bucket.
+
 ## Staging (OPS103)
 
 Alvo real e descartável para validar o SHA (migração/build/rollout/smoke) antes
