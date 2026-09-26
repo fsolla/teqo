@@ -1,6 +1,7 @@
 // @vitest-environment node
 
-import { writeFile } from 'node:fs/promises'
+import { mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
@@ -11,7 +12,9 @@ import { normalizeForSearch } from '@/lib/speechSearch'
 import { INTERNET_SPEECH_MEDIA_SLUG, type WebSpeechFinding } from '@/lib/webSpeech'
 import type { Speech } from '@/payload-types'
 import config from '@/payload.config'
+import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import {
+  createWebSpeechMediaMirror,
   ingestWebSpeech,
   type WebSpeechAcquirer,
   type WebSpeechClassifier,
@@ -381,6 +384,44 @@ describe('ingestWebSpeech (C215)', () => {
     expect(result).toMatchObject({ status: 'failed', stage: 'transcription' })
     expect(result.error).toContain('Transcrição vazia')
     expect(await findBySourceKey(sourceKey)).toBeNull()
+  })
+
+  it('updates a large media row through the direct S3 seam', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'web-speech-large-test-'))
+    const inputPath = join(dir, 'source.mp4')
+    await writeFile(inputPath, MP4_BYTES)
+    const mirror = createWebSpeechMediaMirror({
+      thresholdBytes: 0,
+      uploadLarge: async ({ filename }) => ({
+        filename: filename ?? 'source.mp4',
+        mimeType: 'video/mp4',
+        filesize: MP4_BYTES.length,
+        url: 'http://127.0.0.1:3900/teqo-media/source.mp4',
+      }),
+      removeLarge: async () => undefined,
+    })
+    let mediaId = 0
+
+    try {
+      await withPayloadTransaction(payload, async ({ req }) => {
+        const mirrored = await mirror({ payload, req, alt: 'YouTube — fala', inputPath })
+        mediaId = mirrored.id
+        await mirrored.cleanup()
+      })
+      const media = await payload.findByID({
+        collection: INTERNET_SPEECH_MEDIA_SLUG,
+        id: mediaId,
+        overrideAccess: true,
+      })
+      expect(media).toMatchObject({ filesize: MP4_BYTES.length, mimeType: 'video/mp4' })
+    } finally {
+      if (mediaId) {
+        await payload
+          .delete({ collection: INTERNET_SPEECH_MEDIA_SLUG, id: mediaId, overrideAccess: true })
+          .catch(() => undefined)
+      }
+      await rm(dir, { recursive: true, force: true })
+    }
   })
 
   it('accepts a radio finding with a direct mediaUrl', async () => {
