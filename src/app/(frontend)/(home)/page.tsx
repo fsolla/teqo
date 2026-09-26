@@ -7,6 +7,7 @@ import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
 import { ContentPieceHomeSection } from '@/components/conteudos/ContentPieceHomeSection'
 import { JingleHomeSection } from '@/components/jingles/JingleHomeSection'
+import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import { getPublishedContentPieceItems } from '@/utilities/content/contentPieceReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
@@ -116,14 +117,18 @@ const proofItems = [
 ]
 
 export default async function HomePage() {
-  // S10 — site-level Meta pixel for the campaign home (cached read, fail-closed).
-  const pixelId = await getCampaignHomeMetaPixelId()
+  // S10 — site-level Meta pixel (cached read, fail-closed).
   // S21/S22 — one cached listing (`unstable_cache` tag `jingles`) serves the
   // home sound section and the footer's discovery flag, keeping the home static.
-  const jingles = await getPublishedJingleItems()
   // S27/S39 — one cached listing (tag `contentPieces`) feeds both the discovery
   // flag of the footer and the home sample; zero pieces hides both (fail-closed).
-  const contentPieces = await getPublishedContentPieceItems()
+  // C233 — the same contract for the "Fotos" discovery flag (tag `archivePhotos`).
+  const [pixelId, jingles, contentPieces, showFotos] = await Promise.all([
+    getCampaignHomeMetaPixelId(),
+    getPublishedJingleItems(),
+    getPublishedContentPieceItems(),
+    hasPublishedArchivePhotos(),
+  ])
   const homeJingles = jingles.slice(0, 3)
 
   return (
@@ -253,7 +258,11 @@ export default async function HomePage() {
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 
-      <CampaignFooter showJingles={jingles.length > 0} showConteudos={contentPieces.length > 0} />
+      <CampaignFooter
+        showJingles={jingles.length > 0}
+        showConteudos={contentPieces.length > 0}
+        showFotos={showFotos}
+      />
     </>
   )
 }

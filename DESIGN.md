@@ -290,6 +290,8 @@ Every `/campanha` list surface composes the shared pieces in `src/components/cam
 
 This file is the living owner of Teqo's visual decisions — a working document, not a snapshot. The old single-source-of-brand guardrail (kit 1313 as the only authority; "never re-derive lockups or palette") is retired. The official kit assets in `public/campaign-kit/` stay available — and their technical usage quirks still apply when used — but they no longer bind new design work.
 
+**Public campaign archive actions (C233, 2026-09-26).** On campaign-branded public archive/read surfaces, the primary action is campaign red with white text. Kit yellow is an orientation and keyboard-focus signal — hero edge, restrained eyebrow, current-location underline, and high-contrast focus outline — never the competing CTA fill. This keeps one action dominant, separates public campaign expression from Petition Gold, and makes keyboard location unmistakable over both light and dark media surfaces.
+
 How rules change:
 
 - **Decide, then update the owner.** When a better pattern wins — anti-slop review (`design-taste-frontend` / `gpt-taste`), a reference study (`awesome-design-md`), a redesign pass (`redesign-existing-projects`), or implementation judgment — update this file in the **same change** and say why. A pattern that only lives in code or in an agent's head is drift, not design.

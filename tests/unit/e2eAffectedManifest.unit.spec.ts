@@ -79,6 +79,10 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // contract and the migration makes every PR of this delivery high-risk
       // (curated only).
       'campaignSpeechAcervo',
+      // C233 — deliberate: the public photo album (approval gate, facets,
+      // overlay, media route) is a new contract and the migration makes every
+      // PR of this delivery high-risk (curated only).
+      'frontendFotos',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

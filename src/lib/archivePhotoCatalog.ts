@@ -51,7 +51,8 @@ export const resolveArchivePhotoScene = (token: unknown): ArchivePhotoScene | nu
   return match?.value ?? null
 }
 
-const archivePhotoSceneLabel = (value: ArchivePhotoScene): string =>
+/** The pt-BR label of a scene value (the facet's own label once it has one). */
+export const archivePhotoSceneLabel = (value: ArchivePhotoScene): string =>
   ARCHIVE_PHOTO_SCENES.find((scene) => scene.value === value)?.label ?? value
 
 /**
@@ -94,6 +95,55 @@ export const archivePhotoCatalogSourceLabels: Record<ArchivePhotoCatalogSource, 
   ai: 'IA',
   metadata: 'Metadados',
   none: 'Nada a propor',
+}
+
+/**
+ * C233 — the publication gate between the C232 pre-catalogue and the public
+ * album. `draft` is the honest initial state (nothing is public by default),
+ * `approved` is what the assessoria deliberately sent to the album and
+ * `removed` is the sticky takedown state: a removal request served and
+ * recorded. The cataloguing pipeline never writes this field, and only a human
+ * edit leaves `removed` — fail-closed right to erasure.
+ */
+export const ARCHIVE_PHOTO_PUBLICATION_STATUSES = ['draft', 'approved', 'removed'] as const
+
+export type ArchivePhotoPublicationStatus = (typeof ARCHIVE_PHOTO_PUBLICATION_STATUSES)[number]
+
+export const isArchivePhotoPublicationStatus = (
+  value: unknown,
+): value is ArchivePhotoPublicationStatus =>
+  ARCHIVE_PHOTO_PUBLICATION_STATUSES.includes(value as ArchivePhotoPublicationStatus)
+
+export const archivePhotoPublicationStatusLabels: Record<ArchivePhotoPublicationStatus, string> = {
+  draft: 'Rascunho',
+  approved: 'Aprovada',
+  removed: 'Removida',
+}
+
+/**
+ * The predicate every public read filters through (mirror of
+ * `contentPieceIsPublic`): only an approved photo is public, and a missing or
+ * unknown status fails closed.
+ */
+export const archivePhotoIsPublic = (photo: { publicationStatus?: unknown }): boolean =>
+  photo.publicationStatus === 'approved'
+
+/**
+ * C233 — the removal channel the album advertises ("é você nesta foto? peça a
+ * remoção"): an absolute http(s) URL or a `mailto:`. Presence of a valid
+ * channel is a precondition for a photo to be public — the address itself is
+ * product data configured in the admin, never invented in code.
+ */
+export const isArchivePhotoRemovalChannelUrl = (value: unknown): value is string => {
+  if (typeof value !== 'string') return false
+  const trimmed = value.trim()
+  if (!trimmed) return false
+  try {
+    const { protocol } = new URL(trimmed)
+    return protocol === 'https:' || protocol === 'http:' || protocol === 'mailto:'
+  } catch {
+    return false
+  }
 }
 
 export const ARCHIVE_PHOTO_CAPTION_MAX_LENGTH = 200

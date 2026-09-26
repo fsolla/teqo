@@ -2,11 +2,16 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ARCHIVE_PHOTO_CAPTION_MAX_LENGTH,
+  ARCHIVE_PHOTO_PUBLICATION_STATUSES,
+  archivePhotoIsPublic,
+  archivePhotoPublicationStatusLabels,
   archivePhotoSearchText,
   archivePhotoTakenOn,
   archivePhotoThemesFrom,
   buildArchivePhotoCatalogWrite,
   changedArchivePhotoCuratedFields,
+  isArchivePhotoPublicationStatus,
+  isArchivePhotoRemovalChannelUrl,
   matchPublicFigureMentions,
   parseArchiveVisionOutput,
   resolveArchivePhotoScene,
@@ -353,5 +358,37 @@ describe('archivePhotoSearchText (C232)', () => {
 
   it('is empty for an empty input', () => {
     expect(archivePhotoSearchText({})).toBe('')
+  })
+})
+
+// C233 — the publication gate appended to the same contract: the closed status
+// vocabulary (fail-closed predicate) and the removal-channel validator that
+// guards the album's approval path. No Payload here.
+
+describe('archive photo publication (C233)', () => {
+  it('only approves the exact approved state', () => {
+    expect(ARCHIVE_PHOTO_PUBLICATION_STATUSES).toEqual(['draft', 'approved', 'removed'])
+    expect(archivePhotoPublicationStatusLabels).toEqual({
+      draft: 'Rascunho',
+      approved: 'Aprovada',
+      removed: 'Removida',
+    })
+    expect(isArchivePhotoPublicationStatus('approved')).toBe(true)
+    expect(isArchivePhotoPublicationStatus('publicado')).toBe(false)
+    expect(archivePhotoIsPublic({ publicationStatus: 'approved' })).toBe(true)
+    expect(archivePhotoIsPublic({ publicationStatus: 'draft' })).toBe(false)
+    expect(archivePhotoIsPublic({ publicationStatus: 'removed' })).toBe(false)
+    expect(archivePhotoIsPublic({})).toBe(false)
+  })
+
+  it('accepts only absolute http(s) or mailto removal channels', () => {
+    expect(isArchivePhotoRemovalChannelUrl('https://jorgesolla1313.com.br/contato')).toBe(true)
+    expect(isArchivePhotoRemovalChannelUrl('http://localhost:3000/remocao')).toBe(true)
+    expect(isArchivePhotoRemovalChannelUrl('mailto:acervo@example.org')).toBe(true)
+    expect(isArchivePhotoRemovalChannelUrl('  mailto:acervo@example.org  ')).toBe(true)
+    expect(isArchivePhotoRemovalChannelUrl('javascript:alert(1)')).toBe(false)
+    expect(isArchivePhotoRemovalChannelUrl('/contato')).toBe(false)
+    expect(isArchivePhotoRemovalChannelUrl('')).toBe(false)
+    expect(isArchivePhotoRemovalChannelUrl(null)).toBe(false)
   })
 })

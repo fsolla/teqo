@@ -51,6 +51,10 @@ export const E2E_CURATED_SPECS = [
   // contract and the migration makes every PR of this delivery high-risk
   // (curated only).
   'campaignSpeechAcervo',
+  // C233 — deliberate: the public photo album (approval gate, facets, overlay,
+  // media route) is a new contract and the migration makes every PR of this
+  // delivery high-risk (curated only).
+  'frontendFotos',
 ]
 
 /**
@@ -198,12 +202,41 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontendConteudos'],
   },
   {
+    // C233 — the public photo album: the `/fotos` catalogue, the overlay, the
+    // public media route (thumbnail/download) and the removal channel over the
+    // C231/C232 archive. The migration makes every PR of this delivery
+    // high-risk (curated only).
+    prefixes: [
+      'src/app/(frontend)/fotos',
+      'src/components/fotos',
+      'src/lib/archivePhoto',
+      'src/utilities/archivePhotos',
+      'src/utilities/flickr',
+      'src/globals/PhotoAlbum.ts',
+      'src/collections/ArchivePhoto.ts',
+      'src/utilities/privateMedia',
+      // The tag/allowlist vocabulary the album's cache and runbook tag use.
+      'src/utilities/documents.ts',
+      'src/utilities/revalidateRequest.ts',
+      // The canonical names of the "pessoa pública" facet.
+      'src/lib/publicFigureCatalog.ts',
+    ],
+    specs: ['frontendFotos'],
+  },
+  {
     // S21 — the campaign footer owns the conditional "Jingles" discovery link
     // (it renders on the home, the cards page, `/jingles` and the S29
     // announcement page).
     // S27 — and the conditional "Conteúdos" link.
+    // C233 — and the conditional "Fotos" link.
     prefixes: ['src/components/CampaignFooter.tsx'],
-    specs: ['frontend', 'frontendJingles', 'frontendConteudos', 'frontendShareLink'],
+    specs: [
+      'frontend',
+      'frontendJingles',
+      'frontendConteudos',
+      'frontendShareLink',
+      'frontendFotos',
+    ],
   },
   {
     // S13/S30 — the personalized-cards studio lives in shared cards components

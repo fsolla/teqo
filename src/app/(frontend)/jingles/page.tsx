@@ -3,6 +3,7 @@ import { CampaignPageHeader } from '@/components/CampaignPageHeader'
 import { JingleEmptyState } from '@/components/jingles/JingleEmptyState'
 import { JingleIntro } from '@/components/jingles/JingleIntro'
 import { JinglePlayer } from '@/components/jingles/JinglePlayer'
+import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
@@ -59,9 +60,10 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function JinglesPage() {
-  const [items, showConteudos] = await Promise.all([
+  const [items, showConteudos, showFotos] = await Promise.all([
     getPublishedJingleItems(),
     hasPublishedContentPieces(),
+    hasPublishedArchivePhotos(),
   ])
   const hasItems = items.length > 0
 
@@ -78,7 +80,12 @@ export default async function JinglesPage() {
           <JingleEmptyState />
         )}
       </main>
-      <CampaignFooter showJingles={hasItems} showConteudos={showConteudos} current="jingles" />
+      <CampaignFooter
+        showJingles={hasItems}
+        showConteudos={showConteudos}
+        showFotos={showFotos}
+        current="jingles"
+      />
     </>
   )
 }

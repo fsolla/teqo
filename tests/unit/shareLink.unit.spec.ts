@@ -52,6 +52,7 @@ describe('shareLink slug', () => {
         'conteudos',
         'corte',
         'evento',
+        'fotos',
         'jingles',
         'mandato-no-whatsapp',
         'noticia',

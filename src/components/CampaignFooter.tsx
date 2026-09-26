@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils'
 const APOIAR_URL = 'https://apoiar.me/jorgesolla'
 
 const FOOTER_LINK = cn(
-  'text-[rgb(255_248_242/75%)] no-underline hover:text-white',
+  // C233 (design critique) — every footer link is a 44px-tall target on mobile.
+  'inline-flex min-h-11 items-center text-[rgb(255_248_242/75%)] no-underline hover:text-white',
   'focus-visible:rounded-[2px] focus-visible:text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-yellow)',
 )
 
@@ -21,20 +22,24 @@ const REDES = [
  * the caller resolves the cached flag (`hasPublishedJingles`, or the page's own
  * list) and passes it, so this stays a synchronous presentational leaf.
  * S27 — the same contract for the "Conteúdos" link (`hasPublishedContentPieces`).
+ * C233 — the same contract for the "Fotos" link (`hasPublishedArchivePhotos`).
  * `current` marks the page as the current one for assistive tech and the
  * artefato's highlight.
  */
 export const CampaignFooter = ({
   showJingles = false,
   showConteudos = false,
+  showFotos = false,
   current,
 }: {
   showJingles?: boolean
   showConteudos?: boolean
-  current?: 'jingles' | 'conteudos'
+  showFotos?: boolean
+  current?: 'jingles' | 'conteudos' | 'fotos'
 } = {}) => {
   const jinglesLinkClass = cn(FOOTER_LINK, current === 'jingles' && 'font-bold text-white')
   const conteudosLinkClass = cn(FOOTER_LINK, current === 'conteudos' && 'font-bold text-white')
+  const fotosLinkClass = cn(FOOTER_LINK, current === 'fotos' && 'font-bold text-white')
 
   return (
     <footer className="bg-[#180a09] text-[rgb(255_248_242/75%)]">
@@ -59,6 +64,17 @@ export const CampaignFooter = ({
                 Bandeiras
               </a>
             </li>
+            {showFotos ? (
+              <li>
+                <Link
+                  href="/fotos"
+                  aria-current={current === 'fotos' ? 'page' : undefined}
+                  className={fotosLinkClass}
+                >
+                  Fotos
+                </Link>
+              </li>
+            ) : null}
             {showConteudos ? (
               <li>
                 <Link

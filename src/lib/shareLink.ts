@@ -15,6 +15,7 @@ export const SHARE_LINK_RESERVED_SLUGS = [
   'abaixo-assinado',
   'jingles',
   'conteudos',
+  'fotos',
   'api',
   'admin',
   'noticia',

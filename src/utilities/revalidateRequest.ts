@@ -1,3 +1,4 @@
+import { getCollectionListingTag } from '@/utilities/documents'
 import { ELECTION_TSE_CACHE_TAG } from '@/utilities/electionCache'
 import { getGlobalCacheTag } from '@/utilities/globals'
 import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipality/municipalityCatalogCache'
@@ -5,6 +6,13 @@ import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipality/municip
 export const REVALIDATE_POSTS_TAG = 'posts' as const
 
 export const REVALIDATE_PRIVACY_POLICY_CACHE_TAG = getGlobalCacheTag('privacy-policy')
+
+/**
+ * C233 — the archive photos listing tag the public album (`/fotos`) caches
+ * under. Derived from the same owner the collection hook busts, so the runbook
+ * tag and the code can never drift.
+ */
+const REVALIDATE_ARCHIVE_PHOTOS_TAG = getCollectionListingTag('archivePhoto')
 
 /**
  * Cache tag of the campaign home content board's external feeds (`unstable_cache`
@@ -19,6 +27,7 @@ const ALLOWED_REVALIDATE_TAGS = [
   ELECTION_TSE_CACHE_TAG,
   MUNICIPALITY_CATALOG_CACHE_TAG,
   REVALIDATE_SOCIAL_FEED_TAG,
+  REVALIDATE_ARCHIVE_PHOTOS_TAG,
 ] as const
 
 type AllowedRevalidateTag = (typeof ALLOWED_REVALIDATE_TAGS)[number]

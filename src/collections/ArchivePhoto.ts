@@ -1,4 +1,11 @@
-import type { CollectionBeforeValidateHook, CollectionConfig, Field } from 'payload'
+import type {
+  CollectionAfterChangeHook,
+  CollectionAfterDeleteHook,
+  CollectionBeforeValidateHook,
+  CollectionConfig,
+  Field,
+} from 'payload'
+import { ValidationError } from 'payload'
 
 import { ARCHIVE_PHOTO_SLUG } from '@/lib/archivePhoto'
 import {
@@ -6,16 +13,20 @@ import {
   ARCHIVE_PHOTO_CATALOG_SOURCES,
   ARCHIVE_PHOTO_CURATED_FIELDS,
   ARCHIVE_PHOTO_DESCRIPTION_MAX_LENGTH,
+  ARCHIVE_PHOTO_PUBLICATION_STATUSES,
   ARCHIVE_PHOTO_SCENES,
   ARCHIVE_PHOTO_VISIBLE_TEXT_MAX_LENGTH,
   archivePhotoCatalogSourceLabels,
   archivePhotoCuratedFieldLabels,
+  archivePhotoPublicationStatusLabels,
   archivePhotoSearchText,
   archivePhotoTakenOn,
   changedArchivePhotoCuratedFields,
+  isArchivePhotoRemovalChannelUrl,
 } from '@/lib/archivePhotoCatalog'
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
 import { canReadArchivePhoto, payloadAdminOnly } from '@/utilities/campaignAccess'
+import { revalidateArchivePhotosListing } from '@/utilities/documents'
 
 /**
  * C231 — private upload collection of the Flickr photo archive: the ORIGINAL
@@ -181,13 +192,19 @@ const deriveArchivePhotoCatalogIndex: CollectionBeforeValidateHook = async ({
             collection: 'municipality',
             id: municipalityId,
             depth: 0,
-            select: { name: true },
+            select: { name: true, slug: true },
             // Intentional admin bypass: the município catalog is read-only geography.
             overrideAccess: true,
             req,
           })
           .catch(() => null)
       : null
+
+  // C233 — the public album reads `depth 0` on this row (the `municipality`
+  // collection is campaign-only), so the label/slug the facet needs are
+  // snapshotted here, where the geography read already happens.
+  data.municipalityName = municipality?.name ?? null
+  data.municipalitySlug = municipality?.slug ?? null
 
   data.searchText = archivePhotoSearchText({
     alt: data.alt ?? originalDoc?.alt,
@@ -210,6 +227,55 @@ const deriveArchivePhotoCatalogIndex: CollectionBeforeValidateHook = async ({
   return data
 }
 
+/**
+ * C233 — fail-closed: a photo only becomes public with a visible removal
+ * channel ("é você nesta foto? peça a remoção"). The channel is product data
+ * configured in the album global; this guard never invents one — it refuses
+ * the approval until a valid channel exists.
+ */
+const requireRemovalChannelForApproval: CollectionBeforeValidateHook = async ({ data, req }) => {
+  if (!data) return data
+  // Only the transition INTO approval is guarded: a later edit of an already
+  // approved photo (the cataloguing pipeline included) never re-checks the
+  // channel, and the album global keeps the open album from losing it.
+  if (data.publicationStatus !== 'approved') return data
+
+  // Intentional admin bypass: the channel is public read-only product data and
+  // the guard must not depend on the role of whoever is approving.
+  const album = await req.payload
+    .findGlobal({ slug: 'photoAlbum', depth: 0, overrideAccess: true, req })
+    .catch(() => null)
+  if (!isArchivePhotoRemovalChannelUrl(album?.removalChannelUrl)) {
+    throw new ValidationError({
+      errors: [
+        {
+          path: 'publicationStatus',
+          message:
+            'Configure o canal de remoção (Configurações → Álbum de fotos) antes de aprovar uma foto.',
+        },
+      ],
+    })
+  }
+  return data
+}
+
+/**
+ * C233 — the seam with the public album: every write of a photo (the ficha,
+ * the cataloguing pipeline, the takedown) busts the listing tag `/fotos`
+ * caches under. A collection hook and not a per-caller line, so a new write
+ * path cannot forget it — an `approved→removed` edit pulls the photo AND its
+ * media (the cached by-id read) down without a deploy.
+ */
+const revalidateArchivePhotosListingAfterChange: CollectionAfterChangeHook = ({ doc }) => {
+  revalidateArchivePhotosListing()
+  return doc
+}
+
+const revalidateArchivePhotosListingAfterDelete: CollectionAfterDeleteHook = ({ doc }) => {
+  revalidateArchivePhotosListing()
+  return doc
+}
+
 export const ArchivePhoto: CollectionConfig = {
   slug: ARCHIVE_PHOTO_SLUG,
   labels: {
@@ -221,7 +287,14 @@ export const ArchivePhoto: CollectionConfig = {
     description:
       'Originais e metadados do acervo de fotos do Flickr (conta depjorgesolla). Só abrem com login da campanha.',
     useAsTitle: 'alt',
-    defaultColumns: ['alt', 'takenOn', 'catalog.scene', 'catalog.municipality', 'catalog.source'],
+    defaultColumns: [
+      'alt',
+      'publicationStatus',
+      'takenOn',
+      'catalog.scene',
+      'catalog.municipality',
+      'catalog.source',
+    ],
     listSearchableFields: ['searchText'],
   },
   access: {
@@ -231,7 +304,9 @@ export const ArchivePhoto: CollectionConfig = {
     delete: payloadAdminOnly,
   },
   hooks: {
-    beforeValidate: [deriveArchivePhotoCatalogIndex],
+    beforeValidate: [deriveArchivePhotoCatalogIndex, requireRemovalChannelForApproval],
+    afterChange: [revalidateArchivePhotosListingAfterChange],
+    afterDelete: [revalidateArchivePhotosListingAfterDelete],
   },
   fields: [
     {
@@ -256,6 +331,22 @@ export const ArchivePhoto: CollectionConfig = {
       },
     },
     catalogGroup,
+    {
+      name: 'publicationStatus',
+      type: 'select',
+      label: 'Publicação',
+      required: true,
+      index: true,
+      defaultValue: 'draft',
+      options: ARCHIVE_PHOTO_PUBLICATION_STATUSES.map((status) => ({
+        value: status,
+        label: archivePhotoPublicationStatusLabels[status],
+      })),
+      admin: {
+        description:
+          'Só "Aprovada" aparece no álbum público (/fotos). "Removida" é o estado de remoção a pedido — a catalogação automática nunca o altera e a foto não volta ao público sem uma nova edição humana.',
+      },
+    },
     {
       name: 'curatedFields',
       type: 'select',
@@ -380,6 +471,26 @@ export const ArchivePhoto: CollectionConfig = {
       name: 'license',
       type: 'text',
       label: 'Licença (Flickr)',
+    },
+    {
+      name: 'municipalityName',
+      type: 'text',
+      label: 'Município (nome)',
+      admin: {
+        readOnly: true,
+        description:
+          'Derivado do município da ficha, para o álbum público ler sem tocar a collection campaign-only.',
+      },
+    },
+    {
+      name: 'municipalitySlug',
+      type: 'text',
+      label: 'Município (slug público)',
+      index: true,
+      admin: {
+        readOnly: true,
+        description: 'Faceta de município da URL pública (`/fotos?municipio=<slug>`).',
+      },
     },
     {
       name: 'searchText',

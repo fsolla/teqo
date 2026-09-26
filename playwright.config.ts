@@ -209,6 +209,16 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
+      // C233 — the public photo album (`/fotos`, approval gate, overlay, media
+      // route, removal channel). Owns its archive photo rows and flips the
+      // `photoAlbum` global, so it serializes behind frontend in dev (shared
+      // dev-server boot) and runs parallel to it in prod.
+      name: 'frontendFotos',
+      testMatch: /frontendFotos\.e2e\.spec\.ts/,
+      dependencies: isProdMode ? [] : ['frontend'],
+      use: { ...devices['Desktop Chrome'], channel: 'chromium' },
+    },
+    {
       name: 'admin',
       testMatch: /admin\.e2e\.spec\.ts/,
       // Serialize behind `frontend` (and the S19 share-link spec) in BOTH modes:
