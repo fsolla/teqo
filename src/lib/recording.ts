@@ -1,7 +1,7 @@
 /**
- * C199 — pure rules of an uploaded recording: the status/step vocabulary, the
- * upload limits and the honest failure copy. No I/O and no `server-only`: the
- * client dialog, the JSON routes, the job and the unit tests share this module.
+ * C199 — pure rules of an uploaded recording: the status/step vocabulary and
+ * the honest failure copy. No I/O and no `server-only`: the client dialog, the
+ * JSON routes, the job and the unit tests share this module.
  */
 import {
   CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES,
@@ -35,9 +35,7 @@ export const RECORDING_SPEAKER_LABEL_MAX_LENGTH = 120
 export const RECORDING_SPEAKER_LABEL_REQUIRED_MESSAGE = 'Informe o nome do falante.'
 export const RECORDING_SPEAKER_LABEL_LONG_MESSAGE = `O nome do falante deve ter até ${RECORDING_SPEAKER_LABEL_MAX_LENGTH} caracteres.`
 
-/** Upload ceiling: hours of plenary are the real case, 4 GiB is the guard. */
-export const RECORDING_MAX_BYTES = 4 * 1024 * 1024 * 1024
-export const RECORDING_MAX_SIZE_LABEL = '4 GB'
+/** Accepted upload type: any video container (`.mkv` often arrives with no type). */
 const RECORDING_ACCEPTED_MIME_PREFIX = 'video/'
 
 export const RECORDING_STEPS = ['extracting', 'transcribing', 'saving'] as const
@@ -146,11 +144,6 @@ export const formatRecordingFileSize = (bytes: number): string => {
   if (bytes >= 1024) return `${Math.round(bytes / 1024).toLocaleString('pt-BR')} KB`
   return `${Math.round(bytes)} B`
 }
-
-export const recordingTooLargeMessage = (bytes: number): string =>
-  `Este arquivo tem ${formatRecordingFileSize(bytes)}. Escolha um vídeo de até ${RECORDING_MAX_SIZE_LABEL}.`
-
-export const recordingUploadTooLargeMessage = `O arquivo excede o limite de ${RECORDING_MAX_SIZE_LABEL}.`
 
 export type RecordingViewModel = {
   id: number

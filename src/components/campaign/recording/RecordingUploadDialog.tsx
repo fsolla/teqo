@@ -24,12 +24,9 @@ import {
   formatRecordingFileSize,
   RECORDING_FILE_REQUIRED_MESSAGE,
   RECORDING_FILE_TYPE_MESSAGE,
-  RECORDING_MAX_BYTES,
-  RECORDING_MAX_SIZE_LABEL,
   RECORDING_TITLE_MAX_LENGTH,
   RECORDING_TITLE_REQUIRED_MESSAGE,
   recordingFileTypeAllowed,
-  recordingTooLargeMessage,
 } from '@/lib/recording'
 import { cn } from '@/lib/utils'
 
@@ -109,10 +106,6 @@ export const RecordingUploadDialog = ({
     setFile(next)
     if (!recordingFileTypeAllowed(next.type)) {
       setFileError(RECORDING_FILE_TYPE_MESSAGE)
-      return
-    }
-    if (next.size > RECORDING_MAX_BYTES) {
-      setFileError(recordingTooLargeMessage(next.size))
     }
   }
 
@@ -285,7 +278,7 @@ export const RecordingUploadDialog = ({
                     <UploadIcon className="size-6 text-muted-foreground" aria-hidden="true" />
                     <span className="mt-2 text-sm font-medium">Selecionar arquivo local</span>
                     <span className="mt-1 text-xs text-muted-foreground">
-                      Vídeos até {RECORDING_MAX_SIZE_LABEL} · MP4, MOV, MKV e formatos compatíveis
+                      MP4, MOV, MKV e formatos compatíveis
                     </span>
                   </>
                 )}
@@ -297,7 +290,7 @@ export const RecordingUploadDialog = ({
                     <AlertDescription className="text-xs">{fileError}</AlertDescription>
                   </Alert>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    Vídeos até {RECORDING_MAX_SIZE_LABEL} · MP4, MOV, MKV e formatos compatíveis
+                    MP4, MOV, MKV e formatos compatíveis
                   </p>
                 </>
               ) : null}

@@ -17,7 +17,10 @@ const MIME_BY_EXTENSION: Record<string, string> = {
   '.aac': 'audio/aac',
   '.flac': 'audio/flac',
   '.m4a': 'audio/mp4',
+  '.m4v': 'video/x-m4v',
   '.mka': 'audio/x-matroska',
+  '.mkv': 'video/x-matroska',
+  '.mov': 'video/quicktime',
   '.mp3': 'audio/mpeg',
   '.mp4': 'video/mp4',
   '.ogg': 'audio/ogg',
@@ -116,18 +119,21 @@ export const uploadLargeMedia = async ({
   inputPath,
   filename: providedFilename,
   env = process.env,
+  maxBytes = MAX_LARGE_MEDIA_BYTES,
   upload = defaultUpload,
 }: {
   inputPath: string
   filename?: string
   env?: Record<string, string | undefined>
+  /** Caller ceiling; `Infinity` drops it (the S3 multipart limit is the bound). */
+  maxBytes?: number
   upload?: (args: S3UploadArgs) => Promise<void>
 }): Promise<LargeMediaUpload> => {
   const storage = requireStorage(env)
   const { size } = await stat(inputPath)
-  if (size > MAX_LARGE_MEDIA_BYTES) {
+  if (size > maxBytes) {
     throw new Error(
-      `Mídia de ${(size / 1024 / 1024 / 1024).toFixed(2)} GiB excede o limite de 5 GiB.`,
+      `Mídia de ${(size / 1024 / 1024 / 1024).toFixed(2)} GiB excede o limite de ${(maxBytes / 1024 / 1024 / 1024).toFixed(0)} GiB.`,
     )
   }
 

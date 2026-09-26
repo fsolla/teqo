@@ -8,15 +8,11 @@ import {
   formatRecordingFileSize,
   isRecordingStatus,
   RECORDING_FAILURE_INTERRUPTED,
-  RECORDING_MAX_BYTES,
-  RECORDING_MAX_SIZE_LABEL,
   RECORDING_STATUSES,
   RECORDING_STEPS,
   recordingFailureMessage,
   recordingFileTypeAllowed,
   recordingStatusLabels,
-  recordingTooLargeMessage,
-  recordingUploadTooLargeMessage,
   toRecordingViewModel,
 } from '@/lib/recording'
 import {
@@ -78,13 +74,9 @@ describe('recording vocabulary (C199)', () => {
     expect(recordingFileTypeAllowed('image/png')).toBe(false)
   })
 
-  it('formats sizes in pt-BR and names the limit', () => {
-    expect(formatRecordingFileSize(4.6 * 1024 ** 3)).toContain('GB')
-    expect(formatRecordingFileSize(812 * 1024 ** 2)).toBe('812 MB')
-    expect(recordingTooLargeMessage(4.6 * 1024 ** 3)).toContain('4,6 GB')
-    expect(recordingTooLargeMessage(4.6 * 1024 ** 3)).toContain(RECORDING_MAX_SIZE_LABEL)
-    expect(recordingUploadTooLargeMessage).toContain(RECORDING_MAX_SIZE_LABEL)
-    expect(RECORDING_MAX_BYTES).toBe(4 * 1024 ** 3)
+  it('formats sizes in pt-BR without imposing a ceiling', () => {
+    expect(formatRecordingFileSize(4.6 * 1024 ** 3)).toBe('4,6 GB')
+    expect(formatRecordingFileSize(24 * 1024 ** 3)).toBe('24 GB')
   })
 
   it('formats the byte range below 1 KB honestly', () => {
