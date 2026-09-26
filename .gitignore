@@ -154,3 +154,7 @@ next-env.d.ts
 # Changelog aggregate is a regenerable artifact (OPS85) — entries live in docs/changelog/
 /docs/CHANGELOG-AGENTS.md
 /data/tse-2022/
+
+# Briefing Geral de Militância (interno; repo público).
+/data/briefing-geral-militancia/
+/docs/research/briefing-geral-militancia/
