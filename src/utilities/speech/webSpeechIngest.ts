@@ -1,8 +1,8 @@
 import 'server-only'
 
-import { mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { dirname, extname, join } from 'node:path'
+import { join } from 'node:path'
 import type { Payload } from 'payload'
 
 import {
@@ -32,10 +32,8 @@ import { downloadUrlToFile } from '@/utilities/media/downloadToFile'
 import { ffmpegBinary, messageOf, runFfmpeg } from '@/utilities/media/ffmpeg'
 import {
   deleteLargeMedia,
-  isLargeMedia,
   LARGE_MEDIA_THRESHOLD_BYTES,
   uploadLargeMedia,
-  type LargeMediaUpload,
 } from '@/utilities/media/largeS3Upload'
 import {
   downloadWithYtDlp,
@@ -48,6 +46,7 @@ import {
   withPayloadTransaction,
   type PayloadTransactionRequest,
 } from '@/utilities/payloadTransaction'
+import { createPrivateMediaFromFile } from '@/utilities/privateMedia/privateMediaUpload'
 import {
   classifySpeech,
   type SpeechClassificationResult,
@@ -293,8 +292,6 @@ const extractTranscript = async ({
   return { segments, durationSeconds, asrSeconds }
 }
 
-const noopCleanup = async (): Promise<void> => {}
-
 type WebSpeechMediaMirrorOptions = {
   thresholdBytes?: number
   uploadLarge?: typeof uploadLargeMedia
@@ -307,60 +304,31 @@ export const createWebSpeechMediaMirror =
     uploadLarge = uploadLargeMedia,
     removeLarge = deleteLargeMedia,
   }: WebSpeechMediaMirrorOptions = {}): WebSpeechMediaMirror =>
-  async ({ payload, req, alt, inputPath }) => {
-    const { size } = await stat(inputPath)
-    if (!isLargeMedia(size, thresholdBytes)) {
-      const media = await payload.create({
-        collection: INTERNET_SPEECH_MEDIA_SLUG,
-        data: { alt },
-        filePath: inputPath,
-        req,
-        // Intentional bypass: the ingestion CLI is a trusted actor with no session.
-        overrideAccess: true,
-      })
-      return { id: media.id, cleanup: noopCleanup }
-    }
-
-    const placeholderPath = join(dirname(inputPath), `payload-placeholder${extname(inputPath)}`)
-    await writeFile(placeholderPath, Buffer.alloc(0))
-    let filename: string | null = null
-
-    try {
-      const media = await payload.create({
-        collection: INTERNET_SPEECH_MEDIA_SLUG,
-        data: { alt },
-        filePath: placeholderPath,
-        req,
-        // Intentional bypass: the placeholder row is owned by the trusted ingestion CLI.
-        overrideAccess: true,
-      })
-      filename = media.filename ?? null
-      if (!filename) throw new Error('A mídia grande não recebeu um filename no S3.')
-      const uploadedFilename = filename
-
-      const uploaded: LargeMediaUpload = await uploadLarge({
-        inputPath,
-        filename: uploadedFilename,
-      })
-      await payload.update({
-        collection: INTERNET_SPEECH_MEDIA_SLUG,
-        id: media.id,
-        data: { filesize: uploaded.filesize, mimeType: uploaded.mimeType },
-        req,
-        // Intentional bypass: the trusted ingestion CLI finalizes its own media row.
-        overrideAccess: true,
-      })
-      return {
-        id: media.id,
-        cleanup: async () => {
-          await removeLarge({ filename: uploadedFilename }).catch(() => undefined)
-        },
-      }
-    } catch (error) {
-      if (filename) await removeLarge({ filename }).catch(() => undefined)
-      throw error
-    }
-  }
+  ({ payload, req, alt, inputPath }) =>
+    createPrivateMediaFromFile({
+      inputPath,
+      thresholdBytes,
+      uploadLarge,
+      removeLarge,
+      create: (filePath) =>
+        payload.create({
+          collection: INTERNET_SPEECH_MEDIA_SLUG,
+          data: { alt },
+          filePath,
+          req,
+          // Intentional bypass: the ingestion CLI is a trusted actor with no session.
+          overrideAccess: true,
+        }),
+      update: (id, data) =>
+        payload.update({
+          collection: INTERNET_SPEECH_MEDIA_SLUG,
+          id,
+          data,
+          req,
+          // Intentional bypass: the trusted ingestion CLI finalizes its own media row.
+          overrideAccess: true,
+        }),
+    })
 
 const defaultMirrorMedia = createWebSpeechMediaMirror()
 

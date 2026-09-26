@@ -33,7 +33,6 @@ import {
   retryRecordingForActor,
 } from '@/app/(campaign)/campanha/actions/recording'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
-import { RECORDING_MAX_BYTES } from '@/lib/recording'
 import {
   RECORDING_FORBIDDEN_MESSAGE,
   RECORDING_SPEAKER_UNKNOWN_MESSAGE,
@@ -345,7 +344,6 @@ describe('uploaded recordings (C199)', () => {
         recordedAt: undefined,
       },
       body,
-      contentLength: bytes.length,
       startJob: (recordingId) => scheduled.push(recordingId),
     })
     createdRecordingIds.add(id)
@@ -375,31 +373,97 @@ describe('uploaded recordings (C199)', () => {
     expect(Buffer.from(await response.arrayBuffer())).toEqual(bytes)
   })
 
-  it('refuses an upload above the ceiling without leaving a phantom row', async () => {
+  it('accepts a recording above the payload buffer boundary through the multipart seam', async () => {
+    const bytes = Buffer.from('plenaria-de-horas')
     const body = new ReadableStream<Uint8Array>({
       start(controller) {
-        controller.enqueue(Buffer.alloc(8))
+        controller.enqueue(bytes)
         controller.close()
       },
     })
+    const scheduled: number[] = []
+    const uploaded: { filename?: string; filesize: number }[] = []
+    const removed: string[] = []
+
+    const { id } = await receiveRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: { title: 'Sessão longa', filename: 'sessao longa.MP4', recordedAt: undefined },
+      body,
+      largeThresholdBytes: 0,
+      startJob: (recordingId) => scheduled.push(recordingId),
+      uploadLarge: async ({ filename }) => {
+        uploaded.push({ filename, filesize: bytes.length })
+        return {
+          filename: filename ?? 'sessao_longa.MP4',
+          mimeType: 'video/mp4',
+          filesize: bytes.length,
+          url: 'http://127.0.0.1:3900/teqo-media/sessao_longa.MP4',
+        }
+      },
+      removeLarge: async ({ filename }) => {
+        removed.push(filename)
+      },
+    })
+    createdRecordingIds.add(id)
+
+    const recording = await payload.findByID({
+      collection: 'recording',
+      id,
+      depth: 1,
+      overrideAccess: true,
+    })
+    expect(recording.status).toBe('processing')
+    expect(recording.step).toBe('extracting')
+    expect(scheduled).toEqual([id])
+
+    const media = recording.media
+    expect(media && typeof media === 'object').toBe(true)
+    if (media && typeof media === 'object') {
+      createdMediaIds.add(media.id)
+      // The original file name survives the placeholder (never the placeholder name).
+      expect(media.filename).toContain('sessao_longa')
+      expect(media.filesize).toBe(bytes.length)
+      expect(media.mimeType).toBe('video/mp4')
+      expect(uploaded).toEqual([{ filename: media.filename, filesize: bytes.length }])
+    }
+    expect(removed).toEqual([])
+  })
+
+  it('removes the multipart object and leaves no phantom row when the large upload fails', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(Buffer.from('falha-grande'))
+        controller.close()
+      },
+    })
+    const removed: string[] = []
 
     await expect(
       receiveRecordingUpload({
         payload,
         actor: communicator,
-        metadata: { title: 'Grande demais', filename: 'grande.mp4', recordedAt: undefined },
+        metadata: { title: 'Grande que falha', filename: 'falha.mp4', recordedAt: undefined },
         body,
-        contentLength: RECORDING_MAX_BYTES + 1,
+        largeThresholdBytes: 0,
         startJob: () => undefined,
+        uploadLarge: async () => {
+          throw new Error('S3 indisponível.')
+        },
+        removeLarge: async ({ filename }) => {
+          removed.push(filename)
+        },
       }),
-    ).rejects.toThrow('O arquivo excede o limite de 4 GB.')
+    ).rejects.toThrow('S3 indisponível.')
 
     const rows = await payload.find({
       collection: 'recording',
-      where: { title: { equals: 'Grande demais' } },
+      where: { title: { equals: 'Grande que falha' } },
       overrideAccess: true,
     })
     expect(rows.docs).toHaveLength(0)
+    expect(removed).toHaveLength(1)
+    expect(removed[0]).toContain('falha')
   })
 
   it('preserves a long recording transcript and its search text', async () => {

@@ -40,7 +40,34 @@ describe('large S3 media upload', () => {
 
   it('maps the media extension to a safe content type', () => {
     expect(mimeTypeForPath('/tmp/source.mp4')).toBe('video/mp4')
+    expect(mimeTypeForPath('/tmp/source.mov')).toBe('video/quicktime')
+    expect(mimeTypeForPath('/tmp/source.mkv')).toBe('video/x-matroska')
+    expect(mimeTypeForPath('/tmp/source.m4v')).toBe('video/x-m4v')
     expect(mimeTypeForPath('/tmp/source.unknown')).toBe('application/octet-stream')
+  })
+
+  it('honors the default ceiling and an explicit caller override', async () => {
+    await withTempFile(async (path) => {
+      await expect(
+        uploadLargeMedia({
+          inputPath: path,
+          env: s3Env,
+          maxBytes: 8,
+          upload: async () => undefined,
+        }),
+      ).rejects.toThrow('excede o limite')
+
+      const keys: string[] = []
+      await uploadLargeMedia({
+        inputPath: path,
+        env: s3Env,
+        maxBytes: Number.POSITIVE_INFINITY,
+        upload: async ({ key }) => {
+          keys.push(key)
+        },
+      })
+      expect(keys).toHaveLength(1)
+    })
   })
 
   it('streams a large file to S3 and returns row metadata', async () => {

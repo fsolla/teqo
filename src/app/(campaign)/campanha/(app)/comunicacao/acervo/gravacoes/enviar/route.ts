@@ -7,7 +7,6 @@ import {
   RECORDING_FILE_TYPE_MESSAGE,
   RECORDING_TITLE_REQUIRED_MESSAGE,
   recordingFileTypeAllowed,
-  recordingUploadTooLargeMessage,
   toRecordingViewModel,
 } from '@/lib/recording'
 import {
@@ -49,7 +48,6 @@ const SAFE_MESSAGES = [
   RECORDING_TITLE_REQUIRED_MESSAGE,
   RECORDING_FILE_NAME_MESSAGE,
   RECORDING_FILE_TYPE_MESSAGE,
-  recordingUploadTooLargeMessage,
   RECORDING_BODY_MISSING_MESSAGE,
 ]
 
@@ -78,13 +76,6 @@ export const POST = async (request: Request): Promise<NextResponse<RecordingUplo
     return errorResponse(RECORDING_FILE_TYPE_MESSAGE, 400)
   }
 
-  const contentLengthHeader = request.headers.get('content-length')
-  const parsedLength = contentLengthHeader === null ? null : Number(contentLengthHeader)
-  const contentLength =
-    parsedLength !== null && Number.isFinite(parsedLength) && parsedLength >= 0
-      ? parsedLength
-      : null
-
   try {
     const payload = await getPayload({ config })
     const { id } = await receiveRecordingUpload({
@@ -92,7 +83,6 @@ export const POST = async (request: Request): Promise<NextResponse<RecordingUplo
       actor: user,
       metadata: parsed.data,
       body: request.body,
-      contentLength,
     })
 
     const recording = await payload.findByID({
