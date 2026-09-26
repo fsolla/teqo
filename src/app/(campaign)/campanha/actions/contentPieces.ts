@@ -36,6 +36,16 @@ import {
   searchContentPieceLeaderOptions,
   type ContentPieceLeaderOption,
 } from '@/utilities/content/contentPieceLeaderOptions'
+import {
+  contentPieceExistsForPostIdentity,
+  isContentPieceSourceUrlDuplicateError,
+} from '@/utilities/content/contentPieceLink'
+import {
+  createContentPieceFromProfilePost,
+  listContentPieceProfileImportCandidates,
+  type ContentPieceProfileImportListing,
+  type ContentPieceProfileImportOutcome,
+} from '@/utilities/content/contentPieceProfileImport'
 import { startContentPieceJobInBackground } from '@/utilities/content/contentPieceScheduler'
 import { onPayloadTransactionCommit, withPayloadTransaction } from '@/utilities/payloadTransaction'
 
@@ -332,16 +342,11 @@ export const addContentPieceByLinkForActor = async (input: {
   const link = parseContentPieceLink(parsed.url)
   if (!link) throw new Error(CONTENT_PIECE_LINK_INVALID_MESSAGE)
 
-  const existing = await payload.find({
-    collection: 'contentPiece',
-    where: { sourceUrl: { equals: link.canonicalUrl } },
-    depth: 0,
-    limit: 1,
-    pagination: false,
-    user: actor,
-    overrideAccess: false,
-  })
-  if (existing.docs[0]) throw new Error(CONTENT_PIECE_LINK_DUPLICATE_MESSAGE)
+  // The post's identity, not the URL spelling: pasting `/p/ABC/` answers the
+  // same duplicate as `/reel/ABC/` (C230 shares this probe with the importer).
+  if (await contentPieceExistsForPostIdentity({ payload, actor, link })) {
+    throw new Error(CONTENT_PIECE_LINK_DUPLICATE_MESSAGE)
+  }
 
   try {
     // A link is catalogued as a video piece; the extraction reclassifies an
@@ -367,14 +372,43 @@ export const addContentPieceByLinkForActor = async (input: {
   } catch (error) {
     // A concurrent paste can still hit the unique index; it is the same
     // duplicate the probe above answers, so it maps to the same message.
-    if (
-      error instanceof Error &&
-      /source_url|sourceUrl|duplicate key|unique/i.test(error.message)
-    ) {
+    if (isContentPieceSourceUrlDuplicateError(error)) {
       throw new Error(CONTENT_PIECE_LINK_DUPLICATE_MESSAGE)
     }
     throw error
   }
+}
+
+/**
+ * C230 — lists the novelties of the official profile: the feed is read with
+ * the global's credential (fail-closed) and each post is checked against the
+ * Central by the identity of the post, never by the URL spelling. The listing
+ * persists nothing; the confirmation creates the pieces one by one.
+ */
+export const listContentPieceProfileImportCandidatesForActor =
+  async (): Promise<ContentPieceProfileImportListing> => {
+    const { payload, actor } = await getCampaignActionContext()
+
+    if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+
+    return listContentPieceProfileImportCandidates({ payload, actor })
+  }
+
+/**
+ * C230 — creates ONE draft from ONE listed media through the C220 pipeline
+ * (`existing` covers a repeated/concurrent import). The dialog calls it per
+ * candidate so one failure never stops the others.
+ */
+export const createContentPieceFromProfilePostForActor = async (input: {
+  url: string
+}): Promise<{ outcome: ContentPieceProfileImportOutcome }> => {
+  const parsed = contentPieceLinkRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
+
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+
+  const outcome = await createContentPieceFromProfilePost({ payload, actor, url: parsed.url })
+  return { outcome }
 }
 
 /**

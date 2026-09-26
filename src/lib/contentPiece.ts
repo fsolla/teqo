@@ -395,7 +395,14 @@ type ContentPieceYoutubeLink = {
 
 export type ContentPieceLink = ContentPieceInstagramLink | ContentPieceYoutubeLink
 
-const INSTAGRAM_KINDS = ['p', 'reel', 'reels', 'tv']
+/**
+ * The canonical path kinds of an Instagram post. The kind is presentation and
+ * the shortcode is the identity, so the identity probe spells all of them.
+ */
+const INSTAGRAM_CANONICAL_KINDS = ['p', 'reel', 'tv']
+
+/** The kinds the paste accepts — `reels` is the same presentation as `reel`. */
+const INSTAGRAM_KINDS: readonly string[] = [...INSTAGRAM_CANONICAL_KINDS, 'reels']
 
 /**
  * Normalizes an Instagram or YouTube link into its canonical form, dropping
@@ -468,6 +475,68 @@ export const contentPieceOriginFromLink = (
 /** A short, identifyable provisional title while the cataloguing has not run. */
 export const contentPieceLinkTitle = (link: ContentPieceLink): string =>
   link.origin === 'instagram' ? `Instagram · ${link.shortcode}` : `YouTube · ${link.videoId}`
+
+/**
+ * C230 — every canonical spelling of one post's `sourceUrl`. The Instagram
+ * kind in the path (`p`, `reel`, `tv`) is presentation: the same post can be
+ * pasted or served under another kind, so the identity is the shortcode and a
+ * catalogue probe matches the piece through all its spellings in one `in`
+ * query over the unique `sourceUrl` index. YouTube has a single canonical URL
+ * — the video id is already the whole identity.
+ */
+export const contentPiecePostIdentityUrls = (link: ContentPieceLink): string[] =>
+  link.origin === 'instagram'
+    ? INSTAGRAM_CANONICAL_KINDS.map(
+        (kind) => `https://www.instagram.com/${kind}/${link.shortcode}/`,
+      )
+    : [link.canonicalUrl]
+
+/** One media item of the official profile feed, as the C230 import reads it. */
+export type ContentPieceProfilePost = {
+  permalink: string
+  mediaType: string
+  mediaUrl?: string | null
+}
+
+/**
+ * The link-only reasons the profile metadata alone can tell: a carousel never
+ * offers a single file, and the API omits `media_url` on protected media. The
+ * other reasons only the extraction job can find, so the listing never claims
+ * them.
+ */
+export type ContentPieceProfileLinkOnlyReason = Extract<
+  ContentPieceLinkFailureReason,
+  'carrossel' | 'indisponivel'
+>
+
+export type ContentPieceProfileCandidate = {
+  /** The canonical link the piece will carry — what the import then creates. */
+  url: string
+  /**
+   * Why the piece will circulate only by its link, told by the feed metadata
+   * before the job runs. Null means the job will try the official file.
+   */
+  linkOnlyReason: ContentPieceProfileLinkOnlyReason | null
+}
+
+/**
+ * C230 — classifies one feed media into an import candidate. The official
+ * metadata already answers whether a single file is offered (a carousel never
+ * has one; protected audio omits `media_url`), so the receipt can name the
+ * peça-link outcome honestly. A permalink the catalogue cannot parse is not a
+ * candidate at all — the importer never invents an identity.
+ */
+export const contentPieceProfileCandidateFromPost = (
+  post: ContentPieceProfilePost,
+): ContentPieceProfileCandidate | null => {
+  const link = parseContentPieceLink(post.permalink)
+  if (!link) return null
+  return {
+    url: link.canonicalUrl,
+    linkOnlyReason:
+      post.mediaType === 'CAROUSEL_ALBUM' ? 'carrossel' : post.mediaUrl ? null : 'indisponivel',
+  }
+}
 
 export type ContentPieceViewModel = {
   id: number

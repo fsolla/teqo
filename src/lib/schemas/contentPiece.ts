@@ -30,8 +30,15 @@ export const CONTENT_PIECE_GENERIC_ERROR_MESSAGE =
 /** The pasted link is not an Instagram/YouTube publication. */
 export const CONTENT_PIECE_LINK_INVALID_MESSAGE = 'Cole um link do Instagram ou do YouTube.'
 
-/** The same link is already catalogued (the `sourceUrl` unique constraint). */
+/** The same link is already catalogued (the `sourceUrl` identity probe). */
 export const CONTENT_PIECE_LINK_DUPLICATE_MESSAGE = 'Esta peça já está na Central.'
+
+/** C230 — the official Instagram credential is missing or the feed is off. */
+export const CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE = 'Instagram ainda não configurado.'
+
+/** C230 — the Graph API did not answer the profile listing. */
+export const CONTENT_PIECE_PROFILE_IMPORT_FEED_ERROR_MESSAGE =
+  'Não foi possível falar com o Instagram agora. Tente novamente.'
 
 /** The upload arrived without a usable file name (a field error). */
 const CONTENT_PIECE_FILE_NAME_MESSAGE = 'Nome de arquivo inválido.'
@@ -73,6 +80,13 @@ export type ContentPieceUploadMetadata = z.infer<typeof contentPieceUploadMetada
 export const contentPieceLinkRequestSchema = z.object({
   url: z.string().trim().min(1, CONTENT_PIECE_LINK_INVALID_MESSAGE),
 })
+
+/**
+ * C230 — list the novelties of the official profile: the request carries no
+ * input (the window is the server's decision), so the schema only keeps the
+ * envelope honest.
+ */
+export const contentPieceProfileImportRequestSchema = z.object({})
 
 /** The editable catalogue of one piece (the ficha form). */
 export const contentPieceUpdateRequestSchema = z.object({
@@ -146,6 +160,16 @@ export const CONTENT_PIECE_SAFE_MESSAGES = [
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
   CONTENT_PIECE_MEDIA_ALREADY_ATTACHED_MESSAGE,
   CONTENT_PIECE_TYPE_INVALID_MESSAGE,
+] as const
+
+/**
+ * The messages the C230 profile-import routes may return verbatim: the shared
+ * piece messages plus the feed failure and the fail-closed credential refusal.
+ */
+export const CONTENT_PIECE_PROFILE_IMPORT_SAFE_MESSAGES = [
+  ...CONTENT_PIECE_SAFE_MESSAGES,
+  CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE,
+  CONTENT_PIECE_PROFILE_IMPORT_FEED_ERROR_MESSAGE,
 ] as const
 
 /**

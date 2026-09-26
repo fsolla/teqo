@@ -505,6 +505,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/reel',
       'src/lib/recording',
       'src/lib/contentPiece',
+      // C230 — the piece request schemas and their safe messages (the risk
+      // area maps to the vertical it belongs to).
+      'src/lib/schemas/contentPiece.ts',
       // S37 — the public-figure catalog of the ficha picker.
       'src/lib/publicFigureCatalog.ts',
       'src/lib/privateMedia',

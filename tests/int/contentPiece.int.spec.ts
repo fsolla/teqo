@@ -32,10 +32,14 @@ vi.mock('@/utilities/campaignAuth', () => ({
 }))
 
 import { GET } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/[id]/arquivo/route'
+import { POST as postProfileImportCreate } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/importar/criar/route'
+import { POST as postProfileImport } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/importar/route'
 import {
   addContentPieceByLinkForActor,
+  createContentPieceFromProfilePostForActor,
   deleteContentPieceForActor,
   getContentPieceStatusesForActor,
+  listContentPieceProfileImportCandidatesForActor,
   retryContentPieceForActor,
   searchContentPieceLeaderOptionsForActor,
   setContentPiecePublishedForActor,
@@ -58,7 +62,10 @@ import {
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
+  CONTENT_PIECE_LINK_INVALID_MESSAGE,
   CONTENT_PIECE_NOT_FOUND_MESSAGE,
+  CONTENT_PIECE_PROFILE_IMPORT_FEED_ERROR_MESSAGE,
+  CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE,
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
 } from '@/lib/schemas/contentPiece'
 import { slugify } from '@/lib/slug'
@@ -81,6 +88,11 @@ import {
   resolveContentPieceSource,
 } from '@/utilities/content/contentPieceLink'
 import { loadContentPieceListPageData } from '@/utilities/content/contentPiecePageData'
+import {
+  CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW,
+  createContentPieceFromProfilePost,
+  listContentPieceProfileImportCandidates,
+} from '@/utilities/content/contentPieceProfileImport'
 import {
   getPublishedContentPieceBySlug,
   getPublishedContentPieceItems,
@@ -1628,9 +1640,250 @@ describe('content pieces (C211)', () => {
     await expect(addContentPieceByLinkForActor({ url: `${url}?igsh=abc` })).rejects.toThrow(
       CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
     )
+    // C230 — the identity is the post, not the URL spelling: the same
+    // shortcode under another kind is the same duplicate.
+    await expect(
+      addContentPieceByLinkForActor({ url: 'https://www.instagram.com/p/DUPLICADO/' }),
+    ).rejects.toThrow(CONTENT_PIECE_LINK_DUPLICATE_MESSAGE)
     await expect(
       addContentPieceByLinkForActor({ url: 'https://twitter.com/x/status/1' }),
     ).rejects.toThrow()
+  })
+
+  describe('C230 — import from the official profile', () => {
+    it('lists only the novelties and dedupes by post identity across URL kinds', async () => {
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+      await createPiece({
+        title: 'Peça já catalogada',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: `https://www.instagram.com/p/EX${marker}/`,
+      })
+
+      let receivedMaxResults: number | null = null
+      const listing = await listContentPieceProfileImportCandidates({
+        payload,
+        actor: communicator,
+        loadFeed: async (args) => {
+          receivedMaxResults = args.maxResults
+          return {
+            username: 'depjorgesolla',
+            posts: [
+              instagramPost({ permalink: `https://www.instagram.com/reel/NO${marker}/` }),
+              instagramPost({
+                id: 'carrossel',
+                mediaType: 'CAROUSEL_ALBUM',
+                mediaUrl: null,
+                permalink: `https://www.instagram.com/p/CA${marker}/`,
+              }),
+              instagramPost({
+                id: 'protegido',
+                mediaType: 'REEL',
+                mediaUrl: null,
+                permalink: `https://www.instagram.com/reel/PR${marker}/`,
+              }),
+              // The same post already in the Central, served under another kind.
+              instagramPost({
+                id: 'existente',
+                permalink: `https://www.instagram.com/reel/EX${marker}/`,
+              }),
+            ],
+          }
+        },
+      })
+
+      expect(receivedMaxResults).toBe(CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW)
+      expect(listing.found).toBe(4)
+      expect(listing.existingCount).toBe(1)
+      expect(listing.candidates).toEqual([
+        { url: `https://www.instagram.com/reel/NO${marker}/`, linkOnlyReason: null },
+        { url: `https://www.instagram.com/p/CA${marker}/`, linkOnlyReason: 'carrossel' },
+        { url: `https://www.instagram.com/reel/PR${marker}/`, linkOnlyReason: 'indisponivel' },
+      ])
+    })
+
+    it('fails closed without the credential and never touches the feed', async () => {
+      await setInstagramSettings(false)
+      let called = false
+
+      await expect(
+        listContentPieceProfileImportCandidates({
+          payload,
+          actor: communicator,
+          loadFeed: async () => {
+            called = true
+            return { username: null, posts: [] }
+          },
+        }),
+      ).rejects.toThrow(CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE)
+      expect(called).toBe(false)
+    })
+
+    it('maps a feed failure to the honest message', async () => {
+      await setInstagramSettings(true)
+
+      await expect(
+        listContentPieceProfileImportCandidates({
+          payload,
+          actor: communicator,
+          loadFeed: async () => {
+            throw new Error('Graph API fora do ar')
+          },
+        }),
+      ).rejects.toThrow(CONTENT_PIECE_PROFILE_IMPORT_FEED_ERROR_MESSAGE)
+    })
+
+    it('creates one draft in the link shape and never duplicates on re-import', async () => {
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+      const started: number[] = []
+
+      const outcome = await createContentPieceFromProfilePost({
+        payload,
+        actor: communicator,
+        url: `https://www.instagram.com/reel/CR${marker}/`,
+        startJob: (id) => started.push(id),
+      })
+      expect(outcome).toBe('created')
+
+      const rows = await payload.find({
+        collection: 'contentPiece',
+        where: {
+          sourceUrl: {
+            in: [
+              `https://www.instagram.com/p/CR${marker}/`,
+              `https://www.instagram.com/reel/CR${marker}/`,
+              `https://www.instagram.com/tv/CR${marker}/`,
+            ],
+          },
+        },
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(rows.totalDocs).toBe(1)
+      createdPieceIds.add(rows.docs[0]!.id)
+      expect(rows.docs[0]).toMatchObject({
+        title: `Instagram · CR${marker}`,
+        type: 'video',
+        origin: 'instagram',
+        status: 'rascunho',
+        processingStatus: 'processando',
+        step: 'extraindo',
+      })
+      expect(started).toEqual([rows.docs[0]!.id])
+
+      // The same post under another kind is the same identity: no twin, no job.
+      await expect(
+        createContentPieceFromProfilePost({
+          payload,
+          actor: communicator,
+          url: `https://www.instagram.com/p/CR${marker}/`,
+          startJob: (id) => started.push(id),
+        }),
+      ).resolves.toBe('existing')
+      expect(started).toHaveLength(1)
+    })
+
+    it('refuses a non-Instagram URL in the profile creator', async () => {
+      await expect(
+        createContentPieceFromProfilePost({
+          payload,
+          actor: communicator,
+          url: 'https://youtu.be/VIDEO1',
+        }),
+      ).rejects.toThrow(CONTENT_PIECE_LINK_INVALID_MESSAGE)
+    })
+
+    it('gates the actions behind the communication catalog', async () => {
+      await setInstagramSettings(true)
+      getCampaignUserMock.mockResolvedValue(leader)
+
+      await expect(listContentPieceProfileImportCandidatesForActor()).rejects.toThrow(
+        CONTENT_PIECE_FORBIDDEN_MESSAGE,
+      )
+      await expect(
+        createContentPieceFromProfilePostForActor({ url: 'https://www.instagram.com/reel/GATE1/' }),
+      ).rejects.toThrow(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+    })
+
+    it('answers the JSON envelope of the two import routes', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+
+      // Without the credential the listing route refuses with the safe message.
+      await setInstagramSettings(false)
+      const unconfigured = await postProfileImport(
+        new Request('http://localhost/campanha/comunicacao/conteudos/importar', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+          body: JSON.stringify({}),
+        }),
+      )
+      expect(unconfigured.status).toBe(400)
+      await expect(unconfigured.json()).resolves.toEqual({
+        status: 'error',
+        message: CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE,
+      })
+
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+      const url = `https://www.instagram.com/reel/ROTA${marker}/`
+      const callCreate = () =>
+        postProfileImportCreate(
+          new Request('http://localhost/campanha/comunicacao/conteudos/importar/criar', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+            body: JSON.stringify({ url }),
+          }),
+        )
+
+      const created = await callCreate()
+      expect(created.status).toBe(200)
+      await expect(created.json()).resolves.toEqual({ status: 'success', outcome: 'created' })
+      const rows = await payload.find({
+        collection: 'contentPiece',
+        where: { sourceUrl: { equals: url } },
+        depth: 0,
+        overrideAccess: true,
+      })
+      createdPieceIds.add(rows.docs[0]!.id)
+      await expect((await callCreate()).json()).resolves.toEqual({
+        status: 'success',
+        outcome: 'existing',
+      })
+
+      const crossOrigin = await postProfileImportCreate(
+        new Request('http://localhost/campanha/comunicacao/conteudos/importar/criar', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'https://evil.example' },
+          body: JSON.stringify({ url }),
+        }),
+      )
+      expect(crossOrigin.status).toBe(403)
+    })
+
+    it('creates through the action without leaving the communication gate', async () => {
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+      const url = `https://www.instagram.com/reel/ACT${marker}/`
+      getCampaignUserMock.mockResolvedValue(communicator)
+
+      await expect(createContentPieceFromProfilePostForActor({ url })).resolves.toEqual({
+        outcome: 'created',
+      })
+
+      const rows = await payload.find({
+        collection: 'contentPiece',
+        where: { sourceUrl: { equals: url } },
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(rows.totalDocs).toBe(1)
+      createdPieceIds.add(rows.docs[0]!.id)
+      await expect(createContentPieceFromProfilePostForActor({ url })).resolves.toEqual({
+        outcome: 'existing',
+      })
+    })
   })
 
   it('filters and searches the list', async () => {
