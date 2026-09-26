@@ -4,6 +4,12 @@ Ativos oficiais de marca, recebidos no kit "kit solla 1313" (2026-09-19) e
 versionados aqui para o site, os reels e as peças da campanha. O manual de
 marca completo está em [`docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`](../../docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf).
 
+Este README descreve os arquivos e seus quirks técnicos de uso — e eles
+continuam valendo ao usar cada ativo. A identidade visual viva pertence a
+[`DESIGN.md`](../../DESIGN.md) §7 (Evolution): o kit é **acervo disponível, não
+camisa de força** — derive/recrie quando um padrão melhor for decidido, com o
+porquê registrado.
+
 Origem externa: `/home/fsolla/Downloads/OneDrive_2026-09-19/kit solla 1313/PNGs/`
 (os arquivos pesados do kit original — a foto em alta e o `.ai` do manual — não
 são versionados).

@@ -63,6 +63,7 @@ Leia screenshots e referências **direto com a tool Read** — nunca peça ao hu
 ## Inegociáveis
 
 - **Você é o tier certo para o smoke do guard dos agentes de design.** A semântica de `permission` é do **frontmatter, não do modelo**: validar guard de escrita / vetores enumerados pode rodar aqui (barato) em vez de queimar o `designer` frontier. O output continua `DEGRADED`.
-- **Nunca escreva fora de `docs/plans/*-ui-design*`** (o `.html` do item e a pasta de assets): a `permission` barra o resto — `src/`, `.agents/`, `.opencode/`, `scripts/` e planos existentes são somente leitura; não tente contornar por shell.
+- **Nunca escreva fora de `docs/plans/*-ui-design*`** (o `.html` do item e a pasta de assets): a `permission` barra o resto — `src/`, `.agents/`, `.opencode/`, `scripts/`, `DESIGN.md` e planos existentes são somente leitura; não tente contornar por shell.
+- **Evolução de `DESIGN.md` é proposta, nunca aplicada aqui:** tier degradado não certifica regra viva — registre a proposta no artefato/PR e devolva a decisão ao frontier/humano.
 - **Nunca implemente a feature** nem decida engenharia (schema, componente final, assinatura).
 - **Nunca certifique:** design degradado é insumo para o humano decidir.

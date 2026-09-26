@@ -62,9 +62,9 @@ antes do deploy**.
 Item que **muda UI** (Impeccable B/C/D) tem dono visual: o agente `designer`
 (`.opencode/agent/designer.md`), com a doutrina `.agents/skills/plan-issue/ui-design-html.md`
 como fonte única do artefato `docs/plans/<slug>-ui-design.html`
-(+ `-ui-design-assets/*.svg`). O implementador porta o design aprovado
-classe-a-classe; **nunca improvisa estrutura visual** (data/routes/queries/copy
-seguem com ele).
+(+ `-ui-design-assets/*.svg`) e das regras visuais vivas (`DESIGN.md` §7). O
+implementador porta o design aprovado classe-a-classe; **nunca improvisa
+estrutura visual** (data/routes/queries/copy seguem com ele).
 
 **Triggers (dispatch do `designer`) — a lista fechada da intenção:**
 
@@ -78,6 +78,10 @@ seguem com ele).
   `designer` contra o app **renderizado** (screenshots 390/1280 + estados
   críticos). Os non-triggers abaixo **não** acionam (c).
 - **(d) Ícones/ilustrações** próprios → saem do `designer` (SVG na doutrina).
+- **(e) Padrão visual melhor decidido** (revisão anti-slop, brief de estilo,
+  referência, redesign) → o `designer` registra a evolução em `DESIGN.md` §7
+  com o porquê — e no artefato do item quando a UI aprovada mudar. Skill que
+  sugere padrão novo não basta: a decisão vira regra na mesma mudança.
 
 **Non-triggers (segue com o implementador, sem dispatch):** fiação de
 dados/lógica no markup aprovado, hooks/rotas/queries, copy, port mecânico de
