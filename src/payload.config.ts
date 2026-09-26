@@ -59,6 +59,7 @@ import { VotePledge } from './collections/VotePledge'
 import { CampaignGoals } from './globals/CampaignGoals'
 import { HomePage } from './globals/HomePage'
 import { Metadata } from './globals/Metadata'
+import { PhotoAlbum } from './globals/PhotoAlbum'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
 import { SiteSettings } from './globals/SiteSettings'
 import { SocialFeedSettings } from './globals/SocialFeedSettings'
@@ -158,7 +159,15 @@ export default buildConfig({
     ShareLink,
     Jingle,
   ],
-  globals: [SiteSettings, HomePage, Metadata, PrivacyPolicy, CampaignGoals, SocialFeedSettings],
+  globals: [
+    SiteSettings,
+    HomePage,
+    Metadata,
+    PrivacyPolicy,
+    CampaignGoals,
+    SocialFeedSettings,
+    PhotoAlbum,
+  ],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

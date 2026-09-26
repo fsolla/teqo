@@ -6,6 +6,7 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { CARD_PRIVACY_NOTE } from '@/components/cards/cardCopy'
 import { CardsStudio } from '@/components/cards/CardsStudio'
 import { isCardModelId } from '@/lib/cardModels'
+import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { hasPublishedJingles } from '@/utilities/jingleReads'
 
@@ -25,9 +26,10 @@ export default async function CardsPage({ searchParams }: CardsPageProps) {
   const params = await searchParams
   const rawModel = Array.isArray(params.model) ? params.model[0] : params.model
   const initialModelId = isCardModelId(rawModel) ? rawModel : undefined
-  const [showJingles, showConteudos] = await Promise.all([
+  const [showJingles, showConteudos, showFotos] = await Promise.all([
     hasPublishedJingles(),
     hasPublishedContentPieces(),
+    hasPublishedArchivePhotos(),
   ])
 
   return (
@@ -63,7 +65,11 @@ export default async function CardsPage({ searchParams }: CardsPageProps) {
           <CardsStudio initialModelId={initialModelId} fontFamily={brexterBold.style.fontFamily} />
         </section>
       </main>
-      <CampaignFooter showJingles={showJingles} showConteudos={showConteudos} />
+      <CampaignFooter
+        showJingles={showJingles}
+        showConteudos={showConteudos}
+        showFotos={showFotos}
+      />
     </>
   )
 }

@@ -51,6 +51,28 @@
         outline: 3px solid var(--brand-yellow);
         outline-offset: 3px;
       }
+      .photo-card {
+        display: block;
+        border-radius: 12px;
+        color: inherit;
+        text-decoration: none;
+        transition:
+          transform 160ms ease,
+          box-shadow 160ms ease;
+      }
+      .photo-card:hover {
+        transform: translateY(-2px);
+      }
+      .photo-card:hover .photo-frame {
+        box-shadow: 0 12px 28px rgb(32 27 26 / 16%);
+      }
+      .photo-card:focus-visible {
+        outline: 3px solid var(--brand-yellow);
+        outline-offset: 4px;
+      }
+      .photo-frame {
+        transition: box-shadow 160ms ease;
+      }
       .photo-placeholder {
         position: relative;
         overflow: hidden;
@@ -198,6 +220,9 @@
           <span class="rounded-full border border-border bg-white px-3 py-1 text-xs font-bold"
             >Rota pública · /fotos</span
           >
+          <span class="rounded-full border border-border bg-white px-3 py-1 text-xs font-bold"
+            >Abre agora · acervo começa sem aprovações</span
+          >
         </div>
         <h1 class="display mt-4 text-3xl font-black tracking-[-0.03em]">
           Álbum público: encontrar a foto certa sem virar rede social
@@ -206,6 +231,16 @@
           Cidadão procura por termo, data, município, atividade ou pessoa pública; vê somente fotos
           aprovadas e entende o contexto antes de guardar a imagem.
         </p>
+        <div class="mt-5 rounded-xl border border-[#184e92]/20 bg-[#f0f5fb] p-4 text-sm leading-6">
+          <p class="font-extrabold text-[#184e92]">Extensão do gate · 26 set 2026</p>
+          <p class="mt-1">
+            O hero fica sem CTA: “Encontre você nas fotos” pressupunha selfie/reconhecimento facial
+            (C234), fora desta entrega. A busca logo abaixo já é a ação primária honesta; duplicá-la
+            com “Ver as fotos” criaria competição sem acrescentar destino. Data usa menu de dias
+            publicados no desktop e select no sheet mobile. O detalhe é sempre um dialog sobre a
+            grade, nunca uma página própria.
+          </p>
+        </div>
       </header>
 
       <!-- CENA 01 -->
@@ -253,11 +288,6 @@
                     data e contexto.
                   </p>
                 </div>
-                <a
-                  href="#"
-                  class="secondary relative shrink-0 border-white/40 bg-white/10 text-white"
-                  >Encontre você nas fotos <svg class="icon"><use href="#chev" /></svg
-                ></a>
               </div>
             </section>
             <div class="mx-auto max-w-6xl px-8 py-8">
@@ -278,11 +308,37 @@
                   </div>
                   <button class="primary min-w-28">Buscar fotos</button>
                 </div>
-                <div class="mt-4 flex flex-wrap gap-2" aria-label="Filtros">
-                  <button class="chip">
-                    <svg class="icon size-4"><use href="#calendar" /></svg>Data
-                    <svg class="icon size-3.5"><use href="#down" /></svg>
-                  </button>
+                <div class="mt-4 flex flex-wrap items-start gap-2" aria-label="Filtros">
+                  <div class="relative">
+                    <button class="chip border-[#184e92]/35 text-[#184e92]" aria-expanded="true">
+                      <svg class="icon size-4"><use href="#calendar" /></svg>Data
+                      <svg class="icon size-3.5 rotate-180"><use href="#down" /></svg>
+                    </button>
+                    <div
+                      class="absolute top-12 left-0 z-10 w-56 rounded-xl border border-border bg-white p-1.5 shadow-[0_14px_34px_rgb(0_0_0/16%)]"
+                    >
+                      <p
+                        class="px-3 py-1.5 text-[10px] font-black tracking-[.08em] text-muted-foreground uppercase"
+                      >
+                        Dias com fotos publicadas
+                      </p>
+                      <a
+                        href="#"
+                        class="focus-ring block rounded-lg bg-[#f0f5fb] px-3 py-2 text-sm font-bold text-[#184e92]"
+                        >12 de setembro de 2026</a
+                      >
+                      <a
+                        href="#"
+                        class="focus-ring block rounded-lg px-3 py-2 text-sm font-medium hover:bg-[#ebe9e9]"
+                        >8 de setembro de 2026</a
+                      >
+                      <a
+                        href="#"
+                        class="focus-ring block rounded-lg px-3 py-2 text-sm font-medium hover:bg-[#ebe9e9]"
+                        >3 de setembro de 2026</a
+                      >
+                    </div>
+                  </div>
                   <button class="chip chip-active">
                     <svg class="icon size-4"><use href="#map" /></svg>Município · selecionado
                     <svg class="icon size-3.5"><use href="#x" /></svg>
@@ -298,21 +354,28 @@
                   </button>
                 </div>
               </div>
-              <div class="mt-8 flex items-end justify-between border-b border-border pb-4">
+              <div class="mt-24 flex items-end justify-between border-b border-border pb-4">
                 <div>
                   <p class="text-xs font-black tracking-[.1em] text-[#e4102f] uppercase">
-                    Agenda em destaque
+                    Álbum público
                   </p>
-                  <h3 class="display mt-1 text-2xl font-black">
-                    Plenárias e encontros no município
-                  </h3>
+                  <h3 class="display mt-1 text-2xl font-black">Fotos em Município selecionado</h3>
+                  <p class="mt-1 text-xs text-muted-foreground">
+                    Com mais de um filtro, município define o título; os demais permanecem nos
+                    chips.
+                  </p>
                 </div>
                 <span class="text-sm text-muted-foreground">Mais recentes primeiro</span>
               </div>
               <div class="mt-5 grid grid-cols-3 gap-x-4 gap-y-7">
                 <article class="group">
-                  <button class="focus-ring block w-full rounded-xl text-left">
-                    <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+                  <a
+                    href="/fotos?municipio=selecionado&amp;foto=101"
+                    class="photo-card group block w-full text-left"
+                  >
+                    <div
+                      class="photo-frame photo-placeholder aspect-[4/3] rounded-xl ring-2 ring-[#ffeb00] ring-offset-2"
+                    ></div>
                     <div class="pt-3">
                       <p class="display text-base font-black">Plenária pela saúde pública</p>
                       <p class="mt-1 text-sm leading-5 text-muted-foreground">
@@ -320,11 +383,16 @@
                       </p>
                       <p class="mt-1 text-sm">Jorge Solla e pessoa pública convidada</p>
                     </div>
-                  </button>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
-                    <div class="photo-placeholder photo-b aspect-[4/3] rounded-xl"></div>
+                  <a
+                    href="/fotos?municipio=selecionado&amp;foto=102"
+                    class="photo-card block w-full text-left"
+                  >
+                    <div
+                      class="photo-frame photo-placeholder photo-b aspect-[4/3] rounded-xl"
+                    ></div>
                     <div class="pt-3">
                       <p class="display text-base font-black">Visita à unidade de saúde</p>
                       <p class="mt-1 text-sm leading-5 text-muted-foreground">
@@ -332,11 +400,16 @@
                       </p>
                       <p class="mt-1 text-sm">Jorge Solla</p>
                     </div>
-                  </button>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
-                    <div class="photo-placeholder photo-c aspect-[4/3] rounded-xl"></div>
+                  <a
+                    href="/fotos?municipio=selecionado&amp;foto=103"
+                    class="photo-card block w-full text-left"
+                  >
+                    <div
+                      class="photo-frame photo-placeholder photo-c aspect-[4/3] rounded-xl"
+                    ></div>
                     <div class="pt-3">
                       <p class="display text-base font-black">Encontro com trabalhadores</p>
                       <p class="mt-1 text-sm leading-5 text-muted-foreground">
@@ -344,11 +417,16 @@
                       </p>
                       <p class="mt-1 text-sm">Jorge Solla e pessoa pública convidada</p>
                     </div>
-                  </button>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
-                    <div class="photo-placeholder photo-d aspect-[4/3] rounded-xl"></div>
+                  <a
+                    href="/fotos?municipio=selecionado&amp;foto=104"
+                    class="photo-card block w-full text-left"
+                  >
+                    <div
+                      class="photo-frame photo-placeholder photo-d aspect-[4/3] rounded-xl"
+                    ></div>
                     <div class="pt-3">
                       <p class="display text-base font-black">Caminhada no centro</p>
                       <p class="mt-1 text-sm leading-5 text-muted-foreground">
@@ -356,11 +434,14 @@
                       </p>
                       <p class="mt-1 text-sm">Jorge Solla</p>
                     </div>
-                  </button>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
-                    <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+                  <a
+                    href="/fotos?municipio=selecionado&amp;foto=105"
+                    class="photo-card block w-full text-left"
+                  >
+                    <div class="photo-frame photo-placeholder aspect-[4/3] rounded-xl"></div>
                     <div class="pt-3">
                       <p class="display text-base font-black">Conversa sobre educação</p>
                       <p class="mt-1 text-sm leading-5 text-muted-foreground">
@@ -368,11 +449,16 @@
                       </p>
                       <p class="mt-1 text-sm">Jorge Solla e pessoa pública convidada</p>
                     </div>
-                  </button>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
-                    <div class="photo-placeholder photo-b aspect-[4/3] rounded-xl"></div>
+                  <a
+                    href="/fotos?municipio=selecionado&amp;foto=106"
+                    class="photo-card block w-full text-left"
+                  >
+                    <div
+                      class="photo-frame photo-placeholder photo-b aspect-[4/3] rounded-xl"
+                    ></div>
                     <div class="pt-3">
                       <p class="display text-base font-black">Reunião com a comunidade</p>
                       <p class="mt-1 text-sm leading-5 text-muted-foreground">
@@ -380,9 +466,24 @@
                       </p>
                       <p class="mt-1 text-sm">Jorge Solla</p>
                     </div>
-                  </button>
+                  </a>
                 </article>
               </div>
+              <nav
+                aria-label="Paginação das fotos"
+                class="mt-9 flex items-center justify-between border-t border-border pt-5"
+              >
+                <span
+                  class="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-border px-4 text-sm font-bold text-muted-foreground opacity-55"
+                  aria-disabled="true"
+                >
+                  <svg class="icon"><use href="#arrow" /></svg>Anterior
+                </span>
+                <span class="text-sm font-bold">Página 1</span>
+                <a href="/fotos?municipio=selecionado&amp;pagina=2" class="secondary focus-ring"
+                  >Próxima<svg class="icon rotate-180"><use href="#arrow" /></svg
+                ></a>
+              </nav>
             </div>
           </div>
         </div>
@@ -418,11 +519,6 @@
               <p class="mt-2 text-sm leading-5 text-white/85">
                 Busque pela agenda, pelo lugar ou por quem apareceu.
               </p>
-              <a
-                href="#"
-                class="mt-4 inline-flex min-h-10 items-center gap-2 rounded-lg border border-white/40 px-3 text-sm font-bold"
-                >Encontre você nas fotos <svg class="icon size-4"><use href="#chev" /></svg
-              ></a>
             </div>
             <div class="p-4 pb-8">
               <div class="flex h-11 items-center gap-2 rounded-[10px] border border-black/20 px-3">
@@ -437,40 +533,80 @@
                 ><button class="chip shrink-0">Data</button
                 ><button class="chip shrink-0">Atividade</button>
               </div>
+              <div class="mt-5 border-b border-border pb-3">
+                <p class="text-[10px] font-black tracking-[.1em] text-[#e4102f] uppercase">
+                  Álbum público
+                </p>
+                <h3 class="display mt-1 text-lg font-black">Fotos em Município</h3>
+              </div>
               <div class="mt-5 grid grid-cols-2 gap-x-3 gap-y-5">
                 <article>
-                  <div class="photo-placeholder aspect-square rounded-lg"></div>
-                  <p class="mt-2 text-sm font-extrabold leading-4">Plenária pela saúde</p>
-                  <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
-                    12 set · Município · Plenária
-                  </p>
-                  <p class="mt-1 text-[11px] leading-4">Jorge Solla e pessoa convidada</p>
+                  <a href="/fotos?municipio=selecionado&amp;foto=101" class="photo-card block">
+                    <div
+                      class="photo-frame photo-placeholder aspect-square rounded-lg ring-2 ring-[#ffeb00] ring-offset-2"
+                    ></div>
+                    <p class="mt-2 text-sm font-extrabold leading-4">Plenária pela saúde</p>
+                    <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
+                      12 set · Município · Plenária
+                    </p>
+                    <p class="mt-1 text-[11px] leading-4">Jorge Solla e pessoa convidada</p>
+                  </a>
                 </article>
                 <article>
-                  <div class="photo-placeholder photo-b aspect-square rounded-lg"></div>
-                  <p class="mt-2 text-sm font-extrabold leading-4">Visita à unidade</p>
-                  <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
-                    08 set · Município · Visita
-                  </p>
-                  <p class="mt-1 text-[11px] leading-4">Jorge Solla</p>
+                  <a href="/fotos?municipio=selecionado&amp;foto=102" class="photo-card block">
+                    <div
+                      class="photo-frame photo-placeholder photo-b aspect-square rounded-lg"
+                    ></div>
+                    <p class="mt-2 text-sm font-extrabold leading-4">Visita à unidade</p>
+                    <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
+                      08 set · Município · Visita
+                    </p>
+                    <p class="mt-1 text-[11px] leading-4">Jorge Solla</p>
+                  </a>
                 </article>
                 <article>
-                  <div class="photo-placeholder photo-c aspect-square rounded-lg"></div>
-                  <p class="mt-2 text-sm font-extrabold leading-4">Encontro local</p>
-                  <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
-                    03 set · Município · Reunião
-                  </p>
-                  <p class="mt-1 text-[11px] leading-4">Jorge Solla e pessoa convidada</p>
+                  <a href="/fotos?municipio=selecionado&amp;foto=103" class="photo-card block">
+                    <div
+                      class="photo-frame photo-placeholder photo-c aspect-square rounded-lg"
+                    ></div>
+                    <p class="mt-2 text-sm font-extrabold leading-4">Encontro local</p>
+                    <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
+                      03 set · Município · Reunião
+                    </p>
+                    <p class="mt-1 text-[11px] leading-4">Jorge Solla e pessoa convidada</p>
+                  </a>
                 </article>
                 <article>
-                  <div class="photo-placeholder photo-d aspect-square rounded-lg"></div>
-                  <p class="mt-2 text-sm font-extrabold leading-4">Caminhada no centro</p>
-                  <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
-                    28 ago · Município · Caminhada
-                  </p>
-                  <p class="mt-1 text-[11px] leading-4">Jorge Solla</p>
+                  <a href="/fotos?municipio=selecionado&amp;foto=104" class="photo-card block">
+                    <div
+                      class="photo-frame photo-placeholder photo-d aspect-square rounded-lg"
+                    ></div>
+                    <p class="mt-2 text-sm font-extrabold leading-4">Caminhada no centro</p>
+                    <p class="mt-1 text-[11px] leading-4 text-muted-foreground">
+                      28 ago · Município · Caminhada
+                    </p>
+                    <p class="mt-1 text-[11px] leading-4">Jorge Solla</p>
+                  </a>
                 </article>
               </div>
+              <nav
+                aria-label="Paginação das fotos"
+                class="mt-7 flex items-center justify-between border-t border-border pt-4"
+              >
+                <span
+                  class="grid size-11 place-items-center rounded-[10px] border border-border text-muted-foreground opacity-50"
+                  aria-label="Página anterior indisponível"
+                  aria-disabled="true"
+                  ><svg class="icon"><use href="#arrow" /></svg
+                ></span>
+                <span class="text-xs font-bold">Página 1</span>
+                <a
+                  href="/fotos?municipio=selecionado&amp;pagina=2"
+                  aria-label="Próxima página"
+                  class="focus-ring grid size-11 place-items-center rounded-[10px] border border-border bg-white"
+                  ><svg class="icon rotate-180"><use href="#arrow" /></svg
+                ></a>
+              </nav>
             </div>
           </div>
 
@@ -504,8 +640,14 @@
                     class="mt-1.5 h-11 w-full rounded-[10px] border border-black/20 bg-white px-3 font-normal"
                   >
                     <option>Qualquer data</option>
+                    <option>12 de setembro de 2026</option>
+                    <option>8 de setembro de 2026</option>
+                    <option>3 de setembro de 2026</option>
                   </select></label
                 >
+                <p class="-mt-2 text-xs leading-5 text-muted-foreground">
+                  Somente dias que têm fotos publicadas.
+                </p>
                 <label class="text-sm font-bold"
                   >Município<select
                     class="mt-1.5 h-11 w-full rounded-[10px] border border-[#184e92]/45 bg-white px-3 font-normal text-[#184e92]"
@@ -541,63 +683,147 @@
       <section aria-labelledby="scene-3">
         <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 03</p>
         <h2 id="scene-3" class="display mt-1 text-xl font-black">
-          Foto aberta em contexto · detalhe sem mecânicas sociais
+          Overlay em /fotos?foto=&lt;id&gt; · a grade permanece atrás
         </h2>
-        <div class="stage mt-4 overflow-x-auto rounded-2xl border border-border bg-[#171412]">
-          <div class="min-w-[1080px] p-8 text-white">
-            <div class="mb-5 flex items-center justify-between">
-              <button
-                class="inline-flex h-11 items-center gap-2 rounded-lg border border-white/25 px-4 text-sm font-bold"
-              >
-                <svg class="icon"><use href="#arrow" /></svg>Voltar ao álbum</button
-              ><button
-                aria-label="Fechar"
-                class="grid size-11 place-items-center rounded-full bg-white/10"
-              >
-                <svg class="icon"><use href="#x" /></svg>
-              </button>
+        <p class="mt-2 text-sm text-muted-foreground">
+          “Voltar ao álbum” e “Fechar” são links para a mesma URL filtrada sem <code>foto</code>. O
+          foco inicial vai para “Voltar”; Esc aciona o mesmo fechamento.
+        </p>
+        <div
+          class="stage relative mt-4 h-[820px] min-w-[1080px] overflow-hidden rounded-2xl border border-border bg-white"
+        >
+          <div aria-hidden="true" class="p-8">
+            <div class="h-12 rounded-xl bg-[#fff8f2]"></div>
+            <div class="mt-7 grid grid-cols-3 gap-4 opacity-80">
+              <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+              <div class="photo-placeholder photo-b aspect-[4/3] rounded-xl"></div>
+              <div class="photo-placeholder photo-c aspect-[4/3] rounded-xl"></div>
+              <div class="photo-placeholder photo-d aspect-[4/3] rounded-xl"></div>
+              <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+              <div class="photo-placeholder photo-b aspect-[4/3] rounded-xl"></div>
             </div>
-            <div
-              class="grid grid-cols-[minmax(0,1fr)_340px] overflow-hidden rounded-2xl bg-[#211d1b]"
-            >
-              <div class="photo-placeholder photo-d min-h-[650px] rounded-none"></div>
-              <aside class="flex flex-col p-7">
-                <p class="text-xs font-black tracking-[.1em] text-[#ffeb00] uppercase">
+          </div>
+          <div class="absolute inset-0 bg-[#171412]/82 backdrop-blur-[2px]"></div>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="photo-dialog-title"
+            class="absolute inset-0 overflow-y-auto p-8 text-white"
+          >
+            <div class="mx-auto max-w-6xl">
+              <div class="mb-5 flex items-center justify-between">
+                <a
+                  href="/fotos?municipio=selecionado"
+                  autofocus
+                  class="inline-flex h-11 items-center gap-2 rounded-lg border border-[#ffeb00] px-4 text-sm font-bold outline-3 outline-offset-3 outline-[#ffeb00]"
+                >
+                  <svg class="icon"><use href="#arrow" /></svg>Voltar ao álbum</a
+                >
+                <a
+                  href="/fotos?municipio=selecionado"
+                  aria-label="Fechar foto e voltar à grade"
+                  class="focus-ring grid size-11 place-items-center rounded-full bg-white/10 hover:bg-white/20"
+                >
+                  <svg class="icon"><use href="#x" /></svg>
+                </a>
+              </div>
+              <div
+                class="grid grid-cols-[minmax(0,1fr)_340px] overflow-hidden rounded-2xl bg-[#211d1b] shadow-[0_28px_80px_rgb(0_0_0/40%)]"
+              >
+                <div class="photo-placeholder photo-d min-h-[650px] rounded-none"></div>
+                <aside class="flex flex-col p-7">
+                  <p class="text-xs font-black tracking-[.1em] text-[#ffeb00] uppercase">
+                    Registro aprovado
+                  </p>
+                  <h3
+                    id="photo-dialog-title"
+                    class="display mt-3 text-2xl leading-tight font-black"
+                  >
+                    Plenária pela saúde pública
+                  </h3>
+                  <dl class="mt-6 grid gap-5 text-sm">
+                    <div>
+                      <dt class="font-bold text-white/55">Data</dt>
+                      <dd class="mt-1">12 de setembro de 2026</dd>
+                    </div>
+                    <div>
+                      <dt class="font-bold text-white/55">Local</dt>
+                      <dd class="mt-1">Município selecionado · Bahia</dd>
+                    </div>
+                    <div>
+                      <dt class="font-bold text-white/55">Atividade</dt>
+                      <dd class="mt-1">Plenária</dd>
+                    </div>
+                    <div>
+                      <dt class="font-bold text-white/55">Quem aparece</dt>
+                      <dd class="mt-1">Jorge Solla e pessoa pública convidada</dd>
+                    </div>
+                  </dl>
+                  <a href="/fotos/101/midia?download=1" class="primary focus-ring mt-7 w-full">
+                    <svg class="icon"><use href="#download" /></svg>Baixar foto
+                  </a>
+                  <div class="mt-auto border-t border-white/15 pt-5">
+                    <p class="m-0 text-sm font-bold">É você nesta foto?</p>
+                    <a
+                      class="mt-1 inline-block text-sm text-white/70 underline underline-offset-4"
+                      href="mailto:canal-configurado@example.invalid"
+                      >Peça a remoção desta imagem</a
+                    >
+                  </div>
+                </aside>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="stage relative mt-8 h-[760px] w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+        >
+          <div aria-hidden="true" class="grid grid-cols-2 gap-3 p-4 pt-20 opacity-70">
+            <div class="photo-placeholder aspect-square rounded-lg"></div>
+            <div class="photo-placeholder photo-b aspect-square rounded-lg"></div>
+            <div class="photo-placeholder photo-c aspect-square rounded-lg"></div>
+            <div class="photo-placeholder photo-d aspect-square rounded-lg"></div>
+          </div>
+          <div class="absolute inset-0 bg-[#171412]/84"></div>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalhe da foto"
+            class="absolute inset-0 flex flex-col overflow-y-auto p-4 text-white"
+          >
+            <div class="flex items-center justify-between">
+              <a
+                href="/fotos?municipio=selecionado"
+                class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[#ffeb00] px-3 text-sm font-bold outline-3 outline-offset-2 outline-[#ffeb00]"
+                ><svg class="icon"><use href="#arrow" /></svg>Voltar</a
+              >
+              <a
+                href="/fotos?municipio=selecionado"
+                aria-label="Fechar foto"
+                class="grid size-11 place-items-center rounded-full bg-white/10"
+                ><svg class="icon"><use href="#x" /></svg
+              ></a>
+            </div>
+            <div class="mt-4 overflow-hidden rounded-xl bg-[#211d1b]">
+              <div class="photo-placeholder photo-d aspect-[4/3]"></div>
+              <div class="p-5">
+                <p class="text-[10px] font-black tracking-[.1em] text-[#ffeb00] uppercase">
                   Registro aprovado
                 </p>
-                <h3 class="display mt-3 text-2xl leading-tight font-black">
-                  Plenária pela saúde pública
-                </h3>
-                <dl class="mt-6 grid gap-5 text-sm">
-                  <div>
-                    <dt class="font-bold text-white/55">Data</dt>
-                    <dd class="mt-1">12 de setembro de 2026</dd>
-                  </div>
-                  <div>
-                    <dt class="font-bold text-white/55">Local</dt>
-                    <dd class="mt-1">Município selecionado · Bahia</dd>
-                  </div>
-                  <div>
-                    <dt class="font-bold text-white/55">Atividade</dt>
-                    <dd class="mt-1">Plenária</dd>
-                  </div>
-                  <div>
-                    <dt class="font-bold text-white/55">Quem aparece</dt>
-                    <dd class="mt-1">Jorge Solla e pessoa pública convidada</dd>
-                  </div>
-                </dl>
-                <button class="primary mt-7 w-full">
-                  <svg class="icon"><use href="#download" /></svg>Baixar foto
-                </button>
-                <div class="mt-auto border-t border-white/15 pt-5">
-                  <p class="m-0 text-sm font-bold">É você nesta foto?</p>
-                  <a
-                    class="mt-1 inline-block text-sm text-white/70 underline underline-offset-4"
-                    href="#"
-                    >Peça a remoção desta imagem</a
-                  >
-                </div>
-              </aside>
+                <h3 class="display mt-2 text-xl font-black">Plenária pela saúde pública</h3>
+                <p class="mt-3 text-sm leading-6 text-white/75">
+                  12 de setembro de 2026 · Município selecionado · Plenária
+                </p>
+                <p class="mt-2 text-sm">Jorge Solla e pessoa pública convidada</p>
+                <a href="/fotos/101/midia?download=1" class="primary mt-5 w-full"
+                  ><svg class="icon"><use href="#download" /></svg>Baixar foto</a
+                >
+                <a
+                  href="mailto:canal-configurado@example.invalid"
+                  class="mt-4 block min-h-11 pt-2 text-center text-sm font-bold underline underline-offset-4"
+                  >Peça a remoção desta imagem</a
+                >
+              </div>
             </div>
           </div>
         </div>
@@ -607,29 +833,51 @@
       <section aria-labelledby="scene-4">
         <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 04</p>
         <h2 id="scene-4" class="display mt-1 text-xl font-black">
-          Vazio honesto · nada parecido ocupa a grade
+          Vazios honestos · acervo sem publicação × filtros sem resultado
         </h2>
-        <div class="stage mt-4 max-w-[900px] rounded-2xl border border-border bg-white p-8 sm:p-12">
-          <div class="rounded-2xl border border-[#184e92]/15 bg-[#f9faff] px-6 py-14 text-center">
-            <div
-              class="mx-auto grid size-12 place-items-center rounded-full border border-[#184e92]/20 bg-white text-[#184e92]"
-            >
-              <svg class="icon size-6"><use href="#search" /></svg>
-            </div>
-            <h3 class="display mt-4 text-2xl font-black">Nada encontrado com esses filtros</h3>
-            <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
-              Tente outro termo ou volte a ver todas as fotos aprovadas do álbum.
+        <div class="mt-4 grid gap-6 lg:grid-cols-2">
+          <div class="stage rounded-2xl border border-border bg-white p-6 sm:p-8">
+            <p class="mb-3 text-xs font-black tracking-[.08em] text-[#184e92] uppercase">
+              A · nenhuma foto aprovada ainda
             </p>
-            <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs">
-              <span class="rounded-full border border-border bg-white px-3 py-1.5"
-                >Busca: “termo informado”</span
-              ><span class="rounded-full border border-border bg-white px-3 py-1.5"
-                >Município selecionado</span
-              ><span class="rounded-full border border-border bg-white px-3 py-1.5"
-                >Atividade selecionada</span
+            <div class="rounded-2xl border border-border bg-[#fff8f2] px-6 py-14 text-center">
+              <div
+                class="mx-auto grid size-12 place-items-center rounded-full border border-border bg-white text-muted-foreground"
               >
+                <svg class="icon size-6"><use href="#image" /></svg>
+              </div>
+              <h3 class="display mt-4 text-2xl font-black">O álbum ainda está sendo preparado</h3>
+              <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                Ainda não há fotos aprovadas para publicação. Quando houver registros disponíveis,
+                eles aparecerão aqui.
+              </p>
             </div>
-            <button class="primary mt-6 min-w-40">Limpar filtros</button>
+          </div>
+          <div class="stage rounded-2xl border border-border bg-white p-6 sm:p-8">
+            <p class="mb-3 text-xs font-black tracking-[.08em] text-[#184e92] uppercase">
+              B · combinação sem resultado
+            </p>
+            <div class="rounded-2xl border border-[#184e92]/15 bg-[#f9faff] px-6 py-14 text-center">
+              <div
+                class="mx-auto grid size-12 place-items-center rounded-full border border-[#184e92]/20 bg-white text-[#184e92]"
+              >
+                <svg class="icon size-6"><use href="#search" /></svg>
+              </div>
+              <h3 class="display mt-4 text-2xl font-black">Nada encontrado com esses filtros</h3>
+              <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                Tente outro termo ou volte a ver todas as fotos aprovadas do álbum.
+              </p>
+              <div class="mt-4 flex flex-wrap justify-center gap-2 text-xs">
+                <span class="rounded-full border border-border bg-white px-3 py-1.5"
+                  >Busca: “termo informado”</span
+                ><span class="rounded-full border border-border bg-white px-3 py-1.5"
+                  >Município selecionado</span
+                ><span class="rounded-full border border-border bg-white px-3 py-1.5"
+                  >Atividade selecionada</span
+                >
+              </div>
+              <a href="/fotos" class="primary focus-ring mt-6 min-w-40">Limpar filtros</a>
+            </div>
           </div>
         </div>
       </section>
@@ -640,18 +888,28 @@
         <h2 id="scene-5" class="display mt-1 text-xl font-black">
           Canal de remoção discreto · rodapé do álbum
         </h2>
+        <p class="mt-2 text-sm text-muted-foreground">
+          Esta banda representa o estado configurado. Sem <code>removalChannelUrl</code>, toda a
+          banda é omitida.
+        </p>
         <div class="stage mt-4 overflow-hidden rounded-2xl border border-border bg-white">
-          <div class="mx-auto flex max-w-6xl items-center justify-between gap-6 px-8 py-7">
+          <div
+            class="mx-auto flex max-w-6xl flex-col items-start justify-between gap-5 px-5 py-7 sm:flex-row sm:items-center sm:px-8"
+          >
             <div>
               <p class="display text-base font-black">Aparece em alguma foto?</p>
               <p class="mt-1 text-sm text-muted-foreground">
                 Se você não quiser que ela fique pública, fale com a equipe responsável pelo acervo.
               </p>
             </div>
-            <a href="#" class="secondary shrink-0">Pedir remoção de uma foto</a>
+            <a
+              href="mailto:canal-configurado@example.invalid"
+              class="secondary focus-ring w-full shrink-0 sm:w-auto"
+              >Pedir remoção de uma foto</a
+            >
           </div>
           <footer class="bg-[#180a09] px-8 py-8 text-sm text-white/70">
-            <div class="mx-auto flex max-w-6xl justify-between">
+            <div class="mx-auto flex max-w-6xl flex-col justify-between gap-5 sm:flex-row">
               <div>
                 <b class="display text-white">Jorge Solla 1313</b>
                 <p class="mt-1">Deputado Federal · PT · Bahia</p>
@@ -661,6 +919,104 @@
               </div>
             </div>
           </footer>
+        </div>
+      </section>
+
+      <!-- CENA 06 -->
+      <section aria-labelledby="scene-6">
+        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">
+          Cena 06 · contrato de conteúdo
+        </p>
+        <h2 id="scene-6" class="display mt-1 text-xl font-black">
+          Heading contextual sem “agenda em destaque” inventada
+        </h2>
+        <div class="stage mt-4 overflow-hidden rounded-2xl border border-border bg-white">
+          <div class="grid gap-px bg-border md:grid-cols-2">
+            <div class="bg-white p-5">
+              <p class="text-xs font-bold text-muted-foreground">Sem filtros</p>
+              <p class="display mt-1 text-xl font-black">Fotos da nossa caminhada</p>
+            </div>
+            <div class="bg-white p-5">
+              <p class="text-xs font-bold text-muted-foreground">Município</p>
+              <p class="display mt-1 text-xl font-black">Fotos em &lt;município&gt;</p>
+            </div>
+            <div class="bg-white p-5">
+              <p class="text-xs font-bold text-muted-foreground">Atividade</p>
+              <p class="display mt-1 text-xl font-black">Fotos de &lt;atividade&gt;</p>
+            </div>
+            <div class="bg-white p-5">
+              <p class="text-xs font-bold text-muted-foreground">Pessoa pública</p>
+              <p class="display mt-1 text-xl font-black">Fotos com &lt;pessoa&gt;</p>
+            </div>
+            <div class="bg-white p-5">
+              <p class="text-xs font-bold text-muted-foreground">Data</p>
+              <p class="display mt-1 text-xl font-black">Fotos de &lt;data por extenso&gt;</p>
+            </div>
+            <div class="bg-white p-5">
+              <p class="text-xs font-bold text-muted-foreground">Termo</p>
+              <p class="display mt-1 text-xl font-black">Resultados para “&lt;termo&gt;”</p>
+            </div>
+          </div>
+          <div class="border-t border-border bg-[#fff8f2] p-5 text-sm leading-6">
+            <b>Regra de combinação:</b> prevalece município → atividade → pessoa → data → termo; os
+            demais critérios continuam visíveis como chips removíveis. Assim o título fica curto e
+            não tenta narrar uma consulta inteira.
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 07 -->
+      <section aria-labelledby="scene-7">
+        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">
+          Cena 07 · estados de interação
+        </p>
+        <h2 id="scene-7" class="display mt-1 text-xl font-black">
+          Card inteiro acionável · hover, foco e alt curado
+        </h2>
+        <div class="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="stage rounded-2xl border border-border bg-white p-5">
+            <p class="mb-3 text-xs font-black text-muted-foreground uppercase">Repouso</p>
+            <a href="/fotos?foto=101" class="photo-card block"
+              ><div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+              <p class="display mt-3 font-black">Plenária pela saúde pública</p></a
+            >
+          </div>
+          <div
+            class="stage -translate-y-0.5 rounded-2xl border border-border bg-white p-5 shadow-[0_12px_28px_rgb(32_27_26/16%)]"
+          >
+            <p class="mb-3 text-xs font-black text-muted-foreground uppercase">Hover</p>
+            <a href="/fotos?foto=101" class="block rounded-xl"
+              ><div
+                class="photo-placeholder aspect-[4/3] rounded-xl shadow-[0_12px_28px_rgb(32_27_26/16%)]"
+              ></div>
+              <p class="display mt-3 font-black">Plenária pela saúde pública</p></a
+            >
+          </div>
+          <div class="stage rounded-2xl border border-border bg-white p-5">
+            <p class="mb-3 text-xs font-black text-muted-foreground uppercase">Foco por teclado</p>
+            <a
+              href="/fotos?foto=101"
+              class="block rounded-xl outline-3 outline-offset-4 outline-[#ffeb00]"
+              ><div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+              <p class="display mt-3 font-black">Plenária pela saúde pública</p></a
+            >
+          </div>
+        </div>
+        <div class="mt-5 rounded-xl border border-border bg-white p-5 text-sm leading-6">
+          <p>
+            <b>Imagem real:</b> recebe o <code>alt</code> curado que descreve o que é visível (ação,
+            ambiente e pessoas quando pertinente), não o filename e não uma repetição automática do
+            título.
+          </p>
+          <p class="mt-2">
+            <b>Teclado:</b> um único tab stop por card; Enter abre <code>?foto=&lt;id&gt;</code>. No
+            dialog, o foco inicial e o foco visível ficam em “Voltar”; fechar devolve à mesma grade
+            filtrada. Todos os alvos mobile mantêm ao menos 44px.
+          </p>
+          <p class="mt-2">
+            <b>Paginação:</b> 24 itens por página; anterior/próxima preservam todas as facetas, e a
+            primeira página não exibe <code>pagina=1</code> na URL.
+          </p>
         </div>
       </section>
     </main>

@@ -8,6 +8,8 @@ import { stat } from 'fs/promises'
 import path from 'path'
 import type { Payload } from 'payload'
 import { getRangeRequestInfo } from 'payload/internal'
+import sharp from 'sharp'
+import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 
 import {
@@ -159,6 +161,26 @@ const openLocalObject = async ({
   return { range, body }
 }
 
+/**
+ * Opens one object from whichever backing store is configured (the private S3
+ * bucket in production, the collection's disk directory in dev/test). Single
+ * owner of the choice — the streaming and the resizing paths share it.
+ */
+const openPrivateObject = async ({
+  filename,
+  staticDir,
+  rangeHeader,
+}: {
+  filename: string
+  staticDir: string
+  rangeHeader: string | null
+}): Promise<OpenedObject> => {
+  const storage = privateMediaStorage()
+  return storage
+    ? openS3Object({ storage, filename, rangeHeader })
+    : openLocalObject({ staticDir, filename, rangeHeader })
+}
+
 const notFound = (): Response =>
   new Response(null, { status: 404, headers: { 'Cache-Control': PRIVATE_MEDIA_CACHE_CONTROL } })
 
@@ -189,16 +211,89 @@ export const buildPrivateMediaResponse = async ({
   if (!filename) return notFound()
 
   try {
-    const storage = privateMediaStorage()
-    const opened = storage
-      ? await openS3Object({ storage, filename, rangeHeader })
-      : await openLocalObject({ staticDir, filename, rangeHeader })
+    const opened = await openPrivateObject({ filename, staticDir, rangeHeader })
 
     return new Response(opened.body, {
       status: opened.range.status,
       headers: privateMediaHeaders({
         range: opened.range,
         mimeType: media.mimeType,
+        filename: dispositionFilename?.trim() || filename,
+        download,
+      }),
+    })
+  } catch (error) {
+    if (isMissingObject(error) || (error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+      return notFound()
+    }
+    throw error
+  }
+}
+
+/**
+ * C233 — one image artifact, optionally resized for a public grid. With no
+ * `width` it delegates to `buildPrivateMediaResponse` (range, stored MIME,
+ * disposition); with a `width` it opens the same object and downsizes it on the
+ * fly through sharp, without storing a variant and without a temp file — the
+ * same rule the C232 cataloguing already runs over the archive. The private
+ * headers survive (`no-store`), so a takedown is visible on the next request.
+ */
+export const buildPrivateMediaImageResponse = async ({
+  media,
+  staticDir,
+  width,
+  download,
+  dispositionFilename,
+  rangeHeader = null,
+}: {
+  media: PrivateMediaFile
+  staticDir: string
+  width: number | null
+  download: boolean
+  dispositionFilename?: string | null
+  rangeHeader?: string | null
+}): Promise<Response> => {
+  if (width === null) {
+    return buildPrivateMediaResponse({
+      media,
+      staticDir,
+      rangeHeader,
+      download,
+      dispositionFilename,
+    })
+  }
+
+  const filename = media.filename
+  if (!filename) return notFound()
+
+  try {
+    const opened = await openPrivateObject({ filename, staticDir, rangeHeader: null })
+    if (!(opened.body instanceof Readable)) {
+      throw new Error(`Objeto privado sem stream: ${filename}`)
+    }
+
+    // sharp's constructor takes no stream; the documented stream path is
+    // piping into the instance and draining its output.
+    const transformer = sharp({ failOn: 'error' })
+      .rotate()
+      .resize({ width, withoutEnlargement: true })
+      .jpeg({ quality: 80 })
+    const source = opened.body
+    const resized = new Promise<Buffer>((resolve, reject) => {
+      const chunks: Buffer[] = []
+      transformer.on('data', (chunk: Buffer) => chunks.push(chunk))
+      transformer.on('end', () => resolve(Buffer.concat(chunks)))
+      transformer.on('error', reject)
+      source.on('error', reject)
+    })
+    source.pipe(transformer)
+    const image = await resized
+
+    return new Response(new Uint8Array(image), {
+      status: 200,
+      headers: privateMediaHeaders({
+        range: { status: 200, headers: {} },
+        mimeType: 'image/jpeg',
         filename: dispositionFilename?.trim() || filename,
         download,
       }),

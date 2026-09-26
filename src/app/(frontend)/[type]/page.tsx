@@ -12,6 +12,7 @@ import {
 } from '@/lib/shareLink'
 import { buildShareLinkAnnouncementView } from '@/lib/shareLinkAnnouncement'
 import type { ShareLink } from '@/payload-types'
+import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { hasPublishedJingles } from '@/utilities/jingleReads'
 import { POST_TYPE_LABELS, getVisiblePosts, isPostType } from '@/utilities/posts'
@@ -140,14 +141,17 @@ export default async function Page({ params }: { params: Promise<RouteParams> })
     // deployment-origin URL is only for the OG card in `resolveShareLinkMetadata`.
     const image = typeof link.image === 'object' ? link.image : null
     const canonicalUrl = await resolveShareLinkCanonicalUrl(link.slug)
-    const showJingles = await hasPublishedJingles()
+    const [showJingles, showFotos] = await Promise.all([
+      hasPublishedJingles(),
+      hasPublishedArchivePhotos(),
+    ])
     const view = buildShareLinkAnnouncementView({
       link,
       imageUrl: image?.url ?? null,
       canonicalUrl: canonicalUrl ?? null,
     })
 
-    return <ShareLinkAnnouncement view={view} showJingles={showJingles} />
+    return <ShareLinkAnnouncement view={view} showJingles={showJingles} showFotos={showFotos} />
   }
 
   const posts = (await getVisiblePosts()).filter((post) => post.type === type)

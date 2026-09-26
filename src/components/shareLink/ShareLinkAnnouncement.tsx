@@ -38,9 +38,11 @@ const PRIMARY_ACTION_DISABLED = cn(
 export const ShareLinkAnnouncement = ({
   view,
   showJingles = false,
+  showFotos = false,
 }: {
   view: ShareLinkAnnouncementView
   showJingles?: boolean
+  showFotos?: boolean
 }) => {
   const [live, setLive] = useState<ShareLinkLiveTarget | null>(null)
   const isLive = live !== null
@@ -237,7 +239,7 @@ export const ShareLinkAnnouncement = ({
         </article>
       </main>
 
-      <CampaignFooter showJingles={showJingles} />
+      <CampaignFooter showJingles={showJingles} showFotos={showFotos} />
     </div>
   )
 }

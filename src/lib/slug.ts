@@ -1,3 +1,6 @@
+/** A slug as this module produces it: lowercase alphanumerics, hyphen-separated. */
+export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+
 export const slugify = (value: string): string =>
   value
     .normalize('NFD')

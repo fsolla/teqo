@@ -191,6 +191,7 @@ export interface Config {
     'privacy-policy': PrivacyPolicy;
     campaignGoals: CampaignGoal;
     'social-feed-settings': SocialFeedSetting;
+    photoAlbum: PhotoAlbum;
   };
   globalsSelect: {
     'site-settings': SiteSettingsSelect<false> | SiteSettingsSelect<true>;
@@ -199,6 +200,7 @@ export interface Config {
     'privacy-policy': PrivacyPolicySelect<false> | PrivacyPolicySelect<true>;
     campaignGoals: CampaignGoalsSelect<false> | CampaignGoalsSelect<true>;
     'social-feed-settings': SocialFeedSettingsSelect<false> | SocialFeedSettingsSelect<true>;
+    photoAlbum: PhotoAlbumSelect<false> | PhotoAlbumSelect<true>;
   };
   locale: null;
   widgets: {
@@ -1484,6 +1486,10 @@ export interface ArchivePhoto {
     catalogedAt?: string | null;
   };
   /**
+   * Só "Aprovada" aparece no álbum público (/fotos). "Removida" é o estado de remoção a pedido — a catalogação automática nunca o altera e a foto não volta ao público sem uma nova edição humana.
+   */
+  publicationStatus: 'draft' | 'approved' | 'removed';
+  /**
    * O que a assessoria já editou; a catalogação automática nunca sobrescreve estes campos.
    */
   curatedFields?:
@@ -1545,6 +1551,14 @@ export interface ArchivePhoto {
   sourceUrl?: string | null;
   owner?: string | null;
   license?: string | null;
+  /**
+   * Derivado do município da ficha, para o álbum público ler sem tocar a collection campaign-only.
+   */
+  municipalityName?: string | null;
+  /**
+   * Faceta de município da URL pública (`/fotos?municipio=<slug>`).
+   */
+  municipalitySlug?: string | null;
   /**
    * Tudo o que a busca da lista encontra, normalizado (sem acentos, minúsculas): legenda, texto visível, temas, pessoas, município, álbuns e tags.
    */
@@ -3154,6 +3168,7 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
         source?: T;
         catalogedAt?: T;
       };
+  publicationStatus?: T;
   curatedFields?: T;
   title?: T;
   description?: T;
@@ -3183,6 +3198,8 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
   sourceUrl?: T;
   owner?: T;
   license?: T;
+  municipalityName?: T;
+  municipalitySlug?: T;
   searchText?: T;
   updatedAt?: T;
   createdAt?: T;
@@ -3885,6 +3902,25 @@ export interface SocialFeedSetting {
   createdAt?: string | null;
 }
 /**
+ * Chaves do álbum público (/fotos). Desmarcar "Publicado" tira a rota do ar imediatamente; o canal de remoção alimenta o aviso "é você nesta foto?".
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photoAlbum".
+ */
+export interface PhotoAlbum {
+  id: number;
+  /**
+   * Quando desmarcado, /fotos responde 404 (e some do índice) imediatamente.
+   */
+  published?: boolean | null;
+  /**
+   * Link (https://) ou e-mail (mailto:) para pedir a remoção de uma foto. Obrigatório para publicar o álbum ou aprovar uma foto.
+   */
+  removalChannelUrl?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "site-settings_select".
  */
@@ -3999,6 +4035,17 @@ export interface SocialFeedSettingsSelect<T extends boolean = true> {
   youtubeFeedSnapshot?: T;
   instagramFeedSnapshot?: T;
   instagramSyncStatus?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "photoAlbum_select".
+ */
+export interface PhotoAlbumSelect<T extends boolean = true> {
+  published?: T;
+  removalChannelUrl?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

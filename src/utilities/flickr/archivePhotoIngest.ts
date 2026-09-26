@@ -104,6 +104,9 @@ export const ingestArchivePhoto = async (
         data: {
           flickrId: record.flickrId,
           alt: archivePhotoAlt(record),
+          // C233 — ingestion only ever creates drafts; the album publishes
+          // exclusively through a human curation edit.
+          publicationStatus: 'draft',
           title: record.title,
           description: record.description,
           tags: record.tags.map((name) => ({ name })),

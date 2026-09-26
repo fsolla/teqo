@@ -89,6 +89,7 @@ import * as migration_20260924_123940_add_content_piece_people from './20260924_
 import * as migration_20260926_034118_add_speech_embedding from './20260926_034118_add_speech_embedding';
 import * as migration_20260926_062039_add_archive_photo from './20260926_062039_add_archive_photo';
 import * as migration_20260926_132106_add_archive_photo_catalog from './20260926_132106_add_archive_photo_catalog';
+import * as migration_20260926_163248_add_archive_photo_publication from './20260926_163248_add_archive_photo_publication';
 
 export const migrations = [
   {
@@ -545,5 +546,10 @@ export const migrations = [
     up: migration_20260926_132106_add_archive_photo_catalog.up,
     down: migration_20260926_132106_add_archive_photo_catalog.down,
     name: '20260926_132106_add_archive_photo_catalog',
+  },
+  {
+    up: migration_20260926_163248_add_archive_photo_publication.up,
+    down: migration_20260926_163248_add_archive_photo_publication.down,
+    name: '20260926_163248_add_archive_photo_publication'
   },
 ];

@@ -64,6 +64,13 @@ vi.mock('@/utilities/content/contentPieceReads', () => ({
   getPublishedContentPieceItems: async () => contentPieces.items,
 }))
 
+// C233 — the footer's "Fotos" discovery flag reads the approved archive photos
+// through the Payload DB; the unit env has no database and the real listing is
+// e2e-covered (frontendFotos.e2e.spec.ts).
+vi.mock('@/utilities/archivePhotos/archivePhotoReads', () => ({
+  hasPublishedArchivePhotos: async () => false,
+}))
+
 // S14 — the card section renders the client studio island (next/font local
 // face + matchMedia + canvas); its behavior is e2e-covered, so the unit
 // skeleton mocks both the face module and the island.

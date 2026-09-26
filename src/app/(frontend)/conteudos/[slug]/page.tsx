@@ -2,6 +2,7 @@ import { CampaignFooter } from '@/components/CampaignFooter'
 import { ContentPieceDetail } from '@/components/conteudos/ContentPieceDetail'
 import { ContentPiecePageHeader } from '@/components/conteudos/ContentPiecePageHeader'
 import { CONTENT_PIECE_CATALOG_PATH } from '@/lib/contentPieceCatalog'
+import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { getPublishedContentPieceBySlug } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { hasPublishedJingles } from '@/utilities/jingleReads'
@@ -71,9 +72,10 @@ export async function generateMetadata({
 
 export default async function ContentPiecePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const [item, showJingles] = await Promise.all([
+  const [item, showJingles, showFotos] = await Promise.all([
     getPublishedContentPieceBySlug(slug),
     hasPublishedJingles(),
+    hasPublishedArchivePhotos(),
   ])
   if (!item) notFound()
 
@@ -85,7 +87,12 @@ export default async function ContentPiecePage({ params }: { params: Promise<{ s
           <ContentPieceDetail item={item} />
         </div>
       </main>
-      <CampaignFooter showJingles={showJingles} showConteudos current="conteudos" />
+      <CampaignFooter
+        showJingles={showJingles}
+        showConteudos
+        showFotos={showFotos}
+        current="conteudos"
+      />
     </>
   )
 }

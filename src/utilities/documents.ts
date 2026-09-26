@@ -52,3 +52,6 @@ export const revalidateJinglesListing = () => revalidateCollectionListing('jingl
 
 /** C211 — the content pieces listing tag the public Central (S27) will read. */
 export const revalidateContentPiecesListing = () => revalidateCollectionListing('contentPiece')
+
+/** C233 — the archive photos listing tag the public album (`/fotos`) reads. */
+export const revalidateArchivePhotosListing = () => revalidateCollectionListing('archivePhoto')

@@ -20,6 +20,7 @@ import {
   type ContentPieceCatalogSearchParams,
   type ContentPiecePublicItem,
 } from '@/lib/contentPieceCatalog'
+import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { getPublishedContentPieceItems } from '@/utilities/content/contentPieceReads'
 import { loadContentPieceCatalogSearch } from '@/utilities/content/contentPieceThemeSearch'
 import { getCachedGlobal } from '@/utilities/globalReads'
@@ -85,7 +86,11 @@ export default async function ConteudosPage({
 }: {
   searchParams: Promise<ContentPieceCatalogSearchParams>
 }) {
-  const [rawSearchParams, showJingles] = await Promise.all([searchParams, hasPublishedJingles()])
+  const [rawSearchParams, showJingles, showFotos] = await Promise.all([
+    searchParams,
+    hasPublishedJingles(),
+    hasPublishedArchivePhotos(),
+  ])
   const {
     publishedCount,
     params,
@@ -104,7 +109,7 @@ export default async function ConteudosPage({
         <main className="w-full bg-white">
           <ContentPieceEmptyState />
         </main>
-        <CampaignFooter showJingles={showJingles} />
+        <CampaignFooter showJingles={showJingles} showFotos={showFotos} />
       </>
     )
   }
@@ -178,7 +183,12 @@ export default async function ConteudosPage({
         </section>
       </main>
 
-      <CampaignFooter showJingles={showJingles} showConteudos current="conteudos" />
+      <CampaignFooter
+        showJingles={showJingles}
+        showConteudos
+        showFotos={showFotos}
+        current="conteudos"
+      />
     </>
   )
 }
