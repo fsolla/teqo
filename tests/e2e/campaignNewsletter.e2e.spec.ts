@@ -11,7 +11,13 @@ import { expect, test } from './fixtures/e2eTest'
  * level, and the page confirms in place. Runs the write through the deployed
  * server (server action + Local API) so the fail-closed consent path and the
  * transaction are the production ones.
+ *
+ * The home renders published content pieces; a concurrent curated spec can
+ * publish one whose still is not on disk yet, and `/conteudos/<slug>/frame`
+ * answers 404 until the self-heal lands (C226) — the same declaration as
+ * `frontend.e2e.spec.ts`.
  */
+test.use({ expectedRequestFailurePaths: [/\/conteudos\/.+\/frame$/] })
 test.describe('Campaign home novidades capture', () => {
   const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
   const runSuffix = Date.now()
