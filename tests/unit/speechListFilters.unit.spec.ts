@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildSpeechFacetWhere,
   buildSpeechListWhere,
   buildSpeechListWhereIncludingCutOrigins,
 } from '@/utilities/speech/speechListFilters'
@@ -132,63 +133,34 @@ describe('buildSpeechListWhereIncludingCutOrigins (C174)', () => {
   })
 })
 
-describe('buildSpeechListWhere theme expansion (C192)', () => {
-  it('ORs the query with every expanded theme term', () => {
-    const where = buildSpeechListWhere(parseSpeechListParams({ q: 'defesa do SUS' }), [
-      'saúde pública',
-      'SUS',
-    ])
-
-    expect(where).toEqual({
-      and: [
-        camara,
-        {
-          or: [
-            { searchText: { like: 'defesa do sus' } },
-            { keywords: { contains: 'defesa do SUS' } },
-            { searchText: { like: 'saude publica' } },
-            { keywords: { contains: 'saúde pública' } },
-            { searchText: { like: 'sus' } },
-            { keywords: { contains: 'SUS' } },
-          ],
-        },
-      ],
-    })
-  })
-
-  it('dedupes a term that repeats the query', () => {
-    expect(buildSpeechListWhere(parseSpeechListParams({ q: 'SUS' }), ['SUS'])).toEqual({
-      and: [camara, { or: [{ searchText: { like: 'sus' } }, { keywords: { contains: 'SUS' } }] }],
-    })
-  })
-
-  it('keeps the facets AND-ed and the cut origins OR-ed alongside the expansion', () => {
+// C229 — the semantic theme path seeds its candidates from this facet-only
+// boundary (no textual branch); the literal where above builds on it.
+describe('buildSpeechFacetWhere (C229)', () => {
+  it('returns the source discriminator and every facet branch', () => {
     expect(
-      buildSpeechListWhereIncludingCutOrigins(
-        parseSpeechListParams({ q: 'reforma', topic: ['saude'] }),
-        [7],
-        ['saúde'],
+      buildSpeechFacetWhere(
+        parseSpeechListParams({
+          year: '2026',
+          topic: ['saude'],
+          scope: ['bahia'],
+          phase: ['Breves Comunicações'],
+          municipality: '12',
+          duration: ['curta'],
+        }),
       ),
-    ).toEqual({
-      and: [
-        camara,
-        { topics: { in: ['saude'] } },
-        {
-          or: [
-            { searchText: { like: 'reforma' } },
-            { keywords: { contains: 'reforma' } },
-            { searchText: { like: 'saude' } },
-            { keywords: { contains: 'saúde' } },
-            { id: { in: [7] } },
-          ],
-        },
-      ],
-    })
+    ).toEqual([
+      camara,
+      { year: { in: [2026] } },
+      { topics: { in: ['saude'] } },
+      { scopes: { in: ['bahia'] } },
+      { phase: { in: ['Breves Comunicações'] } },
+      { mentionedMunicipalities: { in: [12] } },
+      { durationSeconds: { less_than: 120 } },
+    ])
   })
 
-  it('stays byte-identical to today without theme terms', () => {
-    const state = parseSpeechListParams({ q: 'reforma' })
-    expect(buildSpeechListWhere(state, [])).toEqual(buildSpeechListWhere(state))
+  it('never carries the textual query branch', () => {
+    expect(buildSpeechFacetWhere(parseSpeechListParams({ q: 'SUS' }))).toEqual([camara])
   })
 })
 

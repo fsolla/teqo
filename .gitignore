@@ -84,6 +84,8 @@ next-env.d.ts
 /data/falas-web/
 # C231 — Flickr photo-archive cache + receipts (pnpm flickr:import)
 /data/flickr/
+# C229 — speech semantic index reports (pnpm acervo:index)
+/data/acervo-index/
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 

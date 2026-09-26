@@ -61,7 +61,7 @@ const buildNormalizedIndex = (text: string): NormalizedIndex => {
 }
 
 /** Normalized search terms (words) of the query, in order, duplicates kept out. */
-export const speechSearchTerms = (query: string): string[] => [
+const speechSearchTerms = (query: string): string[] => [
   ...new Set(
     normalizeForSearch(query)
       .split(' ')

@@ -499,6 +499,8 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/lib/webSpeech',
       'src/collections/Speech.ts',
       'src/collections/InternetSpeechMedia.ts',
+      // C229 — the semantic index collection/engine the theme mode reads.
+      'src/collections/SpeechEmbedding.ts',
       // C216 — the source and ordering vocabularies shared by the acervo.
       'src/lib/acervoSource',
       'src/lib/acervoListSort',

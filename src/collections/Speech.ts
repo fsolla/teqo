@@ -78,6 +78,15 @@ const deleteSpeechAssets: CollectionBeforeDeleteHook = async ({ id, req }) => {
     .map((media) => (typeof media === 'object' && media !== null ? media.id : media))
     .filter((mediaId): mediaId is number => typeof mediaId === 'number')
 
+  // C229 — the semantic index is derived; deleting the speech deletes its rows
+  // first (the relationship FK cannot SET NULL over a NOT NULL column).
+  await req.payload.delete({
+    collection: 'speechEmbedding',
+    where: { speech: { equals: id } },
+    req,
+    // Intentional bypass: same cascade over derived vectors.
+    overrideAccess: true,
+  })
   await req.payload.delete({
     collection: 'speechSegment',
     where: { speech: { equals: id } },

@@ -15,7 +15,8 @@ import { cn } from '@/lib/utils'
  * The standard campaign list empty state (icon, title, description, optional
  * CTA). Rendered inside `CampaignListResults` so it dims with the shared
  * transition like the rows it replaces. `className` / `mediaClassName` /
- * `contentClassName` let a caller tune the shell without forking it (C192).
+ * `contentClassName` / `headerClassName` let a caller tune the shell without
+ * forking it (C192/C229).
  */
 export const CampaignListEmptyState = ({
   icon: Icon,
@@ -25,6 +26,7 @@ export const CampaignListEmptyState = ({
   className,
   mediaClassName,
   contentClassName,
+  headerClassName,
 }: {
   icon: LucideIcon
   title: string
@@ -34,9 +36,11 @@ export const CampaignListEmptyState = ({
   className?: string
   mediaClassName?: string
   contentClassName?: string
+  /** C229 — widens the copy of the theme empty state (design scene 03). */
+  headerClassName?: string
 }) => (
   <Empty className={cn('min-h-72 border', className)}>
-    <EmptyHeader>
+    <EmptyHeader className={headerClassName}>
       <EmptyMedia variant="icon" className={mediaClassName}>
         <Icon aria-hidden="true" />
       </EmptyMedia>

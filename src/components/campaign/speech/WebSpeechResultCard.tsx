@@ -7,6 +7,11 @@ import {
   type SpeechChipGroup,
 } from '@/components/campaign/speech/SpeechResultChips'
 import { SpeechResultThumbnail } from '@/components/campaign/speech/SpeechResultThumbnail'
+import {
+  SpeechLiteralMatchBadge,
+  SpeechSemanticBadges,
+  SpeechSemanticProvenance,
+} from '@/components/campaign/speech/SpeechSemanticEvidence'
 import { WebSpeechPlatformPill } from '@/components/campaign/speech/WebSpeechPlatformPill'
 import { Button } from '@/components/ui/button'
 import type { WebSpeechListItemViewModel } from '@/utilities/speech/speechViewModels'
@@ -19,7 +24,9 @@ const MAX_SCOPE_CHIPS = 2
  * C216 — one web speech in the "Falas na internet" list (design scenes 01/03/05):
  * the cover (or the honest neutral placeholder), the platform pill on the cover
  * and beside the date, the matching excerpt with the search highlight and the
- * single "Ver fala" action.
+ * single "Ver fala" action. C229 — in the theme mode the card carries the
+ * "Tema"/"Termo exato" seals and the real evidence block ("Trecho mais próximo
+ * do tema") instead of the highlighted excerpt.
  */
 export const WebSpeechResultCard = ({ speech }: { speech: WebSpeechListItemViewModel }) => {
   const { excerpt, thumbnailUrl, watchHref } = speech
@@ -29,23 +36,24 @@ export const WebSpeechResultCard = ({ speech }: { speech: WebSpeechListItemViewM
     { key: 'scopes', items: speech.scopes, max: MAX_SCOPE_CHIPS },
   ]
   const hasChips = Boolean(speech.topics.length || speech.scopes.length)
+  const isTheme = speech.semanticMatch
 
   return (
-    <article className="grid gap-4 rounded-xl border border-border p-4 md:grid-cols-[152px_minmax(0,1fr)_auto]">
+    <article className="grid gap-4 rounded-xl border border-border p-4 md:grid-cols-[128px_minmax(0,1fr)_auto]">
       <div className="relative">
         {thumbnailUrl ? (
           <SpeechResultThumbnail
             href={watchHref}
             src={thumbnailUrl}
             label={`Ver fala: ${speech.title}`}
-            className="aspect-video w-full md:w-[152px]"
+            fullWidthOnMobile
           />
         ) : (
           <Link
             href={watchHref}
             aria-hidden="true"
             tabIndex={-1}
-            className="relative grid aspect-video w-full place-items-center overflow-hidden rounded-lg bg-stone-200 text-stone-500 md:w-[152px]"
+            className="relative grid h-28 w-full place-items-center overflow-hidden rounded-lg bg-stone-200 text-stone-500 md:h-20 md:w-32"
           >
             <VideoIcon className="size-7" aria-hidden="true" />
             <span className="absolute bottom-2 text-[10px] font-semibold">SEM CAPA</span>
@@ -62,13 +70,23 @@ export const WebSpeechResultCard = ({ speech }: { speech: WebSpeechListItemViewM
       </div>
 
       <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
+        {isTheme ? <SpeechSemanticBadges matchedTextSearch={speech.matchedTextSearch} /> : null}
+        {!isTheme && speech.literalFallback ? <SpeechLiteralMatchBadge /> : null}
+        <div
+          className={`flex flex-wrap items-center gap-2 ${isTheme || speech.literalFallback ? 'mt-2' : ''}`}
+        >
           <WebSpeechPlatformPill platform={speech.platform.value} label={speech.platform.label} />
           <span className="text-xs text-muted-foreground">{metaLine}</span>
         </div>
         <h3 className="mt-2 text-sm font-semibold">{speech.title}</h3>
 
-        <SpeechExcerpt excerpt={excerpt} className="mt-2 text-sm leading-6 text-foreground/90" />
+        {isTheme ? (
+          <div className="mt-2">
+            <SpeechSemanticProvenance excerpt={excerpt} />
+          </div>
+        ) : (
+          <SpeechExcerpt excerpt={excerpt} className="mt-2 text-sm leading-6 text-foreground/90" />
+        )}
 
         {hasChips ? (
           <div className="mt-2 flex flex-wrap gap-1.5">

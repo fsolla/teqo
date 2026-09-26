@@ -339,7 +339,7 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(filteredHtml).toContain('Limpar busca e filtros')
   })
 
-  test('theme mode degrades honestly to the exact search without the key (C192)', async ({
+  test('theme mode degrades honestly to the exact search without the key (C229)', async ({
     campaign,
     campaignRequest,
   }) => {
@@ -349,8 +349,9 @@ test.describe('communication vertical (C154/C162)', () => {
     const user = await campaign.fixtures.createCampaignUser('communicator')
     const request = await campaignRequest(user, user.password)
 
-    // The e2e environment blanks DEEPSEEK_API_KEY (playwright.config.ts), so the
-    // expansion is unavailable and the page must fall back with the notice.
+    // The e2e environment blanks DEEPINFRA_API_KEY (playwright.config.ts), so
+    // the sense engine is unavailable and the page must fall back with the
+    // notice.
     const themed = await request.get(`/campanha/comunicacao/acervo?q=${marker}&mode=tema`)
     expect(themed.status()).toBe(200)
     const themedHtml = rendered(await themed.text())
@@ -358,22 +359,49 @@ test.describe('communication vertical (C154/C162)', () => {
     expect(themedHtml).toContain('Termo exato')
     expect(themedHtml).toContain('Por tema')
     expect(themedHtml).toContain('data-testid="speech-theme-fallback"')
-    expect(themedHtml).toContain('A busca por tema está indisponível agora.')
+    expect(themedHtml).toContain('A busca por sentido está indisponível agora.')
     expect(themedHtml).toContain('Tentar por tema novamente')
     expect(themedHtml).toContain('Resultados por termo exato')
-    expect(themedHtml).toContain('data-testid="speech-theme-fallback"')
+    // The degraded literal card carries the term seal (design scene 04).
+    expect(themedHtml).toContain('data-testid="speech-literal-badge"')
     // The exact results still render and keep the highlighted term.
     expect(themedHtml).toContain(marker)
     expect(themedHtml).toContain('<mark')
-    // No theme badge is fabricated.
-    expect(themedHtml).not.toContain('Por que apareceu')
+    // No semantic evidence is fabricated.
+    expect(themedHtml).not.toContain('Trecho mais próximo do tema')
 
     // The default mode stays untouched: no mode param means no notice.
     const exact = await request.get(`/campanha/comunicacao/acervo?q=${marker}`)
     expect(exact.status()).toBe(200)
     const exactHtml = rendered(await exact.text())
     expect(exactHtml).toContain(marker)
-    expect(exactHtml).not.toContain('A busca por tema está indisponível agora.')
+    expect(exactHtml).not.toContain('A busca por sentido está indisponível agora.')
+  })
+
+  test('the web theme sort canonicalizes without a redirect loop (C229)', async ({
+    campaign,
+    campaignRequest,
+  }) => {
+    const marker = campaign.fixtures.value('temaordem')
+    const user = await campaign.fixtures.createCampaignUser('communicator')
+    const request = await campaignRequest(user, user.password)
+
+    const recentes = await request.get(
+      `/campanha/comunicacao/acervo?source=internet&q=${marker}&mode=tema&sort=recentes`,
+    )
+    expect(recentes.status()).toBe(200)
+    const recentesHtml = rendered(await recentes.text())
+    // The engine is down in e2e (no key): the ordering control honestly shows
+    // the literal vocabulary and the explicit order survives canonicalization.
+    expect(recentesHtml).toContain('Mais recentes')
+    expect(recentesHtml).not.toContain('Mais relevantes')
+    expect(recentesHtml).toContain('A busca por sentido está indisponível agora.')
+
+    // `relevancia` is the theme default: canonicalizes away, no loop.
+    const relevance = await request.get(
+      `/campanha/comunicacao/acervo?source=internet&q=${marker}&mode=tema&sort=relevancia`,
+    )
+    expect(relevance.status()).toBe(200)
   })
 
   test('advisor and leader are redirected away from the acervo', async ({

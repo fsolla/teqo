@@ -269,6 +269,7 @@ export const SpeechAcervoFilters = ({
         themeUnavailable={themeUnavailable}
         onSelect={runMode}
         relatedHint="Encontra falas relacionadas pelo sentido."
+        unavailableHint="Você pode tentar “Por tema” novamente."
       />
 
       <div

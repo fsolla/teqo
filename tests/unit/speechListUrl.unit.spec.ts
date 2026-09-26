@@ -238,3 +238,62 @@ describe('web speeches source (C216)', () => {
     expect(speechHasActiveFilters(parseSpeechListParams({}))).toBe(false)
   })
 })
+
+// C229 — the theme mode of the web source: relevance is the default and
+// `recentes` becomes a real state that must serialize; the exact mode keeps
+// its bytes and the Câmara keeps no sort at all.
+describe('theme sort of the web source (C229)', () => {
+  const themeParams = { source: 'internet', q: 'combate à oposição', mode: 'tema' } as const
+
+  it('parses the theme sort with relevance and unknown values as the default', () => {
+    expect(parseSpeechListParams({ ...themeParams, sort: 'recentes' }).sort).toBe('recentes')
+    expect(parseSpeechListParams({ ...themeParams, sort: 'duracao_maior' }).sort).toBe(
+      'duracao_maior',
+    )
+    expect(parseSpeechListParams({ ...themeParams, sort: 'relevancia' }).sort).toBeUndefined()
+    expect(parseSpeechListParams({ ...themeParams, sort: 'maratona' }).sort).toBeUndefined()
+    // The Câmara contract never carries a sort, not even in the theme mode.
+    expect(parseSpeechListParams({ q: 'SUS', mode: 'tema', sort: 'recentes' }).sort).toBeUndefined()
+  })
+
+  it('serializes an explicit recentes in the theme mode only', () => {
+    expect(
+      serializeCanonicalSpeechListSearchParams(
+        parseSpeechListParams({ ...themeParams, sort: 'recentes' }),
+      ).toString(),
+    ).toBe('source=internet&q=combate+%C3%A0+oposi%C3%A7%C3%A3o&mode=tema&sort=recentes')
+    // Relevance and unknown values canonicalize away.
+    expect(
+      serializeCanonicalSpeechListSearchParams(
+        parseSpeechListParams({ ...themeParams, sort: 'relevancia' }),
+      ).get('sort'),
+    ).toBeNull()
+    // The exact mode still omits its own default.
+    expect(
+      serializeCanonicalSpeechListSearchParams(
+        parseSpeechListParams({ source: 'internet', q: 'SUS', sort: 'recentes' }),
+      ).get('sort'),
+    ).toBeNull()
+  })
+
+  it('canonicalizes relevance and unknown theme sorts into a redirect', () => {
+    const relevance = resolveSpeechListUrl({ ...themeParams, sort: 'relevancia' })
+    expect(relevance.state.sort).toBeUndefined()
+    expect(relevance.redirectHref).toBe(
+      '/campanha/comunicacao/acervo?source=internet&q=combate+%C3%A0+oposi%C3%A7%C3%A3o&mode=tema',
+    )
+
+    const unknown = resolveSpeechListUrl({ ...themeParams, sort: 'maratona' })
+    expect(unknown.redirectHref).toBe(
+      '/campanha/comunicacao/acervo?source=internet&q=combate+%C3%A0+oposi%C3%A7%C3%A3o&mode=tema',
+    )
+  })
+
+  it('keeps the canonical round-trip of an explicit theme order', () => {
+    const state = parseSpeechListParams({ ...themeParams, sort: 'recentes' })
+    expect(buildSpeechListHref(state, 2)).toBe(
+      '/campanha/comunicacao/acervo?source=internet&q=combate+%C3%A0+oposi%C3%A7%C3%A3o&mode=tema&sort=recentes&page=2',
+    )
+    expect(resolveSpeechListUrl({ ...themeParams, sort: 'recentes' }).redirectHref).toBeUndefined()
+  })
+})

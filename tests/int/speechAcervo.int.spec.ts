@@ -6,9 +6,12 @@ import type { Payload } from 'payload'
 import { getPayload } from 'payload'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
+import type { SpeechTopic } from '@/lib/speechFacets'
 import { matchMunicipalityMentions } from '@/lib/speechGazetteer'
 import { speechPosterHref } from '@/lib/speechPoster'
 import config from '@/payload.config'
+import { DEEPINFRA_EMBED_MODEL } from '@/utilities/ai/deepInfraEmbed'
+import { indexSpeechSources } from '@/utilities/speech/speechEmbeddingIndex'
 import { upsertSpeechBundle, type SpeechImportBundle } from '@/utilities/speech/speechImport'
 import {
   loadSpeechAcervoPageData,
@@ -64,6 +67,42 @@ const createSpeech = async (overrides: Partial<SpeechImportBundle> = {}): Promis
   if (!speech) throw new Error('fixture speech was not created')
   return speech.id
 }
+
+/**
+ * C229 — writes one index row directly (the CLI has its own unit coverage);
+ * the vectors are tiny and hand-picked so the ranking assertions are exact.
+ */
+const seedSpeechEmbedding = async (
+  speechId: number,
+  kind: 'speech' | 'segment' | 'window',
+  order: number | null,
+  vector: number[],
+): Promise<void> => {
+  await payload.create({
+    collection: 'speechEmbedding',
+    data: {
+      speech: speechId,
+      kind,
+      order,
+      model: DEEPINFRA_EMBED_MODEL,
+      dimensions: vector.length,
+      contentHash: `${kind}-${order ?? 'root'}-${vector.join(',')}`,
+      vector,
+    },
+    overrideAccess: true,
+  })
+}
+
+/** Facets of a test speech with the topic overridden (the facet boundary test). */
+const facetsWithTopics = (topics: SpeechTopic[]): NonNullable<SpeechImportBundle['facets']> => ({
+  topics,
+  scopes: ['bahia'],
+  municipalities: [],
+  people: [],
+  programs: [],
+  projects: [],
+  classifiedBy: 'gazetteer',
+})
 
 /**
  * C172 — the detail loader asks YouTube for the session video's start by
@@ -348,42 +387,75 @@ describe('speech acervo (C154)', () => {
     ).rejects.toBeInstanceOf(SpeechNotFoundError)
   })
 
-  it('finds a speech by expanded theme terms and explains the match (C192)', async () => {
+  it('ranks by sense with the closest real passage and no highlight (C229)', async () => {
     const runId = randomUUID().slice(0, 8)
-    const marker = `tema${runId}`
-    const id = await createSpeech({
+    const closer = await createSpeech({
+      speechAt: '2020-01-01T10:00',
       segments: [
-        {
-          startSeconds: 0,
-          endSeconds: 3,
-          text: `Garantir o atendimento universal ${marker} na rede pública`,
-        },
+        { startSeconds: 10, endSeconds: 13, text: 'Primeiro trecho da fala' },
+        { startSeconds: 40, endSeconds: 43, text: `O embate com a oposição ${runId}` },
       ],
     })
+    const newer = await createSpeech({
+      speechAt: '2026-01-01T10:00',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: 'Um assunto distante' }],
+    })
+    await seedSpeechEmbedding(closer, 'speech', null, [1, 0])
+    await seedSpeechEmbedding(newer, 'speech', null, [0.9, 0.435])
+    await seedSpeechEmbedding(closer, 'segment', 2, [1, 0])
+    await seedSpeechEmbedding(closer, 'segment', 1, [0, 1])
+    await seedSpeechEmbedding(newer, 'segment', 1, [0.9, 0.435])
 
     const { coordinator } = await createUsers()
-    const expansionCalls: string[] = []
+    const embedCalls: string[] = []
     const data = await loadSpeechAcervoPageData(
       payload,
       coordinator,
-      { q: 'defesa do SUS', mode: 'tema' },
-      async (theme) => {
-        expansionCalls.push(theme)
-        return { terms: [`atendimento universal ${marker}`] }
+      { q: 'combate à oposição', mode: 'tema' },
+      async (query) => {
+        embedCalls.push(query)
+        return [1, 0]
       },
     )
 
-    expect(expansionCalls).toEqual(['defesa do SUS'])
+    expect(embedCalls).toEqual(['combate à oposição'])
     expect(data.themeUnavailable).toBe(false)
     expect(data.themeApplied).toBe(true)
-    const row = data.rows.find((item) => item.id === id)
-    expect(row?.matchKind).toBe('theme')
-    expect(row?.themeMatchTerm).toBe(`atendimento universal ${marker}`)
+    // Proximity beats the date: the older speech outranks the newer one.
+    const ids = data.rows.map((row) => row.id)
+    expect(ids.indexOf(closer)).toBeLessThan(ids.indexOf(newer))
+
+    const row = data.rows.find((item) => item.id === closer)
+    expect(row?.semanticMatch).toBe(true)
     expect(row?.matchedTextSearch).toBe(false)
-    expect(row?.excerpt.parts.some((part) => part.highlighted)).toBe(true)
+    expect(row?.matchKind).toBe('theme')
+    // The evidence is the real segment closest to the query, without highlight.
+    expect(row?.excerpt.parts.map((part) => part.text).join('')).toContain(
+      `embate com a oposição ${runId}`,
+    )
+    expect(row?.excerpt.parts.some((part) => part.highlighted)).toBe(false)
+    expect(row?.watchHref).toContain('t=40')
   })
 
-  it('degrades to the literal search when the expansion is unavailable (C192)', async () => {
+  it('returns the honest empty when nothing passes the cut-off (C229)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const id = await createSpeech({ speechAt: '1985-01-01T10:00', year: 1985 })
+    await seedSpeechEmbedding(id, 'speech', null, [0, 1])
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: `tema distante ${runId}`, mode: 'tema', year: '1985' },
+      async () => [1, 0],
+    )
+
+    expect(data.rows).toEqual([])
+    expect(data.themeApplied).toBe(true)
+    expect(data.themeUnavailable).toBe(false)
+  })
+
+  it('degrades to the literal search when the embedder is unavailable (C229)', async () => {
     const runId = randomUUID().slice(0, 8)
     const marker = `literal${runId}`
     const id = await createSpeech({
@@ -401,17 +473,198 @@ describe('speech acervo (C154)', () => {
     expect(data.themeUnavailable).toBe(true)
     expect(data.themeApplied).toBe(false)
     const row = data.rows.find((item) => item.id === id)
-    expect(row?.themeMatchTerm).toBeNull()
+    expect(row?.semanticMatch).toBe(false)
     expect(row?.matchedTextSearch).toBe(true)
   })
 
-  it('never expands for an actor outside the catalog gate (C192)', async () => {
+  it('degrades when the candidates have no index rows (C229)', async () => {
+    const id = await createSpeech({ speechAt: '1984-01-01T10:00', year: 1984 })
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: 'qualquer tema', mode: 'tema', year: '1984' },
+      async () => [1, 0],
+    )
+
+    expect(data.themeUnavailable).toBe(true)
+    expect(data.themeApplied).toBe(false)
+    expect(data.rows.every((row) => row.id !== id)).toBe(true)
+  })
+
+  it('keeps the facets as the candidate boundary (C229)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const saude = await createSpeech({
+      speechAt: '2024-01-01T10:00',
+      facets: facetsWithTopics(['saude']),
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Saúde ${runId}` }],
+    })
+    const educacao = await createSpeech({
+      speechAt: '2024-01-02T10:00',
+      facets: facetsWithTopics(['educacao']),
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Educação ${runId}` }],
+    })
+    await seedSpeechEmbedding(saude, 'speech', null, [1, 0])
+    await seedSpeechEmbedding(educacao, 'speech', null, [1, 0])
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: 'tema qualquer', mode: 'tema', topic: 'saude' },
+      async () => [1, 0],
+    )
+
+    const ids = data.rows.map((row) => row.id)
+    expect(ids).toContain(saude)
+    expect(ids).not.toContain(educacao)
+  })
+
+  it('ranks by relevance over the date in the theme mode (C229)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const older = await createSpeech({
+      speechAt: '2020-01-01T10:00',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Fala ${runId}` }],
+    })
+    const newer = await createSpeech({
+      speechAt: '2026-01-01T10:00',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Fala ${runId}` }],
+    })
+    await seedSpeechEmbedding(older, 'speech', null, [1, 0])
+    await seedSpeechEmbedding(newer, 'speech', null, [0.9, 0.435])
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: `tema ${runId}`, mode: 'tema' },
+      async () => [1, 0],
+    )
+
+    // Relevance first: the older speech outranks the newer one.
+    const ids = data.rows.map((row) => row.id)
+    expect(ids.indexOf(older)).toBeLessThan(ids.indexOf(newer))
+    // The Câmara contract has no sort: the dated state never leaks through.
+    expect(data.state.sort).toBeUndefined()
+  })
+
+  it('indexes a speech end-to-end and skips it on the second run (C229)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const id = await createSpeech({
+      speechAt: '1986-01-01T10:00',
+      year: 1986,
+      segments: [
+        { startSeconds: 0, endSeconds: 3, text: `Primeiro trecho ${runId}` },
+        { startSeconds: 3, endSeconds: 6, text: `Segundo trecho ${runId}` },
+      ],
+    })
+    const source = {
+      id,
+      segments: [
+        { order: 1, startSeconds: 0, text: `Primeiro trecho ${runId}` },
+        { order: 2, startSeconds: 3, text: `Segundo trecho ${runId}` },
+      ],
+    }
+    const embedCalls: string[][] = []
+    const embedTexts = async (texts: readonly string[]) => {
+      embedCalls.push([...texts])
+      return {
+        vectors: texts.map((_, index) => (index === 0 ? [1, 0] : [0.6, 0.8])),
+        promptTokens: 10,
+      }
+    }
+
+    const first = await indexSpeechSources(payload, [source], { embedTexts })
+    expect(first).toMatchObject({ indexed: 1, failed: 0, units: 2, upToDate: 0 })
+    expect(embedCalls).toEqual([[`Primeiro trecho ${runId}`, `Segundo trecho ${runId}`]])
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: `tema ${runId}`, mode: 'tema', year: '1986' },
+      async () => [1, 0],
+    )
+    const row = data.rows.find((item) => item.id === id)
+    expect(row?.semanticMatch).toBe(true)
+    expect(row?.excerpt.parts.map((part) => part.text).join('')).toContain(
+      `Primeiro trecho ${runId}`,
+    )
+
+    const second = await indexSpeechSources(payload, [source], { embedTexts })
+    expect(second).toMatchObject({ indexed: 0, failed: 0, upToDate: 1 })
+    expect(embedCalls).toHaveLength(1)
+
+    // A stored order that no longer exists falls back to the FIRST real segment
+    // (never a shifted positional guess).
+    await seedSpeechEmbedding(id, 'segment', 999, [0, 1])
+    const fallback = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: `tema ${runId}`, mode: 'tema', year: '1986' },
+      async () => [0, 1],
+    )
+    expect(
+      fallback.rows
+        .find((item) => item.id === id)
+        ?.excerpt.parts.map((part) => part.text)
+        .join(''),
+    ).toContain(`Primeiro trecho ${runId}`)
+  })
+
+  it('cascades the index rows when the speech is deleted (C229)', async () => {
+    const id = await createSpeech()
+    await seedSpeechEmbedding(id, 'speech', null, [1, 0])
+
+    await payload.delete({ collection: 'speech', id, depth: 0, overrideAccess: true })
+
+    const found = await payload.find({
+      collection: 'speechEmbedding',
+      where: { speech: { equals: id } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+    expect(found.totalDocs).toBe(0)
+  })
+
+  it('ignores vectors from another embedding model (C229)', async () => {
+    const id = await createSpeech({ speechAt: '1983-01-01T10:00', year: 1983 })
+    await payload.create({
+      collection: 'speechEmbedding',
+      data: {
+        speech: id,
+        kind: 'speech',
+        model: 'outro-modelo',
+        dimensions: 2,
+        contentHash: 'outro-modelo',
+        vector: [1, 0],
+      },
+      overrideAccess: true,
+    })
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: 'qualquer tema', mode: 'tema', year: '1983' },
+      async () => [1, 0],
+    )
+
+    // The foreign vector is never scored against a bge-m3 query: the loader
+    // degrades instead of ranking nonsense.
+    expect(data.themeUnavailable).toBe(true)
+    expect(data.rows).toEqual([])
+  })
+
+  it('never calls the sense engine for an actor outside the catalog gate (C229)', async () => {
     const { advisor } = await createUsers()
     let called = false
     await expect(
       loadSpeechAcervoPageData(payload, advisor, { q: 'SUS', mode: 'tema' }, async () => {
         called = true
-        return { terms: ['saúde'] }
+        return [1, 0]
       }),
     ).rejects.toThrow(/permissão/i)
     expect(called).toBe(false)

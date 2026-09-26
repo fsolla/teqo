@@ -5,7 +5,12 @@
  * member equals no filter); year/phase/municipality are data-driven and
  * validated structurally.
  */
-import { parseAcervoSort, type AcervoSortKey } from '@/lib/acervoListSort'
+import {
+  acervoSortIsDuration,
+  parseAcervoSort,
+  parseAcervoThemeSort,
+  type AcervoSortKey,
+} from '@/lib/acervoListSort'
 import { ACERVO_SOURCE_INTERNET, parseAcervoSource } from '@/lib/acervoSource'
 import { CAMPAIGN_COMMUNICATION_ACERVO } from '@/lib/campaignPaths'
 import { isContactSearchQueryReady } from '@/lib/contactSearchQuery'
@@ -31,10 +36,10 @@ import {
 export const speechPageSize = 25
 
 /**
- * C192 — search mode of the acervo. `termo` is the literal search (default,
- * never serialized so existing deep links stay byte-identical); `tema` asks the
- * semantic bridge for related terms. Kept as a single-value param, only
- * meaningful alongside `q`.
+ * C192/C229 — search mode of the acervo. `termo` is the literal search
+ * (default, never serialized so existing deep links stay byte-identical);
+ * `tema` asks the sense engine (C229) for related speeches. Kept as a
+ * single-value param, only meaningful alongside `q`.
  */
 export type SpeechSearchMode = 'termo' | 'tema'
 
@@ -76,7 +81,11 @@ export type SpeechListState = {
   phases?: string[]
   municipalities?: number[]
   durations?: SpeechDurationBucket[]
-  /** C216 — the web list ordering; the Câmara contract has no sort. */
+  /**
+   * C216 — the web list ordering; the Câmara contract has no sort. C229 — in
+   * the theme mode the relevance order is the default (`sort` absent) and
+   * `recentes` becomes a real state; the exact mode keeps its bytes.
+   */
   sort?: AcervoSortKey
 }
 
@@ -135,7 +144,14 @@ export const parseSpeechListParams = (params: RawSpeechListParams): SpeechListSt
     params.duration,
     speechDurationSet,
   )
-  const sort = isWeb ? parseAcervoSort(params.sort) : undefined
+  // C229 — the web sort is mode-aware: the theme mode defaults to relevance
+  // (`sort` absent) and recognizes `recentes`/`relevancia`; the exact mode
+  // keeps the C216 rule (only the duration orders are meaningful).
+  const sort = isWeb
+    ? mode === 'tema'
+      ? parseAcervoThemeSort(params.sort)
+      : parseAcervoSort(params.sort)
+    : undefined
 
   return {
     ...(isWeb ? { source: ACERVO_SOURCE_INTERNET } : {}),
@@ -189,9 +205,14 @@ export const serializeCanonicalSpeechListSearchParams = (
     params.append('municipality', String(municipality))
   }
   for (const duration of canonicalState.durations ?? []) params.append('duration', duration)
-  // C216 — `recentes` is the default and never serialized; the sort belongs to
-  // the web source only.
-  if (canonicalState.source === 'internet' && canonicalState.sort) {
+  // C216 — `recentes` is the exact-mode default and never serialized; C229 —
+  // in the theme mode relevance took that place, so an explicit `recentes` is
+  // a real state and serializes. Both rules live on the web source only.
+  if (
+    canonicalState.source === 'internet' &&
+    canonicalState.sort &&
+    (canonicalState.mode === 'tema' || acervoSortIsDuration(canonicalState.sort))
+  ) {
     params.set('sort', canonicalState.sort)
   }
   if (canonicalState.page > 1) params.set('page', String(canonicalState.page))

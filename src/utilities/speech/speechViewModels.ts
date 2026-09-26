@@ -17,17 +17,12 @@ import type { SpeechScope, SpeechTopic } from '@/lib/speechFacets'
 import {
   buildHighlightedExcerpt,
   pickMatchingSegment,
-  speechSearchTerms,
   splitHighlightedParts,
   type SpeechHighlightedExcerpt,
   type SpeechHighlightPart,
 } from '@/lib/speechHighlight'
 import { speechPosterHref, speechPosterTarget } from '@/lib/speechPoster'
-import {
-  normalizeForSearch,
-  speechMatchesSearchQuery,
-  speechMatchesSearchTerm,
-} from '@/lib/speechSearch'
+import { normalizeForSearch, speechMatchesSearchQuery } from '@/lib/speechSearch'
 import {
   correctedExcerptOffsetSeconds,
   excerptOffsetSeconds,
@@ -48,6 +43,12 @@ import { speechScopeLabels, speechTopicLabels } from '@/utilities/speech/speechL
 
 /** ASR segment shape, owned by the C158 excerpt builder (`lib/speechExcerpt`). */
 export type SpeechSegmentRecord = SpeechExcerptSegment
+
+/**
+ * C229 — the segment plus its stored `order`, so the semantic evidence reader
+ * can resolve the index row back to the real passage text.
+ */
+export type SpeechSegmentRecordWithOrder = SpeechSegmentRecord & { order: number }
 
 export type SpeechListRecord = {
   id: number
@@ -106,11 +107,18 @@ export type SpeechListItemViewModel = {
    */
   matchedTextSearch: boolean
   /**
-   * C192 — the expanded theme term that matched the speech text/keywords, or
-   * null when the search was literal (or the expansion did not surface this
-   * row). The card uses it to label the result and to explain why it appeared.
+   * C229 — the semantic engine surfaced this row in the theme mode and the
+   * excerpt is the real passage closest to the theme. The card uses it to show
+   * the "Tema" seal and the "Trecho mais próximo do tema" block (no highlight,
+   * no score); false in the literal/degraded path.
    */
-  themeMatchTerm: string | null
+  semanticMatch: boolean
+  /**
+   * C229 — the actor asked for the theme mode but the engine was down, so this
+   * is a literal result of the degraded path; the card labels it "Termo exato"
+   * (design scene 04) without changing the plain exact search.
+   */
+  literalFallback: boolean
 }
 
 export type SpeechDetailSegmentViewModel = {
@@ -193,38 +201,12 @@ const scopeViewModels = (speech: SpeechListRecord) =>
   (speech.scopes ?? []).map((value) => ({ value, label: speechScopeLabels[value] }))
 
 /**
- * C192 — the first expanded theme term that actually surfaced this speech. The
- * gate is the `speechMatchesSearchTerm` mirror (the same predicate the `where`
- * runs), so the card never claims a theme the search did not use. The evidence
- * is the passage that carries the term, or the official keyword when that is
- * what matched. Returns undefined when no theme term applies to this row.
+ * C229 — the semantic evidence of one row: the real passage closest to the
+ * theme (segment or text window) and its start when the player can seek to it.
  */
-const pickThemeMatch = (
-  speech: SpeechListRecord,
-  segments: readonly SpeechSegmentRecord[],
-  themeTerms: readonly string[],
-): { term: string; segment?: SpeechSegmentRecord; keyword?: string } | undefined => {
-  for (const term of themeTerms) {
-    const trimmed = term.trim()
-    const normalized = normalizeForSearch(trimmed)
-    if (!normalized || !speechMatchesSearchTerm(speech, trimmed)) continue
-
-    if (normalizeForSearch(speech.searchText ?? '').includes(normalized)) {
-      const segment =
-        segments.find((item) => normalizeForSearch(item.text).includes(normalized)) ??
-        segments.find((item) => {
-          const text = normalizeForSearch(item.text)
-          return speechSearchTerms(trimmed).some((word) => text.includes(word))
-        }) ??
-        segments[0]
-      return { term: trimmed, segment }
-    }
-
-    const lowered = trimmed.toLowerCase()
-    const keyword = (speech.keywords ?? []).find((item) => item.toLowerCase().includes(lowered))
-    if (keyword) return { term: trimmed, keyword }
-  }
-  return undefined
+export type SpeechSemanticEvidence = {
+  text: string
+  startSeconds: number | null
 }
 
 /**
@@ -234,11 +216,13 @@ const pickThemeMatch = (
  */
 const withSeekQuery = (
   href: string,
-  segment: SpeechSegmentRecord | undefined,
+  startSeconds: number | null | undefined,
   query: string | undefined,
 ): string => {
   const params = new URLSearchParams()
-  if (segment) params.set('t', String(Math.max(0, Math.floor(segment.startSeconds))))
+  if (typeof startSeconds === 'number' && Number.isFinite(startSeconds)) {
+    params.set('t', String(Math.max(0, Math.floor(startSeconds))))
+  }
   if (query) params.set('q', query)
   const queryString = params.toString()
   return queryString ? `${href}?${queryString}` : href
@@ -246,9 +230,9 @@ const withSeekQuery = (
 
 export const buildWatchHref = (
   speechId: number,
-  segment: SpeechSegmentRecord | undefined,
+  startSeconds: number | null | undefined,
   query: string | undefined,
-): string => withSeekQuery(`${CAMPAIGN_COMMUNICATION_ACERVO}/${speechId}`, segment, query)
+): string => withSeekQuery(`${CAMPAIGN_COMMUNICATION_ACERVO}/${speechId}`, startSeconds, query)
 
 type SpeechCuts = readonly SpeechCutSummaryViewModel[]
 
@@ -261,7 +245,9 @@ export const toSpeechListItemViewModel = ({
   query,
   municipalityLabels,
   cuts = [],
-  themeTerms = [],
+  semanticMatch = false,
+  literalFallback = false,
+  semanticEvidence = null,
 }: {
   speech: SpeechListRecord
   segments: readonly SpeechSegmentRecord[]
@@ -269,8 +255,12 @@ export const toSpeechListItemViewModel = ({
   municipalityLabels: ReadonlyMap<number, string>
   /** C174 — the cuts of this speech, nested in the result card. */
   cuts?: SpeechCuts
-  /** C192 — expanded theme terms; empty in the literal search. */
-  themeTerms?: readonly string[]
+  /** C229 — the sense engine surfaced this row (a hit, by construction). */
+  semanticMatch?: boolean
+  /** C229 — literal result of the degraded theme path (design scene 04). */
+  literalFallback?: boolean
+  /** C229 — the passage closest to the theme; null when the row has no unit. */
+  semanticEvidence?: SpeechSemanticEvidence | null
 }): SpeechListItemViewModel => {
   const matchedSegment = pickMatchingSegment(segments, query)
   const q = query?.trim()
@@ -280,25 +270,18 @@ export const toSpeechListItemViewModel = ({
     Boolean(normalizedQuery) &&
     (speech.keywords ?? []).some((keyword) => normalizeForSearch(keyword).includes(normalizedQuery))
 
-  // C192 — the theme evidence wins the excerpt so the card's "Por que apareceu"
-  // block shows the passage that actually matched, even when the speech also
-  // contains the literal query.
-  const themeMatch = pickThemeMatch(speech, segments, themeTerms)
-
+  // C229 — the semantic evidence wins the excerpt so the theme card shows the
+  // real passage closest to the sense searched, without any highlight (the
+  // theme engine never matched a term) and without a score.
   const excerptSource =
-    themeMatch?.segment?.text ??
-    themeMatch?.keyword ??
+    semanticEvidence?.text ??
     matchedSegment?.text ??
     segments[0]?.text ??
     speech.summary ??
     speech.officialTranscript ??
     ''
 
-  // C192 — the theme passage highlights the whole phrase as one band (the
-  // per-term split would drop the "à" and break it into pieces).
-  const excerpt = themeMatch
-    ? buildHighlightedExcerpt(excerptSource, themeMatch.term, { phrase: true })
-    : buildHighlightedExcerpt(excerptSource, q ?? '')
+  const excerpt = buildHighlightedExcerpt(excerptSource, semanticMatch ? '' : (q ?? ''))
 
   return {
     id: speech.id,
@@ -307,23 +290,28 @@ export const toSpeechListItemViewModel = ({
     durationLabel: formatSpeechDuration(speech.durationSeconds),
     presidingOfficer: speech.presidingOfficer ?? null,
     excerpt,
-    matchKind: matchedSegment
-      ? 'segment'
-      : keywordMatch
-        ? 'keyword'
-        : themeMatch
-          ? 'theme'
+    matchKind: semanticMatch
+      ? 'theme'
+      : matchedSegment
+        ? 'segment'
+        : keywordMatch
+          ? 'keyword'
           : 'fallback',
     topics: topicViewModels(speech),
     scopes: scopeViewModels(speech),
     keywords: speech.keywords ?? [],
     municipalities: municipalityViewModels(speech, municipalityLabels),
     thumbnailUrl: thumbnailUrlOf(speech),
-    watchHref: buildWatchHref(speech.id, matchedSegment, q),
+    watchHref: buildWatchHref(
+      speech.id,
+      semanticEvidence?.startSeconds ?? matchedSegment?.startSeconds,
+      q,
+    ),
     officialTextUrl: speech.officialTextUrl ?? null,
     cuts: [...cuts],
     matchedTextSearch: speechMatchesSearchQuery(speech, query),
-    themeMatchTerm: themeMatch?.term ?? null,
+    semanticMatch,
+    literalFallback,
   }
 }
 
@@ -403,7 +391,7 @@ export type WebSpeechListRecord = {
   scopes?: SpeechScope[] | null
   /** Upload relation at depth 0 (id) or depth 1 (object); presence drives the cover. */
   thumbnail?: number | { id: number } | null
-  /** Normalized search text; lets the row mirror the Câmara theme evidence. */
+  /** Normalized search text; lets the row mirror the Câmara literal match. */
   searchText?: string | null
 }
 
@@ -430,6 +418,12 @@ export type WebSpeechListItemViewModel = {
   /** Detail link that seeks the player to the matching segment (`?t=`) and
    * keeps the search term for the transcript highlight (`?q=`). */
   watchHref: string
+  /** C229 — the semantic engine surfaced this row; same contract as the Câmara. */
+  semanticMatch: boolean
+  /** C229 — literal result of the degraded theme path (design scene 04). */
+  literalFallback: boolean
+  /** C229 — the row also contains the literal query; the card shows "Termo exato". */
+  matchedTextSearch: boolean
 }
 
 export type WebSpeechDetailViewModel = {
@@ -464,38 +458,36 @@ const webSpeechTitle = (speech: WebSpeechListRecord): string =>
 
 const buildWebSpeechWatchHref = (
   speechId: number,
-  segment: SpeechSegmentRecord | undefined,
+  startSeconds: number | null | undefined,
   query: string | undefined,
-): string => withSeekQuery(campaignInternetSpeechHref(speechId), segment, query)
+): string => withSeekQuery(campaignInternetSpeechHref(speechId), startSeconds, query)
 
 /**
  * List item of one web speech: platform chip, publication date + duration, the
- * matching excerpt (theme evidence preferred, like the Câmara) and the private
- * cover href. The cuts/VOD of the Câmara row have no counterpart here.
+ * matching excerpt (C229 semantic evidence preferred, like the Câmara) and the
+ * private cover href. The cuts/VOD of the Câmara row have no counterpart here.
  */
 export const toWebSpeechListItemViewModel = ({
   speech,
   segments,
   query,
-  themeTerms = [],
+  semanticMatch = false,
+  literalFallback = false,
+  semanticEvidence = null,
 }: {
   speech: WebSpeechListRecord
   segments: readonly SpeechSegmentRecord[]
   query?: string
-  /** C216 — expanded theme terms; empty in the literal search. */
-  themeTerms?: readonly string[]
+  /** C229 — the sense engine surfaced this row (a hit, by construction). */
+  semanticMatch?: boolean
+  /** C229 — literal result of the degraded theme path (design scene 04). */
+  literalFallback?: boolean
+  /** C229 — the passage closest to the theme; null when the row has no unit. */
+  semanticEvidence?: SpeechSemanticEvidence | null
 }): WebSpeechListItemViewModel => {
   const matchedSegment = pickMatchingSegment(segments, query)
   const q = query?.trim()
-  // Same evidence rule as the Câmara VM: a theme passage wins the excerpt so
-  // the card shows why the row appeared.
-  const themeMatch = pickThemeMatch(speech, segments, themeTerms)
-  const excerptSource =
-    themeMatch?.segment?.text ??
-    themeMatch?.keyword ??
-    matchedSegment?.text ??
-    segments[0]?.text ??
-    ''
+  const excerptSource = semanticEvidence?.text ?? matchedSegment?.text ?? segments[0]?.text ?? ''
 
   return {
     id: speech.id,
@@ -503,14 +495,19 @@ export const toWebSpeechListItemViewModel = ({
     platform: webPlatformViewModel(speech.platform),
     dateLabel: formatSpeechDate(speech.speechAt),
     durationLabel: formatSpeechDuration(speech.durationSeconds),
-    excerpt: themeMatch
-      ? buildHighlightedExcerpt(excerptSource, themeMatch.term, { phrase: true })
-      : buildHighlightedExcerpt(excerptSource, q ?? ''),
+    excerpt: buildHighlightedExcerpt(excerptSource, semanticMatch ? '' : (q ?? '')),
     topics: topicViewModels(speech),
     scopes: scopeViewModels(speech),
     thumbnailUrl:
       relationshipId(speech.thumbnail) === null ? null : campaignInternetSpeechCoverHref(speech.id),
-    watchHref: buildWebSpeechWatchHref(speech.id, matchedSegment ?? themeMatch?.segment, q),
+    watchHref: buildWebSpeechWatchHref(
+      speech.id,
+      semanticEvidence?.startSeconds ?? matchedSegment?.startSeconds,
+      q,
+    ),
+    semanticMatch,
+    literalFallback,
+    matchedTextSearch: speechMatchesSearchQuery(speech, query),
   }
 }
 
