@@ -191,3 +191,5 @@ export {
   canReadContentPiece,
   canUpdateContentPiece,
 } from '@/utilities/access/contentPieces'
+
+export { canReadArchivePhoto } from '@/utilities/access/archivePhotos'

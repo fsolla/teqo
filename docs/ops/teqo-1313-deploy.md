@@ -1296,6 +1296,48 @@ reel no admin tira da biblioteca e para de servir os arquivos. Para remover de
 vez, apagar o `reel` (e as `reelMedia` órfãs) no admin; re-ingerir recria a
 entrada (as mesmas chaves de objeto são sobrescritas).
 
+## C231 — ingestão do acervo de fotos do Flickr
+
+O comando `pnpm flickr:import` traz as fotos da conta `depjorgesolla` para o
+acervo privado (`archivePhoto`): listagem + metadados pela API oficial e o
+original de cada foto no bucket. A identidade é o **id da foto no Flickr** —
+reexecutar converge ("novas / já existiam / falharam com motivo") e nunca
+duplica; vídeos do photostream são contados e pulados. Nada é publicado e nada
+no Flickr é tocado.
+
+Chave e conta vêm do env do stack (`FLICKR_API_KEY`, `FLICKR_USER_ID` — nunca no
+repo). O dry-run é o padrão e não escreve:
+
+```bash
+# no homeserver:
+ssh homeserver
+cd ~/stack
+# 1) plano (dry-run; lê a API e o banco, não baixa nem escreve):
+docker compose --profile maintenance run --rm \
+  teqo-staging-migrate pnpm flickr:import --limit 5
+# 2) escrita no staging (exige TEQO_ENV + confirmação; as 4 S3_* são obrigatórias):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=staging -e FLICKR_IMPORT_CONFIRM=1 \
+  teqo-staging-migrate pnpm flickr:import --apply --limit 5
+# 3) validação no staging e só então produção (TEQO_ENV=production, serviço teqo-1313-migrate)
+# 4) inventário a qualquer momento (read-only, sem Flickr):
+docker compose --profile maintenance run --rm \
+  teqo-staging-migrate pnpm flickr:import --verify
+```
+
+Os recibos JSON ficam em `data/flickr/reports/` do container — monte um volume
+(`-v /srv/flickr-reports:/app/data/flickr`) para preservá-los. Guardas: fora de
+teste o `TEQO_ENV=staging|production` é obrigatório com o **nome exato** do
+banco (`teqo_staging`/`teqo_1313`); `ALLOW_REMOTE_DB` é recusado; sem as 4
+`S3_*` o `--apply` recusa (o container gravaria em disco efêmero); e
+`FLICKR_IMPORT_CONFIRM=1` é exigido em alvo não-local. A chave da API nunca
+entra em recibo/log.
+
+Rollback: a migration `add_archive_photo` é aditiva. O rollback funcional é
+apagar as linhas do `archivePhoto` no admin (o objeto correspondente no bucket
+pode ser removido à parte); reexecutar a ingestão recria as mesmas chaves de
+objeto.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)

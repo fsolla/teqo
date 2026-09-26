@@ -23,17 +23,21 @@ export const downloadUrlToFile = async ({
   destinationPath,
   timeoutMs = DOWNLOAD_TIMEOUT_MS,
   maxBytes = DOWNLOAD_MAX_BYTES,
+  headers,
   fetchImpl = fetch,
 }: {
   url: string
   destinationPath: string
   timeoutMs?: number
   maxBytes?: number
+  /** Extra request headers (C231 — the Flickr CDN needs its User-Agent). */
+  headers?: HeadersInit
   fetchImpl?: typeof fetch
 }): Promise<void> => {
   const response = await fetchImpl(url, {
     redirect: 'follow',
     signal: AbortSignal.timeout(timeoutMs),
+    ...(headers ? { headers } : {}),
   })
   if (!response.ok) throw new Error(`Download falhou (HTTP ${response.status}).`)
   if (!response.body) throw new Error('Download sem corpo.')

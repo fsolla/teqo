@@ -94,6 +94,7 @@ export interface Config {
     reelMedia: ReelMedia;
     contentPiece: ContentPiece;
     contentMedia: ContentMedia;
+    archivePhoto: ArchivePhoto;
     contentEvent: ContentEvent;
     recording: Recording;
     recordingMedia: RecordingMedia;
@@ -149,6 +150,7 @@ export interface Config {
     reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
     contentPiece: ContentPieceSelect<false> | ContentPieceSelect<true>;
     contentMedia: ContentMediaSelect<false> | ContentMediaSelect<true>;
+    archivePhoto: ArchivePhotoSelect<false> | ArchivePhotoSelect<true>;
     contentEvent: ContentEventSelect<false> | ContentEventSelect<true>;
     recording: RecordingSelect<false> | RecordingSelect<true>;
     recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
@@ -1353,6 +1355,76 @@ export interface ContentMedia {
   focalY?: number | null;
 }
 /**
+ * Originais e metadados do acervo de fotos do Flickr (conta depjorgesolla). Só abrem com login da campanha.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archivePhoto".
+ */
+export interface ArchivePhoto {
+  id: number;
+  /**
+   * Identidade da foto no Flickr — a chave que torna a ingestão idempotente.
+   */
+  flickrId: string;
+  /**
+   * Descrição do arquivo para acessibilidade.
+   */
+  alt: string;
+  title?: string | null;
+  description?: string | null;
+  tags?:
+    | {
+        name: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Data informada pelo Flickr, sem fuso (YYYY-MM-DD HH:MM:SS).
+   */
+  takenAt?: string | null;
+  /**
+   * Data de publicação no Flickr (ISO 8601, UTC).
+   */
+  postedAt?: string | null;
+  albums?:
+    | {
+        albumId: string;
+        title: string;
+        id?: string | null;
+      }[]
+    | null;
+  geo?: {
+    latitude?: number | null;
+    longitude?: number | null;
+  };
+  /**
+   * Metadados EXIF da foto, como o Flickr respondeu ({ tag, label, value }).
+   */
+  exif?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  sourceUrl?: string | null;
+  owner?: string | null;
+  license?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+}
+/**
  * Eventos anônimos de circulação (abertura, download, compartilhamento).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2179,6 +2251,10 @@ export interface PayloadLockedDocument {
         value: number | ContentMedia;
       } | null)
     | ({
+        relationTo: 'archivePhoto';
+        value: number | ArchivePhoto;
+      } | null)
+    | ({
         relationTo: 'contentEvent';
         value: number | ContentEvent;
       } | null)
@@ -2888,6 +2964,52 @@ export interface ContentPieceSelect<T extends boolean = true> {
  */
 export interface ContentMediaSelect<T extends boolean = true> {
   alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "archivePhoto_select".
+ */
+export interface ArchivePhotoSelect<T extends boolean = true> {
+  flickrId?: T;
+  alt?: T;
+  title?: T;
+  description?: T;
+  tags?:
+    | T
+    | {
+        name?: T;
+        id?: T;
+      };
+  takenAt?: T;
+  postedAt?: T;
+  albums?:
+    | T
+    | {
+        albumId?: T;
+        title?: T;
+        id?: T;
+      };
+  geo?:
+    | T
+    | {
+        latitude?: T;
+        longitude?: T;
+      };
+  exif?: T;
+  sourceUrl?: T;
+  owner?: T;
+  license?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -3753,6 +3875,7 @@ export interface TaskCreateCollectionExport {
       | 'reelMedia'
       | 'contentPiece'
       | 'contentMedia'
+      | 'archivePhoto'
       | 'contentEvent'
       | 'recording'
       | 'recordingMedia'

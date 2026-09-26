@@ -210,6 +210,97 @@ export const databaseTarget = () => {
 }
 
 /**
+ * Declared environment → exact database name. The name is the honest
+ * discriminator on the homeserver: the socat proxy rewrites the host to
+ * 127.0.0.1 and `NODE_ENV=production` is set in both env files, so the host
+ * check alone cannot tell staging from production (C195/C231).
+ */
+export const TEQO_ENV_DATABASE_BY_ENV = Object.freeze({
+  staging: 'teqo_staging',
+  production: 'teqo_1313',
+})
+
+/**
+ * Fail-closed write-target guard shared by the ingest CLIs (C195/C231).
+ * Outside a test run the declared `TEQO_ENV` (`staging`|`production`) is
+ * mandatory and must match the exact database name; inside vitest only a
+ * `teqo*_test` database is accepted. `ALLOW_REMOTE_DB` is always refused —
+ * an ingest never runs from a workstation against a remote database.
+ *
+ * @param {{
+ *   databaseUrl?: string | null,
+ *   teqoEnv?: string | null,
+ *   allowRemoteDb?: boolean,
+ *   isTest?: boolean,
+ * }} [options]
+ * @returns {{ environment: 'staging' | 'production' | 'test', databaseName: string }}
+ */
+export const assertEnvironmentDatabaseTarget = ({
+  databaseUrl = process.env.DATABASE_URL,
+  teqoEnv = process.env.TEQO_ENV,
+  allowRemoteDb = isRemoteDbOverrideSet(),
+  isTest = process.env.NODE_ENV === 'test' || isTruthyEnv(process.env.VITEST),
+} = {}) => {
+  if (databaseUrl === undefined || databaseUrl === null || String(databaseUrl).trim() === '') {
+    throw new Error(
+      'DATABASE_URL ausente — rode no ambiente do alvo (env file do stack) para o guard saber onde escrever.',
+    )
+  }
+
+  const targetDatabaseName = databaseName(databaseUrl)
+
+  let protocol = null
+  try {
+    protocol = new URL(String(databaseUrl ?? '')).protocol
+  } catch {
+    protocol = null
+  }
+  if (protocol !== 'postgresql:') {
+    throw new Error(
+      `protocolo "${protocol ?? '(inválido)'}" ≠ "postgresql:" — a ingestão só escreve num alvo PostgreSQL.`,
+    )
+  }
+
+  if (!isLocalDatabaseUrl(databaseUrl)) {
+    // Never echo the URL — it carries the DB password.
+    throw new Error(
+      `host "${databaseHostname(databaseUrl) ?? '(inválido)'}" fora do allowlist local — a ingestão nunca escreve em alvo remoto.`,
+    )
+  }
+
+  if (allowRemoteDb) {
+    throw new Error(
+      'ALLOW_REMOTE_DB está setado — remova; a ingestão não precisa do override remoto.',
+    )
+  }
+
+  if (isTest) {
+    if (targetDatabaseName === null || !TEST_DATABASE_NAME_RE.test(targetDatabaseName)) {
+      throw new Error(
+        `banco-alvo "${targetDatabaseName ?? '(inválido)'}" não é de teste — a ingestão em teste só escreve em "teqo*_test".`,
+      )
+    }
+    return { environment: 'test', databaseName: targetDatabaseName }
+  }
+
+  if (teqoEnv !== 'staging' && teqoEnv !== 'production') {
+    throw new Error(
+      `TEQO_ENV="${teqoEnv ?? '(ausente)'}" — declare o ambiente do alvo: TEQO_ENV=staging ou TEQO_ENV=production.`,
+    )
+  }
+
+  const expected = TEQO_ENV_DATABASE_BY_ENV[teqoEnv]
+  if (targetDatabaseName !== expected) {
+    throw new Error(
+      `banco-alvo "${targetDatabaseName ?? '(inválido)'}" ≠ "${expected}" para TEQO_ENV="${teqoEnv}" — ` +
+        'o comando recusa escrever num alvo que não corresponde ao ambiente declarado.',
+    )
+  }
+
+  return { environment: teqoEnv, databaseName: targetDatabaseName }
+}
+
+/**
  * C155/C215 write guard shared by the import CLIs: a non-local/production
  * target (or the `ALLOW_REMOTE_DB` escape) refuses the run unless the command's
  * own intent flag is set. The homeserver env sets `NODE_ENV=production` and the

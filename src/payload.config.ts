@@ -11,6 +11,7 @@ import { s3Storage } from '@payloadcms/storage-s3'
 import { pt } from 'payload/i18n/pt'
 import { Activity } from './collections/Activity'
 import { AllocationDecision } from './collections/AllocationDecision'
+import { ArchivePhoto } from './collections/ArchivePhoto'
 import { CalendarFeed } from './collections/CalendarFeed'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
@@ -60,6 +61,7 @@ import { Metadata } from './globals/Metadata'
 import { PrivacyPolicy } from './globals/PrivacyPolicy'
 import { SiteSettings } from './globals/SiteSettings'
 import { SocialFeedSettings } from './globals/SocialFeedSettings'
+import { ARCHIVE_PHOTO_SLUG } from './lib/archivePhoto'
 import { isPayloadAdmin } from './utilities/campaignAccess'
 import { resolveS3StorageEnv } from './utilities/mediaStorage'
 
@@ -133,6 +135,7 @@ export default buildConfig({
     ReelMedia,
     ContentPiece,
     ContentMedia,
+    ArchivePhoto,
     ContentEvent,
     Recording,
     RecordingMedia,
@@ -193,6 +196,8 @@ export default buildConfig({
               contentMedia: true,
               // C215 — private mirrored web-speech files; same failure mode if omitted.
               internetSpeechMedia: true,
+              // C231 — private Flickr photo-archive originals; same failure mode if omitted.
+              [ARCHIVE_PHOTO_SLUG]: true,
             },
             bucket: mediaStorage.bucket,
             config: {
