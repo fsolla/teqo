@@ -91,8 +91,15 @@ describe('design agents share the OPS117 bash write guard', () => {
     expect(rules).toEqual(expectedBash)
   })
 
+  // DESIGN1: only the frontier designer evolves the living visual rules
+  // (`DESIGN.md` §7); the degraded tier proposes and hands the decision back.
+  const expectedEdit = {
+    designer: [`'*': deny`, `'docs/plans/*-ui-design*': allow`, `'DESIGN.md': allow`],
+    'designer-degraded': [`'*': deny`, `'docs/plans/*-ui-design*': allow`],
+  } as const
+
   it.each(agents)('%s keeps the file-tool gate fail-closed (OPS113 intact)', (agent) => {
-    expect(block(agent, 'edit')).toEqual([`'*': deny`, `'docs/plans/*-ui-design*': allow`])
+    expect(block(agent, 'edit')).toEqual(expectedEdit[agent])
   })
 })
 
