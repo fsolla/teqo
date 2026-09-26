@@ -69,18 +69,22 @@ describe('toSpeechListItemViewModel thumbnail (C182 — frame of the speech)', (
   })
 })
 
-describe('toSpeechListItemViewModel theme match (C192)', () => {
-  const segment = (text: string) => ({ startSeconds: 0, endSeconds: 3, text })
-  const themeRow = ({
+describe('toSpeechListItemViewModel semantic evidence (C229)', () => {
+  const segment = (text: string, startSeconds = 0) => ({
+    startSeconds,
+    endSeconds: startSeconds + 3,
+    text,
+  })
+  const semanticRow = ({
     text,
     query,
-    themeTerms,
+    evidence,
     keywords = [],
     searchText,
   }: {
     text: string
     query?: string
-    themeTerms: string[]
+    evidence?: { text: string; startSeconds: number | null } | null
     keywords?: string[]
     searchText?: string
   }) =>
@@ -89,94 +93,75 @@ describe('toSpeechListItemViewModel theme match (C192)', () => {
       segments: [segment(text)],
       query,
       municipalityLabels: new Map(),
-      themeTerms,
+      semanticMatch: Boolean(evidence),
+      semanticEvidence: evidence,
     })
 
-  it('surfaces the theme passage with the expanded term highlighted', () => {
-    const row = themeRow({
-      text: 'Defendemos o atendimento público e acesso universal à saúde',
-      searchText: 'defendemos o atendimento publico e acesso universal a saude',
-      query: 'defesa do SUS',
-      themeTerms: ['acesso universal'],
+  it('shows the semantic passage with no highlight when no term matches', () => {
+    const row = semanticRow({
+      text: 'Uma fala sobre outro assunto',
+      query: 'combate à oposição',
+      evidence: { text: 'O embate com a oposição e o bolsonarismo', startSeconds: 42 },
     })
 
     expect(row.matchKind).toBe('theme')
-    expect(row.themeMatchTerm).toBe('acesso universal')
+    expect(row.semanticMatch).toBe(true)
     expect(row.matchedTextSearch).toBe(false)
-    expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(true)
+    expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(false)
+    expect(row.excerpt.parts.map((part) => part.text).join('')).toContain('bolsonarismo')
+    expect(row.watchHref).toBe(
+      '/campanha/comunicacao/acervo/1?t=42&q=combate+%C3%A0+oposi%C3%A7%C3%A3o',
+    )
   })
 
-  it('keeps the theme term when the speech also matches the literal query', () => {
-    const row = themeRow({
+  it('keeps the literal match flag when the speech also contains the query', () => {
+    const row = semanticRow({
       text: 'A defesa do SUS e da saúde pública baiana',
       searchText: 'a defesa do sus e da saude publica baiana',
       query: 'SUS',
-      themeTerms: ['saúde pública'],
+      evidence: { text: 'A defesa do SUS', startSeconds: 0 },
     })
 
-    expect(row.matchKind).toBe('segment')
-    expect(row.themeMatchTerm).toBe('saúde pública')
+    expect(row.semanticMatch).toBe(true)
     expect(row.matchedTextSearch).toBe(true)
+    // The evidence never highlights the term: the engine did not match it.
+    expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(false)
   })
 
-  it('matches a keyword as theme evidence and uses it as the excerpt', () => {
-    const row = themeRow({
-      text: 'Uma fala sobre outro assunto',
-      query: 'defesa do SUS',
-      themeTerms: ['Farmácia Popular'],
-      keywords: ['Farmácia Popular'],
+  it('stays literal without semantic evidence', () => {
+    const row = semanticRow({
+      text: 'A defesa do SUS',
+      searchText: 'a defesa do sus',
+      query: 'SUS',
     })
 
-    expect(row.matchKind).toBe('theme')
-    expect(row.themeMatchTerm).toBe('Farmácia Popular')
-    const excerptText = row.excerpt.parts.map((part) => part.text).join('')
-    expect(excerptText).toContain('Farmácia Popular')
+    expect(row.semanticMatch).toBe(false)
+    expect(row.matchKind).toBe('segment')
+    expect(row.matchedTextSearch).toBe(true)
     expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(true)
   })
 
-  it('does not claim a theme the where never used (word-only coincidence)', () => {
-    const row = themeRow({
-      text: 'O atendimento público é prioridade',
-      searchText: 'o atendimento publico e prioridade',
-      query: 'defesa do SUS',
-      themeTerms: ['atendimento universal'],
+  it('seeks the evidence start when known and omits the seek without one', () => {
+    const window = semanticRow({
+      text: 'Outra fala',
+      query: 'tema',
+      evidence: { text: 'Trecho de janela', startSeconds: null },
+    })
+    expect(window.watchHref).toBe('/campanha/comunicacao/acervo/1?q=tema')
+  })
+
+  it('flags a degraded literal row without claiming the theme', () => {
+    const row = toSpeechListItemViewModel({
+      speech: { id: 1, speechAt: '2026-08-11T18:48', searchText: 'a defesa do sus' },
+      segments: [segment('A defesa do SUS')],
+      query: 'SUS',
+      municipalityLabels: new Map(),
+      literalFallback: true,
     })
 
-    expect(row.themeMatchTerm).toBeNull()
-    expect(row.matchKind).toBe('fallback')
-  })
-
-  it('stays literal without theme terms or when none matches', () => {
-    expect(
-      themeRow({ text: 'A defesa do SUS', query: 'SUS', themeTerms: [] }).themeMatchTerm,
-    ).toBeNull()
-    expect(
-      themeRow({ text: 'A defesa do SUS', query: 'SUS', themeTerms: ['educação'] }).themeMatchTerm,
-    ).toBeNull()
-  })
-
-  it('never claims a theme term the where mirror did not match (C192)', () => {
-    // "saúde pública" never appears contiguously in the search text, so the
-    // mirror rejects it and only the term that really matched is claimed.
-    expect(
-      themeRow({
-        text: 'Saúde para todos e a rede pública de atendimento',
-        searchText: 'saude para todos e a rede publica de atendimento',
-        query: 'defesa do SUS',
-        themeTerms: ['saúde pública', 'atendimento'],
-      }).themeMatchTerm,
-    ).toBe('atendimento')
-  })
-
-  it('falls back to keywords as theme evidence when the text does not match', () => {
-    const row = themeRow({
-      text: 'Uma fala sobre outro assunto',
-      query: 'defesa do SUS',
-      themeTerms: ['Farmácia Popular'],
-      keywords: ['Farmácia Popular'],
-    })
-
-    expect(row.themeMatchTerm).toBe('Farmácia Popular')
+    expect(row.literalFallback).toBe(true)
+    expect(row.semanticMatch).toBe(false)
+    expect(row.matchKind).toBe('segment')
     expect(row.excerpt.parts.some((part) => part.highlighted)).toBe(true)
   })
 })
@@ -198,7 +183,6 @@ describe('web speech view models (C216)', () => {
       },
       segments: [],
       query: undefined,
-      themeTerms: [],
     })
 
   it('labels the platform and the day-only publication date', () => {

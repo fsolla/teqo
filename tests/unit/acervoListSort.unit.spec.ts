@@ -2,7 +2,13 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { ACERVO_SORT_OPTIONS, acervoSortIsDuration, parseAcervoSort } from '@/lib/acervoListSort'
+import {
+  ACERVO_SORT_OPTIONS,
+  ACERVO_THEME_SORT_OPTIONS,
+  acervoSortIsDuration,
+  parseAcervoSort,
+  parseAcervoThemeSort,
+} from '@/lib/acervoListSort'
 
 // C216 — the shared ordering vocabulary of the acervo (recordings C219 + web
 // speeches): `recentes` is the default and never serialized, and only the two
@@ -35,5 +41,29 @@ describe('ACERVO_SORT_OPTIONS', () => {
       { value: 'duracao_maior', label: 'Duração (maior)' },
       { value: 'duracao_menor', label: 'Duração (menor)' },
     ])
+  })
+})
+
+// C229 — the theme vocabulary of the speech acervo: relevance is the default
+// and `recentes` must remain askable; recordings/Central keep the list above.
+describe('theme sort vocabulary', () => {
+  it('opens with relevance and keeps the shared options', () => {
+    expect(ACERVO_THEME_SORT_OPTIONS).toEqual([
+      { value: 'relevancia', label: 'Mais relevantes' },
+      ...ACERVO_SORT_OPTIONS,
+    ])
+  })
+
+  it('parses relevance and unknown values as the default', () => {
+    expect(parseAcervoThemeSort('relevancia')).toBeUndefined()
+    expect(parseAcervoThemeSort('maratona')).toBeUndefined()
+    expect(parseAcervoThemeSort(undefined)).toBeUndefined()
+  })
+
+  it('keeps recentes and the duration orders meaningful', () => {
+    expect(parseAcervoThemeSort('recentes')).toBe('recentes')
+    expect(parseAcervoThemeSort('duracao_maior')).toBe('duracao_maior')
+    expect(parseAcervoThemeSort('duracao_menor')).toBe('duracao_menor')
+    expect(parseAcervoThemeSort(['recentes', 'duracao_maior'])).toBe('recentes')
   })
 })

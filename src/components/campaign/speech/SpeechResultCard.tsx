@@ -1,4 +1,4 @@
-import { ExternalLinkIcon, PlayIcon, SparklesIcon } from 'lucide-react'
+import { ExternalLinkIcon, PlayIcon } from 'lucide-react'
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 
@@ -9,8 +9,12 @@ import {
   type SpeechChipGroup,
 } from '@/components/campaign/speech/SpeechResultChips'
 import { SpeechResultThumbnail } from '@/components/campaign/speech/SpeechResultThumbnail'
+import {
+  SpeechLiteralMatchBadge,
+  SpeechSemanticBadges,
+  SpeechSemanticProvenance,
+} from '@/components/campaign/speech/SpeechSemanticEvidence'
 import { Button } from '@/components/ui/button'
-import type { SpeechHighlightedExcerpt } from '@/lib/speechHighlight'
 import type { SpeechListItemViewModel } from '@/utilities/speech/speechViewModels'
 
 /**
@@ -22,42 +26,6 @@ const MAX_SCOPE_CHIPS = 2
 const MAX_KEYWORD_CHIPS = 3
 
 const MetaSeparator = () => <span aria-hidden="true">·</span>
-
-/**
- * C192 — the theme result provenance: the real excerpt that matched the theme,
- * with the expanded term highlighted. It replaces the common excerpt (never
- * coexists with it) and carries no score.
- */
-const SpeechThemeProvenance = ({ excerpt }: { excerpt: SpeechHighlightedExcerpt }) => {
-  if (excerpt.parts.length === 0) return null
-
-  return (
-    <div className="rounded-lg border-l-2 border-primary bg-primary/[0.035] px-3 py-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
-        Por que apareceu
-      </p>
-      <SpeechExcerpt
-        excerpt={excerpt}
-        className="mt-1 text-sm leading-6 text-foreground/90"
-        quoted
-      />
-    </div>
-  )
-}
-
-const SpeechThemeBadges = ({ matchedTextSearch }: { matchedTextSearch: boolean }) => (
-  <div className="flex flex-wrap items-center gap-1.5">
-    <span className="inline-flex h-5 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-      <SparklesIcon className="size-3" aria-hidden="true" />
-      Tema
-    </span>
-    {matchedTextSearch ? (
-      <span className="inline-flex h-5 items-center rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium text-foreground">
-        Termo exato
-      </span>
-    ) : null}
-  </div>
-)
 
 const ActionLink = ({
   href,
@@ -109,7 +77,7 @@ const SpeechMetaLine = ({
 
 /**
  * The primary CTA of every result card: a link to the speech (or its trecho)
- * whose variant/width the caller owns (C192 adds the theme appearance).
+ * whose variant/width the caller owns (C229 adds the theme appearance).
  */
 const SpeechWatchButton = ({
   speech,
@@ -169,13 +137,18 @@ export const SpeechResultCard = ({
 }) => {
   // C174 (option B): a speech that surfaced only because a cut matched the term
   // shows the origin note instead of an excerpt the speech does not contain, and
-  // the actions sit at the top right (approved scene 05). C192 — a theme result
-  // outranks this branch: the theme evidence lives in the speech itself.
-  if (!speech.matchedTextSearch && speech.themeMatchTerm === null) {
+  // the actions sit at the top right (approved scene 05). C229 — a semantic
+  // result outranks this branch: the evidence lives in the speech itself.
+  if (!speech.matchedTextSearch && !speech.semanticMatch) {
     return (
       <article className="rounded-xl border bg-card p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
           <div className="min-w-0">
+            {speech.literalFallback ? (
+              <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                <SpeechLiteralMatchBadge />
+              </div>
+            ) : null}
             <SpeechMetaLine speech={speech} originLabel />
             <p className="mt-2 text-sm text-muted-foreground">
               A fala não contém o termo exato; ela aparece porque um corte vinculado corresponde à
@@ -212,15 +185,15 @@ export const SpeechResultCard = ({
       className: 'font-normal text-muted-foreground',
     },
   ]
-  const isTheme = speech.themeMatchTerm !== null
-  // C192 — a theme card only offers the trecho seek when the speech really
+  const isTheme = speech.semanticMatch
+  // C229 — a semantic card only offers the trecho seek when the speech really
   // contains the literal query (a stopword-only segment hit must not claim it).
   const watchLabel =
     speech.matchKind === 'segment' && speech.matchedTextSearch ? 'Assistir no trecho' : 'Ver fala'
-  // C192 — the theme card replaces the common excerpt with the provenance block;
-  // the two never coexist (design gate).
+  // C229 — the semantic card replaces the common excerpt with the evidence
+  // block; the two never coexist (design gate).
   const bodyNode = isTheme ? (
-    <SpeechThemeProvenance excerpt={speech.excerpt} />
+    <SpeechSemanticProvenance excerpt={speech.excerpt} />
   ) : (
     <SpeechExcerpt
       excerpt={speech.excerpt}
@@ -234,11 +207,18 @@ export const SpeechResultCard = ({
     <article className="rounded-xl border bg-card p-4">
       {isTheme ? (
         <div className="flex flex-col items-start gap-2">
-          <SpeechThemeBadges matchedTextSearch={speech.matchedTextSearch} />
+          <SpeechSemanticBadges matchedTextSearch={speech.matchedTextSearch} />
           <SpeechMetaLine speech={speech} />
         </div>
       ) : (
-        <SpeechMetaLine speech={speech} />
+        <div className="flex flex-col items-start gap-2">
+          {speech.literalFallback ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <SpeechLiteralMatchBadge />
+            </div>
+          ) : null}
+          <SpeechMetaLine speech={speech} />
+        </div>
       )}
 
       <div className={isTheme ? 'mt-3' : 'mt-2'}>

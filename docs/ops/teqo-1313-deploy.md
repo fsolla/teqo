@@ -757,15 +757,46 @@ changelog `docs/changelog/2026-09-13-c155.md`.
 O import é aditivo e idempotente; não há migração para desfazer. Para remover
 uma legislatura (ex.: reimportar do zero), apagar os discursos e seus
 segmentos — as rels (`speech_rels`, `speech_topics`, `speech_scopes`) caem por
-cascade:
+cascade (o índice de sentido sai antes; a FK dos vetores é `SET NULL` sobre
+coluna NOT NULL, então o SQL cru precisa apagá-los por conta própria):
 
 ```sql
+DELETE FROM "speech_embedding" WHERE "speech_id" IN (SELECT id FROM "speech" WHERE "legislature" = '55');
 DELETE FROM "speech_segment" WHERE "speech_id" IN (SELECT id FROM "speech" WHERE "legislature" = '55');
 DELETE FROM "speech" WHERE "legislature" = '55';
 ```
 
-Para desfazer o acervo inteiro: `DELETE FROM "speech_segment"; DELETE FROM "speech";`
-(a cobertura `--coverage` volta a zero). Reexecutar `--all` reconstrói.
+Para desfazer o acervo inteiro: `DELETE FROM "speech_embedding"; DELETE FROM
+"speech_segment"; DELETE FROM "speech";` (a cobertura `--coverage` volta a
+zero). Reexecutar `--all` reconstrói, e `pnpm acervo:index` refaz o índice.
+
+### C229 — índice de sentido do acervo
+
+O modo **"Por tema"** do acervo (Câmara + internet) passou a ser similaridade
+por embeddings (C229): as falas importadas precisam entrar no índice vetorial
+antes de aparecerem nessa busca. O passo é manual, idempotente por hash de
+conteúdo + modelo e deve ser rodado **depois** de qualquer import (C155/C225):
+
+```bash
+# no homeserver, com o env de produção carregado (DEEPINFRA_API_KEY)
+cd ~/teqo-backfill && git fetch origin && git checkout <SHA> && pnpm install
+set -a; source ~/stack/.env; set +a
+set -a; source ~/stack/teqo-1313.env; set +a
+export DATABASE_URL="${DATABASE_URL/@postgres:5432/@127.0.0.1:5433}"
+
+# ensaio (read-only): quanto falta indexar e quantos trechos
+pnpm acervo:index --dry-run
+# indexação (write guard do C229)
+ACERVO_INDEX_CONFIRM=1 pnpm acervo:index --source all
+# calibração/verificação do aceite (read-only; imprime top-N com score)
+pnpm acervo:index --probe "combate à oposição" --top 10
+pnpm acervo:index --probe "impeachment" --top 10
+```
+
+O relatório JSON fica em `data/acervo-index/reports/` (gitignored) com
+indexadas/puladas/falhas/trechos/tokens/custo. Os temas do aceite e 3–4 temas
+de controle validam `SPEECH_SEMANTIC_MIN_COSINE` (`src/lib/speechSemantic.ts`);
+registre os top-N e o valor final no changelog. Reexecutar só paga o que mudou.
 
 ## C225 — rodada de falas da internet no acervo de produção
 
@@ -1049,6 +1080,12 @@ flock -n 9 || { printf '%s\n' 'já existe uma rodada web' >&2; exit 1; }
    os segmentos e o objeto espelhado sumiram. Remova o `sourceKey` de qualquer
    `pending`/`review` que ainda o referencie. Se essa prova não for feita, a
    rodada fica bloqueada para aprovação operacional.
+
+7. **Índice de sentido (C229):** depois do import, rode o passo do C229
+   (`ACERVO_INDEX_CONFIRM=1 pnpm acervo:index --source web`, ou `--source all`
+   para pegar as duas origens). Sem ele, as falas novas não aparecem na busca
+   "Por tema"; o `--probe` confere o aceite e o relatório traz tokens/custo.
+   O passo está detalhado na seção "C229 — índice de sentido do acervo".
 
 ### Inventário read-only
 

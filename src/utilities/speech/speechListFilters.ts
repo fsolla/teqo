@@ -36,7 +36,13 @@ export const durationBucketWhere = (bucket: SpeechDurationBucket): Where => {
   }
 }
 
-const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
+/**
+ * C229 — the facet-only branches of the acervo. This is the ONE candidate
+ * boundary of the semantic theme path: the sense search ranks every speech the
+ * facets allow, attaching no textual branch (the `q` LIKE stays exclusive to
+ * the literal/degraded path). Also the base of the literal `where` below.
+ */
+export const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
   // C215/C216 — ONE discriminator decides the source: the web list carries
   // `source=internet` and reads `origin: web`; everything else is the Câmara
   // list (the web speeches are never mixed here). The Fase facet is Câmara-only.
@@ -62,48 +68,28 @@ const buildSpeechFacetWhere = (state: SpeechListState): Where[] => {
   return filters
 }
 
-const buildSpeechTextBranches = (q: string, themeTerms: readonly string[] = []): Where[] => {
+const buildSpeechTextBranches = (q: string): Where[] => {
   const branches: Where[] = []
-  const seenText = new Set<string>()
-  const seenKeyword = new Set<string>()
-
-  // C192 — the literal query plus the expanded theme terms, each contributing
-  // the same two branches (normalized text / raw keyword). Duplicates are
-  // dropped so an expansion that repeats the query does not widen the OR.
-  for (const term of [q, ...themeTerms]) {
-    const normalized = normalizeForSearch(term)
-    if (normalized && !seenText.has(normalized)) {
-      seenText.add(normalized)
-      branches.push({ searchText: { like: normalized } })
-    }
-    const raw = term.trim()
-    const lowered = raw.toLowerCase()
-    if (raw && !seenKeyword.has(lowered)) {
-      seenKeyword.add(lowered)
-      branches.push({ keywords: { contains: raw } })
-    }
-  }
-
+  const normalized = normalizeForSearch(q)
+  if (normalized) branches.push({ searchText: { like: normalized } })
+  const raw = q.trim()
+  if (raw) branches.push({ keywords: { contains: raw } })
   return branches
 }
 
 /**
- * The textual branch: normalized speech text OR a raw official keyword, for the
- * query and (C192) every expanded theme term. The keyword `contains` compiles
- * to ILIKE `%q%` — case-insensitive, accent still significant. The view-model
- * mirror is `lib/speechSearch.speechMatchesSearchTerm`; a semantics change here
- * has to land there too.
+ * The textual branch: normalized speech text OR a raw official keyword. The
+ * keyword `contains` compiles to ILIKE `%q%` — case-insensitive, accent still
+ * significant. The view-model mirror is `lib/speechSearch.speechMatchesSearchTerm`;
+ * a semantics change here has to land there too.
  */
-const buildSpeechTextWhere = (q: string, themeTerms: readonly string[] = []): Where => ({
-  or: buildSpeechTextBranches(q, themeTerms),
+const buildSpeechTextWhere = (q: string): Where => ({
+  or: buildSpeechTextBranches(q),
 })
 
-export const buildSpeechListWhere = (
-  state: SpeechListState,
-  themeTerms: readonly string[] = [],
-): Where => {
+export const buildSpeechListWhere = (state: SpeechListState): Where => {
   const filters = buildSpeechFacetWhere(state)
-  if (state.q) filters.push(buildSpeechTextWhere(state.q, themeTerms))
+  if (state.q) filters.push(buildSpeechTextWhere(state.q))
 
   return filters.length ? { and: filters } : {}
 }
@@ -111,18 +97,17 @@ export const buildSpeechListWhere = (
 /**
  * C174 (option B) — the acervo `where` widened to the origin speech of a
  * matching cut: the page still paginates by SPEECH, so the origin ids are OR-ed
- * into the textual branch (facets stay AND-ed over every row). C192 adds the
- * expanded theme terms to that same textual branch; only the literal query
- * drives the cut-origin lookup.
+ * into the textual branch (facets stay AND-ed over every row). The cut-origin
+ * lookup is lexical (`state.q`) and therefore never runs in the C229 theme
+ * path — there the semantic engine selects the candidates.
  */
 export const buildSpeechListWhereIncludingCutOrigins = (
   state: SpeechListState,
   originSpeechIds: readonly number[],
-  themeTerms: readonly string[] = [],
 ): Where => {
   const filters = buildSpeechFacetWhere(state)
   if (state.q) {
-    const branches = buildSpeechTextBranches(state.q, themeTerms)
+    const branches = buildSpeechTextBranches(state.q)
     if (originSpeechIds.length) branches.push({ id: { in: [...originSpeechIds] } })
     filters.push({ or: branches })
   }

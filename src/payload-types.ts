@@ -89,6 +89,7 @@ export interface Config {
     speech: Speech;
     speechSegment: SpeechSegment;
     speechCut: SpeechCut;
+    speechEmbedding: SpeechEmbedding;
     internetSpeechMedia: InternetSpeechMedia;
     reel: Reel;
     reelMedia: ReelMedia;
@@ -145,6 +146,7 @@ export interface Config {
     speech: SpeechSelect<false> | SpeechSelect<true>;
     speechSegment: SpeechSegmentSelect<false> | SpeechSegmentSelect<true>;
     speechCut: SpeechCutSelect<false> | SpeechCutSelect<true>;
+    speechEmbedding: SpeechEmbeddingSelect<false> | SpeechEmbeddingSelect<true>;
     internetSpeechMedia: InternetSpeechMediaSelect<false> | InternetSpeechMediaSelect<true>;
     reel: ReelSelect<false> | ReelSelect<true>;
     reelMedia: ReelMediaSelect<false> | ReelMediaSelect<true>;
@@ -1138,6 +1140,46 @@ export interface SpeechCut {
   error?: string | null;
   publishedAt?: string | null;
   createdBy?: (number | null) | CampaignUser;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speechEmbedding".
+ */
+export interface SpeechEmbedding {
+  id: number;
+  speech: number | Speech;
+  kind: 'speech' | 'segment' | 'window';
+  /**
+   * Posição do trecho na fala; vazio no vetor da fala.
+   */
+  order?: number | null;
+  /**
+   * Início do segmento quando conhecido; vazio na janela de texto.
+   */
+  startSeconds?: number | null;
+  /**
+   * Modelo de embedding que gerou o vetor (muda ⇒ reindexar).
+   */
+  model: string;
+  dimensions: number;
+  /**
+   * Hash do texto + modelo; decide o pulo na reindexação.
+   */
+  contentHash: string;
+  /**
+   * Embedding L2-normalizado da unidade.
+   */
+  vector:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2231,6 +2273,10 @@ export interface PayloadLockedDocument {
         value: number | SpeechCut;
       } | null)
     | ({
+        relationTo: 'speechEmbedding';
+        value: number | SpeechEmbedding;
+      } | null)
+    | ({
         relationTo: 'internetSpeechMedia';
         value: number | InternetSpeechMedia;
       } | null)
@@ -2864,6 +2910,22 @@ export interface SpeechCutSelect<T extends boolean = true> {
   error?: T;
   publishedAt?: T;
   createdBy?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "speechEmbedding_select".
+ */
+export interface SpeechEmbeddingSelect<T extends boolean = true> {
+  speech?: T;
+  kind?: T;
+  order?: T;
+  startSeconds?: T;
+  model?: T;
+  dimensions?: T;
+  contentHash?: T;
+  vector?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -3870,6 +3932,7 @@ export interface TaskCreateCollectionExport {
       | 'speech'
       | 'speechSegment'
       | 'speechCut'
+      | 'speechEmbedding'
       | 'internetSpeechMedia'
       | 'reel'
       | 'reelMedia'

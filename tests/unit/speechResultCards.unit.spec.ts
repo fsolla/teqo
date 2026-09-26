@@ -62,7 +62,8 @@ const speech = (overrides: Partial<SpeechListItemViewModel> = {}): SpeechListIte
   officialTextUrl: null,
   cuts: [],
   matchedTextSearch: true,
-  themeMatchTerm: null,
+  semanticMatch: false,
+  literalFallback: false,
   ...overrides,
 })
 
@@ -88,6 +89,9 @@ const webSpeech = (
   ],
   thumbnailUrl: null,
   watchHref: '/campanha/comunicacao/acervo/internet/9',
+  semanticMatch: false,
+  literalFallback: false,
+  matchedTextSearch: false,
   ...overrides,
 })
 
@@ -115,16 +119,68 @@ describe('speech result cards excerpt', () => {
     expect(html).not.toContain('text-sm leading-relaxed')
   })
 
-  it('wraps the theme provenance excerpt in quotes', () => {
+  it('shows the semantic evidence block with the seal and without a highlight', () => {
     const html = renderWithAppRouter(
-      createElement(SpeechResultCard, { speech: speech({ themeMatchTerm: 'saúde' }) }),
+      createElement(SpeechResultCard, {
+        speech: speech({
+          semanticMatch: true,
+          excerpt: {
+            parts: [{ text: 'O embate com a oposição', highlighted: false }],
+            truncatedStart: false,
+            truncatedEnd: true,
+          },
+        }),
+      }),
     )
 
-    expect(html).toContain('Por que apareceu')
+    expect(html).toContain('Trecho mais próximo do tema')
+    expect(html).toContain('Tema')
     expect(html).toContain('“')
     expect(html).toContain('”')
-    // The provenance replaces the common excerpt — they never coexist (C192).
+    expect(html).not.toContain('<mark')
+    // The evidence block replaces the common excerpt — they never coexist.
     expect(html).not.toContain('text-sm leading-relaxed')
+  })
+
+  it('shows the term seal alongside the theme seal when the query also matches', () => {
+    const html = renderWithAppRouter(
+      createElement(SpeechResultCard, {
+        speech: speech({ semanticMatch: true, matchedTextSearch: true }),
+      }),
+    )
+
+    expect(html).toContain('Tema')
+    expect(html).toContain('Termo exato')
+  })
+
+  it('shows the same semantic evidence on the web card', () => {
+    const html = renderWithAppRouter(
+      createElement(WebSpeechResultCard, {
+        speech: webSpeech({
+          semanticMatch: true,
+          excerpt: {
+            parts: [{ text: 'O embate com a oposição', highlighted: false }],
+            truncatedStart: false,
+            truncatedEnd: true,
+          },
+        }),
+      }),
+    )
+
+    expect(html).toContain('Trecho mais próximo do tema')
+    expect(html).toContain('Tema')
+    expect(html).not.toContain('<mark')
+    expect(html).toContain('Fala na internet')
+  })
+
+  it('labels a degraded literal card with the term seal', () => {
+    const html = renderWithAppRouter(
+      createElement(SpeechResultCard, { speech: speech({ literalFallback: true }) }),
+    )
+
+    expect(html).toContain('data-testid="speech-literal-badge"')
+    expect(html).toContain('Termo exato')
+    expect(html).not.toContain('Trecho mais próximo do tema')
   })
 
   it('keeps the web card own excerpt classes', () => {

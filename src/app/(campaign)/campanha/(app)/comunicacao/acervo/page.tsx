@@ -61,7 +61,7 @@ type SpeechAcervoPageProps = {
  * (the C216 web speeches).
  */
 const AcervoHeader = ({ source }: { source: AcervoSource }) => (
-  <div className="flex flex-col gap-4 pt-4 md:pt-0">
+  <div className="flex flex-col gap-2 pt-4 max-md:-mb-6 md:gap-4 md:pt-0">
     {/* Mobile keeps only the switcher row: the shell chrome already carries the
         title and the action joins the toggle (approved scene 6). */}
     <div className="flex flex-wrap items-end justify-between gap-4 max-md:hidden">
@@ -81,12 +81,14 @@ const AcervoHeader = ({ source }: { source: AcervoSource }) => (
         <RecordingUploadDialog />
       </div>
     </div>
-    <div className="flex flex-wrap items-center justify-between gap-3">
-      <AcervoSourceToggle source={source} />
+    <div className="flex items-center justify-between gap-2 md:gap-3">
+      <div className="min-w-0 flex-1 md:flex-none">
+        <AcervoSourceToggle source={source} />
+      </div>
       <RecordingUploadDialog
         triggerLabel=""
         triggerAriaLabel="Enviar gravação"
-        triggerClassName="min-h-10 md:hidden"
+        triggerClassName="min-h-9 md:hidden"
       />
     </div>
   </div>
@@ -97,11 +99,14 @@ const AcervoHeader = ({ source }: { source: AcervoSource }) => (
  * term / theme / idle) and the hint line of `mode=tema`. The caller owns the
  * right side (`controls`: the Câmara leaves the retry button bare, the other
  * two wrap it with their sort select) and whether the row renders at all.
+ * C229 — `semanticTheme` swaps the hint of the speech sources for the design
+ * copy of the sense engine; the recordings keep their lexical wording.
  */
 const AcervoResultsHeading = ({
   themeMode,
   themeActive,
   themeUnavailable,
+  semanticTheme = false,
   idleTitle,
   itemNoun,
   controls,
@@ -109,6 +114,7 @@ const AcervoResultsHeading = ({
   themeMode: boolean
   themeActive: boolean
   themeUnavailable: boolean
+  semanticTheme?: boolean
   idleTitle: string
   itemNoun: 'fala' | 'gravação'
   controls: ReactNode
@@ -123,13 +129,32 @@ const AcervoResultsHeading = ({
             : idleTitle}
       </h2>
       {themeMode ? (
-        <p className="mt-0.5 text-xs text-muted-foreground">
-          {themeUnavailable
-            ? 'Comportamento atual do acervo.'
-            : themeActive
-              ? `Confira o indício em cada ${itemNoun} antes de abrir.`
-              : 'Nenhum termo relacionado foi acrescentado; mostramos a busca literal.'}
-        </p>
+        themeUnavailable ? (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {semanticTheme
+              ? 'Ordenados por data, como na busca literal.'
+              : 'Comportamento atual do acervo.'}
+          </p>
+        ) : themeActive ? (
+          semanticTheme ? (
+            <>
+              <p className="mt-0.5 hidden text-xs text-muted-foreground md:block">
+                Do mais próximo ao menos próximo do sentido buscado.
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground md:hidden">
+                Ordenados pela proximidade de sentido.
+              </p>
+            </>
+          ) : (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Confira o indício em cada {itemNoun} antes de abrir.
+            </p>
+          )
+        ) : (
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Nenhum termo relacionado foi acrescentado; mostramos a busca literal.
+          </p>
+        )
       ) : null}
     </div>
     {controls}
@@ -149,9 +174,9 @@ const AcervoResultsControls = ({
   themeUnavailable: boolean
   hint: string
 }) => (
-  <div className="flex flex-wrap items-end gap-2">
+  <div className="flex w-full flex-wrap items-end gap-2 md:w-auto">
     {themeUnavailable ? <CampaignThemeRetryButton /> : null}
-    <AcervoSortSelect state={state} hint={hint} />
+    <AcervoSortSelect state={state} hint={hint} themeUnavailable={themeUnavailable} />
   </div>
 )
 
@@ -293,6 +318,7 @@ const WebSpeechesSource = ({
           themeMode={themeMode}
           themeActive={themeActive}
           themeUnavailable={data.themeUnavailable}
+          semanticTheme
           idleTitle="Resultados encontrados"
           itemNoun="fala"
           controls={
@@ -310,17 +336,18 @@ const WebSpeechesSource = ({
           <CampaignListEmptyState
             className="border-solid"
             mediaClassName="rounded-none bg-transparent"
+            headerClassName={themeActive ? 'max-w-lg [text-wrap:wrap]' : undefined}
             icon={SearchXIcon}
             title={
               themeActive
-                ? 'Nenhuma fala encontrada para este tema'
+                ? 'Nenhuma fala combina bem com esse tema'
                 : hasFilters
                   ? 'Nenhuma fala encontrada'
                   : 'Nenhuma fala da internet catalogada ainda'
             }
             description={
               themeActive
-                ? 'Não encontramos uma fala que corresponda ao sentido desta busca com os filtros atuais. Não vamos preencher a lista com resultados pouco relacionados.'
+                ? 'Não encontramos uma fala próxima o suficiente do sentido buscado com os filtros atuais. Não vamos completar a lista com resultados pouco relacionados.'
                 : hasFilters
                   ? 'Não encontramos uma fala para esta busca com os filtros atuais. Tente outro termo ou remova um filtro.'
                   : 'As falas encontradas na internet aparecem aqui depois que a ingestão as catalogar.'
@@ -334,7 +361,7 @@ const WebSpeechesSource = ({
                     Usar termo exato
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" className="min-h-11">
+                <Button asChild variant="ghost" className="min-h-11 text-muted-foreground">
                   <Link href={buildAcervoSourceHref('internet')}>Limpar filtros</Link>
                 </Button>
               </div>
@@ -387,6 +414,7 @@ const CamaraSource = ({ data }: { data: Awaited<ReturnType<typeof loadSpeechAcer
             themeMode={themeMode}
             themeActive={themeActive}
             themeUnavailable={data.themeUnavailable}
+            semanticTheme
             idleTitle="Resultados"
             itemNoun="fala"
             controls={data.themeUnavailable ? <CampaignThemeRetryButton /> : null}
@@ -398,19 +426,20 @@ const CamaraSource = ({ data }: { data: Awaited<ReturnType<typeof loadSpeechAcer
         ) : (
           <CampaignListEmptyState
             icon={SearchXIcon}
+            headerClassName={themeActive ? 'max-w-lg [text-wrap:wrap]' : undefined}
             className={themeActive ? 'border-solid' : undefined}
             mediaClassName={themeActive ? 'size-12 rounded-full' : undefined}
             contentClassName={themeActive ? 'max-w-none' : undefined}
             title={
               themeActive
-                ? 'Nenhuma fala encontrada para este tema'
+                ? 'Nenhuma fala combina bem com esse tema'
                 : data.state.q
                   ? `Nenhuma fala encontrada para "${data.state.q}"`
                   : 'Nenhuma fala encontrada'
             }
             description={
               themeActive
-                ? 'Não encontramos uma fala que corresponda ao sentido desta busca com os filtros atuais. Não vamos preencher a lista com resultados pouco relacionados.'
+                ? 'Não encontramos uma fala próxima o suficiente do sentido buscado com os filtros atuais. Não vamos completar a lista com resultados pouco relacionados.'
                 : hasFilters
                   ? 'Tente outro termo, remova filtros ou busque por um tema.'
                   : 'O acervo ainda não tem falas importadas.'
@@ -424,7 +453,7 @@ const CamaraSource = ({ data }: { data: Awaited<ReturnType<typeof loadSpeechAcer
                     Usar termo exato
                   </Link>
                 </Button>
-                <Button asChild variant="ghost" className="min-h-11">
+                <Button asChild variant="ghost" className="min-h-11 text-muted-foreground">
                   <Link href={CAMPAIGN_COMMUNICATION_ACERVO}>Limpar filtros</Link>
                 </Button>
               </div>

@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { matchMunicipalityMentions } from '@/lib/speechGazetteer'
 import { INTERNET_SPEECH_MEDIA_SLUG } from '@/lib/webSpeech'
 import config from '@/payload.config'
+import { DEEPINFRA_EMBED_MODEL } from '@/utilities/ai/deepInfraEmbed'
 import { upsertSpeechBundle, type SpeechImportBundle } from '@/utilities/speech/speechImport'
 import {
   loadSpeechAcervoPageData,
@@ -93,6 +94,28 @@ const createWebSpeech = async (overrides: Partial<SpeechImportBundle> = {}): Pro
   const speech = found.docs[0]
   if (!speech) throw new Error('web speech fixture was not created')
   return speech.id
+}
+
+/** C229 — one hand-picked index row for the web source (vectors are tiny on purpose). */
+const seedSpeechEmbedding = async (
+  speechId: number,
+  kind: 'speech' | 'segment' | 'window',
+  order: number | null,
+  vector: number[],
+): Promise<void> => {
+  await payload.create({
+    collection: 'speechEmbedding',
+    data: {
+      speech: speechId,
+      kind,
+      order,
+      model: DEEPINFRA_EMBED_MODEL,
+      dimensions: vector.length,
+      contentHash: `${kind}-${order ?? 'root'}-${vector.join(',')}`,
+      vector,
+    },
+    overrideAccess: true,
+  })
 }
 
 const createCamaraSpeech = async (overrides: Partial<SpeechImportBundle> = {}): Promise<number> => {
@@ -267,7 +290,7 @@ describe('web speech acervo (C216)', () => {
     expect(byDuration.rows.map((row) => row.id)).toEqual([older])
   })
 
-  it('expands a theme only over the web rows and keeps the evidence (C192)', async () => {
+  it('runs the sense engine only over the web rows and keeps the evidence (C229)', async () => {
     const runId = randomUUID().slice(0, 8)
     const marker = `temaweb${runId}`
     const id = await createWebSpeech({
@@ -279,25 +302,65 @@ describe('web speech acervo (C216)', () => {
         },
       ],
     })
+    await seedSpeechEmbedding(id, 'speech', null, [1, 0])
+    await seedSpeechEmbedding(id, 'segment', 1, [1, 0])
 
     const { coordinator } = await createUsers()
-    const expansionCalls: string[] = []
+    const embedCalls: string[] = []
     const data = await loadWebSpeechAcervoPageData(
       payload,
       coordinator,
-      { q: 'defesa do SUS', mode: 'tema' },
-      async (theme) => {
-        expansionCalls.push(theme)
-        return { terms: [`atendimento universal ${marker}`] }
+      { source: 'internet', q: 'defesa do SUS', mode: 'tema' },
+      async (query) => {
+        embedCalls.push(query)
+        return [1, 0]
       },
     )
 
-    expect(expansionCalls).toEqual(['defesa do SUS'])
+    expect(embedCalls).toEqual(['defesa do SUS'])
     expect(data.themeUnavailable).toBe(false)
     expect(data.themeApplied).toBe(true)
     const row = data.rows.find((item) => item.id === id)
-    expect(row).toBeDefined()
-    expect(row?.excerpt.parts.some((part) => part.highlighted)).toBe(true)
+    expect(row?.semanticMatch).toBe(true)
+    expect(row?.matchedTextSearch).toBe(false)
+    expect(row?.excerpt.parts.map((part) => part.text).join('')).toContain(marker)
+    expect(row?.excerpt.parts.some((part) => part.highlighted)).toBe(false)
+  })
+
+  it('lets an explicit order override relevance in the theme mode (C229)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const older = await createWebSpeech({
+      speechAt: '2020-01-01T00:00',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Fala tema ${runId}` }],
+    })
+    const newer = await createWebSpeech({
+      speechAt: '2026-01-01T00:00',
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Fala tema ${runId}` }],
+    })
+    await seedSpeechEmbedding(older, 'speech', null, [1, 0])
+    await seedSpeechEmbedding(newer, 'speech', null, [0.9, 0.435])
+
+    const { coordinator } = await createUsers()
+    const byRelevance = await loadWebSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { source: 'internet', q: `tema ${runId}`, mode: 'tema' },
+      async () => [1, 0],
+    )
+    expect(byRelevance.rows.map((row) => row.id).indexOf(older)).toBeLessThan(
+      byRelevance.rows.map((row) => row.id).indexOf(newer),
+    )
+
+    const byDate = await loadWebSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { source: 'internet', q: `tema ${runId}`, mode: 'tema', sort: 'recentes' },
+      async () => [1, 0],
+    )
+    expect(byDate.state.sort).toBe('recentes')
+    expect(byDate.rows.map((row) => row.id).indexOf(newer)).toBeLessThan(
+      byDate.rows.map((row) => row.id).indexOf(older),
+    )
   })
 
   it('carries the private routes, the platform and the origin attribution in the detail', async () => {

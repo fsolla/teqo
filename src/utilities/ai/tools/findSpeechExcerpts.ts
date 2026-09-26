@@ -269,7 +269,7 @@ const toExcerptViewModel = ({ candidate, motivo }: SelectedCandidate) => ({
   ...(motivo ? { motivo } : {}),
   url: buildWatchHref(
     candidate.speechId,
-    candidate.excerpt,
+    candidate.excerpt.startSeconds,
     candidate.excerpt.matchedTerms.join(' '),
   ),
 })

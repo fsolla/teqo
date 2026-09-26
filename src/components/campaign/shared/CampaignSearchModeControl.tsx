@@ -28,6 +28,7 @@ export const CampaignSearchModeControl = ({
   themeUnavailable = false,
   onSelect,
   relatedHint,
+  unavailableHint = 'Indisponível agora; mostramos o termo exato.',
 }: {
   activeMode: SpeechSearchMode
   /** The theme expansion is down; the selector reflects the fallback. */
@@ -35,6 +36,12 @@ export const CampaignSearchModeControl = ({
   onSelect: (mode: SpeechSearchMode) => void
   /** Desktop hint of the corpus ("Encontra falas relacionadas pelo sentido."). */
   relatedHint: string
+  /**
+   * C229 — the degraded helper. The speech sources use the approved copy of the
+   * fallback scene, which stays visible on mobile too (the success hint does
+   * not); the recordings keep their own line.
+   */
+  unavailableHint?: string
 }) => (
   <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
     <div className="flex w-full items-center gap-2 md:w-auto">
@@ -76,8 +83,13 @@ export const CampaignSearchModeControl = ({
         </button>
       </div>
     </div>
-    <p className="hidden text-xs text-muted-foreground md:block">
-      {themeUnavailable ? 'Indisponível agora; mostramos o termo exato.' : relatedHint}
+    <p
+      className={cn(
+        'text-xs text-muted-foreground',
+        themeUnavailable ? 'block' : 'hidden md:block',
+      )}
+    >
+      {themeUnavailable ? unavailableHint : relatedHint}
     </p>
   </div>
 )

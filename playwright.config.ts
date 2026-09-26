@@ -283,8 +283,10 @@ export default defineConfig({
          * C192 — blank the DeepSeek key so the acervo's theme expansion always
          * degrades to the literal search (never the network) and the degraded
          * state stays deterministic, same principle as the Google test key.
+         * C229 — the same for the embeddings provider of the speech sources.
          */
         DEEPSEEK_API_KEY: '',
+        DEEPINFRA_API_KEY: '',
         PAYLOAD_SECRET: process.env.PAYLOAD_SECRET ?? 'test-only-secret-not-used-in-production',
         // Prod mode serves a production build where `getCampaignInviteBaseURL`
         // fails closed unless NEXT_PUBLIC_SITE_URL is an HTTPS public DNS name

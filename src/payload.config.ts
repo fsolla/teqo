@@ -47,6 +47,7 @@ import { ShareLink } from './collections/ShareLink'
 import { Signature } from './collections/Signature'
 import { Speech } from './collections/Speech'
 import { SpeechCut } from './collections/SpeechCut'
+import { SpeechEmbedding } from './collections/SpeechEmbedding'
 import { SpeechSegment } from './collections/SpeechSegment'
 import { StateDeputy } from './collections/StateDeputy'
 import { Subscription } from './collections/Subscription'
@@ -130,6 +131,7 @@ export default buildConfig({
     Speech,
     SpeechSegment,
     SpeechCut,
+    SpeechEmbedding,
     InternetSpeechMedia,
     Reel,
     ReelMedia,
