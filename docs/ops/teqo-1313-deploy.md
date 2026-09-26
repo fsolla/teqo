@@ -1375,6 +1375,60 @@ apagar as linhas do `archivePhoto` no admin (o objeto correspondente no bucket
 pode ser removido à parte); reexecutar a ingestão recria as mesmas chaves de
 objeto.
 
+## C232 — catalogação com IA do acervo de fotos
+
+O comando `pnpm archive:catalog` pré-cataloga as fotos do acervo (`archivePhoto`)
+com um engine de visão LOCAL: legenda/descrição, atividade/cena, texto visível,
+temas do vocabulário existente, município (gazetteer) e pessoas públicas (só do
+catálogo curado, lidas do TEXTO — nunca de rosto). A curadoria da assessoria
+vence: campo editado no admin entra em "Campos curados" e a catalogação nunca
+sobrescreve; reexecutar converge ("processadas / puladas / falharam com motivo")
+e só as pendentes são processadas. Nada é publicado.
+
+O engine é qualquer servidor OpenAI-compatible na **rede privada** (Ollama,
+llama.cpp, vLLM). Exemplo: servir o modelo na workstation com GPU (o mesmo padrão
+do ML do Immich no tailnet) e apontar o container para lá:
+
+```bash
+# na workstation (GPU), ex. com Ollama:
+ollama serve                       # porta 11434, alcançável pelo tailnet
+ollama pull qwen2.5vl:7b
+
+# no homeserver:
+ssh homeserver
+cd ~/stack
+# 0) plano (dry-run; lê a fila, não chama o engine nem escreve):
+docker compose --profile maintenance run --rm \
+  -e ARCHIVE_VISION_BASE_URL=http://100.94.122.26:11434/v1 \
+  -e ARCHIVE_VISION_MODEL=qwen2.5vl:7b \
+  teqo-staging-migrate pnpm archive:catalog --limit 5
+# 1) canário no staging (exige TEQO_ENV + confirmação; as 4 S3_* são obrigatórias):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=staging -e ARCHIVE_CATALOG_CONFIRM=1 \
+  -e ARCHIVE_VISION_BASE_URL=http://100.94.122.26:11434/v1 \
+  -e ARCHIVE_VISION_MODEL=qwen2.5vl:7b \
+  teqo-staging-migrate pnpm archive:catalog --apply --limit 5
+# 2) validação no staging e só então produção (TEQO_ENV=production, serviço teqo-1313-migrate)
+# 3) inventário a qualquer momento (read-only, sem engine):
+docker compose --profile maintenance run --rm \
+  teqo-staging-migrate pnpm archive:catalog --verify
+```
+
+Os recibos JSON ficam em `data/archive/reports/` do container — monte um volume
+(`-v /srv/archive-reports:/app/data/archive`) para preservá-los. Guardas: fora de
+teste o `TEQO_ENV=staging|production` é obrigatório com o **nome exato** do banco
+(`teqo_staging`/`teqo_1313`); `ALLOW_REMOTE_DB` é recusado; sem as 4 `S3_*` o
+`--apply` recusa (o acervo não estaria acessível no alvo); `ARCHIVE_CATALOG_CONFIRM=1`
+é exigido em alvo não-local; e o endpoint do engine precisa estar na rede privada
+— host público é recusado e exige `ARCHIVE_VISION_ALLOW_REMOTE=1` explícito
+(registrado no recibo com host/modelo e o escopo). Falha por foto é isolada e
+nomeada (nada é escrito; a próxima execução retenta); o lote de 6,5k é sequencial
+(~4–10 h). A chave do engine (quando houver) nunca entra em recibo/log.
+
+Rollback: a migration `add_archive_photo_catalog` é aditiva; o rollback funcional
+é limpar o grupo `catalog`/`curatedFields` no admin. Reexecutar nunca duplica nem
+sobrescreve curadoria.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)

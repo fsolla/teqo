@@ -43,6 +43,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/agent-pool-state.mjs',
   'scripts/lib/agent-session.mjs',
   'scripts/lib/ansi.mjs',
+  'scripts/lib/archiveCatalogPlan.mjs',
+  'scripts/lib/archiveVisionApi.mjs',
   'scripts/lib/auto-unblock.mjs',
   'scripts/lib/briefingContent.mjs',
   'scripts/lib/briefingRender.mjs',

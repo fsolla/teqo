@@ -6,7 +6,7 @@ import {
   type SpeechScope,
   type SpeechTopic,
 } from '@/lib/speechFacets'
-import { normalizeForSearch } from '@/lib/speechSearch'
+import { escapeRegExp, normalizeForSearch } from '@/lib/speechSearch'
 
 /**
  * Offline gazetteer pass of the speech facet classifier (C153): topic/scope
@@ -286,8 +286,6 @@ const SPEECH_SCOPE_TERMS: Record<SpeechScope, readonly string[]> = {
     'tratado',
   ],
 }
-
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const containsTerm = (normalizedText: string, term: string): boolean =>
   new RegExp(`(^|[^a-z0-9])${escapeRegExp(term)}($|[^a-z0-9])`).test(normalizedText)

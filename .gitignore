@@ -86,6 +86,8 @@ next-env.d.ts
 /data/flickr/
 # C229 — speech semantic index reports (pnpm acervo:index)
 /data/acervo-index/
+# C232 — photo-archive cataloguing receipts (pnpm archive:catalog)
+/data/archive/
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 

@@ -320,6 +320,89 @@ export const assertWriteConfirm = ({ label, flag, command, hint = '' }) => {
 }
 
 /**
+ * True when the host is reachable only from the private network: loopback,
+ * RFC1918, CGNAT/tailnet (`100.64/10`), link-local/ULA IPv6, `.local`/`.internal`
+ * suffixes or a single-label name (docker network). A public IP or domain is
+ * NOT private — it is exactly what the C232 guard refuses by default.
+ *
+ * @param {unknown} hostname
+ * @returns {boolean}
+ */
+export const isPrivateVisionHost = (hostname) => {
+  const host = String(hostname ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^\[|\]$/g, '')
+  if (host === '') return false
+  // IPv6 literal (loopback/link-local/ULA). The `includes(':')` gate is what
+  // keeps a NAME starting with "fc"/"fd" (e.g. fdic.gov) from passing here —
+  // it must fall through to the domain checks below.
+  if (
+    host.includes(':') &&
+    (host === '::1' || host.startsWith('fe80:') || host.startsWith('fc') || host.startsWith('fd'))
+  ) {
+    return true
+  }
+  if (!host.includes('.')) return true
+  if (host.endsWith('.local') || host.endsWith('.internal')) return true
+
+  const parts = host.split('.')
+  if (parts.length !== 4 || parts.some((part) => !/^\d{1,3}$/.test(part))) return false
+  const octets = parts.map(Number)
+  if (octets.some((octet) => octet > 255)) return false
+  const [first, second] = octets
+  return (
+    first === 10 ||
+    first === 127 ||
+    (first === 192 && second === 168) ||
+    (first === 172 && second >= 16 && second <= 31) ||
+    (first === 100 && second >= 64 && second <= 127)
+  )
+}
+
+/**
+ * C232 — the vision engine reads the citizens' photos, so it must live on the
+ * private network: a public host is refused unless the run declares the
+ * `ARCHIVE_VISION_ALLOW_REMOTE=1` escape (the product guardrail is "PII/rostos
+ * não vão a terceiro sem decisão explícita e contrato"). Returns the scope so
+ * the receipt records which mode ran — the escape is never invisible.
+ *
+ * @param {{ baseUrl?: string | null, allowRemote?: boolean, label?: string }} [options]
+ * @returns {{ scope: 'local' | 'remote', host: string }}
+ */
+export const assertLocalVisionEndpoint = ({
+  baseUrl = process.env.ARCHIVE_VISION_BASE_URL,
+  allowRemote = isTruthyEnv(process.env.ARCHIVE_VISION_ALLOW_REMOTE),
+  label = 'archive:catalog',
+} = {}) => {
+  const raw = String(baseUrl ?? '').trim()
+  if (raw === '') {
+    dieWithLabel(label)(
+      'ARCHIVE_VISION_BASE_URL ausente — configure o endpoint do engine de visão (ex.: http://100.94.122.26:11434/v1).',
+    )
+  }
+
+  let url
+  try {
+    url = new URL(raw)
+  } catch {
+    dieWithLabel(label)(`ARCHIVE_VISION_BASE_URL inválida: ${raw}`)
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    dieWithLabel(label)(`ARCHIVE_VISION_BASE_URL deve ser http(s), não "${url.protocol}".`)
+  }
+
+  const host = url.hostname
+  if (isPrivateVisionHost(host)) return { scope: 'local', host }
+  if (allowRemote) return { scope: 'remote', host }
+
+  dieWithLabel(label)(
+    `ARCHIVE_VISION_BASE_URL aponta para host público "${host}" — as fotos do acervo (PII/rostos de cidadãos) não vão a terceiro sem decisão explícita e contrato.\n` +
+      '  Rode o engine na rede privada (LAN/tailnet) ou, ciente do risco, declare ARCHIVE_VISION_ALLOW_REMOTE=1.',
+  )
+}
+
+/**
  * Port for `next dev` (OPS40). Next's CLI resolves its port via commander's
  * `.env('PORT')` BEFORE `@next/env` loads `.env.local`, so a `PORT` written by
  * the worktree provisioner was silently ignored and every `pnpm dev` bound
