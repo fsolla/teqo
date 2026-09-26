@@ -16,6 +16,9 @@ export const normalizeForSearch = (value: string): string =>
     .replace(/\s+/g, ' ')
     .trim()
 
+/** Escapes a literal for a RegExp source; the whole-word matchers share it. */
+export const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 type SpeechSearchableRecord = {
   /** Normalized segment text persisted by the segment hook (C153). */
   searchText?: string | null

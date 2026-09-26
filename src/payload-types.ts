@@ -1412,6 +1412,93 @@ export interface ArchivePhoto {
    * Descrição do arquivo para acessibilidade.
    */
   alt: string;
+  /**
+   * Proposta automática (IA + metadados). A assessoria revisa na ficha: o que ela editar entra em "Campos curados" e nunca é sobrescrito.
+   */
+  catalog?: {
+    caption?: string | null;
+    /**
+     * Descrição semântica do que a foto mostra (não substitui a do Flickr).
+     */
+    description?: string | null;
+    scene?:
+      | (
+          | 'plenaria'
+          | 'audiencia'
+          | 'reuniao'
+          | 'evento'
+          | 'mobilizacao'
+          | 'visita'
+          | 'entrevista'
+          | 'discurso'
+          | 'retrato'
+          | 'gabinete'
+          | 'outro'
+        )
+      | null;
+    /**
+     * Texto legível na imagem (faixas, placas, banners).
+     */
+    visibleText?: string | null;
+    /**
+     * Presença de pessoas na foto — sem identificação de rosto (biometria é C234).
+     */
+    hasPeople?: boolean | null;
+    themes?:
+      | (
+          | 'saude'
+          | 'educacao'
+          | 'cultura'
+          | 'esporte'
+          | 'seguranca-publica'
+          | 'meio-ambiente'
+          | 'economia-trabalho'
+          | 'direitos-humanos'
+          | 'infraestrutura'
+          | 'ciencia-tecnologia'
+          | 'politica-instituicoes'
+          | 'agricultura'
+          | 'habitacao-cidades'
+          | 'comunicacao-midia'
+          | 'igualdade-racial'
+          | 'mulheres-genero'
+          | 'juventude'
+          | 'pessoa-deficiencia'
+        )[]
+      | null;
+    /**
+     * Somente nomes do catálogo curado, mencionados no texto da foto; nunca inferidos de rosto.
+     */
+    people?: string[] | null;
+    /**
+     * Quando o texto da foto aponta um município sem ambiguidade.
+     */
+    municipality?: (number | null) | Municipality;
+    /**
+     * IA = o modelo contribuiu; Metadados = só o texto derivou; Nada a propor.
+     */
+    source?: ('ai' | 'metadata' | 'none') | null;
+    /**
+     * Chave de idempotência: foto com data preenchida não é reprocessada.
+     */
+    catalogedAt?: string | null;
+  };
+  /**
+   * O que a assessoria já editou; a catalogação automática nunca sobrescreve estes campos.
+   */
+  curatedFields?:
+    | (
+        | 'alt'
+        | 'caption'
+        | 'description'
+        | 'scene'
+        | 'visibleText'
+        | 'hasPeople'
+        | 'themes'
+        | 'people'
+        | 'municipality'
+      )[]
+    | null;
   title?: string | null;
   description?: string | null;
   tags?:
@@ -1424,6 +1511,10 @@ export interface ArchivePhoto {
    * Data informada pelo Flickr, sem fuso (YYYY-MM-DD HH:MM:SS).
    */
   takenAt?: string | null;
+  /**
+   * Derivado da data da foto (meio-dia UTC, sem fuso).
+   */
+  takenOn?: string | null;
   /**
    * Data de publicação no Flickr (ISO 8601, UTC).
    */
@@ -1454,6 +1545,10 @@ export interface ArchivePhoto {
   sourceUrl?: string | null;
   owner?: string | null;
   license?: string | null;
+  /**
+   * Tudo o que a busca da lista encontra, normalizado (sem acentos, minúsculas): legenda, texto visível, temas, pessoas, município, álbuns e tags.
+   */
+  searchText?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -3045,6 +3140,21 @@ export interface ContentMediaSelect<T extends boolean = true> {
 export interface ArchivePhotoSelect<T extends boolean = true> {
   flickrId?: T;
   alt?: T;
+  catalog?:
+    | T
+    | {
+        caption?: T;
+        description?: T;
+        scene?: T;
+        visibleText?: T;
+        hasPeople?: T;
+        themes?: T;
+        people?: T;
+        municipality?: T;
+        source?: T;
+        catalogedAt?: T;
+      };
+  curatedFields?: T;
   title?: T;
   description?: T;
   tags?:
@@ -3054,6 +3164,7 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
         id?: T;
       };
   takenAt?: T;
+  takenOn?: T;
   postedAt?: T;
   albums?:
     | T
@@ -3072,6 +3183,7 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
   sourceUrl?: T;
   owner?: T;
   license?: T;
+  searchText?: T;
   updatedAt?: T;
   createdAt?: T;
   url?: T;

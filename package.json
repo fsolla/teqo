@@ -35,6 +35,7 @@
     "media:recover": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/recover-media.mjs",
     "reels:ingest": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/reels-ingest.mjs",
     "flickr:import": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/ingest-flickr-archive.mjs",
+    "archive:catalog": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/catalog-archive-photos.mjs",
     "db:seed:minimal": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/seed-minimal.mjs",
     "campaign:staging:test-account": "cross-env NODE_OPTIONS=\"--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs\" node scripts/bootstrap-staging-test-account.mjs",
     "db:check:push-chain": "node scripts/check-push-chain.mjs",

@@ -15,12 +15,13 @@ import {
 } from '@/lib/contentPiece'
 import { institutionCatalog, institutionSpellings } from '@/lib/institutionCatalog'
 import { type SpeechTopic } from '@/lib/speechFacets'
-import { matchMunicipalityMentions, type SpeechFacetInput } from '@/lib/speechGazetteer'
-import { normalizeForSearch } from '@/lib/speechSearch'
+import { type SpeechFacetInput } from '@/lib/speechGazetteer'
+import { escapeRegExp, normalizeForSearch } from '@/lib/speechSearch'
 import {
   DEEPSEEK_FLASH_STRUCTURED_MAX_OUTPUT_TOKENS,
   DEEPSEEK_FLASH_STRUCTURED_PROVIDER_OPTIONS,
 } from '@/utilities/ai/deepseekFlashDefaults'
+import { resolveMentionedMunicipalityId } from '@/utilities/municipality/municipalityMentionResolver'
 import { classifySpeech } from '@/utilities/speech/speechClassifier'
 
 /**
@@ -75,8 +76,6 @@ const SYSTEM_PROMPT =
   'Use apenas o que está na transcrição; nunca invente números, acordos, cidades ou citações.'
 
 const clip = (value: string, maximum: number): string => value.trim().slice(0, maximum).trim()
-
-const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** Deterministic fallback: never empty, never invents a fact. */
 export const buildContentPieceFallbackMetadata = ({
@@ -151,10 +150,10 @@ const suggestContentPieceMetadata: ContentPieceSuggester = async ({
 }
 
 /**
- * The city rule is deliberately conservative: the gazetteer mention list is
- * converted to distinct cities, and only a city with exactly ONE catalog entry
- * resolves. Salvador has one entry per TSE zone, so a bare "Salvador" mention
- * is ambiguous and stays empty — the assessoria picks the zone on the ficha.
+ * The content-piece entry point to the shared conservative city rule
+ * (`resolveMentionedMunicipalityId`): only a city with exactly ONE catalog
+ * entry resolves, and a bare "Salvador" stays empty — the assessoria picks the
+ * zone on the ficha.
  */
 export const resolveContentPieceMunicipalityId = async ({
   payload,
@@ -162,24 +161,7 @@ export const resolveContentPieceMunicipalityId = async ({
 }: {
   payload: Payload
   transcript: string
-}): Promise<number | null> => {
-  const mentions = matchMunicipalityMentions(transcript)
-  const cities = new Set(mentions.map((entry) => entry.city))
-  if (cities.size !== 1) return null
-  const entries = mentions.filter((entry) => entry.city === [...cities][0])
-  if (entries.length !== 1) return null
-
-  const found = await payload.find({
-    collection: 'municipality',
-    where: { slug: { equals: entries[0]!.slug } },
-    depth: 0,
-    limit: 1,
-    pagination: false,
-    // Intentional admin bypass: the município catalog is read-only geography.
-    overrideAccess: true,
-  })
-  return found.docs[0]?.id ?? null
-}
+}): Promise<number | null> => resolveMentionedMunicipalityId({ payload, text: transcript })
 
 /**
  * Matches the institution catalog against the text: a spelling counts only as a
