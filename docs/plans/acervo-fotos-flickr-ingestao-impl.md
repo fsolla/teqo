@@ -169,6 +169,7 @@ N/A — operação/ingestão; o recibo é arquivo JSON operacional (conferência
 
 - **Factory dos predicados de leitura da Central (S1).** `canReadArchivePhoto` segue o padrão intencional de predicado próprio por superfície (o comentário "never an alias" em `contentPieces.ts`; cada vertical pode ampliar seu gate sem conceder escrita alheia). Reabrir só se uma ampliação de read precisar valer para todas as verticais de uma vez.
 - **Tipagem do bag do recibo (S3)** e **`--out` absoluto (S4).** Doc-only/paridade com o irmão `import-web-speeches.mjs`; tipar se o formatter for tocado de novo; o recibo é arquivo operacional do operador.
+- **Duplicata oculta no DOM do card de responsáveis (OPS83/#824).** O e2e curado destravou uma falha pré-existente (reproduzida em `origin/main`): a página de demanda monta o form de responsáveis duas vezes (visível + cópia oculta) e `campaignDemandVisibility` batia nos dois com locator estrito. Esta entrega escopa os locators ao elemento visível (classe "locator não-escopado" do plano OPS83/#824, que segue dono da causa-raiz); sem Issue nova.
 - **Drift pré-existente `activity.tags`.** Coluna sobra no banco (a config não a declara; o snapshot de base também não) e é invisível ao diff — fora do escopo. O reparo do snapshot desta entrega (106 tabelas como novo base) elimina a re-geração de DDL alheia nas próximas `migrate:create`.
 
 ## Aceite de engenharia
