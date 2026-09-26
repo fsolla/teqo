@@ -9,6 +9,8 @@ description: 'Test in real browsers via Chrome DevTools MCP.'
 
 Use Chrome DevTools MCP to give your agent eyes into the browser. This bridges the gap between static code analysis and live browser execution — the agent can see what the user sees, inspect the DOM, read console logs, analyze network requests, and capture performance data. Instead of guessing what's happening at runtime, verify it.
 
+**See also:** the `playwright-cli` skill (`.agents/skills/playwright-cli/SKILL.md`) — a token-efficient, snapshot-driven CLI for agent sessions, screenshots, and Playwright test debugging. Prefer it for UI critique/port loops and simple automation; use this DevTools MCP skill when you need deep inspection (computed styles, performance traces, forms/console specifics) or the global MCP is already attached.
+
 ## When to Use
 
 - Building or modifying anything that renders in a browser

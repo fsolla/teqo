@@ -285,3 +285,15 @@ Every `/campanha` list surface composes the shared pieces in `src/components/cam
 - **Don't** use Petition Gold or home body gradients inside the campaign desk.
 - **Don't** invent display fonts for UI labels, buttons, or data.
 - **Don't** lift every card; flat is the desk’s resting state.
+
+## 7. Evolution
+
+This file is the living owner of Teqo's visual decisions — a working document, not a snapshot. The old single-source-of-brand guardrail (kit 1313 as the only authority; "never re-derive lockups or palette") is retired. The official kit assets in `public/campaign-kit/` stay available — and their technical usage quirks still apply when used — but they no longer bind new design work.
+
+How rules change:
+
+- **Decide, then update the owner.** When a better pattern wins — anti-slop review (`design-taste-frontend` / `gpt-taste`), a reference study (`awesome-design-md`), a redesign pass (`redesign-existing-projects`), or implementation judgment — update this file in the **same change** and say why. A pattern that only lives in code or in an agent's head is drift, not design.
+- **Scope by surface.** Sections 1–6 describe the `/campanha` operate desk first; public/persuade surfaces (site, petition, campaign page) may pick a different visual world, but they inherit the token contract and the access/consent constraints.
+- **Tokens move through code.** Change `colors`, `typography`, `rounded`, `components` via the existing shadcn / `data-theme` plumbing; this file records intent, the CSS stays the executable truth. Keep both in sync in the same change.
+- **Material changes keep the human gate.** A material visual change (visible identity, hierarchy, brand direction) still goes through the plan-issue/work-issue hi-fi gate: propose, show, merge. Token-neutral refinements follow the normal PR review.
+- **Keep it current.** Stale rules here mislead every agent that reads this file — delete what no longer holds instead of accumulating contradictions.

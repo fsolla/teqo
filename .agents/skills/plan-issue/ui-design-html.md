@@ -16,14 +16,14 @@ Serve para **aprovar o design final antes de qualquer código** e, depois, **por
 Mesma doutrina para os dois papéis (fonte única — os prompts dos agentes apontam para cá, não copiam as regras):
 
 - **Criar:** o agente `designer` (`.opencode/agent/designer.md`) produz ou estende o hi-fi a partir do plano de intenção aprovado — tokens/brand reais, copy pt-BR real, cenas 390/1280, estados críticos. O artefato nasce **antes** da implementação e é o alvo do gate.
-- **Criticar:** o `designer` relê a **implementação renderizada** (screenshots do app) contra o artefato aprovado e devolve **lista numerada de ajustes concretos** — hierarquia (o CTA primário domina?), contraste, tipografia, espaçamento, mobile, acessibilidade. **A referência é o alvo — nunca a critique.**
+- **Criticar:** o `designer` relê a **implementação renderizada** contra o artefato aprovado e devolve **lista numerada de ajustes concretos** — hierarquia (o CTA primário domina?), contraste, tipografia, espaçamento, mobile, acessibilidade. Capture as telas com `playwright-cli` (§Skills de design; MCP Playwright/Chrome DevTools como fallback) e rode a revisão `web-design-guidelines` (`file:line`) quando a superfície for código. **A referência é o alvo — nunca a critique.**
 - **Visão nativa (fail-closed):** leia screenshots, prints e referências **direto com a tool Read**; nunca peça ao humano para descrever o que você pode ver. Se a leitura da imagem falhar (modelo da sessão sem visão), **pare** e peça a troca de modelo via `/models` antes de julgar a tela; **nunca descreva o que não viu**.
 - **Tier degradado:** o `designer-degraded` cria/estende/critica, mas **marca todo output `DEGRADED`** e **nunca certifica** — exige sign-off humano explícito. `DEGRADED` não é design aprovado.
-- **Escrita só no artefato (file tools + bash):** os dois agentes têm `permission` fail-closed — `edit`/`write`/`patch` negados fora de `docs/plans/<slug>-ui-design*` e o **bash** nega os vetores de escrita enumerados (redirecionamento, `sed -i`, `tee`, shells/interpretadores) fora do artefato; o resto do shell fica em `ask`. Não tente contornar por shell (o guard cobre os vetores enumerados, não é sandbox de SO) — leia/inspecione à vontade (`cat`, `sed -n`, `git diff`) e grave o artefato pelas file tools.
+- **Escrita só no artefato (file tools + bash):** os dois agentes têm `permission` fail-closed — `edit`/`write`/`patch` negados fora de `docs/plans/<slug>-ui-design*`; o `designer` frontier também pode gravar `DESIGN.md`, o `designer-degraded` **não** (evolução de regra visual é proposta, nunca aplicada por tier que não certifica). O **bash** nega os vetores de escrita enumerados (redirecionamento, `sed -i`, `tee`, shells/interpretadores) fora do artefato; o resto do shell fica em `ask`. Não tente contornar por shell (o guard cobre os vetores enumerados, não é sandbox de SO) — leia/inspecione à vontade (`cat`, `sed -n`, `git diff`) e grave o artefato pelas file tools.
 
 ## Escopo de dispatch — o `designer` frontier só roda design de fato
 
-O tier frontier (`designer` com pin `openai/gpt-5.6-sol`) é **recurso escasso e caro**: ele é despachado **apenas** nos dois modos de design — **Criar** ou **Criticar** o artefato — e **apenas** para item que **muda UI**. Todo trabalho que não é isso roda no **modelo padrão da sessão**, nunca no frontier.
+O tier frontier (`designer` com pin `openai/gpt-5.6-sol`) é **recurso escasso e caro**: ele é despachado **apenas** nos dois modos de design — **Criar** ou **Criticar** o artefato (e, como consequência, evoluir `DESIGN.md`) — e **apenas** para item que **muda UI**. Todo trabalho que não é isso roda no **modelo padrão da sessão**, nunca no frontier.
 
 **Provider `openai` reservado aos agentes de design.** O provider `openai` (OAuth ChatGPT Plus) existe **só** para o design: todo modelo `openai/*` — `gpt-5.6-sol`/`sol-fast`, `gpt-6-astra`, `gpt-5.6-luna`/`-fast`, `gpt-5.6-terra` — é usado **apenas** pelos agentes de design (`designer`, e `designer-campanha-solla` na própria sessão) e **apenas** para criar/criticar design. Nenhuma outra sessão ou agente (`build`, `explore`, `general`, skills, subagentes), nem `small_model`, compaction ou worker de orquestração, troca para `openai/*` via `/models`, `--model` ou config — esses rodam no modelo padrão (`deepseek/deepseek-flash`). A reserva cobre **todo** o consumo do provider, não só o dispatch do `designer`.
 
@@ -33,11 +33,11 @@ O tier frontier (`designer` com pin `openai/gpt-5.6-sol`) é **recurso escasso e
 - teste de visão/sanidade de imagem ("qual a cor dominante") — use o modelo padrão da sessão, que tem visão;
 - exploração de código (`@explore`), review geral (`@general`), `@solla-comunicacao`;
 - escrever/revisar plano de intenção, impl plan, PR, changelog ou doc;
-- qualquer coisa cujo output não seja `docs/plans/<slug>-ui-design*`.
+- qualquer coisa cujo output não seja `docs/plans/<slug>-ui-design*` (exceção: `DESIGN.md`, que é decisão de design — ver §Skills de design).
 
 **Gate antes de disparar (as três têm de ser "sim"):**
 
-1. O item **muda UI** (Impeccable B/C/D)? 2. É **Criar** ou **Criticar** o artefato hi-fi? 3. O output é `docs/plans/<slug>-ui-design*`?
+1. O item **muda UI** (Impeccable B/C/D)? 2. É **Criar** ou **Criticar** o artefato hi-fi? 3. O output é `docs/plans/<slug>-ui-design*` ou a evolução de `DESIGN.md`?
 
 Qualquer "não" ⇒ **não despache** o `designer` frontier: segue com o implementador ou com o modelo padrão da sessão.
 
@@ -67,9 +67,29 @@ Qualquer "não" ⇒ **não despache** o `designer` frontier: segue com o impleme
 
 - **Tokens reais são esperados.** Use as cores, raios, sombras e a tipografia da superfície-alvo; se `data-theme='campaign'` for o alvo, os tokens da campanha valem no artefato (definidos inline via CSS variables/classes, na mesma escala do app).
 - **Brand é permitida e esperada** — gradiente, sombra, motion de apresentação, logo quando aprovado. O teto protege contra virar implementação, não contra ter acabamento.
-- **Marca de campanha tem fonte única: o kit 1313.** Ativos e regras de uso em `public/campaign-kit/README.md` (manual completo em `docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`); não recriar lockup nem inventar paleta — o README do kit é a dona da marca, a doutrina só aponta.
+- **Marca e tokens são vivos.** [`DESIGN.md`](../../../DESIGN.md) §7 (Evolution) é o dono das decisões visuais e evolui quando um padrão melhor aparece. O kit 1313 (`public/campaign-kit/README.md`, manual em `docs/campaign-kit/manual-campanha-jorge-solla-1313.pdf`) é **acervo de ativos disponível, não camisa de força**: use os arquivos oficiais quando servirem e derive/recrie quando o design evoluir. Os quirks técnicos dos ativos (trim da moldura, disco da estrela, faixas seguras) continuam valendo ao usar cada arquivo.
 - **shadcn/lucide primeiro.** Componentes e ícones seguem o vocabulário do app (button, card, dialog, tabs, badge); custom só quando não houver equivalente.
 - **Skeleton completo** abaixo é ponto de partida — o artefato real traz o conteúdo do item.
+
+## Skills de design (toolkit)
+
+O design do Teqo combina a doutrina própria (`PRODUCT.md`, `DESIGN.md`, este arquivo) com skills de execução. Nenhuma skill externa substitui o gate; elas são entrada para desenhar, criticar e evoluir — origem e licença em `.agents/skills/UPSTREAM.md`.
+
+| Skill | Papel |
+| --- | --- |
+| `impeccable` | Doutrina de craft/modos (persuade/operate/read/experience) e comandos de polimento — dono existente para o desk `/campanha` (operate). |
+| `design-taste-frontend` | Anti-slop para **persuade** (site, campanha, landing): lê o brief, infere a direção, pre-flight. Use `gpt-taste` quando a sessão for GPT/Codex (inclui o `designer` frontier). |
+| `redesign-existing-projects` | Auditoria + upgrade de superfície existente sem quebrar função — o caminho para evoluir telas atuais (públicas e desk). |
+| `high-end-visual-design`, `minimalist-ui`, `industrial-brutalist-ui` | Briefs de estilo opt-in quando o item pede um mundo visual específico. |
+| `stitch-design-taste` | Gera `DESIGN.md` semântico (formato Stitch). No Teqo, **merge** no `DESIGN.md` raiz — nunca sobrescrever; a §7 decide. |
+| `web-design-guidelines` | Review de a11y/UX/perf com findings `file:line` — piso obrigatório antes de fechar UI. |
+| `awesome-design-md` | Biblioteca de referências (`DESIGN.md` de sites reais) para explorar direção visual. Copiar o craft, nunca a identidade. |
+| `playwright-cli` | Browser automation token-efficient: screenshots, snapshots, sessões — capture para a crítica e para o port fiel. MCP Playwright/Chrome DevTools como fallback. |
+| `full-output-enforcement` | Anti-truncamento/placeholder — qualquer task longa, não só design. |
+
+**Precedência quando as regras conflitarem:** `PRODUCT.md` (posicionamento, anti-referências) → `DESIGN.md` (identidade viva e tokens) → este contrato (gate e artefato) → skills de execução. **Conflito é sinal de evolução, não de impasse:** decida o melhor padrão, registre o porquê e atualize o dono (`DESIGN.md` §7) na mesma mudança — nunca deixe a regra dividida nem siga a doutrina antiga em silêncio.
+
+**Escopo por superfície:** taste/estilo valem para **persuade/read** (site público, página de campanha, editorial); o desk `/campanha` é **operate** — lá mandam `impeccable` (operate), `redesign-existing-projects`, a lista canônica de componentes do `DESIGN.md` e `web-design-guidelines`. Não aplique anti-slop de landing page no desk sem critério.
 
 ```html
 <!doctype html>
