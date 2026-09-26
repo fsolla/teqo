@@ -1,0 +1,1212 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C229 · Busca por sentido no acervo de falas</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-sidebar: var(--sidebar);
+        --color-sidebar-foreground: var(--sidebar-foreground);
+        --color-sidebar-accent: var(--sidebar-accent);
+        --color-sidebar-border: var(--sidebar-border);
+        --color-estimate-pending: var(--estimate-pending);
+        --color-estimate-pending-foreground: var(--estimate-pending-foreground);
+        --radius-sm: 0.25rem;
+        --radius-md: 0.375rem;
+        --radius-lg: 0.5rem;
+        --radius-xl: 0.75rem;
+        --radius-4xl: 9999px;
+      }
+
+      [data-theme='campaign'] {
+        --radius: 0.5rem;
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --card: #ffffff;
+        --card-foreground: #1c1917;
+        --popover: #ffffff;
+        --popover-foreground: #1c1917;
+        --primary: #c51414;
+        --primary-foreground: #ffffff;
+        --secondary: #f5f5f4;
+        --secondary-foreground: #292524;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --accent: #f4f4f5;
+        --accent-foreground: #1c1917;
+        --border: rgb(28 25 23 / 12%);
+        --input: rgb(28 25 23 / 16%);
+        --ring: #c51414;
+        --sidebar: #fafaf9;
+        --sidebar-foreground: #1c1917;
+        --sidebar-accent: #f5f5f4;
+        --sidebar-border: rgb(28 25 23 / 12%);
+        --estimate-pending: #fef3c7;
+        --estimate-pending-foreground: #92400e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      button,
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+      .artifact-grid {
+        background-image: radial-gradient(rgb(28 25 23 / 8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame-shadow {
+        box-shadow: 0 18px 54px rgb(28 25 23 / 10%);
+      }
+      .menu-shadow {
+        box-shadow: 0 12px 30px rgb(28 25 23 / 14%);
+      }
+    </style>
+  </head>
+  <body class="artifact-grid min-h-screen bg-[#efeeec] text-foreground antialiased">
+    <main class="mx-auto flex max-w-[1480px] flex-col gap-16 px-4 py-10 md:px-8 md:py-14">
+      <header class="max-w-3xl">
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="rounded-full bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground"
+            >C229 · gate hi-fi</span
+          >
+          <span class="rounded-full border border-border bg-white px-2.5 py-1 text-xs font-medium"
+            >Campanha · Comunicação</span
+          >
+        </div>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">
+          A fala certa, mesmo quando as palavras mudam
+        </h1>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+          Delta sobre o acervo existente: “Por tema” passa a ordenar por proximidade de sentido e
+          mostra o trecho real que sustenta cada resultado — sem score e sem explicação inventada.
+        </p>
+      </header>
+
+      <!-- CENA 01 · DESKTOP -->
+      <section aria-labelledby="scene-desktop">
+        <div class="mb-4 flex items-end justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold text-primary">CENA 01</p>
+            <h2 id="scene-desktop" class="mt-1 text-xl font-semibold tracking-tight">
+              Desktop ~1280 · relevância por sentido e evidência real
+            </h2>
+          </div>
+          <p class="hidden text-xs text-muted-foreground md:block">
+            Variante de ordenação aberta incluída
+          </p>
+        </div>
+
+        <div class="overflow-x-auto rounded-xl border border-border bg-white frame-shadow">
+          <div class="flex min-h-[1130px] min-w-[1180px]">
+            <aside
+              class="flex w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar p-3"
+            >
+              <div class="mb-5 flex h-10 items-center gap-2 px-2">
+                <div
+                  class="flex size-8 items-center justify-center rounded-lg bg-primary text-sm font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <p class="text-sm font-semibold">Solla</p>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <nav class="space-y-1 text-sm" aria-label="Navegação da campanha">
+                <a class="flex h-9 items-center gap-3 rounded-md px-2" href="#">
+                  <svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path d="m3 11 9-8 9 8" />
+                    <path d="M5 10v10h14V10" /></svg
+                  >Início
+                </a>
+                <a class="flex h-9 items-center gap-3 rounded-md px-2" href="#">
+                  <svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    aria-hidden="true"
+                  >
+                    <path d="M3 3v18h18" />
+                    <path d="m7 16 4-4 4 2 4-6" /></svg
+                  >Quadro
+                </a>
+                <div class="rounded-lg bg-sidebar-accent p-1">
+                  <div class="flex h-9 items-center gap-3 rounded-md px-2 font-medium">
+                    <svg
+                      class="size-4 text-primary"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="m3 11 18-5v12L3 14v-3Z" />
+                      <path d="M11.6 16.8 13 21H8l-1.8-6" />
+                    </svg>
+                    Comunicação
+                    <svg
+                      class="ml-auto size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </div>
+                  <div class="ml-5 border-l border-sidebar-border pl-3">
+                    <a
+                      aria-current="page"
+                      class="flex h-9 items-center rounded-md bg-white px-2 font-medium text-primary ring-1 ring-border"
+                      href="#"
+                      >Acervo de falas</a
+                    >
+                    <a
+                      class="mt-1 flex h-9 items-center rounded-md px-2 text-muted-foreground"
+                      href="#"
+                      >Biblioteca de cortes</a
+                    >
+                  </div>
+                </div>
+              </nav>
+              <div class="mt-auto border-t border-sidebar-border pt-3">
+                <div class="flex items-center gap-3 px-2 py-2">
+                  <div class="size-8 rounded-full bg-secondary"></div>
+                  <div>
+                    <p class="text-sm font-medium">Assessoria</p>
+                    <p class="text-xs text-muted-foreground">Comunicação</p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            <div class="min-w-0 flex-1 bg-background">
+              <header class="flex h-16 items-center justify-between border-b border-border px-8">
+                <div>
+                  <p class="text-base font-semibold">Acervo de falas</p>
+                  <p class="text-xs text-muted-foreground">Comunicação</p>
+                </div>
+                <div class="size-9 rounded-full bg-secondary"></div>
+              </header>
+
+              <div class="mx-auto flex max-w-[900px] flex-col gap-7 px-8 py-7">
+                <div class="flex flex-col gap-4">
+                  <div>
+                    <h1 class="text-xl font-semibold tracking-tight">Acervo de falas</h1>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      Busque nas falas da Câmara, nas gravações da equipe ou nas falas encontradas
+                      na internet.
+                    </p>
+                  </div>
+                  <nav
+                    aria-label="Fonte do acervo"
+                    class="inline-flex w-fit rounded-lg bg-secondary p-1 text-sm"
+                  >
+                    <a href="#" class="rounded-md px-3 py-2 text-muted-foreground"
+                      >Falas da Câmara</a
+                    >
+                    <a href="#" class="rounded-md px-3 py-2 text-muted-foreground"
+                      >Gravações enviadas</a
+                    >
+                    <a
+                      href="#"
+                      aria-current="page"
+                      class="rounded-md bg-card px-3 py-2 font-medium shadow-sm ring-1 ring-border"
+                      >Falas na internet</a
+                    >
+                  </nav>
+                </div>
+                <form
+                  role="search"
+                  aria-label="Buscar no acervo"
+                  class="rounded-xl border border-border bg-card p-4 shadow-sm"
+                >
+                  <label for="desktop-query" class="mb-1.5 block text-sm font-medium"
+                    >Buscar nas falas na internet</label
+                  >
+                  <div
+                    class="flex min-h-11 items-center gap-2 rounded-md border border-ring bg-white px-3 ring-3 ring-ring/20"
+                  >
+                    <svg
+                      class="size-4 shrink-0 text-muted-foreground"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      aria-hidden="true"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                    <input
+                      id="desktop-query"
+                      class="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                      value="tema pesquisado"
+                      readonly
+                    />
+                    <button
+                      type="button"
+                      aria-label="Limpar busca"
+                      class="flex size-8 items-center justify-center rounded-full text-muted-foreground"
+                    >
+                      <svg
+                        class="size-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        aria-hidden="true"
+                      >
+                        <path d="M18 6 6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div
+                    class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3"
+                  >
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs font-medium text-muted-foreground">Buscar por</span>
+                      <div
+                        class="inline-flex rounded-lg bg-muted p-1"
+                        role="group"
+                        aria-label="Modo de busca"
+                      >
+                        <button
+                          type="button"
+                          class="min-h-9 rounded-md px-3 text-sm font-medium text-muted-foreground"
+                        >
+                          Termo exato
+                        </button>
+                        <button
+                          type="button"
+                          aria-pressed="true"
+                          class="min-h-9 rounded-md bg-white px-3 text-sm font-semibold text-primary shadow-sm ring-1 ring-border"
+                        >
+                          <span class="inline-flex items-center gap-1.5"
+                            ><svg
+                              class="size-3.5"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              stroke-width="2"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z"
+                              />
+                              <path
+                                d="m19 14-.9 2.1L16 17l2.1.9L19 20l.9-2.1L22 17l-2.1-.9L19 14Z"
+                              /></svg
+                            >Por tema</span
+                          >
+                        </button>
+                      </div>
+                    </div>
+                    <p class="text-xs text-muted-foreground">
+                      Encontra falas relacionadas pelo sentido.
+                    </p>
+                  </div>
+                  <div
+                    role="group"
+                    aria-label="Filtros do acervo"
+                    class="mt-2 flex flex-wrap gap-2"
+                  >
+                    <button
+                      type="button"
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium"
+                    >
+                      Ano
+                      <svg
+                        class="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium"
+                    >
+                      Tema
+                      <svg
+                        class="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium"
+                    >
+                      Alcance
+                      <svg
+                        class="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium"
+                    >
+                      Duração
+                      <svg
+                        class="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      class="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border px-3 text-xs font-medium"
+                    >
+                      Município citado
+                      <svg
+                        class="size-3"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                </form>
+
+                <div>
+                  <div class="relative z-20 mb-3 flex items-start justify-between gap-4">
+                    <div>
+                      <h3 class="text-sm font-semibold">Resultados por tema</h3>
+                      <p class="mt-0.5 text-xs text-muted-foreground">
+                        Do mais próximo ao menos próximo do sentido buscado.
+                      </p>
+                    </div>
+                    <div class="relative flex flex-col items-end gap-1">
+                      <label class="flex items-center gap-2 text-xs text-muted-foreground"
+                        >Ordenar por
+                        <button
+                          type="button"
+                          aria-expanded="true"
+                          class="inline-flex min-h-10 w-44 items-center justify-between rounded-md border border-input bg-white px-3 py-2 text-sm font-medium text-foreground"
+                        >
+                          Mais relevantes
+                          <svg
+                            class="size-4 text-muted-foreground"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <path d="m6 9 6 6 6-6" />
+                          </svg>
+                        </button>
+                      </label>
+                      <div
+                        class="menu-shadow absolute right-0 top-11 w-44 overflow-hidden rounded-md border border-border bg-popover p-1"
+                        role="listbox"
+                        aria-label="Opções de ordenação"
+                      >
+                        <div
+                          class="flex min-h-9 items-center justify-between rounded-sm bg-accent px-2.5 text-sm font-medium"
+                          role="option"
+                          aria-selected="true"
+                        >
+                          Mais relevantes<svg
+                            class="size-4 text-primary"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <path d="m20 6-11 11-5-5" />
+                          </svg>
+                        </div>
+                        <div
+                          class="flex min-h-9 items-center rounded-sm px-2.5 text-sm"
+                          role="option"
+                        >
+                          Mais recentes
+                        </div>
+                        <div
+                          class="flex min-h-9 items-center rounded-sm px-2.5 text-sm"
+                          role="option"
+                        >
+                          Duração (maior)
+                        </div>
+                        <div
+                          class="flex min-h-9 items-center rounded-sm px-2.5 text-sm"
+                          role="option"
+                        >
+                          Duração (menor)
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-3 pt-32">
+                    <article class="rounded-xl border border-border bg-card p-4">
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <span
+                          class="inline-flex h-5 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                          ><svg
+                            class="size-3"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z"
+                            /></svg
+                          >Tema</span
+                        >
+                      </div>
+                      <p class="mt-2 text-xs text-muted-foreground">Fala · Data · Duração</p>
+                      <div class="mt-3 grid grid-cols-[128px_minmax(0,1fr)] gap-4">
+                        <div
+                          class="flex h-20 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
+                        >
+                          <svg
+                            class="size-6"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="1.75"
+                            aria-hidden="true"
+                          >
+                            <path d="m6 3 14 9-14 9z" />
+                          </svg>
+                        </div>
+                        <div
+                          class="rounded-lg border-l-2 border-primary bg-primary/[0.035] px-3 py-2.5"
+                        >
+                          <p class="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                            Trecho mais próximo do tema
+                          </p>
+                          <div
+                            class="mt-2.5 space-y-2"
+                            aria-label="Placeholder de trecho real sem destaque de termo"
+                          >
+                            <div class="h-2.5 w-full rounded-full bg-stone-200"></div>
+                            <div class="h-2.5 w-[88%] rounded-full bg-stone-200"></div>
+                            <div class="h-2.5 w-[46%] rounded-full bg-stone-200"></div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="mt-3 flex items-center justify-between gap-3">
+                        <div class="flex gap-1.5">
+                          <span class="rounded-full bg-secondary px-2 py-0.5 text-xs"
+                            >Tema da fala</span
+                          ><span
+                            class="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+                            >Alcance</span
+                          >
+                        </div>
+                        <a
+                          href="#"
+                          class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium"
+                          >Ver fala
+                          <svg
+                            class="size-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path d="m9 18 6-6-6-6" /></svg
+                        ></a>
+                      </div>
+                    </article>
+
+                    <article class="rounded-xl border border-border bg-card p-4">
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <span
+                          class="inline-flex h-5 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                          ><svg
+                            class="size-3"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z"
+                            /></svg
+                          >Tema</span
+                        >
+                        <span
+                          class="inline-flex h-5 items-center rounded-full border border-border bg-background px-2 py-0.5 text-xs font-medium"
+                          >Termo exato</span
+                        >
+                      </div>
+                      <p class="mt-2 text-xs text-muted-foreground">Fala · Data · Duração</p>
+                      <div
+                        class="mt-3 rounded-lg border-l-2 border-primary bg-primary/[0.035] px-3 py-2.5"
+                      >
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                          Trecho mais próximo do tema
+                        </p>
+                        <div
+                          class="mt-2.5 space-y-2"
+                          aria-label="Placeholder de trecho real sem destaque de termo"
+                        >
+                          <div class="h-2.5 w-[94%] rounded-full bg-stone-200"></div>
+                          <div class="h-2.5 w-[76%] rounded-full bg-stone-200"></div>
+                        </div>
+                      </div>
+                      <div class="mt-3 flex justify-end">
+                        <a
+                          href="#"
+                          class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium"
+                          >Ver fala
+                          <svg
+                            class="size-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path d="m9 18 6-6-6-6" /></svg
+                        ></a>
+                      </div>
+                    </article>
+
+                    <article class="rounded-xl border border-border bg-card p-4">
+                      <div class="flex flex-wrap items-center gap-1.5">
+                        <span
+                          class="inline-flex h-5 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                          ><svg
+                            class="size-3"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z"
+                            /></svg
+                          >Tema</span
+                        >
+                      </div>
+                      <p class="mt-2 text-xs text-muted-foreground">Fala · Data · Duração</p>
+                      <div
+                        class="mt-3 rounded-lg border-l-2 border-primary bg-primary/[0.035] px-3 py-2.5"
+                      >
+                        <p class="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                          Trecho mais próximo do tema
+                        </p>
+                        <div
+                          class="mt-2.5 space-y-2"
+                          aria-label="Placeholder de trecho real sem destaque de termo"
+                        >
+                          <div class="h-2.5 w-full rounded-full bg-stone-200"></div>
+                          <div class="h-2.5 w-[64%] rounded-full bg-stone-200"></div>
+                        </div>
+                      </div>
+                      <div class="mt-3 flex justify-end">
+                        <a
+                          href="#"
+                          class="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-sm font-medium"
+                          >Ver fala
+                          <svg
+                            class="size-4"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                          >
+                            <path d="m9 18 6-6-6-6" /></svg
+                        ></a>
+                      </div>
+                    </article>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 02 · MOBILE -->
+      <section aria-labelledby="scene-mobile">
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-primary">CENA 02</p>
+          <h2 id="scene-mobile" class="mt-1 text-xl font-semibold tracking-tight">
+            Mobile ~390 · modo, ordenação e evidência tocáveis
+          </h2>
+        </div>
+        <div
+          class="w-[390px] max-w-full overflow-hidden rounded-[18px] border border-border bg-white frame-shadow"
+        >
+          <div class="flex h-14 items-center justify-between bg-primary px-4 text-white">
+            <div class="flex items-center gap-2">
+              <div
+                class="flex size-8 items-center justify-center rounded-lg bg-white/15 text-sm font-bold"
+              >
+                S
+              </div>
+              <div>
+                <p class="text-sm font-semibold">Acervo de falas</p>
+                <p class="text-[11px] text-white/75">Comunicação</p>
+              </div>
+            </div>
+            <div class="size-8 rounded-full bg-white/15"></div>
+          </div>
+          <nav
+            aria-label="Fonte do acervo"
+            class="mx-4 mt-3 grid grid-cols-3 rounded-lg bg-secondary p-1 text-center text-sm"
+          >
+            <a href="#" class="min-h-11 rounded-md px-1 py-3 text-muted-foreground">Câmara</a>
+            <a href="#" class="min-h-11 rounded-md px-1 py-3 text-muted-foreground">Enviadas</a>
+            <a
+              href="#"
+              aria-current="page"
+              class="min-h-11 rounded-md bg-card px-1 py-3 font-medium shadow-sm ring-1 ring-border"
+              >Internet</a
+            >
+          </nav>
+          <form
+            class="border-b border-border bg-white px-4 pb-3 pt-2"
+            aria-label="Buscar no acervo no celular"
+          >
+            <div class="flex min-h-11 items-center gap-2 px-1">
+              <svg
+                class="size-4 shrink-0 text-muted-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" /></svg
+              ><input
+                aria-label="Buscar nas falas na internet"
+                class="min-w-0 flex-1 bg-transparent text-base outline-none"
+                value="tema pesquisado"
+                readonly
+              /><button
+                type="button"
+                aria-label="Limpar"
+                class="flex size-11 items-center justify-center rounded-full"
+              >
+                <span
+                  class="flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground"
+                  ><svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M18 6 6 18M6 6l12 12" /></svg
+                ></span>
+              </button>
+            </div>
+            <div
+              class="mt-1 grid grid-cols-2 rounded-lg bg-muted p-1"
+              role="group"
+              aria-label="Modo de busca"
+            >
+              <button
+                type="button"
+                class="min-h-11 rounded-md px-3 text-sm font-medium text-muted-foreground"
+              >
+                Termo exato</button
+              ><button
+                type="button"
+                aria-pressed="true"
+                class="min-h-11 rounded-md bg-white px-3 text-sm font-semibold text-primary shadow-sm ring-1 ring-border"
+              >
+                <span class="inline-flex items-center gap-1.5"
+                  ><svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z"
+                    /></svg
+                  >Por tema</span
+                >
+              </button>
+            </div>
+            <div class="mt-2 flex gap-2 overflow-hidden" aria-label="Filtros do acervo">
+              <button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border border-border px-3 text-xs font-medium"
+              >
+                Ano</button
+              ><button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border border-border px-3 text-xs font-medium"
+              >
+                Tema</button
+              ><button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border border-border px-3 text-xs font-medium"
+              >
+                Duração</button
+              ><button
+                type="button"
+                class="min-h-11 shrink-0 rounded-full border border-border px-3 text-xs font-medium"
+              >
+                Município citado
+              </button>
+            </div>
+          </form>
+          <div class="px-4 py-5">
+            <div class="mb-3 flex flex-col gap-3">
+              <div>
+                <h3 class="text-sm font-semibold">Resultados por tema</h3>
+                <p class="mt-0.5 text-xs text-muted-foreground">
+                  Ordenados pela proximidade de sentido.
+                </p>
+              </div>
+              <label
+                class="flex min-h-11 w-full items-center justify-between rounded-lg border border-input bg-white px-3 text-xs text-muted-foreground"
+                >Ordenar por
+                <span class="inline-flex items-center gap-2 text-sm font-medium text-foreground"
+                  >Mais relevantes
+                  <svg
+                    class="size-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="m6 9 6 6 6-6" /></svg></span
+              ></label>
+            </div>
+            <article class="rounded-xl border border-border p-4">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <span
+                  class="inline-flex h-5 items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                  ><svg
+                    class="size-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z"
+                    /></svg
+                  >Tema</span
+                >
+              </div>
+              <p class="mt-2 text-xs text-muted-foreground">Fala · Data · Duração · Origem</p>
+              <div
+                class="mt-3 flex h-28 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
+              >
+                <svg
+                  class="size-7"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.75"
+                >
+                  <path d="m6 3 14 9-14 9z" />
+                </svg>
+              </div>
+              <div class="mt-3 rounded-lg border-l-2 border-primary bg-primary/[0.035] px-3 py-2.5">
+                <p class="text-[11px] font-semibold uppercase tracking-wide text-primary">
+                  Trecho mais próximo do tema
+                </p>
+                <div
+                  class="mt-2.5 space-y-2"
+                  aria-label="Placeholder de trecho real sem destaque de termo"
+                >
+                  <div class="h-2.5 w-full rounded-full bg-stone-200"></div>
+                  <div class="h-2.5 w-[91%] rounded-full bg-stone-200"></div>
+                  <div class="h-2.5 w-[55%] rounded-full bg-stone-200"></div>
+                </div>
+              </div>
+              <a
+                href="#"
+                class="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-medium text-white"
+                >Ver fala
+                <svg
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m9 18 6-6-6-6" /></svg
+              ></a>
+            </article>
+          </div>
+          <div
+            class="grid h-16 grid-cols-5 border-t border-border bg-white text-[10px] text-muted-foreground"
+          >
+            <div class="flex flex-col items-center justify-center gap-1">⌂<span>Início</span></div>
+            <div class="flex flex-col items-center justify-center gap-1">
+              ○<span>Municípios</span>
+            </div>
+            <div class="flex flex-col items-center justify-center gap-1">
+              ◷<span>Atualizações</span>
+            </div>
+            <div class="flex flex-col items-center justify-center gap-1">□<span>Agenda</span></div>
+            <div class="flex flex-col items-center justify-center gap-1 font-medium text-primary">
+              •••<span>Mais</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 03 · VAZIO -->
+      <section aria-labelledby="scene-empty">
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-primary">CENA 03</p>
+          <h2 id="scene-empty" class="mt-1 text-xl font-semibold tracking-tight">
+            Vazio honesto · sem aproximação suficiente
+          </h2>
+        </div>
+        <div class="max-w-[960px] rounded-xl border border-border bg-white p-6 frame-shadow md:p-8">
+          <form aria-label="Busca sem resultado">
+            <label for="empty-query" class="mb-1.5 block text-sm font-medium"
+              >Buscar no acervo de falas</label
+            >
+            <div class="flex min-h-11 items-center gap-2 rounded-md border border-input px-3">
+              <svg
+                class="size-4 text-muted-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" /></svg
+              ><input
+                id="empty-query"
+                class="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                value="tema pesquisado"
+                readonly
+              />
+            </div>
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+              <span class="text-xs font-medium text-muted-foreground">Buscar por</span>
+              <div class="inline-flex rounded-lg bg-muted p-1">
+                <button
+                  type="button"
+                  class="min-h-11 rounded-md px-3 text-sm text-muted-foreground md:min-h-9"
+                >
+                  Termo exato</button
+                ><button
+                  type="button"
+                  class="min-h-11 rounded-md bg-white px-3 text-sm font-semibold text-primary shadow-sm ring-1 ring-border md:min-h-9"
+                >
+                  Por tema
+                </button>
+              </div>
+            </div>
+          </form>
+          <div
+            class="mt-8 flex min-h-72 flex-col items-center justify-center rounded-xl border border-border px-6 py-10 text-center"
+          >
+            <div
+              class="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground"
+            >
+              <svg
+                class="size-6"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.75"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+                <path d="m8 8 6 6M14 8l-6 6" />
+              </svg>
+            </div>
+            <h3 class="mt-4 text-base font-semibold">Nenhuma fala combina bem com esse tema</h3>
+            <p class="mt-1 max-w-lg text-sm leading-6 text-muted-foreground">
+              Não encontramos uma fala próxima o suficiente do sentido buscado com os filtros
+              atuais. Não vamos completar a lista com resultados pouco relacionados.
+            </p>
+            <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-medium text-white"
+              >
+                <svg
+                  class="size-4"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="m4 7h10M4 12h16M4 17h8" />
+                  <path d="m17 5 3 2-3 2" /></svg
+                >Reformular busca</button
+              ><button
+                type="button"
+                class="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-medium"
+              >
+                Usar termo exato</button
+              ><button
+                type="button"
+                class="inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium text-muted-foreground"
+              >
+                Limpar filtros
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 04 · DEGRADADO -->
+      <section aria-labelledby="scene-degraded">
+        <div class="mb-4">
+          <p class="text-xs font-semibold text-primary">CENA 04</p>
+          <h2 id="scene-degraded" class="mt-1 text-xl font-semibold tracking-tight">
+            Degradado · busca lexical sem interromper o trabalho
+          </h2>
+        </div>
+        <div class="max-w-[960px] rounded-xl border border-border bg-white p-6 frame-shadow md:p-8">
+          <form aria-label="Busca degradada">
+            <label for="fallback-query" class="mb-1.5 block text-sm font-medium"
+              >Buscar no acervo de falas</label
+            >
+            <div class="flex min-h-11 items-center gap-2 rounded-md border border-input px-3">
+              <svg
+                class="size-4 text-muted-foreground"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" /></svg
+              ><input
+                id="fallback-query"
+                class="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                value="tema pesquisado"
+                readonly
+              />
+            </div>
+            <div
+              class="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3"
+            >
+              <div class="flex items-center gap-2">
+                <span class="hidden text-xs font-medium text-muted-foreground md:inline"
+                  >Buscar por</span
+                >
+                <div class="inline-flex rounded-lg bg-muted p-1">
+                  <button
+                    type="button"
+                    aria-pressed="true"
+                    class="min-h-11 rounded-md bg-white px-3 text-sm font-semibold text-foreground shadow-sm ring-1 ring-border md:min-h-9"
+                  >
+                    Termo exato</button
+                  ><button
+                    type="button"
+                    class="min-h-11 rounded-md px-3 text-sm font-medium text-muted-foreground md:min-h-9"
+                  >
+                    <span class="inline-flex items-center gap-1.5"
+                      ><svg
+                        class="size-3.5 text-estimate-pending-foreground"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="M12 9v4M12 17h.01" />
+                        <path
+                          d="M10.3 3.7 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0Z"
+                        /></svg
+                      >Por tema</span
+                    >
+                  </button>
+                </div>
+              </div>
+              <p class="text-xs text-muted-foreground">Você pode tentar “Por tema” novamente.</p>
+            </div>
+          </form>
+          <div
+            role="status"
+            class="mt-4 flex items-start gap-3 rounded-lg border border-estimate-pending/80 bg-estimate-pending/55 px-4 py-3 text-estimate-pending-foreground"
+          >
+            <svg
+              class="mt-0.5 size-4 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              aria-hidden="true"
+            >
+              <path d="M12 9v4M12 17h.01" />
+              <path
+                d="M10.3 3.7 2.6 17a2 2 0 0 0 1.7 3h15.4a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0Z"
+              />
+            </svg>
+            <div>
+              <p class="text-sm font-medium">A busca por sentido está indisponível agora.</p>
+              <p class="mt-0.5 text-xs leading-5">
+                Para não interromper o trabalho, mostramos resultados por correspondência de termos.
+              </p>
+            </div>
+          </div>
+          <div class="mt-6">
+            <div class="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h3 class="text-sm font-semibold">Resultados por termo exato</h3>
+                <p class="mt-0.5 text-xs text-muted-foreground">
+                  Ordenados por data, como na busca literal.
+                </p>
+              </div>
+              <button
+                type="button"
+                class="min-h-11 rounded-lg border border-border px-3 text-sm font-medium"
+              >
+                Tentar por tema novamente
+              </button>
+            </div>
+            <article class="mt-3 rounded-xl border border-border p-4">
+              <div class="flex flex-wrap items-center gap-2">
+                <span
+                  class="inline-flex h-6 items-center rounded-full border border-border px-2.5 text-xs font-medium"
+                  >Termo exato</span
+                ><span class="text-xs text-muted-foreground">Fala · Data · Duração · Origem</span>
+              </div>
+              <div class="mt-3 flex flex-col items-start gap-4 sm:flex-row">
+                <div
+                  class="flex h-20 w-32 shrink-0 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground"
+                >
+                  <svg
+                    class="size-6"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.75"
+                  >
+                    <path d="m6 3 14 9-14 9z" />
+                  </svg>
+                </div>
+                <div class="w-full min-w-0 flex-1">
+                  <div
+                    class="space-y-2"
+                    aria-label="Placeholder de trecho literal com termo destacado"
+                  >
+                    <div class="flex gap-1.5">
+                      <div class="h-2.5 w-[28%] rounded-full bg-stone-200"></div>
+                      <div class="h-2.5 w-[22%] rounded-sm bg-amber-200"></div>
+                      <div class="h-2.5 flex-1 rounded-full bg-stone-200"></div>
+                    </div>
+                    <div class="h-2.5 w-[72%] rounded-full bg-stone-200"></div>
+                  </div>
+                  <div class="mt-3 flex gap-1.5">
+                    <span class="rounded-full bg-secondary px-2 py-0.5 text-xs">Tema da fala</span
+                    ><span
+                      class="rounded-full border border-border px-2 py-0.5 text-xs text-muted-foreground"
+                      >palavra-chave</span
+                    >
+                  </div>
+                </div>
+              </div>
+              <div class="mt-3 flex justify-end">
+                <a
+                  href="#"
+                  class="inline-flex min-h-11 items-center justify-center rounded-lg bg-primary px-4 text-sm font-medium text-white"
+                  >Ver fala</a
+                >
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <aside
+        class="max-w-[960px] rounded-xl border border-dashed border-border bg-white p-5"
+        aria-label="Anotações do design"
+      >
+        <p class="text-xs font-semibold">Anotações do gate — não são copy do produto</p>
+        <ul class="mt-2 space-y-1.5 text-xs leading-5 text-muted-foreground">
+          <li>
+            <strong class="font-medium text-foreground">Evidência semântica:</strong> “Trecho mais
+            próximo do tema” contém somente um trecho real da fala. Não há score, justificativa
+            gerada ou destaque de palavra.
+          </li>
+          <li>
+            <strong class="font-medium text-foreground">Ordem:</strong> “Mais relevantes” é o padrão
+            de “Por tema”; data e duração continuam disponíveis quando a pessoa escolhe outra ordem.
+          </li>
+          <li>
+            <strong class="font-medium text-foreground">Coexistência:</strong> “Tema” e “Termo
+            exato” podem aparecer juntos. O bloco continua mostrando a evidência por sentido; o
+            destaque literal permanece restrito ao caminho literal.
+          </li>
+          <li>
+            <strong class="font-medium text-foreground">Conteúdo:</strong> caixas e barras cinza são
+            placeholders para mídia e trechos reais. Nenhuma fala, data, duração, nome ou claim foi
+            inventado.
+          </li>
+          <li>
+            <strong class="font-medium text-foreground">Fallback:</strong> a seleção muda
+            honestamente para “Termo exato”; “Por tema” continua visível e acionável para nova
+            tentativa, sem aparência de controle quebrado.
+          </li>
+        </ul>
+      </aside>
+    </main>
+  </body>
+</html>
