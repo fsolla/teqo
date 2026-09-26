@@ -82,6 +82,14 @@ export const CAMPAIGN_CONTENT_PIECE_LINK_HREF = `${CAMPAIGN_COMMUNICATION_CONTEU
 export const CAMPAIGN_CONTENT_PIECE_STATUS_HREF =
   `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/status` as const
 
+/** C230 — list the novelties of the official Instagram profile. */
+export const CAMPAIGN_CONTENT_PIECE_PROFILE_IMPORT_HREF =
+  `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/importar` as const
+
+/** C230 — create one piece from one listed profile media. */
+export const CAMPAIGN_CONTENT_PIECE_PROFILE_IMPORT_CREATE_HREF =
+  `${CAMPAIGN_CONTENT_PIECE_PROFILE_IMPORT_HREF}/criar` as const
+
 export const campaignContentPieceFileHref = (id: number, download = false): string =>
   `${campaignContentPieceDetailHref(id)}/arquivo${download ? '?download=1' : ''}`
 

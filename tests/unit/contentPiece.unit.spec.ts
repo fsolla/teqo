@@ -9,6 +9,8 @@ import {
   contentPieceLinkFailureReasonLabels,
   contentPieceLinkTitle,
   contentPieceOriginFromLink,
+  contentPiecePostIdentityUrls,
+  contentPieceProfileCandidateFromPost,
   contentPieceSearchText,
   contentPieceSlugBase,
   contentPieceSlugCandidates,
@@ -235,6 +237,70 @@ describe('content piece links', () => {
     expect(contentPieceLinkTitle(instagram)).toBe('Instagram · ABC')
     const youtube = parseContentPieceLink('https://youtu.be/VID')!
     expect(contentPieceLinkTitle(youtube)).toBe('YouTube · VID')
+  })
+})
+
+describe('C230 — the identity and the import candidate of a profile post', () => {
+  it('spells every Instagram kind because the shortcode is the identity', () => {
+    const fromPost = parseContentPieceLink('https://www.instagram.com/p/ABC123/')!
+    const fromReel = parseContentPieceLink('https://www.instagram.com/reel/ABC123/')!
+    // The kind is presentation: both pastes probe the same three spellings.
+    expect(contentPiecePostIdentityUrls(fromPost)).toEqual([
+      'https://www.instagram.com/p/ABC123/',
+      'https://www.instagram.com/reel/ABC123/',
+      'https://www.instagram.com/tv/ABC123/',
+    ])
+    expect(contentPiecePostIdentityUrls(fromReel)).toEqual(contentPiecePostIdentityUrls(fromPost))
+  })
+
+  it('keeps the single canonical URL for YouTube', () => {
+    const youtube = parseContentPieceLink('https://youtu.be/VIDEO1')!
+    expect(contentPiecePostIdentityUrls(youtube)).toEqual([
+      'https://www.youtube.com/watch?v=VIDEO1',
+    ])
+  })
+
+  it('classifies the feed metadata into the honest link-only reason', () => {
+    expect(
+      contentPieceProfileCandidateFromPost({
+        permalink: 'https://www.instagram.com/reel/ABC/',
+        mediaType: 'REEL',
+        mediaUrl: 'https://cdn.example/reel.mp4',
+      }),
+    ).toEqual({ url: 'https://www.instagram.com/reel/ABC/', linkOnlyReason: null })
+    expect(
+      contentPieceProfileCandidateFromPost({
+        permalink: 'https://www.instagram.com/p/ABC/',
+        mediaType: 'IMAGE',
+        mediaUrl: 'https://cdn.example/photo.jpg',
+      }),
+    ).toEqual({ url: 'https://www.instagram.com/p/ABC/', linkOnlyReason: null })
+    // A carousel never offers a single file, even when a child URL leaks in.
+    expect(
+      contentPieceProfileCandidateFromPost({
+        permalink: 'https://www.instagram.com/p/ABC/',
+        mediaType: 'CAROUSEL_ALBUM',
+        mediaUrl: 'https://cdn.example/child.jpg',
+      }),
+    ).toEqual({ url: 'https://www.instagram.com/p/ABC/', linkOnlyReason: 'carrossel' })
+    // Protected audio: the API omits the media URL.
+    expect(
+      contentPieceProfileCandidateFromPost({
+        permalink: 'https://www.instagram.com/reel/ABC/',
+        mediaType: 'REEL',
+        mediaUrl: null,
+      }),
+    ).toEqual({ url: 'https://www.instagram.com/reel/ABC/', linkOnlyReason: 'indisponivel' })
+  })
+
+  it('refuses a permalink the catalogue cannot parse', () => {
+    expect(
+      contentPieceProfileCandidateFromPost({
+        permalink: 'https://www.instagram.com/stories/depjorgesolla/1/',
+        mediaType: 'IMAGE',
+        mediaUrl: 'https://cdn.example/photo.jpg',
+      }),
+    ).toBeNull()
   })
 })
 

@@ -1,4 +1,4 @@
-import type { ContentPieceViewModel } from '@/lib/contentPiece'
+import type { ContentPieceProfileCandidate, ContentPieceViewModel } from '@/lib/contentPiece'
 
 /** Wire contract of `POST .../conteudos/enviar` (C211) — raw-body upload. */
 export type ContentPieceUploadResponse =
@@ -8,6 +8,21 @@ export type ContentPieceUploadResponse =
 /** Wire contract of `POST .../conteudos/link` (C211) — add by link. */
 export type ContentPieceLinkResponse =
   | { status: 'success'; piece: ContentPieceViewModel }
+  | { status: 'error'; message: string }
+
+/** Wire contract of `POST .../conteudos/importar` (C230) — profile listing. */
+export type ContentPieceProfileImportCandidatesResponse =
+  | {
+      status: 'success'
+      found: number
+      existingCount: number
+      candidates: ContentPieceProfileCandidate[]
+    }
+  | { status: 'error'; message: string }
+
+/** Wire contract of `POST .../conteudos/importar/criar` (C230) — one draft. */
+export type ContentPieceProfileImportCreateResponse =
+  | { status: 'success'; outcome: 'created' | 'existing' }
   | { status: 'error'; message: string }
 
 /** Wire contract of `POST .../conteudos/status` (C211) — status poll. */

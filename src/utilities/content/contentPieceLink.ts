@@ -8,10 +8,13 @@ import type { Payload } from 'payload'
 import {
   CONTENT_MEDIA_SLUG,
   CONTENT_PIECE_MAX_BYTES,
+  contentPiecePostIdentityUrls,
   parseContentPieceLink,
+  type ContentPieceLink,
   type ContentPieceLinkFailureReason,
   type ContentPieceType,
 } from '@/lib/contentPiece'
+import type { CampaignUser } from '@/payload-types'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import {
   isInstagramFeedConfigured,
@@ -77,6 +80,41 @@ const matchesInstagramShortcode =
     const parsed = parseContentPieceLink(post.permalink)
     return parsed?.origin === 'instagram' && parsed.shortcode === shortcode
   }
+
+/**
+ * C230 — the one identity probe of the vertical: a post is already catalogued
+ * when ANY canonical spelling of its shortcode is a `sourceUrl`. The paste
+ * path (C220) and the profile importer (C230) share it, so pasting `/p/ABC/`
+ * answers "já está na Central" for a piece that entered as `/reel/ABC/`.
+ */
+export const contentPieceExistsForPostIdentity = async ({
+  payload,
+  actor,
+  link,
+}: {
+  payload: Payload
+  actor: CampaignUser
+  link: ContentPieceLink
+}): Promise<boolean> => {
+  const found = await payload.find({
+    collection: 'contentPiece',
+    where: { sourceUrl: { in: contentPiecePostIdentityUrls(link) } },
+    depth: 0,
+    limit: 1,
+    pagination: false,
+    user: actor,
+    overrideAccess: false,
+  })
+  return found.docs.length > 0
+}
+
+/**
+ * A concurrent paste/import can still hit the `sourceUrl` unique index; the
+ * caller maps it to the same "already catalogued" answer as the identity
+ * probe. One predicate, so both creation paths cannot drift apart.
+ */
+export const isContentPieceSourceUrlDuplicateError = (error: unknown): boolean =>
+  error instanceof Error && /source_url|sourceUrl|duplicate key|unique/i.test(error.message)
 
 /** A hung Graph API must not hold the piece `processando` until the 1 h reaper. */
 const CONTENT_PIECE_LINK_FEED_TIMEOUT_MS = 30_000
