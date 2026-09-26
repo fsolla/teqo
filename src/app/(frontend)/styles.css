@@ -6,6 +6,7 @@
 
 @custom-variant dark (&:is(.dark *));
 @source "../../**/*.{js,ts,jsx,tsx,mdx}";
+@source not "../../../docs/**";
 
 @theme {
   --breakpoint-2xs: 23.75rem;
