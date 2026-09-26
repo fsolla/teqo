@@ -21,7 +21,13 @@ import { expect, test } from './fixtures/e2eTest'
  *
  * The tests are serial: the empty-state assertions need a global window with
  * zero published jingles, and only this spec owns jingle rows.
+ *
+ * The home renders published content pieces; a concurrent curated spec can
+ * publish one whose still is not on disk yet, and `/conteudos/<slug>/frame`
+ * answers 404 until the self-heal lands (C226) — the same declaration as
+ * `frontend.e2e.spec.ts`.
  */
+test.use({ expectedRequestFailurePaths: [/\/conteudos\/.+\/frame$/] })
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 
