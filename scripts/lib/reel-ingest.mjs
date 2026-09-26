@@ -22,31 +22,12 @@ import {
   reelMediaFieldByKind,
 } from '../../src/lib/reel.ts'
 
-import {
-  ALLOW_REMOTE_DB_FLAG,
-  TEST_DATABASE_NAME_RE,
-  databaseHostname,
-  databaseName,
-  isLocalDatabaseUrl,
-  isTruthyEnv,
-  parseEqualsFlags,
-} from './cli.mjs'
+import { assertEnvironmentDatabaseTarget, isTruthyEnv, parseEqualsFlags } from './cli.mjs'
 
 /** Explicit write-intent flag; dry-run (the default) never needs it. */
 export const REELS_INGEST_CONFIRM_FLAG = 'REELS_INGEST_CONFIRM'
 
 const USAGE = 'uso: `pnpm reels:ingest <diretório> [--apply]`'
-
-/**
- * Declared environment → exact database name. The name is the honest
- * discriminator on the homeserver: the socat proxy rewrites the host to
- * 127.0.0.1 and `NODE_ENV=production` is set in both env files, so
- * `assertLocalDatabase` alone cannot tell staging from production.
- */
-const REEL_INGEST_DATABASE_BY_ENV = Object.freeze({
-  staging: 'teqo_staging',
-  production: 'teqo_1313',
-})
 
 /** Identity hash of the shot list written by the production skill (sha256 hex). */
 const REEL_INGEST_SHOT_LIST_HASH_RE = /^[a-f0-9]{64}$/
@@ -104,7 +85,8 @@ export const parseReelIngestArgs = (argv = process.argv.slice(2)) => {
  * (`staging`|`production`) is mandatory and must match the exact database name;
  * inside vitest only a `teqo*_test` database is accepted. `ALLOW_REMOTE_DB` is
  * always refused — the ingest never runs from a workstation against a remote
- * database.
+ * database. The rule lives once in `cli.mjs` (`assertEnvironmentDatabaseTarget`,
+ * C231); this alias keeps the C195 name and contract.
  *
  * @param {{
  *   databaseUrl?: string | null,
@@ -114,70 +96,7 @@ export const parseReelIngestArgs = (argv = process.argv.slice(2)) => {
  * }} [options]
  * @returns {{ environment: 'staging' | 'production' | 'test', databaseName: string }}
  */
-export const assertReelIngestTarget = ({
-  databaseUrl = process.env.DATABASE_URL,
-  teqoEnv = process.env.TEQO_ENV,
-  allowRemoteDb = isTruthyEnv(process.env[ALLOW_REMOTE_DB_FLAG]),
-  isTest = process.env.NODE_ENV === 'test' || isTruthyEnv(process.env.VITEST),
-} = {}) => {
-  if (databaseUrl === undefined || databaseUrl === null || String(databaseUrl).trim() === '') {
-    throw new Error(
-      'DATABASE_URL ausente — rode no ambiente do alvo (env file do stack) para o guard saber onde escrever.',
-    )
-  }
-
-  const targetDatabaseName = databaseName(databaseUrl)
-
-  let protocol = null
-  try {
-    protocol = new URL(String(databaseUrl ?? '')).protocol
-  } catch {
-    protocol = null
-  }
-  if (protocol !== 'postgresql:') {
-    throw new Error(
-      `protocolo "${protocol ?? '(inválido)'}" ≠ "postgresql:" — o ingest só escreve num alvo PostgreSQL.`,
-    )
-  }
-
-  if (!isLocalDatabaseUrl(databaseUrl)) {
-    // Never echo the URL — it carries the DB password.
-    throw new Error(
-      `host "${databaseHostname(databaseUrl) ?? '(inválido)'}" fora do allowlist local — o ingest nunca escreve em alvo remoto.`,
-    )
-  }
-
-  if (allowRemoteDb) {
-    throw new Error(
-      'ALLOW_REMOTE_DB está setado — remova; o ingest não precisa do override remoto.',
-    )
-  }
-
-  if (isTest) {
-    if (targetDatabaseName === null || !TEST_DATABASE_NAME_RE.test(targetDatabaseName)) {
-      throw new Error(
-        `banco-alvo "${targetDatabaseName ?? '(inválido)'}" não é de teste — o ingest em teste só escreve em "teqo*_test".`,
-      )
-    }
-    return { environment: 'test', databaseName: targetDatabaseName }
-  }
-
-  if (teqoEnv !== 'staging' && teqoEnv !== 'production') {
-    throw new Error(
-      `TEQO_ENV="${teqoEnv ?? '(ausente)'}" — declare o ambiente do alvo: TEQO_ENV=staging ou TEQO_ENV=production.`,
-    )
-  }
-
-  const expected = REEL_INGEST_DATABASE_BY_ENV[teqoEnv]
-  if (targetDatabaseName !== expected) {
-    throw new Error(
-      `banco-alvo "${targetDatabaseName ?? '(inválido)'}" ≠ "${expected}" para TEQO_ENV="${teqoEnv}" — ` +
-        'o comando recusa escrever num alvo que não corresponde ao ambiente declarado.',
-    )
-  }
-
-  return { environment: teqoEnv, databaseName: targetDatabaseName }
-}
+export const assertReelIngestTarget = (options = {}) => assertEnvironmentDatabaseTarget(options)
 
 /**
  * All reasons a parsed metadata + file listing is not a valid package. Empty

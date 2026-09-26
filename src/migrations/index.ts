@@ -86,6 +86,7 @@ import * as migration_20260924_040210_add_recording_facets from './20260924_0402
 import * as migration_20260924_042028_add_web_speech_origin from './20260924_042028_add_web_speech_origin';
 import * as migration_20260924_045625_add_content_piece_link_failure_reason from './20260924_045625_add_content_piece_link_failure_reason';
 import * as migration_20260924_123940_add_content_piece_people from './20260924_123940_add_content_piece_people';
+import * as migration_20260926_062039_add_archive_photo from './20260926_062039_add_archive_photo';
 
 export const migrations = [
   {
@@ -527,5 +528,10 @@ export const migrations = [
     up: migration_20260924_123940_add_content_piece_people.up,
     down: migration_20260924_123940_add_content_piece_people.down,
     name: '20260924_123940_add_content_piece_people',
+  },
+  {
+    up: migration_20260926_062039_add_archive_photo.up,
+    down: migration_20260926_062039_add_archive_photo.down,
+    name: '20260926_062039_add_archive_photo'
   },
 ];

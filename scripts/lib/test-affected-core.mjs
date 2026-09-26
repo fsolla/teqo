@@ -74,6 +74,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/dossieResearch.mjs',
   'scripts/lib/dossieUnit.mjs',
   'scripts/lib/e2e-affected-manifest.mjs',
+  'scripts/lib/flickrApi.mjs',
+  'scripts/lib/flickrPlan.mjs',
   'scripts/lib/github-api.mjs',
   'scripts/lib/github-branch-protection.mjs',
   'scripts/lib/github-pr-flow.mjs',

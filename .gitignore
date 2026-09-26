@@ -61,6 +61,7 @@ next-env.d.ts
 /recordingMedia
 /contentMedia
 /internetSpeechMedia
+/archivePhoto
 
 # TSE open-data zip cache (pnpm db:seed:tse)
 /data/tse/
@@ -81,6 +82,8 @@ next-env.d.ts
 /data/camara/
 # C215 — web-speech ingestion batch cache + reports (pnpm falas-web:import)
 /data/falas-web/
+# C231 — Flickr photo-archive cache + receipts (pnpm flickr:import)
+/data/flickr/
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 
