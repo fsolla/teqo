@@ -796,6 +796,10 @@ operar depois do merge.
   do pipeline. Não use um diretório local como fila de upload.
 - `internetSpeechMedia` continua privada e servida pelo acervo autenticado. Não
   copie a URL do bucket para um canal público.
+- Mídia acima de 2 GiB não passa pelo `fs.readFile` do Payload: o follow-up
+  C225-large cria a row com um placeholder e sobrescreve a mesma key por upload
+  multipart direto no S3. O teto técnico desta esteira é 5 GiB; acima disso a
+  falha fica em `pending`, sem fingir que a mídia foi espelhada.
 
 ### Pré-requisitos
 
@@ -1104,6 +1108,10 @@ próprios.
 - **Egress do homeserver:** a rota para APIs/CDNs pode ser intermitente. O
   preflight é um gate: se `--dump-json` ou o Garage falhar, a rodada não começa.
   Não silencie a falha nem troque o banco de produção por um alvo remoto.
+- **Mídia acima de 2 GiB:** o código anterior falhava no `fs.readFile` do Node
+  antes de chegar ao S3. O follow-up C225-large usa upload multipart e uma row
+  placeholder; confirme no relatório que a etapa `media` terminou e que o objeto
+  tem o tamanho real. O teto desta implementação é 5 GiB.
 - **S3 ausente ou endpoint errado:** o novo guard recusa escrita não-local sem
   as quatro `S3_*`; um erro de conectividade aparece no relatório. O env file do
   container não deve ser editado para acomodar o host.

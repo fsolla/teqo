@@ -1,8 +1,8 @@
 import 'server-only'
 
-import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, readdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 import type { Payload } from 'payload'
 
 import {
@@ -31,13 +31,23 @@ import {
 import { downloadUrlToFile } from '@/utilities/media/downloadToFile'
 import { ffmpegBinary, messageOf, runFfmpeg } from '@/utilities/media/ffmpeg'
 import {
+  deleteLargeMedia,
+  isLargeMedia,
+  LARGE_MEDIA_THRESHOLD_BYTES,
+  uploadLargeMedia,
+  type LargeMediaUpload,
+} from '@/utilities/media/largeS3Upload'
+import {
   downloadWithYtDlp,
   readYtDlpMetadata,
   resolveYtDlp,
   YTDLP_INSTALL_HINT,
   type YtDlpMetadata,
 } from '@/utilities/media/ytdlp'
-import { withPayloadTransaction } from '@/utilities/payloadTransaction'
+import {
+  withPayloadTransaction,
+  type PayloadTransactionRequest,
+} from '@/utilities/payloadTransaction'
 import {
   classifySpeech,
   type SpeechClassificationResult,
@@ -93,6 +103,13 @@ export type WebSpeechAcquirer = (
   tempDir: string,
 ) => Promise<WebSpeechAcquisition>
 
+type WebSpeechMediaMirror = (args: {
+  payload: Payload
+  req: PayloadTransactionRequest
+  alt: string
+  inputPath: string
+}) => Promise<{ id: number; cleanup: () => Promise<void> }>
+
 export type WebSpeechTranscriber = (
   file: Blob,
   options?: { filename?: string },
@@ -106,6 +123,7 @@ export type WebSpeechIngestDeps = {
   classify?: WebSpeechClassifier
   runFfmpeg?: typeof runFfmpeg
   downloadThumbnail?: (url: string, destinationPath: string) => Promise<void>
+  mirrorMedia?: WebSpeechMediaMirror
 }
 
 class WebSpeechIngestError extends Error {
@@ -275,6 +293,77 @@ const extractTranscript = async ({
   return { segments, durationSeconds, asrSeconds }
 }
 
+const noopCleanup = async (): Promise<void> => {}
+
+type WebSpeechMediaMirrorOptions = {
+  thresholdBytes?: number
+  uploadLarge?: typeof uploadLargeMedia
+  removeLarge?: typeof deleteLargeMedia
+}
+
+export const createWebSpeechMediaMirror =
+  ({
+    thresholdBytes = LARGE_MEDIA_THRESHOLD_BYTES,
+    uploadLarge = uploadLargeMedia,
+    removeLarge = deleteLargeMedia,
+  }: WebSpeechMediaMirrorOptions = {}): WebSpeechMediaMirror =>
+  async ({ payload, req, alt, inputPath }) => {
+    const { size } = await stat(inputPath)
+    if (!isLargeMedia(size, thresholdBytes)) {
+      const media = await payload.create({
+        collection: INTERNET_SPEECH_MEDIA_SLUG,
+        data: { alt },
+        filePath: inputPath,
+        req,
+        // Intentional bypass: the ingestion CLI is a trusted actor with no session.
+        overrideAccess: true,
+      })
+      return { id: media.id, cleanup: noopCleanup }
+    }
+
+    const placeholderPath = join(dirname(inputPath), `payload-placeholder${extname(inputPath)}`)
+    await writeFile(placeholderPath, Buffer.alloc(0))
+    let filename: string | null = null
+
+    try {
+      const media = await payload.create({
+        collection: INTERNET_SPEECH_MEDIA_SLUG,
+        data: { alt },
+        filePath: placeholderPath,
+        req,
+        // Intentional bypass: the placeholder row is owned by the trusted ingestion CLI.
+        overrideAccess: true,
+      })
+      filename = media.filename ?? null
+      if (!filename) throw new Error('A mídia grande não recebeu um filename no S3.')
+      const uploadedFilename = filename
+
+      const uploaded: LargeMediaUpload = await uploadLarge({
+        inputPath,
+        filename: uploadedFilename,
+      })
+      await payload.update({
+        collection: INTERNET_SPEECH_MEDIA_SLUG,
+        id: media.id,
+        data: { filesize: uploaded.filesize, mimeType: uploaded.mimeType },
+        req,
+        // Intentional bypass: the trusted ingestion CLI finalizes its own media row.
+        overrideAccess: true,
+      })
+      return {
+        id: media.id,
+        cleanup: async () => {
+          await removeLarge({ filename: uploadedFilename }).catch(() => undefined)
+        },
+      }
+    } catch (error) {
+      if (filename) await removeLarge({ filename }).catch(() => undefined)
+      throw error
+    }
+  }
+
+const defaultMirrorMedia = createWebSpeechMediaMirror()
+
 /**
  * The artifact and the speech in ONE transaction (`req` threaded through the
  * upload and the upsert). Throws `WebSpeechIngestError('media')`; the caller
@@ -291,6 +380,7 @@ const persistIngestedSpeech = async ({
   durationSeconds,
   inputPath,
   thumbnail,
+  mirrorMedia,
 }: {
   payload: Payload
   finding: WebSpeechFinding
@@ -302,19 +392,15 @@ const persistIngestedSpeech = async ({
   durationSeconds: number | null
   inputPath: string
   thumbnail: number | null
+  mirrorMedia: WebSpeechMediaMirror
 }): Promise<void> => {
   const alt = `${webSpeechPlatformLabel(finding.platform)} — ${metadata.title ?? speechAt}`
+  const cleanupRef: { current?: () => Promise<void> } = {}
 
   try {
     await withPayloadTransaction(payload, async ({ req }) => {
-      const media = await payload.create({
-        collection: INTERNET_SPEECH_MEDIA_SLUG,
-        data: { alt },
-        filePath: inputPath,
-        req,
-        // Intentional bypass: the ingestion CLI is a trusted actor with no session.
-        overrideAccess: true,
-      })
+      const mirrored = await mirrorMedia({ payload, req, alt, inputPath })
+      cleanupRef.current = mirrored.cleanup
 
       await upsertSpeechBundle(
         payload,
@@ -326,13 +412,14 @@ const persistIngestedSpeech = async ({
             endSeconds: segment.endSeconds,
             text: segment.text,
           })),
-          mirroredMedia: media.id,
+          mirroredMedia: mirrored.id,
           thumbnail,
         },
         { req },
       )
     })
   } catch (error) {
+    await cleanupRef.current?.().catch(() => undefined)
     throw new WebSpeechIngestError('media', messageOf(error, MEDIA_FAILURE))
   }
 }
@@ -354,6 +441,7 @@ export const ingestWebSpeech = async (
   const downloadThumbnail =
     deps.downloadThumbnail ??
     ((url, destinationPath) => downloadUrlToFile({ url, destinationPath }))
+  const mirrorMedia = deps.mirrorMedia ?? defaultMirrorMedia
 
   let asrSeconds = 0
   let tempDir: string | null = null
@@ -457,6 +545,7 @@ export const ingestWebSpeech = async (
         durationSeconds: extracted.durationSeconds,
         inputPath,
         thumbnail: thumbnailId ?? previousThumbnail,
+        mirrorMedia,
       })
     } catch (error) {
       if (thumbnailId !== null) {
