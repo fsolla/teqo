@@ -1,0 +1,1034 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C230 · Importar do perfil oficial</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-sidebar: var(--sidebar);
+        --color-destructive: var(--destructive);
+      }
+
+      [data-theme='campaign'] {
+        --radius: 0.5rem;
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --card: #ffffff;
+        --primary: #c51414;
+        --primary-foreground: #ffffff;
+        --secondary: #f5f5f4;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --destructive: #b42318;
+        --border: rgb(28 25 23 / 12%);
+        --sidebar: #fafaf9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      .board {
+        background: #efeeec;
+        background-image: radial-gradient(rgb(28 25 23 / 8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame {
+        box-shadow: 0 18px 52px rgb(28 25 23 / 10%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .scene-label::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #d6d3d1;
+      }
+
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-outline {
+        border-color: var(--border);
+        background: white;
+        color: var(--foreground);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted-foreground);
+      }
+      .btn-disabled {
+        border-color: var(--border);
+        background: #f5f5f4;
+        color: #a8a29e;
+        cursor: not-allowed;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 650;
+        line-height: 1.25;
+      }
+      .badge-ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .badge-work {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge-draft {
+        background: #f4f4f5;
+        color: #57534e;
+      }
+      .badge-link {
+        background: #eef0f3;
+        color: #46505c;
+      }
+
+      .field {
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 8px;
+        background: white;
+        padding: 9px 12px;
+        font-size: 14px;
+      }
+
+      .modal {
+        width: 512px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        padding: 32px;
+        box-shadow: 0 24px 70px rgb(0 0 0 / 28%);
+      }
+      .modal-mobile {
+        width: calc(100% - 32px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
+      }
+
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #e7e5e4;
+        border-top-color: var(--primary);
+        border-radius: 999px;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation: none;
+          border-color: var(--primary);
+        }
+      }
+    </style>
+  </head>
+
+  <body class="board min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="badge bg-primary text-white">C230 · design do gate</span>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Importar do perfil oficial</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          A assessoria traz as publicações recentes de @depjorgesolla para a Central, sem colar link
+          por link. Só entram novidades, sempre como rascunho, com um recibo honesto ao final.
+        </p>
+      </header>
+
+      <!-- CENA 01 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 01</span>
+          <h2>Desktop 1280 · lista com a nova entrada e rascunhos importados</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="flex min-h-[720px]">
+            <aside class="w-60 shrink-0 border-r bg-sidebar p-3">
+              <div class="flex h-12 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <nav class="mt-5 space-y-1 text-sm">
+                <div class="rounded-md px-3 py-2 text-muted-foreground">Início</div>
+                <div class="rounded-md px-3 py-2 font-semibold">Comunicação</div>
+                <div class="ml-4 border-l pl-3">
+                  <div
+                    class="rounded-md bg-white px-3 py-2 font-semibold text-primary ring-1 ring-border"
+                  >
+                    Conteúdos
+                  </div>
+                  <div class="mt-1 rounded-md px-3 py-2 text-muted-foreground">Acervo</div>
+                </div>
+              </nav>
+            </aside>
+
+            <div class="min-w-0 flex-1">
+              <header class="flex h-11 items-center border-b px-4 text-xs text-muted-foreground">
+                <span>Comunicação / Conteúdos</span
+                ><span class="ml-auto">Assessoria de comunicação</span>
+              </header>
+              <div class="p-8">
+                <div class="flex items-start justify-between gap-5">
+                  <div>
+                    <h3 class="text-lg font-semibold">Conteúdos</h3>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      Peças que alimentam a Central pública. Rascunhos não aparecem no site.
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button class="btn btn-outline">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect width="16" height="16" x="4" y="4" rx="4" />
+                        <circle cx="12" cy="12" r="3" />
+                        <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+                      </svg>
+                      Importar do perfil
+                    </button>
+                    <button class="btn btn-outline">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1l-1.1 1.1" />
+                        <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20l1.1-1.1" />
+                      </svg>
+                      Adicionar por link
+                    </button>
+                    <button class="btn btn-primary">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 3v12m0-12 4 4m-4-4L8 7" />
+                        <path d="M5 14v5h14v-5" />
+                      </svg>
+                      Enviar peças
+                    </button>
+                  </div>
+                </div>
+
+                <div class="mt-6 flex gap-2">
+                  <div class="field flex items-center gap-2 text-muted-foreground">
+                    <svg
+                      class="size-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </svg>
+                    Buscar por título, tema ou cidade…
+                  </div>
+                  <button class="btn btn-outline">Filtros</button>
+                  <button class="btn btn-outline" aria-label="Escolher colunas">Colunas</button>
+                </div>
+
+                <div class="mt-5 overflow-hidden rounded-xl border">
+                  <table class="w-full table-fixed text-left text-sm">
+                    <thead class="bg-stone-50 text-xs text-muted-foreground">
+                      <tr>
+                        <th class="w-[30%] p-4">Peça</th>
+                        <th class="w-[17%]">Processamento</th>
+                        <th class="w-[14%]">Publicação</th>
+                        <th>Circulação</th>
+                        <th class="pr-4 text-right">Próxima ação</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y">
+                      <tr>
+                        <td class="p-4">
+                          <div class="flex items-center gap-3">
+                            <div
+                              class="grid h-14 w-20 shrink-0 place-items-center rounded-md bg-gradient-to-br from-stone-200 to-stone-100 text-stone-500"
+                            >
+                              <svg
+                                class="size-5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                              >
+                                <path d="m16 13 5 3-5 3v-6Z" />
+                                <rect width="12" height="14" x="3" y="5" rx="2" />
+                              </svg>
+                            </div>
+                            <div>
+                              <b>Publicação importada · tema a revisar</b>
+                              <p class="mt-1 text-xs text-muted-foreground">Vídeo · Instagram</p>
+                              <p class="mt-0.5 text-xs font-medium text-primary">Importada agora</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="badge badge-work">Processando</span>
+                          <p class="mt-1 text-xs text-muted-foreground">Catalogando…</p>
+                        </td>
+                        <td><span class="badge badge-draft">Rascunho</span></td>
+                        <td class="text-xs text-muted-foreground">Ainda não publicada</td>
+                        <td class="pr-4 text-right">
+                          <button class="btn btn-outline">Abrir</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="p-4">
+                          <div class="flex items-center gap-3">
+                            <div
+                              class="grid h-14 w-20 shrink-0 place-items-center rounded-md bg-gradient-to-br from-stone-200 to-stone-100 text-stone-500"
+                            >
+                              <svg
+                                class="size-5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                              >
+                                <path d="M10 13a5 5 0 0 0 7.1.1l2-2a5 5 0 0 0-7.1-7.1" />
+                                <path d="M14 11a5 5 0 0 0-7.1-.1l-2 2A5 5 0 0 0 12 20" />
+                              </svg>
+                            </div>
+                            <div>
+                              <b>Carrossel importado · título a revisar</b>
+                              <p class="mt-1 text-xs text-muted-foreground">
+                                Instagram · Peça-link
+                              </p>
+                              <p class="mt-0.5 text-xs font-medium text-primary">Importada agora</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span class="badge badge-ready">Pronto</span></td>
+                        <td><span class="badge badge-draft">Rascunho</span></td>
+                        <td class="text-xs text-muted-foreground">Ainda não publicada</td>
+                        <td class="pr-4 text-right">
+                          <button class="btn btn-outline">Abrir</button>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="p-4">
+                          <div class="flex items-center gap-3">
+                            <div
+                              class="grid h-14 w-20 shrink-0 place-items-center rounded-md bg-gradient-to-br from-stone-200 to-stone-100 text-stone-500"
+                            >
+                              <svg
+                                class="size-5"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                              >
+                                <path d="m16 13 5 3-5 3v-6Z" />
+                                <rect width="12" height="14" x="3" y="5" rx="2" />
+                              </svg>
+                            </div>
+                            <div>
+                              <b>Peça já revisada pela assessoria</b>
+                              <p class="mt-1 text-xs text-muted-foreground">Vídeo · Salvador</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span class="badge badge-ready">Pronto</span></td>
+                        <td><span class="badge badge-draft">Rascunho</span></td>
+                        <td class="text-xs text-muted-foreground">Ainda não publicada</td>
+                        <td class="pr-4 text-right">
+                          <button class="btn btn-outline">Abrir</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p class="mt-3 text-xs text-muted-foreground">
+                  Rascunhos não aparecem no site. Uma falha não interrompe as outras peças.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 02 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 02</span>
+          <h2>Desktop 1280 · confirmação antes de buscar</h2>
+        </div>
+        <div
+          class="desktop frame relative mx-auto min-h-[650px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button
+              class="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <header>
+              <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect width="16" height="16" x="4" y="4" rx="4" />
+                  <circle cx="12" cy="12" r="3" />
+                  <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
+              <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                Vamos procurar as publicações recentes de
+                <b class="text-foreground">@depjorgesolla</b> que ainda não estão na Central.
+              </p>
+            </header>
+
+            <div class="mt-5 space-y-3">
+              <div class="flex gap-3 rounded-lg border p-3.5">
+                <svg
+                  class="mt-0.5 size-4 shrink-0 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <div>
+                  <b class="text-sm">Somente novidades da janela recente</b>
+                  <p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+                    Publicações que já estão na Central serão reconhecidas e não criam cópias.
+                  </p>
+                </div>
+              </div>
+              <div class="flex gap-3 rounded-lg border p-3.5">
+                <svg
+                  class="mt-0.5 size-4 shrink-0 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <div>
+                  <b class="text-sm">Tudo entra como Rascunho</b>
+                  <p class="mt-0.5 text-xs leading-5 text-muted-foreground">
+                    Nada é publicado automaticamente. A assessoria revisa e decide o que publicar.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="mt-4 rounded-lg border bg-stone-50 p-4 text-xs leading-5 text-muted-foreground"
+            >
+              <b class="text-foreground">Sem scraping.</b><br />Só o perfil oficial @depjorgesolla,
+              pela API oficial. Carrossel ou mídia sem arquivo extraível continua como peça-link,
+              com o motivo visível.
+            </div>
+
+            <footer class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Cancelar</button>
+              <button class="btn btn-primary">Buscar publicações</button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 03 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 03</span>
+          <h2>Desktop 1280 · em execução, sem progresso inventado</h2>
+        </div>
+        <div
+          class="desktop frame relative mx-auto min-h-[650px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <header>
+              <div class="flex items-center gap-3">
+                <div class="spinner shrink-0" aria-hidden="true"></div>
+                <div>
+                  <h3 class="text-lg font-semibold leading-tight">Importando do perfil</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Mantenha esta janela aberta até concluir.
+                  </p>
+                </div>
+              </div>
+            </header>
+
+            <div class="mt-6 rounded-xl border p-4">
+              <div class="flex items-start gap-3">
+                <div
+                  class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-green-100 text-green-700"
+                >
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </div>
+                <div>
+                  <b class="text-sm">Publicações recentes encontradas</b>
+                  <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                    A busca foi feita em @depjorgesolla pela API oficial.
+                  </p>
+                </div>
+              </div>
+              <div class="my-3 ml-3 h-5 border-l border-dashed"></div>
+              <div class="flex items-start gap-3">
+                <div class="spinner mt-0.5 shrink-0"></div>
+                <div>
+                  <b class="text-sm">Importando 7 de 12…</b>
+                  <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                    Criando apenas as novidades como rascunho e reconhecendo o que já estava na
+                    Central.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p class="mt-4 rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground">
+              Algumas mídias podem levar mais tempo para serem preparadas. O resultado final separa
+              novas, já existentes e falhas — nenhuma falha fica escondida.
+            </p>
+            <footer class="mt-6 flex justify-end">
+              <button class="btn btn-disabled" disabled>
+                <span class="spinner !size-4 !border-stone-300 !border-t-stone-500"></span
+                >Importando…
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 04 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 04</span>
+          <h2>Desktop 1280 · recibo final com motivos e próximo passo</h2>
+        </div>
+        <div
+          class="desktop frame relative mx-auto min-h-[720px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button
+              class="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <header>
+              <div
+                class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700"
+              >
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.3"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold">Importação concluída</h3>
+              <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                As novidades já estão na Central como rascunho. Nada foi publicado.
+              </p>
+            </header>
+
+            <div class="mt-5 grid grid-cols-3 gap-2">
+              <div class="rounded-lg border border-green-200 bg-green-50 p-3">
+                <b class="block text-xl tabular-nums text-green-800">12</b
+                ><span class="text-xs font-medium text-green-800">novas criadas</span>
+              </div>
+              <div class="rounded-lg border bg-stone-50 p-3">
+                <b class="block text-xl tabular-nums">3</b
+                ><span class="text-xs font-medium text-muted-foreground">já estavam</span>
+              </div>
+              <div class="rounded-lg border border-red-200 bg-red-50 p-3">
+                <b class="block text-xl tabular-nums text-red-800">1</b
+                ><span class="text-xs font-medium text-red-800">falhou</span>
+              </div>
+            </div>
+
+            <div class="mt-4 overflow-hidden rounded-lg border text-xs">
+              <div class="flex items-start gap-3 border-b p-3.5">
+                <span class="badge badge-link shrink-0">Peça-link</span>
+                <div>
+                  <b class="text-sm">1 carrossel · criado como peça-link</b>
+                  <p class="mt-1 leading-5 text-muted-foreground">
+                    A API oficial não ofereceu um arquivo único. A publicação entrou pelo link, com
+                    este motivo na ficha.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 border-b p-3.5">
+                <span class="badge badge-link shrink-0">Peça-link</span>
+                <div>
+                  <b class="text-sm">1 áudio protegido · criado como peça-link</b>
+                  <p class="mt-1 leading-5 text-muted-foreground">
+                    O arquivo não pôde ser extraído pela via oficial. A publicação não foi
+                    descartada.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 bg-red-50 p-3.5">
+                <svg
+                  class="mt-0.5 size-4 shrink-0 text-red-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4m0 4h.01" />
+                </svg>
+                <div>
+                  <b class="text-sm text-red-900">1 publicação não foi importada</b>
+                  <p class="mt-1 leading-5 text-red-800">
+                    Falha de rede ao preparar a peça. Tente importar novamente; as peças já criadas
+                    não serão duplicadas.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <footer class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Fechar</button
+              ><button class="btn btn-primary">Ver os rascunhos</button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 05 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 05</span>
+          <h2>Desktop 1280 · credencial ausente, fail-closed no lugar da ação</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="flex min-h-[500px]">
+            <aside class="w-60 shrink-0 border-r bg-sidebar p-3">
+              <div class="flex h-12 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <div class="mt-5 rounded-md px-3 py-2 text-sm font-semibold">Comunicação</div>
+              <div class="ml-4 border-l pl-3">
+                <div
+                  class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border"
+                >
+                  Conteúdos
+                </div>
+              </div>
+            </aside>
+            <div class="min-w-0 flex-1">
+              <header class="h-11 border-b"></header>
+              <div class="p-8">
+                <div class="flex items-start justify-between gap-5">
+                  <div>
+                    <h3 class="text-lg font-semibold">Conteúdos</h3>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                      Peças que alimentam a Central pública. Rascunhos não aparecem no site.
+                    </p>
+                  </div>
+                  <div class="flex items-start gap-2">
+                    <div class="text-right">
+                      <button class="btn btn-disabled" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect width="16" height="16" x="4" y="4" rx="4" />
+                          <circle cx="12" cy="12" r="3" /></svg
+                        >Importar do perfil
+                      </button>
+                      <p class="mt-1.5 text-xs font-medium text-muted-foreground">
+                        Instagram ainda não configurado
+                      </p>
+                    </div>
+                    <button class="btn btn-outline">Adicionar por link</button
+                    ><button class="btn btn-primary">Enviar peças</button>
+                  </div>
+                </div>
+                <div class="mt-6 flex gap-2">
+                  <div class="field text-muted-foreground">Buscar por título, tema ou cidade…</div>
+                  <button class="btn btn-outline">Filtros</button>
+                </div>
+                <div class="mt-5 rounded-xl border p-4">
+                  <div class="h-14 rounded-lg bg-stone-100"></div>
+                  <div class="mt-3 h-14 rounded-lg bg-stone-100"></div>
+                  <div class="mt-3 h-14 rounded-lg bg-stone-100"></div>
+                </div>
+                <div
+                  class="mt-5 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"
+                >
+                  <svg
+                    class="mt-0.5 size-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M12 8v4m0 4h.01" /></svg
+                  ><span
+                    ><b>Instagram ainda não configurado.</b> A importação pelo perfil fica
+                    indisponível até a credencial oficial existir. Não há atalho por scraping nesta
+                    tela.</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 06 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 06</span>
+          <h2>Mobile 390 · lista, execução e resultado</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame relative min-h-[820px] overflow-hidden border bg-white">
+            <header class="flex h-14 items-center bg-primary px-4 text-white">
+              <b class="text-sm">Conteúdos</b>
+              <div class="ml-auto flex items-center gap-2">
+                <span class="grid size-9 place-items-center rounded-md bg-white/10">⌕</span
+                ><span class="grid size-9 place-items-center rounded-md bg-white/10">•••</span>
+              </div>
+            </header>
+            <div class="p-4 pb-24">
+              <h3 class="text-lg font-semibold">Conteúdos</h3>
+              <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                Peças que alimentam a Central pública. Rascunhos não aparecem no site.
+              </p>
+              <button class="btn btn-primary mt-4 w-full">Enviar peças</button>
+              <div class="mt-2 grid grid-cols-2 gap-2">
+                <button class="btn btn-outline">Adicionar link</button
+                ><button class="btn btn-outline">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect width="16" height="16" x="4" y="4" rx="4" />
+                    <circle cx="12" cy="12" r="3" /></svg
+                  >Importar perfil
+                </button>
+              </div>
+              <div class="field mt-4 flex items-center gap-2 text-muted-foreground">
+                ⌕ <span>Buscar conteúdos…</span>
+              </div>
+              <div class="mt-4 space-y-3">
+                <article class="rounded-xl border p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <b class="text-sm">Publicação importada · tema a revisar</b
+                    ><span class="badge badge-work shrink-0">Processando</span>
+                  </div>
+                  <div class="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span class="badge badge-draft">Rascunho</span><span>Instagram · Vídeo</span>
+                  </div>
+                  <div class="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                    <div class="h-full w-1/2 rounded-full bg-primary"></div>
+                  </div>
+                  <p class="mt-2 text-xs text-muted-foreground">Catalogando…</p>
+                  <button class="btn btn-outline mt-3 w-full">Abrir</button>
+                </article>
+                <article class="rounded-xl border p-4">
+                  <div class="flex items-start justify-between gap-3">
+                    <b class="text-sm">Carrossel importado · título a revisar</b
+                    ><span class="badge badge-ready shrink-0">Pronto</span>
+                  </div>
+                  <div class="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                    <span class="badge badge-draft">Rascunho</span
+                    ><span>Instagram · Peça-link</span>
+                  </div>
+                  <button class="btn btn-outline mt-3 w-full">Abrir</button>
+                </article>
+              </div>
+            </div>
+            <nav
+              class="absolute inset-x-0 bottom-0 grid h-[66px] grid-cols-5 border-t bg-white pt-2 text-center text-[10px] text-muted-foreground"
+            >
+              <span>⌂<b class="mt-1 block font-medium">Início</b></span
+              ><span>♙<b class="mt-1 block font-medium">Pessoas</b></span
+              ><span>⌖<b class="mt-1 block font-medium">Municípios</b></span
+              ><span class="text-primary">▣<b class="mt-1 block font-medium">Comunicação</b></span
+              ><span>•••<b class="mt-1 block font-medium">Mais</b></span>
+            </nav>
+          </div>
+
+          <div class="phone frame relative min-h-[820px] overflow-hidden border bg-white">
+            <header class="flex h-14 items-center bg-primary px-4 text-white">
+              <b class="text-sm">Conteúdos</b>
+            </header>
+            <div class="p-4 opacity-35">
+              <div class="h-6 w-40 rounded bg-stone-300"></div>
+              <div class="mt-3 h-11 rounded bg-stone-200"></div>
+              <div class="mt-3 h-36 rounded-xl bg-stone-200"></div>
+            </div>
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal-mobile absolute left-4 right-4 top-1/2 -translate-y-1/2">
+              <header class="flex items-center gap-3">
+                <div class="spinner shrink-0"></div>
+                <div>
+                  <h3 class="text-lg font-semibold">Importando do perfil</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">Mantenha esta janela aberta.</p>
+                </div>
+              </header>
+              <div class="mt-5 rounded-xl border p-4">
+                <div class="flex gap-3">
+                  <div
+                    class="grid size-6 shrink-0 place-items-center rounded-full bg-green-100 text-green-700"
+                  >
+                    ✓
+                  </div>
+                  <div>
+                    <b class="text-sm">Publicações recentes encontradas</b>
+                    <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                      Perfil oficial consultado pela API.
+                    </p>
+                  </div>
+                </div>
+                <div class="my-3 ml-3 h-5 border-l border-dashed"></div>
+                <div class="flex gap-3">
+                  <div class="spinner shrink-0"></div>
+                  <div>
+                    <b class="text-sm">Importando 7 de 12…</b>
+                    <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                      Só novidades, sempre como rascunho.
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <p class="mt-4 text-xs leading-5 text-muted-foreground">
+                Sem scraping. Nenhuma peça é publicada automaticamente.
+              </p>
+              <button class="btn btn-disabled mt-5 w-full" disabled>
+                <span class="spinner !size-4 !border-stone-300 !border-t-stone-500"></span
+                >Importando…
+              </button>
+            </article>
+          </div>
+
+          <div class="phone frame relative min-h-[820px] overflow-hidden border bg-white">
+            <header class="flex h-14 items-center bg-primary px-4 text-white">
+              <b class="text-sm">Conteúdos</b>
+            </header>
+            <div class="p-4 opacity-35">
+              <div class="h-6 w-40 rounded bg-stone-300"></div>
+              <div class="mt-3 h-11 rounded bg-stone-200"></div>
+              <div class="mt-3 h-36 rounded-xl bg-stone-200"></div>
+            </div>
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal-mobile absolute left-4 right-4 top-1/2 -translate-y-1/2">
+              <header>
+                <div
+                  class="mb-3 grid size-9 place-items-center rounded-full bg-green-100 text-green-700"
+                >
+                  ✓
+                </div>
+                <h3 class="text-lg font-semibold">Importação concluída</h3>
+                <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                  As novidades estão como rascunho. Nada foi publicado.
+                </p>
+              </header>
+              <div class="mt-4 grid grid-cols-3 gap-1.5">
+                <div class="rounded-lg border border-green-200 bg-green-50 p-2">
+                  <b class="block text-lg text-green-800">12</b
+                  ><span class="text-[10px] font-medium text-green-800">novas</span>
+                </div>
+                <div class="rounded-lg border p-2">
+                  <b class="block text-lg">3</b
+                  ><span class="text-[10px] text-muted-foreground">já estavam</span>
+                </div>
+                <div class="rounded-lg border border-red-200 bg-red-50 p-2">
+                  <b class="block text-lg text-red-800">1</b
+                  ><span class="text-[10px] text-red-800">falhou</span>
+                </div>
+              </div>
+              <div class="mt-3 rounded-lg border text-xs">
+                <div class="border-b p-3">
+                  <b>1 carrossel · peça-link criada</b>
+                  <p class="mt-1 leading-5 text-muted-foreground">
+                    Sem arquivo único pela API oficial.
+                  </p>
+                </div>
+                <div class="bg-red-50 p-3 text-red-900">
+                  <b>1 falha de rede</b>
+                  <p class="mt-1 leading-5 text-red-800">Tente novamente; não haverá duplicatas.</p>
+                </div>
+              </div>
+              <button class="btn btn-primary mt-4 w-full">Ver os rascunhos</button
+              ><button class="btn btn-ghost mt-2 w-full">Fechar</button>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 07 -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 07</span>
+          <h2>Lista vazia · importar é uma das três saídas</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl border bg-white">
+          <div class="flex min-h-[560px]">
+            <aside class="w-60 shrink-0 border-r bg-sidebar p-3">
+              <div class="flex h-12 items-center gap-2 px-2">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <div class="mt-5 rounded-md px-3 py-2 text-sm font-semibold">Comunicação</div>
+              <div class="ml-4 border-l pl-3">
+                <div
+                  class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border"
+                >
+                  Conteúdos
+                </div>
+              </div>
+            </aside>
+            <div class="min-w-0 flex-1">
+              <header class="h-11 border-b"></header>
+              <div class="p-8">
+                <div>
+                  <h3 class="text-lg font-semibold">Conteúdos</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Peças que alimentam a Central pública. Rascunhos não aparecem no site.
+                  </p>
+                </div>
+                <div class="mt-6 field text-muted-foreground">
+                  Buscar por título, tema ou cidade…
+                </div>
+                <div
+                  class="mt-5 grid min-h-72 place-items-center rounded-xl border px-8 py-12 text-center"
+                >
+                  <div class="max-w-xl">
+                    <div
+                      class="mx-auto grid size-12 place-items-center rounded-full border bg-stone-50 text-stone-600"
+                    >
+                      <svg
+                        class="size-5"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                      >
+                        <path d="m7.5 4.3 9 5.2v10l-9-5.2z" />
+                        <path
+                          d="m16.5 9.5 4-2.3v10l-4 2.3M7.5 4.3l4-2.3 9 5.2M3.5 6.6l4-2.3v10l-4 2.3z"
+                        />
+                      </svg>
+                    </div>
+                    <h4 class="mt-4 text-base font-semibold">Nenhuma peça na Central ainda</h4>
+                    <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
+                      Envie os arquivos do evento, importe as publicações recentes de @depjorgesolla
+                      ou cole o link de uma publicação do Instagram/YouTube. Cada peça entra como
+                      rascunho.
+                    </p>
+                    <div class="mt-5 flex flex-wrap items-center justify-center gap-2">
+                      <button class="btn btn-primary">Enviar peças</button
+                      ><button class="btn btn-outline">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect width="16" height="16" x="4" y="4" rx="4" />
+                          <circle cx="12" cy="12" r="3" /></svg
+                        >Importar do perfil</button
+                      ><button class="btn btn-outline">Adicionar por link</button>
+                    </div>
+                    <p class="mt-4 text-xs text-muted-foreground">
+                      Importar usa somente o perfil oficial e nunca publica automaticamente.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
