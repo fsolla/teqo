@@ -51,7 +51,10 @@ test.describe('C143 — demand visibility (explicit responsibles)', () => {
     // The list rendered for him: the empty state proves the page settled
     // (and that the demand is absent — the link assertion below is the
     // fail-closed complement).
-    await expect(page.getByText('Nenhuma demanda por aqui')).toBeVisible()
+    // The list mounts the desktop table and the mobile cards together (one
+    // hidden) — assert the rendered empty state, not every DOM copy
+    // (OPS83/#824, same class).
+    await expect(page.getByText('Nenhuma demanda por aqui').filter({ visible: true })).toBeVisible()
     await expect(page.getByRole('link', { name: demand.title })).toHaveCount(0)
 
     // The URL does not open either — the demand simply does not exist for him
@@ -69,20 +72,32 @@ test.describe('C143 — demand visibility (explicit responsibles)', () => {
     const { peer, responsible, demand } = await setupDemand(campaign, fixtures)
     const demandURL = `${campaign.baseURL}/campanha/demandas/${demand.slug}`
 
+    // Pre-existing duplication (OPS83/#824 — the "locator não-escopado" class):
+    // the detail page mounts the responsibles form twice in the DOM — the
+    // visible one plus a hidden copy with the same markup. Scope every card
+    // interaction to the visible form; the search dialog stays page-level (it
+    // portals outside).
+    const responsiblesCard = page
+      .locator('form')
+      .filter({ hasText: 'Responsáveis pela demanda' })
+      .filter({ visible: true })
+
     // The responsible manages the list: add the peer through the search dialog.
     await campaign.sessionFor(context, responsible)
     await page.goto(demandURL)
-    await expect(page.getByText('Só quem é responsável vê esta demanda.')).toBeVisible()
+    await expect(responsiblesCard.getByText('Só quem é responsável vê esta demanda.')).toBeVisible()
 
     // The trigger announces the current selection (e.g. "…: 1 responsável").
-    await page.getByRole('button', { name: /Responsáveis pela demanda/ }).click()
+    await responsiblesCard.getByRole('button', { name: /Responsáveis pela demanda/ }).click()
     await page.getByPlaceholder('Buscar assessor…').fill(peer.name)
     await page.getByRole('option', { name: peer.name }).click()
     // The multi-add dialog stays open (modal) — close it before saving.
     await page.keyboard.press('Escape')
-    await page.getByRole('button', { name: 'Salvar responsáveis' }).click()
-    await expect(page.getByText('Responsáveis atualizados.')).toBeVisible()
-    await expect(page.getByRole('button', { name: `Remover ${peer.name}` })).toBeVisible()
+    await responsiblesCard.getByRole('button', { name: 'Salvar responsáveis' }).click()
+    await expect(responsiblesCard.getByText('Responsáveis atualizados.')).toBeVisible()
+    await expect(
+      responsiblesCard.getByRole('button', { name: `Remover ${peer.name}` }),
+    ).toBeVisible()
 
     // The peer now opens the demand.
     await campaign.sessionFor(context, peer)
@@ -92,15 +107,17 @@ test.describe('C143 — demand visibility (explicit responsibles)', () => {
     // Back as the responsible, remove the peer and revoke the access again.
     await campaign.sessionFor(context, responsible)
     await page.goto(demandURL)
-    await page.getByRole('button', { name: `Remover ${peer.name}` }).click()
+    await responsiblesCard.getByRole('button', { name: `Remover ${peer.name}` }).click()
     // The responsibles save is an optimistic server-action write — wait for the
     // POST to land BEFORE swapping to the peer, or the peer's navigation can
     // race the revoke (OPS83 run #16: the accessible demand still served).
     await Promise.all([
       expectPostResponse(page, demandURL),
-      page.getByRole('button', { name: 'Salvar responsáveis' }).click(),
+      responsiblesCard.getByRole('button', { name: 'Salvar responsáveis' }).click(),
     ])
-    await expect(page.getByRole('button', { name: `Remover ${peer.name}` })).toHaveCount(0)
+    await expect(
+      responsiblesCard.getByRole('button', { name: `Remover ${peer.name}` }),
+    ).toHaveCount(0)
 
     // The peer already rendered THIS URL (granted, line 88), so the Next RSC
     // cache can serve the previous payload on a plain goto even after the
