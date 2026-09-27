@@ -123,17 +123,22 @@ describe('faces:index write guards (C234)', () => {
     expect(output(result)).toContain('S3_BUCKET')
   })
 
-  it('reaches the payload bootstrap with the complete target declared', () => {
-    const result = run(indexScript, ['--apply'], {
-      FACE_INDEX_CONFIRM: '1',
-      TEQO_ENV: 'production',
-      ...withS3,
-    })
+  it(
+    'reaches the payload bootstrap with the complete target declared',
+    () => {
+      const result = run(indexScript, ['--apply'], {
+        FACE_INDEX_CONFIRM: '1',
+        TEQO_ENV: 'production',
+        ...withS3,
+      })
 
-    // No production database here: the run must fail while connecting (or
-    // right after), never with one of the write guards.
-    expect(result.status).toBe(1)
-    expect(output(result)).not.toContain('FACE_INDEX_CONFIRM=1')
-    expect(output(result)).not.toContain('TEQO_ENV=')
-  })
+      // No production database here: the run must fail while connecting (or
+      // right after), never with one of the write guards. The spawn boots
+      // Payload, so the unit default (5s) is not enough on CI runners.
+      expect(result.status).toBe(1)
+      expect(output(result)).not.toContain('FACE_INDEX_CONFIRM=1')
+      expect(output(result)).not.toContain('TEQO_ENV=')
+    },
+    30_000,
+  )
 })
