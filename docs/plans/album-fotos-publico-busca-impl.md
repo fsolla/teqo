@@ -183,6 +183,12 @@ Nenhum achado virou Issue nova (zero `expensive_lock` ≥4). Os baratos ficaram 
 - **`RAISE NOTICE` do backfill** pode não aparecer no log do deploy. Gatilho: se o count não aparecer no 1º deploy real, trocar por log do migrator.
 - **Resize on-the-fly sem cache** — decisão aprovada (hard-stop 5); revisita já condicionada a p95/>~1k aprovadas.
 
+## Fechamento (sessão `--auto`, 2026-09-26)
+
+- **Design (trigger c): PARIDADE CERTIFICADA** pelo `designer` (tier primário `openai/gpt-5.6-sol`, sem `DEGRADED`) em 3 passadas contra o app renderizado (390/1280): grade/facetas, overlay, dois vazios, rodapé e sheet mobile. Ajustes da crítica aplicados: dialog semântico com trap de Tab e foco devolvido ao card, alvos de 44px (chips/sheet/limpar/remoção/rodapé), hover dos cards, raio/ritmo mobile, nav desktop e rodapé sempre com "Fotos" na própria `/fotos`. `DESIGN.md` §7 evoluiu (vermelho primário em acervo público; amarelo = orientação/foco).
+- **Hard-stops:** aprovados explicitamente pelo humano na sessão — schema/migration ✅, contrato `/fotos` ✅, bypasses intencionais ✅, miniatura on-the-fly ✅, timing eleitoral → **abrir agora**.
+- **Gates locais:** `pnpm gate:fast` verde (4897 unit), int do caminho verde (4/4), `frontendFotos` 6/6 (3 execuções), superfície pública afetada (home/jingles/conteudos/shareLink) 65/65, knip/format/cycles verdes. O curado de campanha rodou junto (cadeia de deps do dev): flakes pré-existentes passam no retry e um warning de `key` dev-only em `CampaignListOmnibox`/`AdvisorsPage` (código intocado pelo diff; não ocorre no build de produção do CI).
+
 ## Aceite de engenharia
 
 - [ ] Aceite de produto coberto: busca por data/município/atividade/pessoa + termo; só aprovadas (nem por URL direta); contexto real; vazio honesto; canal de remoção visível com efeito imediato e `removed` não republicável pelo pipeline; cache por tag com pull-down imediato; a11y; grade leve mobile; same-origin/privado.
