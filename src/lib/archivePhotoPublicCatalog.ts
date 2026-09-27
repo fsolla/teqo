@@ -25,6 +25,13 @@ import { normalizeForSearch } from '@/lib/speechSearch'
 
 export const ARCHIVE_PHOTO_ALBUM_PATH = '/fotos'
 
+/**
+ * C234 — the selfie search entry (`/fotos/encontre`): a page of the album
+ * (noindex), gated by the album global's `selfieSearchEnabled` flag and by the
+ * Consent resolved server-side.
+ */
+export const ARCHIVE_PHOTO_ALBUM_ENTRY_PATH = `${ARCHIVE_PHOTO_ALBUM_PATH}/encontre`
+
 /** Grid page size (design scene 07: 24 itens; prev/next preserve the facets). */
 export const ARCHIVE_PHOTO_ALBUM_PAGE_SIZE = 24
 

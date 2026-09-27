@@ -47,6 +47,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # same-origin (the files are gitignored build artifacts, never committed).
 RUN node scripts/copy-card-vision-assets.mjs
 
+# C234 — copy the face-api model weights into public/ so the selfie search runs
+# same-origin too (same gitignored-artifact contract).
+RUN node scripts/copy-face-vision-assets.mjs
+
 # OPS99: Generate importMap with dummy S3_* envs BEFORE next build.
 # This ensures the production image always has the S3ClientUploadHandler entry,
 # eliminating the class of bugs where the admin goes blank (OPS69/OPS72/OPS73).

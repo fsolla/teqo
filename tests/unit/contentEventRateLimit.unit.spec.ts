@@ -58,4 +58,16 @@ describe('checkContentEventRateLimit', () => {
     vi.setSystemTime(new Date('2026-09-23T12:10:00.001Z'))
     expect(checkContentEventRateLimit(key)).toBe(true)
   })
+
+  it('honours a stricter caller budget on the same registry (C234 selfie search)', () => {
+    const key = 'unit-strict-budget-client'
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      expect(checkContentEventRateLimit(key, 20)).toBe(true)
+    }
+    expect(checkContentEventRateLimit(key, 20)).toBe(false)
+
+    // Another client still has its own window and the default budget is intact.
+    expect(checkContentEventRateLimit(`${key}-other`, 20)).toBe(true)
+    expect(checkContentEventRateLimit('unit-default-budget-client')).toBe(true)
+  })
 })

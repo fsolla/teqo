@@ -22,6 +22,7 @@ const blockConsentDeletionWithReferences: CollectionBeforeDeleteHook = async ({ 
     leaderships,
     supporters,
     voteSupporters,
+    faceSubjects,
   ] = await Promise.all([
     req.payload.count({
       collection: 'subscription',
@@ -65,6 +66,14 @@ const blockConsentDeletionWithReferences: CollectionBeforeDeleteHook = async ({ 
       overrideAccess: true,
       req,
     }),
+    // C234 — face-subject references: intentional access bypass like every
+    // count above (the hook must see every reference to decide).
+    req.payload.count({
+      collection: 'faceSubject',
+      where: { consent: { equals: id } },
+      overrideAccess: true,
+      req,
+    }),
   ])
 
   const references: Array<[number, string]> = [
@@ -75,6 +84,7 @@ const blockConsentDeletionWithReferences: CollectionBeforeDeleteHook = async ({ 
     [leaderships.totalDocs, 'lideranças'],
     [supporters.totalDocs, 'apoiadores'],
     [voteSupporters.totalDocs, 'apoiadores (intenção de voto)'],
+    [faceSubjects.totalDocs, 'pessoas no índice de busca por selfie'],
   ]
   const used = references.filter(([count]) => count > 0)
   if (used.length === 0) return

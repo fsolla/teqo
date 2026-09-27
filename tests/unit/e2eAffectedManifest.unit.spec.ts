@@ -83,6 +83,11 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // overlay, media route) is a new contract and the migration makes every
       // PR of this delivery high-risk (curated only).
       'frontendFotos',
+      // C234 — deliberate: the selfie search page/endpoint (Consent
+      // fail-closed, only consented subjects, only approved photos) is a new
+      // contract and the migration makes every PR of this delivery high-risk
+      // (curated only).
+      'frontendFotosSelfie',
     ])
     const onDisk = new Set(specNamesOnDisk())
     for (const spec of E2E_CURATED_SPECS) {

@@ -26,6 +26,7 @@ import { ingestArchivePhoto } from '@/utilities/flickr/archivePhotoIngest'
 
 import { ARCHIVE_PHOTO_JPEG_BYTES } from '../helpers/archivePhotoFixture'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
+import { PHOTO_ALBUM_LEASE_KEY, withExclusiveTestDatabaseLease } from '../helpers/testDatabaseLease'
 
 // C233 — the public album boundary over the real Payload `teqo_test`: the
 // approve/draft/removed gate, the sticky removal, the removal-channel guard,
@@ -78,21 +79,28 @@ const createPhoto = async (): Promise<{ id: number; flickrId: string }> => {
   return { id: created.id, flickrId }
 }
 
+// The `photoAlbum` global is a single row created by the first write: every
+// spec file that writes it serializes on the shared lease so parallel forks
+// cannot race the creation into two rows (C234 specs write it too).
 const setChannel = async (removalChannelUrl: string): Promise<void> => {
-  await payload.updateGlobal({
-    slug: 'photoAlbum',
-    data: { published: true, removalChannelUrl },
-    overrideAccess: true,
-  })
+  await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
+    payload.updateGlobal({
+      slug: 'photoAlbum',
+      data: { published: true, removalChannelUrl },
+      overrideAccess: true,
+    }),
+  )
 }
 
 /** Published is false here on purpose: the guard refuses an open album with no channel. */
 const closeAlbumAndClearChannel = async (): Promise<void> => {
-  await payload.updateGlobal({
-    slug: 'photoAlbum',
-    data: { published: false, removalChannelUrl: null },
-    overrideAccess: true,
-  })
+  await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
+    payload.updateGlobal({
+      slug: 'photoAlbum',
+      data: { published: false, removalChannelUrl: null },
+      overrideAccess: true,
+    }),
+  )
 }
 
 const approve = async (id: number): Promise<void> => {

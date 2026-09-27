@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { getCardModel } from '@/lib/cardModels'
 import { contentEventRequestSchema } from '@/lib/schemas/contentEvent'
 import { getStateDeputyCard } from '@/lib/stateDeputyCatalog'
+import { readBoundedRequestBody } from '@/utilities/boundedRequestBody'
 import {
   checkContentEventRateLimit,
   contentEventClientKey,
@@ -37,43 +38,10 @@ const MAX_BODY_BYTES = 4 * 1024
 const silentResponse = (status: number): NextResponse =>
   new NextResponse(null, { status, headers: NO_STORE })
 
-/**
- * Reads the body with a hard byte ceiling, streaming and aborting as soon as
- * the ceiling is crossed — a chunked body without `content-length` cannot make
- * the route buffer unbounded input. `null` means "refused".
- */
-const readBoundedBody = async (request: Request): Promise<string | null> => {
-  const body = request.body
-  if (!body) return ''
-
-  const reader = body.getReader()
-  const decoder = new TextDecoder()
-  let text = ''
-  let bytes = 0
-
-  try {
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-
-      bytes += value.byteLength
-      if (bytes > MAX_BODY_BYTES) {
-        await reader.cancel().catch(() => undefined)
-        return null
-      }
-      text += decoder.decode(value, { stream: true })
-    }
-    return text + decoder.decode()
-  } catch {
-    await reader.cancel().catch(() => undefined)
-    return null
-  }
-}
-
 export const POST = async (request: Request): Promise<NextResponse> => {
   if (!isSameOriginRequest(request)) return silentResponse(403)
 
-  const rawBody = await readBoundedBody(request)
+  const rawBody = await readBoundedRequestBody(request, MAX_BODY_BYTES)
   if (rawBody === null) return silentResponse(400)
 
   let body: unknown

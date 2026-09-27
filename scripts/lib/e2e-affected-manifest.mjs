@@ -55,6 +55,10 @@ export const E2E_CURATED_SPECS = [
   // media route) is a new contract and the migration makes every PR of this
   // delivery high-risk (curated only).
   'frontendFotos',
+  // C234 — deliberate: the selfie search page/endpoint (Consent fail-closed,
+  // only consented subjects, only approved photos) is a new contract and the
+  // migration makes every PR of this delivery high-risk (curated only).
+  'frontendFotosSelfie',
 ]
 
 /**
@@ -221,7 +225,29 @@ export const E2E_AFFECTED_MANIFEST = [
       // The canonical names of the "pessoa pública" facet.
       'src/lib/publicFigureCatalog.ts',
     ],
-    specs: ['frontendFotos'],
+    specs: ['frontendFotos', 'frontendFotosSelfie'],
+  },
+  {
+    // C234 — the selfie search: the `/fotos/encontre` page (already matched by
+    // the C233 prefix above), the anonymous descriptor endpoint, the consented
+    // subjects and the bounded-body/rate-limit owners it shares. The migration
+    // makes every PR of this delivery high-risk (curated only).
+    prefixes: [
+      'src/app/(frontend)/api/fotos',
+      'src/lib/faceSearch.ts',
+      'src/utilities/faceSubjects',
+      'src/collections/FaceSubject.ts',
+      'src/collections/Consent.ts',
+      'src/utilities/campaignConsent.ts',
+      'src/lib/campaignConsentKeys.ts',
+    ],
+    specs: ['frontendFotosSelfie'],
+  },
+  {
+    // C234 — the bounded streaming body reader extracted from the beacon: both
+    // anonymous JSON routes consume it, so a diff there wakes both specs.
+    prefixes: ['src/utilities/boundedRequestBody.ts'],
+    specs: ['frontendConteudos', 'frontendFotosSelfie'],
   },
   {
     // S21 — the campaign footer owns the conditional "Jingles" discovery link
@@ -457,7 +483,13 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/app/(campaign)/campanha/actions/speech.ts',
       'src/app/(campaign)/campanha/actions/reels.ts',
     ],
-    specs: ['frontend', 'campaignNewsletter', 'campaignSpeechCut', 'campaignReel'],
+    specs: [
+      'frontend',
+      'campaignNewsletter',
+      'campaignSpeechCut',
+      'campaignReel',
+      'frontendFotosSelfie',
+    ],
   },
   {
     // Web Push client — the opt-in toast mounts on the campaign shell, so a
@@ -549,7 +581,7 @@ export const E2E_AFFECTED_MANIFEST = [
       // The role predicates drive the vertical gate and the assistant surfaces.
       'src/lib/campaignRoles',
     ],
-    specs: ['campaignSpeechAcervo', 'campaignSpeechCut', 'campaignReel'],
+    specs: ['campaignSpeechAcervo', 'campaignSpeechCut', 'campaignReel', 'frontendFotosSelfie'],
   },
   {
     // C167 — the unlisted public page of a cut: 200 with the stored file and

@@ -219,6 +219,17 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'], channel: 'chromium' },
     },
     {
+      // C234 — the selfie search page (`/fotos/encontre`) and its anonymous
+      // endpoint. Owns its faceSubject/Consent rows and flips the SAME
+      // `photoAlbum` global as the C233 spec, so it serializes behind it in
+      // BOTH modes (the admin project precedent: a shared global cannot run
+      // concurrently across projects).
+      name: 'frontendFotosSelfie',
+      testMatch: /frontendFotosSelfie\.e2e\.spec\.ts/,
+      dependencies: ['frontendFotos'],
+      use: { ...devices['Desktop Chrome'], channel: 'chromium' },
+    },
+    {
       name: 'admin',
       testMatch: /admin\.e2e\.spec\.ts/,
       // Serialize behind `frontend` (and the S19 share-link spec) in BOTH modes:
@@ -267,6 +278,13 @@ export default defineConfig({
          * the same flag in its "Build for e2e" step.
          */
         NEXT_PUBLIC_CARDS_CUTOUT_STUB: process.env.NEXT_PUBLIC_CARDS_CUTOUT_STUB ?? '1',
+        /*
+         * C234 — the selfie-search engine (face-api + ~7 MB of models) is
+         * replaced by a deterministic descriptor in tests: no model download,
+         * no inference. The real engine is exercised by the CLI canary and
+         * manually (same contract as S15).
+         */
+        NEXT_PUBLIC_FACE_SEARCH_STUB: process.env.NEXT_PUBLIC_FACE_SEARCH_STUB ?? '1',
         /*
          * C122 — the fake service-account key lets the agenda Google mirror
          * derive real states (synced/disabled/paused) in the server process.

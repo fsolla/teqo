@@ -77,5 +77,15 @@ export const PhotoAlbum: GlobalConfig = {
           'Link (https://) ou e-mail (mailto:) para pedir a remoção de uma foto. Obrigatório para publicar o álbum ou aprovar uma foto.',
       },
     },
+    {
+      name: 'selfieSearchEnabled',
+      type: 'checkbox',
+      label: 'Busca por selfie',
+      defaultValue: false,
+      admin: {
+        description:
+          'Liga a busca por selfie (/fotos/encontre). Nasce desligada: só abra com o consentimento configurado e o aval jurídico/DPIA registrados (C234).',
+      },
+    },
   ],
 }

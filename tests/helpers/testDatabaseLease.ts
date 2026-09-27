@@ -126,6 +126,17 @@ export const purgeOrphanedConsentRenames = async (
 export const CAMPAIGN_INVITE_CONSENT_LEASE_KEY = 'campaign-invite-consent'
 export const SUPPORTER_REGISTRATION_CONSENT_LEASE_KEY = 'supporter-registration-consent'
 export const SUPPORTER_VOTE_INTENTION_CONSENT_LEASE_KEY = 'supporter-vote-intention-consent'
+
+/**
+ * Serializes spec files that write the `photoAlbum` global. A Payload global is
+ * a single row created by the first write; two parallel spec files writing a
+ * missing global race the creation and the table ends with TWO rows — every
+ * later read then picks one of them by `created_at` and the specs disagree
+ * about the state (observed when the C233 album spec and the C234 face specs
+ * ran in parallel).
+ */
+export const PHOTO_ALBUM_LEASE_KEY = 'photo-album-global'
+
 /**
  * Serializes spec files that treat the election collections as test-owned:
  * `electionResultsImport.int.spec.ts` wipes ALL election rows, which would
