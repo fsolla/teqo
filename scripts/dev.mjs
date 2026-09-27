@@ -15,6 +15,7 @@ import { spawn } from 'node:child_process'
 import { createRequire } from 'node:module'
 
 import { copyCardVisionAssets } from './copy-card-vision-assets.mjs'
+import { copyFaceVisionAssets } from './copy-face-vision-assets.mjs'
 import './guard-dev-db.mjs'
 import { dieWithLabel, loadCliEnv, nextDevArgs, resolveDevPort } from './lib/cli.mjs'
 
@@ -27,6 +28,7 @@ loadCliEnv()
 // server serves it same-origin before Next boots.
 try {
   await copyCardVisionAssets(process.cwd())
+  await copyFaceVisionAssets(process.cwd())
 } catch (error) {
   die(error.message)
 }

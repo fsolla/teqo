@@ -60,7 +60,7 @@
         color: white;
         font-size: 14px;
         font-weight: 800;
-        box-shadow: 0 8px 18px rgb(228 16 47 / 18%);
+        box-shadow: 0 4px 0 #7f1616;
       }
       .secondary {
         display: inline-flex;
@@ -74,6 +74,22 @@
         padding: 10px 16px;
         color: #201b1a;
         font-size: 14px;
+        font-weight: 800;
+      }
+      .primary:focus-visible,
+      .secondary:focus-visible {
+        outline: 3px solid var(--brand-yellow);
+        outline-offset: 3px;
+      }
+      .revision-badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 24px;
+        border-radius: 999px;
+        background: #eef4fb;
+        padding: 4px 9px;
+        color: #184e92;
+        font-size: 11px;
         font-weight: 800;
       }
       .icon {
@@ -189,6 +205,20 @@
         <rect x="3" y="11" width="18" height="10" rx="2" />
         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
       </symbol>
+      <symbol id="wifi-off" viewBox="0 0 24 24">
+        <path
+          d="m2 2 20 20M8.5 8.5A12.4 12.4 0 0 1 21 9M3 9a16 16 0 0 1 2.8-1.6M6.5 13a8 8 0 0 1 6.9-1.7M17.5 13a8 8 0 0 1 .5.4M9.5 16.5a4 4 0 0 1 5 0M12 20h.01"
+        />
+      </symbol>
+      <symbol id="clock" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </symbol>
+      <symbol id="refresh" viewBox="0 0 24 24">
+        <path
+          d="M20 6v5h-5M4 18v-5h5M18.5 9A7 7 0 0 0 6.4 6.4L4 9M5.5 15A7 7 0 0 0 17.6 17.6L20 15"
+        />
+      </symbol>
     </svg>
 
     <main class="mx-auto flex max-w-[1480px] flex-col gap-16 px-4 py-10 md:px-8">
@@ -198,6 +228,9 @@
             >C234 · gate hi-fi</span
           ><span class="rounded-full border border-border bg-white px-3 py-1 text-xs font-bold"
             >Fluxo sensível · LGPD fail-closed</span
+          ><span
+            class="rounded-full border border-[#184e92]/20 bg-[#eef4fb] px-3 py-1 text-xs font-extrabold text-[#184e92]"
+            >Estendido para a execução · 27 set 2026</span
           >
         </div>
         <h1 class="display mt-4 text-3xl font-black tracking-[-.03em]">
@@ -207,14 +240,35 @@
           A pessoa parte do álbum, entende o uso de biometria, escolhe a própria selfie e recebe
           apenas fotos públicas aprovadas em que aparece. A selfie permanece no dispositivo.
         </p>
+        <div class="mt-5 rounded-xl border border-[#184e92]/15 bg-[#f9faff] p-4 text-sm leading-6">
+          <p class="font-extrabold text-[#184e92]">Deltas de execução desta revisão</p>
+          <p class="mt-1 text-muted-foreground">
+            A entrada agora respeita o hero e a grade reais do C233; o fluxo é uma página própria em
+            <b class="text-foreground">/fotos/encontre</b>; resultado, vazio A/C, falhas do
+            processamento e opt-out sem reconhecimento ganham estados explícitos. Cenas revisadas
+            mantêm o número aprovado e recebem selo azul; cenas novas começam em 09.
+          </p>
+        </div>
       </header>
 
       <!-- CENA 01 -->
+      <!-- Port literal da entrada: rounded-2xl border border-[#184e92]/15 bg-[#f9faff] px-6 py-5;
+           CTA: inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] bg-(--pt-red)
+           px-4 font-[family-name:var(--font-exo2)] text-sm font-extrabold text-white
+           shadow-[0_4px_0_#7f1616] + ARCHIVE_PHOTO_FOCUS. -->
       <section aria-labelledby="s1">
-        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 01</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 01</p>
+          <span class="revision-badge">Revisada · C234 execução</span>
+        </div>
         <h2 id="s1" class="display mt-1 text-xl font-black">
-          Desktop ~1280 · entrada no contexto da /fotos
+          Entrada real na /fotos · flag ligada
         </h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">
+          O hero do C233 permanece inteiro. A entrada ocupa uma faixa própria entre o hero e as
+          facetas: descoberta forte, sem competir com o título do álbum nem transformar o hero em
+          duas colunas.
+        </p>
         <div class="stage mt-4 overflow-x-auto rounded-2xl border border-border bg-white">
           <div class="min-h-[660px] min-w-[1180px] bg-white">
             <header class="bg-[#ae1603]">
@@ -226,58 +280,163 @@
                     class="absolute top-[-29.5px] left-[-22.4px] h-auto w-[189px] max-w-none"
                   />
                 </div>
-                <span class="text-sm font-bold text-white">Fotos</span>
+                <nav class="flex items-center gap-6 text-sm font-bold text-white">
+                  <span>Início</span><span class="border-b-2 border-[#ffeb00] py-2">Fotos</span
+                  ><span>Conteúdos</span>
+                </nav>
               </div>
             </header>
-            <div class="mx-auto max-w-6xl px-8 py-9">
-              <nav class="text-sm text-muted-foreground">
-                Início <span class="px-1">/</span> Fotos
-              </nav>
-              <div class="mt-6 grid grid-cols-[1fr_420px] items-stretch gap-6">
-                <div class="rounded-2xl bg-[#fff8f2] p-8">
-                  <p class="text-xs font-black tracking-[.1em] text-[#e4102f] uppercase">
-                    Álbum público
+            <section
+              class="relative isolate overflow-hidden border-b-4 border-[#ffeb00] bg-[radial-gradient(circle_at_78%_0%,rgb(255_230_7/13%),transparent_28%),linear-gradient(112deg,#e4102f_0%,#b8102a_58%,#184e92_100%)] text-white"
+            >
+              <div class="mx-auto flex min-h-[230px] max-w-6xl items-center px-8 py-10">
+                <div class="max-w-2xl">
+                  <p class="text-xs font-black tracking-[.12em] text-[#ffeb00] uppercase">
+                    Memória da nossa caminhada
                   </p>
-                  <h3 class="display mt-3 text-[38px] leading-[1.02] font-black tracking-[-.03em]">
-                    Procure uma foto por data, lugar ou atividade.
+                  <h3 class="display mt-3 text-[42px] leading-none font-black tracking-[-.03em]">
+                    Fotos que contam onde a gente esteve.
                   </h3>
-                  <p class="mt-4 max-w-lg text-base leading-6 text-muted-foreground">
-                    Use os filtros para navegar pelos registros aprovados da caminhada.
+                  <p class="mt-4 max-w-xl text-base leading-6 text-white/90">
+                    Procure uma agenda, um município ou uma pessoa pública e abra cada registro com
+                    data e contexto.
                   </p>
+                </div>
+              </div>
+            </section>
+            <main class="mx-auto max-w-6xl px-8 py-8">
+              <aside
+                class="grid grid-cols-[1fr_auto] items-center gap-6 rounded-2xl border border-[#184e92]/15 bg-[#f9faff] px-6 py-5"
+              >
+                <div class="flex items-start gap-4">
                   <div
-                    class="mt-7 flex h-12 items-center gap-3 rounded-[10px] border border-black/20 bg-white px-4 text-sm text-muted-foreground"
+                    class="grid size-11 shrink-0 place-items-center rounded-xl bg-[#184e92] text-white"
                   >
-                    <svg class="icon"><use href="#image" /></svg>Buscar no álbum…
+                    <svg class="icon size-5"><use href="#spark" /></svg>
+                  </div>
+                  <div>
+                    <h3 class="display text-xl font-black">Encontre você nas fotos</h3>
+                    <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                      Use uma selfie sua. A imagem não sai deste dispositivo e a busca cobre quem
+                      autorizou participar do índice.
+                    </p>
                   </div>
                 </div>
-                <aside
-                  class="relative overflow-hidden rounded-2xl bg-[linear-gradient(145deg,#184e92,#0d315f)] p-7 text-white"
+                <button class="primary shrink-0">
+                  Começar busca por selfie <svg class="icon"><use href="#chev" /></svg>
+                </button>
+              </aside>
+              <div class="mt-8 rounded-2xl border border-border bg-white p-5">
+                <div
+                  class="flex h-12 items-center gap-3 rounded-[10px] border border-black/20 px-4 text-sm text-muted-foreground"
                 >
-                  <div
-                    class="absolute -right-12 -bottom-12 size-56 rounded-full border-[30px] border-[#ffeb00]/15"
-                  ></div>
-                  <div
-                    class="relative grid size-12 place-items-center rounded-xl bg-white/12 text-[#ffeb00]"
+                  <svg class="icon"><use href="#image" /></svg>Buscar no álbum…
+                </div>
+                <div class="mt-4 flex gap-2">
+                  <span
+                    class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                    >Data</span
                   >
-                    <svg class="icon size-6"><use href="#spark" /></svg>
-                  </div>
-                  <h3 class="display relative mt-5 text-2xl font-black">Encontre você nas fotos</h3>
-                  <p class="relative mt-2 text-sm leading-6 text-white/80">
-                    Use uma selfie sua. Ela não sai deste dispositivo e não vira cadastro.
-                  </p>
-                  <button class="primary relative mt-7 w-full">
-                    Começar busca por selfie <svg class="icon"><use href="#chev" /></svg>
-                  </button>
-                  <p class="relative mt-3 text-center text-xs text-white/65">
-                    Sem conta · você controla a remoção
-                  </p>
-                </aside>
+                  <span
+                    class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                    >Município</span
+                  >
+                  <span
+                    class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                    >Atividade</span
+                  >
+                  <span
+                    class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                    >Pessoa pública</span
+                  >
+                </div>
               </div>
-              <div class="mt-7 grid grid-cols-4 gap-4">
+              <div class="mt-7 grid grid-cols-3 gap-4">
                 <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
                 <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
                 <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
-                <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
+              </div>
+            </main>
+          </div>
+        </div>
+        <div class="mt-6 grid gap-6 lg:grid-cols-[390px_1fr]">
+          <div>
+            <p class="text-sm font-extrabold">Mobile 390 · flag ligada</p>
+            <div
+              class="stage mt-3 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+            >
+              <header class="flex h-14 items-center justify-between bg-[#ae1603] px-5 text-white">
+                <span class="display font-black">Jorge Solla</span
+                ><span class="text-sm font-bold">Fotos</span>
+              </header>
+              <div
+                class="border-b-4 border-[#ffeb00] bg-[linear-gradient(125deg,#e4102f,#184e92)] px-5 py-8 text-white"
+              >
+                <p class="text-xs font-black tracking-[.12em] text-[#ffeb00] uppercase">
+                  Nossa caminhada
+                </p>
+                <h3 class="display mt-3 text-[30px] leading-[.98] font-black">
+                  Encontre um momento.
+                </h3>
+                <p class="mt-3 text-sm leading-5 text-white/90">
+                  Busque pela agenda, pelo lugar ou por quem apareceu.
+                </p>
+              </div>
+              <main class="px-5 py-6">
+                <aside class="rounded-2xl border border-[#184e92]/15 bg-[#f9faff] p-4">
+                  <div class="flex gap-3">
+                    <div
+                      class="grid size-10 shrink-0 place-items-center rounded-xl bg-[#184e92] text-white"
+                    >
+                      <svg class="icon"><use href="#spark" /></svg>
+                    </div>
+                    <div>
+                      <h3 class="display text-lg font-black">Encontre você nas fotos</h3>
+                      <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                        Sua selfie fica neste aparelho. A busca é para quem aderiu ao índice.
+                      </p>
+                    </div>
+                  </div>
+                  <button class="primary mt-4 w-full">Começar busca por selfie</button>
+                </aside>
+                <div
+                  class="mt-6 flex h-12 items-center gap-3 rounded-[10px] border border-black/20 px-4 text-sm text-muted-foreground"
+                >
+                  <svg class="icon"><use href="#image" /></svg>Buscar no álbum…
+                </div>
+                <div class="mt-5 grid grid-cols-2 gap-3">
+                  <div class="photo-placeholder aspect-square rounded-lg"></div>
+                  <div class="photo-placeholder aspect-square rounded-lg"></div>
+                </div>
+              </main>
+            </div>
+          </div>
+          <div class="max-w-2xl">
+            <p class="text-sm font-extrabold">Flag desligada · álbum normal, sem reserva vazia</p>
+            <div class="mt-3 rounded-2xl border border-border bg-white p-6">
+              <div
+                class="rounded-xl border border-dashed border-[#184e92]/30 bg-[#f9faff] p-4 text-sm leading-6 text-muted-foreground"
+              >
+                <b class="text-foreground">Regra visual:</b> a faixa inteira não existe. Hero e
+                facetas se encostam pelo espaçamento normal do C233; não aparece placeholder, aviso
+                de indisponibilidade nem link no header/rodapé.
+              </div>
+              <div
+                class="mt-5 flex h-12 items-center gap-3 rounded-[10px] border border-black/20 px-4 text-sm text-muted-foreground"
+              >
+                <svg class="icon"><use href="#image" /></svg>Buscar no álbum…
+              </div>
+              <div class="mt-4 flex gap-2">
+                <span
+                  class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                  >Data</span
+                ><span
+                  class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                  >Município</span
+                ><span
+                  class="flex min-h-11 items-center rounded-full border border-border px-3 text-xs font-bold"
+                  >Atividade</span
+                >
               </div>
             </div>
           </div>
@@ -286,72 +445,101 @@
 
       <!-- CENA 02 -->
       <section aria-labelledby="s2">
-        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 02</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 02</p>
+          <span class="revision-badge">Revisada · página /fotos/encontre</span>
+        </div>
         <h2 id="s2" class="display mt-1 text-xl font-black">
-          Desktop ~1280 · aviso de biometria e consentimento explícito
+          Desktop ~1280 · aviso e consentimento na página própria, não em modal
         </h2>
-        <div
-          class="stage relative mt-4 min-h-[720px] overflow-hidden rounded-2xl border border-border bg-[linear-gradient(rgb(24_10_9/55%),rgb(24_10_9/55%)),#fff8f2] p-8"
-        >
-          <div
-            class="mx-auto max-w-[570px] rounded-2xl bg-white p-7 shadow-[0_28px_90px_rgb(0_0_0/26%)]"
-          >
-            <div class="flex items-start justify-between gap-4">
-              <div class="grid size-12 place-items-center rounded-xl bg-[#eef4fb] text-[#184e92]">
-                <svg class="icon size-6"><use href="#shield" /></svg>
+        <div class="stage mt-4 overflow-x-auto rounded-2xl border border-border bg-white">
+          <div class="min-h-[720px] min-w-[1180px] bg-[#fff8f2]">
+            <header class="bg-[#ae1603]">
+              <div class="mx-auto flex h-16 max-w-6xl items-center justify-between px-8 text-white">
+                <div class="relative h-[52px] w-[144px] overflow-hidden">
+                  <img
+                    src="../../public/campaign-kit/jorge-solla-negativo.png"
+                    alt="Jorge Solla"
+                    class="absolute top-[-29.5px] left-[-22.4px] h-auto w-[189px] max-w-none"
+                  />
+                </div>
+                <a href="#" class="flex min-h-11 items-center gap-2 text-sm font-bold"
+                  ><svg class="icon"><use href="#arrow" /></svg>Voltar ao álbum</a
+                >
               </div>
-              <button
-                aria-label="Fechar"
-                class="grid size-10 place-items-center rounded-full bg-muted"
-              >
-                <svg class="icon"><use href="#x" /></svg>
-              </button>
-            </div>
-            <p class="mt-5 text-xs font-black tracking-[.1em] text-[#184e92] uppercase">
-              Antes da sua selfie
-            </p>
-            <h3 class="display mt-2 text-2xl font-black">Sua face é um dado biométrico sensível</h3>
-            <p class="mt-3 text-sm leading-6 text-muted-foreground">
-              Com sua autorização, comparamos a sua selfie com o índice permitido do álbum para
-              mostrar somente fotos públicas aprovadas em que você aparece.
-            </p>
-            <div class="mt-5 grid gap-3 rounded-xl bg-[#f9faff] p-4 text-sm">
-              <div class="flex gap-3">
-                <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#device" /></svg>
-                <p>
-                  <b>A selfie não sai do dispositivo.</b><br /><span class="text-muted-foreground"
-                    >A imagem é processada aqui e não é guardada na galeria do site.</span
+            </header>
+            <div class="mx-auto max-w-[650px] px-8 py-10">
+              <p class="mb-4 text-center text-sm font-bold text-muted-foreground">
+                Encontre você nas fotos
+              </p>
+              <div class="rounded-2xl border border-border bg-white p-7">
+                <div class="flex items-start justify-between gap-4">
+                  <div
+                    class="grid size-12 place-items-center rounded-xl bg-[#eef4fb] text-[#184e92]"
                   >
-                </p>
-              </div>
-              <div class="flex gap-3">
-                <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#lock" /></svg>
-                <p>
-                  <b>Você pode desistir e pedir remoção.</b><br /><span
-                    class="text-muted-foreground"
-                    >O resultado não mostra nomes de terceiros nem percentual de semelhança.</span
+                    <svg class="icon size-6"><use href="#shield" /></svg>
+                  </div>
+                  <span
+                    class="rounded-full bg-[#eef4fb] px-3 py-1 text-xs font-extrabold text-[#184e92]"
+                    >Passo 1 de 3</span
                   >
+                </div>
+                <p class="mt-5 text-xs font-black tracking-[.1em] text-[#184e92] uppercase">
+                  Antes da sua selfie
                 </p>
+                <h3 class="display mt-2 text-2xl font-black">
+                  Sua face é um dado biométrico sensível
+                </h3>
+                <p class="mt-3 text-sm leading-6 text-muted-foreground">
+                  Com sua autorização, comparamos a sua selfie com o índice formado por pessoas que
+                  autorizaram participar, para mostrar somente fotos públicas aprovadas em que você
+                  aparece.
+                </p>
+                <div class="mt-5 grid gap-3 rounded-xl bg-[#f9faff] p-4 text-sm">
+                  <div class="flex gap-3">
+                    <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#device" /></svg>
+                    <p>
+                      <b>A selfie não sai do dispositivo.</b><br /><span
+                        class="text-muted-foreground"
+                        >A imagem é processada aqui e não é guardada na galeria do site.</span
+                      >
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#lock" /></svg>
+                    <p>
+                      <b>Você pode desistir e pedir remoção.</b><br /><span
+                        class="text-muted-foreground"
+                        >O resultado não mostra nomes de terceiros nem percentual de
+                        semelhança.</span
+                      >
+                    </p>
+                  </div>
+                </div>
+                <label
+                  class="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-black/15 p-4 text-sm leading-5"
+                  ><span
+                    class="mt-0.5 grid size-5 shrink-0 place-items-center rounded border-2 border-[#184e92] bg-[#184e92] text-white"
+                    ><svg class="icon size-3.5"><use href="#check" /></svg></span
+                  ><span
+                    >Li e autorizo o uso temporário da minha biometria facial para procurar a mim
+                    mesmo neste álbum.</span
+                  ></label
+                >
+                <p class="mt-3 text-xs leading-5 text-muted-foreground">
+                  Saiba como tratamos seus dados na
+                  <a href="#" class="font-bold text-[#184e92] underline underline-offset-2"
+                    >Política de Privacidade</a
+                  >.
+                </p>
+                <button class="primary mt-6 w-full">Concordar e escolher minha selfie</button>
+                <a
+                  href="#"
+                  class="mt-3 flex min-h-11 w-full items-center justify-center text-sm font-bold text-muted-foreground"
+                  >Agora não · voltar ao álbum</a
+                >
               </div>
             </div>
-            <label
-              class="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-black/15 p-4 text-sm leading-5"
-              ><span
-                class="mt-0.5 grid size-5 shrink-0 place-items-center rounded border-2 border-[#184e92] bg-[#184e92] text-white"
-                ><svg class="icon size-3.5"><use href="#check" /></svg></span
-              ><span
-                >Li e autorizo o uso temporário da minha biometria facial para procurar a mim mesmo
-                neste álbum.</span
-              ></label
-            >
-            <p class="mt-3 text-xs leading-5 text-muted-foreground">
-              Saiba como tratamos seus dados na
-              <a href="#" class="font-bold text-[#184e92] underline underline-offset-2"
-                >Política de Privacidade</a
-              >.
-            </p>
-            <button class="primary mt-6 w-full">Concordar e escolher minha selfie</button>
-            <button class="mt-3 w-full text-sm font-bold text-muted-foreground">Agora não</button>
           </div>
         </div>
       </section>
@@ -414,9 +602,12 @@
 
       <!-- CENA 04 -->
       <section aria-labelledby="s4">
-        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 04</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 04</p>
+          <span class="revision-badge">Confirmada · página, não modal</span>
+        </div>
         <h2 id="s4" class="display mt-1 text-xl font-black">
-          Mobile ~390 · processando sem promessas ou percentuais
+          Mobile 390 · processando em /fotos/encontre, sem promessas ou percentuais
         </h2>
         <div
           class="stage mt-4 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
@@ -437,7 +628,10 @@
                 <div class="spinner !size-7 !border-[3px]"></div>
               </div>
             </div>
-            <h3 class="display mt-7 text-2xl font-black">Procurando você nas fotos aprovadas…</h3>
+            <p class="mt-7 text-xs font-black tracking-[.08em] text-[#184e92] uppercase">
+              Passo 3 de 3
+            </p>
+            <h3 class="display mt-2 text-2xl font-black">Procurando você nas fotos aprovadas…</h3>
             <p class="mt-3 max-w-[290px] text-sm leading-6 text-muted-foreground">
               Mantenha esta tela aberta. Sua selfie continua somente neste aparelho.
             </p>
@@ -450,8 +644,13 @@
       </section>
 
       <!-- CENA 05 -->
+      <!-- Card de resultado porta ARCHIVE_PHOTO_CARD; imagem: aspect-square ... sm:aspect-[4/3];
+           conteúdo: pt-3, título Exo 2 text-sm/font-black sm:text-base e meta muted. Sem terceiro parágrafo. -->
       <section aria-labelledby="s5">
-        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 05</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 05</p>
+          <span class="revision-badge">Revisada · variante sem terceiros</span>
+        </div>
         <h2 id="s5" class="display mt-1 text-xl font-black">
           Desktop ~1280 · resultado mínimo: só fotos aprovadas em que você aparece
         </h2>
@@ -487,32 +686,49 @@
               </div>
               <div class="mt-7 grid grid-cols-3 gap-x-4 gap-y-7">
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
+                  <a href="#" class="focus-ring block w-full rounded-xl text-left">
                     <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
-                    <p class="display mt-3 font-black">Plenária pela saúde pública</p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                      12 set 2026 · Município selecionado · Plenária
-                    </p>
-                  </button>
+                    <div class="pt-3">
+                      <p class="display text-base font-black text-balance">
+                        Plenária pela saúde pública
+                      </p>
+                      <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                        12 set 2026 · Município selecionado · Plenária
+                      </p>
+                    </div>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
+                  <a href="#" class="focus-ring block w-full rounded-xl text-left">
                     <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
-                    <p class="display mt-3 font-black">Caminhada no centro</p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                      28 ago 2026 · Município selecionado · Caminhada
-                    </p>
-                  </button>
+                    <div class="pt-3">
+                      <p class="display text-base font-black text-balance">Caminhada no centro</p>
+                      <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                        28 ago 2026 · Município selecionado · Caminhada
+                      </p>
+                    </div>
+                  </a>
                 </article>
                 <article>
-                  <button class="focus-ring block w-full rounded-xl text-left">
+                  <a href="#" class="focus-ring block w-full rounded-xl text-left">
                     <div class="photo-placeholder aspect-[4/3] rounded-xl"></div>
-                    <p class="display mt-3 font-black">Encontro com a comunidade</p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                      16 ago 2026 · Município selecionado · Reunião
-                    </p>
-                  </button>
+                    <div class="pt-3">
+                      <p class="display text-base font-black text-balance">
+                        Encontro com a comunidade
+                      </p>
+                      <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                        16 ago 2026 · Município selecionado · Reunião
+                      </p>
+                    </div>
+                  </a>
                 </article>
+              </div>
+              <div
+                class="mt-5 rounded-xl border border-[#184e92]/15 bg-[#f9faff] px-4 py-3 text-xs leading-5 text-[#143c70]"
+              >
+                <b>Contrato visual da variante:</b> imagem 4:3, título e contexto do card C233. A
+                linha “Quem aparece” não é reservada, ocultada nem substituída; ela não existe no
+                resultado por selfie.
               </div>
               <div class="mt-10 flex items-center justify-between rounded-xl bg-[#fff8f2] p-5">
                 <div>
@@ -530,11 +746,61 @@
             </main>
           </div>
         </div>
+        <div class="mt-6">
+          <p class="text-sm font-extrabold">
+            Mobile 390 · a mesma variante em grade de duas colunas
+          </p>
+          <div
+            class="stage mt-3 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+          >
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+              <button aria-label="Voltar">
+                <svg class="icon"><use href="#arrow" /></svg></button
+              ><span class="text-sm font-bold">Resultado</span><span class="w-[18px]"></span>
+            </header>
+            <main class="px-5 py-6">
+              <h3 class="display text-2xl font-black">Encontramos você nestas fotos.</h3>
+              <p class="mt-2 text-sm leading-5 text-muted-foreground">
+                Só registros públicos aprovados, sem nomes de terceiros.
+              </p>
+              <button class="secondary mt-4 w-full">Usar outra selfie</button>
+              <div class="mt-6 grid grid-cols-2 gap-x-3 gap-y-5">
+                <article>
+                  <a href="#" class="focus-ring block w-full rounded-xl text-left"
+                    ><div class="photo-placeholder aspect-square rounded-lg"></div>
+                    <div class="pt-3">
+                      <p class="display text-sm font-black text-balance">
+                        Plenária pela saúde pública
+                      </p>
+                      <p class="mt-1 text-xs leading-4 text-muted-foreground">
+                        12 set 2026 · Município selecionado
+                      </p>
+                    </div></a
+                  >
+                </article>
+                <article>
+                  <a href="#" class="focus-ring block w-full rounded-xl text-left"
+                    ><div class="photo-placeholder aspect-square rounded-lg"></div>
+                    <div class="pt-3">
+                      <p class="display text-sm font-black text-balance">Caminhada no centro</p>
+                      <p class="mt-1 text-xs leading-4 text-muted-foreground">
+                        28 ago 2026 · Município selecionado
+                      </p>
+                    </div></a
+                  >
+                </article>
+              </div>
+            </main>
+          </div>
+        </div>
       </section>
 
       <!-- CENA 06 -->
       <section aria-labelledby="s6">
-        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 06</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 06</p>
+          <span class="revision-badge">Revisada · índice A/C</span>
+        </div>
         <h2 id="s6" class="display mt-1 text-xl font-black">
           Mobile ~390 · vazio honesto, sem “parecidos”
         </h2>
@@ -550,13 +816,13 @@
             <div class="grid size-14 place-items-center rounded-full bg-[#eef4fb] text-[#184e92]">
               <svg class="icon size-7"><use href="#image" /></svg>
             </div>
-            <h3 class="display mt-5 text-2xl font-black">Não encontramos você</h3>
+            <h3 class="display mt-5 text-2xl font-black">Não encontramos fotos suas</h3>
             <p class="mt-2 max-w-[310px] text-sm leading-6 text-muted-foreground">
-              Talvez a luz ou o ângulo tenham dificultado a busca — ou ainda não haja uma foto
-              pública aprovada sua no álbum.
+              Esta busca funciona para quem autorizou participar do índice. Também pode não haver
+              uma foto sua entre os registros públicos aprovados.
             </p>
             <p class="mt-3 text-sm font-bold">
-              Não mostramos pessoas parecidas para preencher a tela.
+              Não mostramos pessoas parecidas nem tentamos adivinhar quem você é.
             </p>
             <button class="primary mt-7 w-full">Tentar outra foto</button>
             <a href="#" class="mt-4 text-sm font-bold text-[#184e92] underline underline-offset-3"
@@ -601,7 +867,10 @@
 
       <!-- CENA 08 -->
       <section aria-labelledby="s8">
-        <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 08</p>
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 08</p>
+          <span class="revision-badge">Revisada · opt-out self-service</span>
+        </div>
         <h2 id="s8" class="display mt-1 text-xl font-black">
           Mobile ~390 · opt-out e pedido de remoção com confirmação
         </h2>
@@ -618,8 +887,8 @@
               </p>
               <h3 class="display mt-1 text-2xl font-black">Você decide se quer aparecer</h3>
               <p class="mt-2 text-sm leading-6 text-muted-foreground">
-                Escolha o pedido. A equipe registra o atendimento e mantém a proteção fechada até
-                concluir.
+                Para sair do índice, confirme sua identidade com uma selfie. Para retirar uma foto
+                pública, use o canal da equipe responsável pelo acervo.
               </p>
               <label class="mt-5 flex gap-3 rounded-xl border-2 border-[#184e92] bg-[#f9faff] p-4"
                 ><span
@@ -632,15 +901,17 @@
                   ></span
                 ></label
               >
-              <label class="mt-3 flex gap-3 rounded-xl border border-border p-4"
-                ><span class="mt-0.5 size-5 shrink-0 rounded-full border-2 border-stone-400"></span
+              <a
+                href="#"
+                data-source="photoAlbum.removalChannelUrl"
+                class="secondary mt-3 flex w-full items-start! justify-between! p-4! text-left"
                 ><span
                   ><b class="text-sm">Pedir remoção de uma foto</b
                   ><small class="mt-1 block text-xs leading-5 text-muted-foreground"
-                    >Informe qual imagem não deve continuar pública.</small
+                    >Abre o canal configurado pela equipe responsável pelo acervo.</small
                   ></span
-                ></label
-              >
+                ><svg class="icon mt-0.5 shrink-0"><use href="#chev" /></svg
+              ></a>
               <button class="primary mt-6 w-full">Continuar</button
               ><a href="#" class="mt-4 block text-center text-sm font-bold text-muted-foreground"
                 >Cancelar</a
@@ -660,8 +931,8 @@
               </div>
               <h3 class="display mt-4 text-xl font-black">Confirmar saída do índice?</h3>
               <p class="mt-2 text-sm leading-6 text-muted-foreground">
-                Vamos registrar seu pedido. Até o atendimento ser concluído, sua presença permanece
-                protegida e não deve voltar ao índice.
+                Vamos reconhecer você neste aparelho e, se houver correspondência, retirar sua
+                presença do índice de busca.
               </p>
               <button
                 class="mt-6 flex min-h-11 w-full items-center justify-center rounded-[10px] bg-[#b42318] px-4 text-sm font-extrabold text-white"
@@ -672,6 +943,223 @@
                 Voltar sem alterar
               </button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 09 -->
+      <section aria-labelledby="s9">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 09</p>
+          <span class="revision-badge">Nova · engine indisponível</span>
+        </div>
+        <h2 id="s9" class="display mt-1 text-xl font-black">
+          Navegador sem os recursos necessários · mobile 390
+        </h2>
+        <div class="mt-4 grid items-start gap-8 xl:grid-cols-[390px_1fr]">
+          <div class="stage w-[390px] overflow-hidden rounded-[30px] border border-border bg-white">
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+              <button aria-label="Voltar">
+                <svg class="icon"><use href="#arrow" /></svg></button
+              ><span class="text-sm font-bold">Encontre você</span><span class="w-[18px]"></span>
+            </header>
+            <div class="flex min-h-[570px] flex-col items-center justify-center px-6 text-center">
+              <div class="grid size-14 place-items-center rounded-full bg-[#eef4fb] text-[#184e92]">
+                <svg class="icon size-7"><use href="#device" /></svg>
+              </div>
+              <h3 class="display mt-5 text-2xl font-black">
+                Este navegador não consegue fazer a busca por selfie
+              </h3>
+              <p class="mt-3 max-w-[310px] text-sm leading-6 text-muted-foreground">
+                Para proteger sua imagem, o reconhecimento precisa rodar neste aparelho. Este
+                navegador não oferece os recursos necessários.
+              </p>
+              <p class="mt-3 text-sm font-bold">
+                O problema não é com a sua selfie. Nenhuma imagem foi enviada.
+              </p>
+              <a href="#" class="primary mt-7 w-full">Voltar ao álbum</a>
+              <p class="mt-4 text-xs leading-5 text-muted-foreground">
+                Você pode tentar novamente em outro navegador ou aparelho compatível.
+              </p>
+            </div>
+          </div>
+          <div>
+            <p class="text-sm font-extrabold">Desktop 1280 · mesma copy, hierarquia adaptada</p>
+            <div
+              class="stage mt-3 min-h-[470px] overflow-hidden rounded-2xl border border-border bg-[#fff8f2]"
+            >
+              <header class="flex h-16 items-center justify-between bg-[#ae1603] px-8 text-white">
+                <span class="display font-black">Jorge Solla</span
+                ><a href="#" class="text-sm font-bold">Voltar ao álbum</a>
+              </header>
+              <div class="mx-auto max-w-xl px-8 py-12 text-center">
+                <div
+                  class="mx-auto grid size-14 place-items-center rounded-full bg-[#eef4fb] text-[#184e92]"
+                >
+                  <svg class="icon size-7"><use href="#device" /></svg>
+                </div>
+                <h3 class="display mt-5 text-2xl font-black">
+                  Este navegador não consegue fazer a busca por selfie
+                </h3>
+                <p class="mt-3 text-sm leading-6 text-muted-foreground">
+                  Para proteger sua imagem, o reconhecimento precisa rodar neste aparelho. Este
+                  navegador não oferece os recursos necessários.
+                </p>
+                <a href="#" class="primary mt-7">Voltar ao álbum</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 10 -->
+      <section aria-labelledby="s10">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 10</p>
+          <span class="revision-badge">Nova · erro do engine</span>
+        </div>
+        <h2 id="s10" class="display mt-1 text-xl font-black">
+          Processamento local interrompido · mobile 390
+        </h2>
+        <div
+          class="stage mt-4 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+        >
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+            <button aria-label="Voltar">
+              <svg class="icon"><use href="#arrow" /></svg></button
+            ><span class="text-sm font-bold">Encontre você</span><span class="w-[18px]"></span>
+          </header>
+          <div class="flex min-h-[570px] flex-col items-center justify-center px-6 text-center">
+            <div class="grid size-14 place-items-center rounded-full bg-red-50 text-[#b42318]">
+              <svg class="icon size-7"><use href="#alert" /></svg>
+            </div>
+            <h3 class="display mt-5 text-2xl font-black">Não foi possível processar a busca</h3>
+            <p class="mt-3 max-w-[310px] text-sm leading-6 text-muted-foreground">
+              O reconhecimento neste aparelho parou antes de concluir. Sua selfie não foi enviada
+              nem guardada.
+            </p>
+            <button class="primary mt-7 w-full">
+              <svg class="icon"><use href="#refresh" /></svg>Tentar novamente</button
+            ><a
+              href="#"
+              class="mt-4 flex min-h-11 items-center text-sm font-bold text-[#184e92] underline underline-offset-3"
+              >Voltar ao álbum</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 11 -->
+      <section aria-labelledby="s11">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 11</p>
+          <span class="revision-badge">Nova · limite de tentativas</span>
+        </div>
+        <h2 id="s11" class="display mt-1 text-xl font-black">
+          Resposta 429 sem linguagem técnica · mobile 390
+        </h2>
+        <div
+          class="stage mt-4 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+        >
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+            <button aria-label="Voltar">
+              <svg class="icon"><use href="#arrow" /></svg></button
+            ><span class="text-sm font-bold">Encontre você</span><span class="w-[18px]"></span>
+          </header>
+          <div class="flex min-h-[570px] flex-col items-center justify-center px-6 text-center">
+            <div class="grid size-14 place-items-center rounded-full bg-amber-50 text-amber-800">
+              <svg class="icon size-7"><use href="#clock" /></svg>
+            </div>
+            <h3 class="display mt-5 text-2xl font-black">Muitas tentativas em pouco tempo</h3>
+            <p class="mt-3 max-w-[305px] text-sm leading-6 text-muted-foreground">
+              Para proteger este recurso, a busca foi pausada por alguns minutos.
+            </p>
+            <p class="mt-3 text-sm font-bold">Espere alguns minutos antes de tentar novamente.</p>
+            <a href="#" class="primary mt-7 w-full">Voltar ao álbum</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 12 -->
+      <section aria-labelledby="s12">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 12</p>
+          <span class="revision-badge">Nova · falha de rede</span>
+        </div>
+        <h2 id="s12" class="display mt-1 text-xl font-black">
+          Falha de conexão depois do processamento local · mobile 390
+        </h2>
+        <div
+          class="stage mt-4 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+        >
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+            <button aria-label="Voltar">
+              <svg class="icon"><use href="#arrow" /></svg></button
+            ><span class="text-sm font-bold">Encontre você</span><span class="w-[18px]"></span>
+          </header>
+          <div class="flex min-h-[570px] flex-col items-center justify-center px-6 text-center">
+            <div class="grid size-14 place-items-center rounded-full bg-[#eef4fb] text-[#184e92]">
+              <svg class="icon size-7"><use href="#wifi-off" /></svg>
+            </div>
+            <h3 class="display mt-5 text-2xl font-black">Não foi possível enviar a busca</h3>
+            <p class="mt-3 max-w-[310px] text-sm leading-6 text-muted-foreground">
+              A conexão falhou ao enviar somente os dados necessários para procurar as fotos. Sua
+              selfie continua neste aparelho.
+            </p>
+            <button class="primary mt-7 w-full">
+              <svg class="icon"><use href="#refresh" /></svg>Tentar enviar novamente</button
+            ><a
+              href="#"
+              class="mt-4 flex min-h-11 items-center text-sm font-bold text-[#184e92] underline underline-offset-3"
+              >Voltar ao álbum</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 13 -->
+      <section aria-labelledby="s13">
+        <div class="flex flex-wrap items-center gap-2">
+          <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 13</p>
+          <span class="revision-badge">Nova · opt-out sem match</span>
+        </div>
+        <h2 id="s13" class="display mt-1 text-xl font-black">
+          Minha presença · pessoa não encontrada no índice · mobile 390
+        </h2>
+        <div
+          class="stage mt-4 w-[390px] overflow-hidden rounded-[30px] border border-border bg-white"
+        >
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+            <button aria-label="Voltar">
+              <svg class="icon"><use href="#arrow" /></svg></button
+            ><span class="text-sm font-bold">Minha presença</span><span class="w-[18px]"></span>
+          </header>
+          <div class="flex min-h-[600px] flex-col items-center justify-center px-6 text-center">
+            <div class="grid size-14 place-items-center rounded-full bg-[#eef4fb] text-[#184e92]">
+              <svg class="icon size-7"><use href="#shield" /></svg>
+            </div>
+            <h3 class="display mt-5 text-2xl font-black">Não encontramos sua presença no índice</h3>
+            <p class="mt-3 max-w-[310px] text-sm leading-6 text-muted-foreground">
+              Não foi possível reconhecer uma participação sua no índice com esta selfie. Nenhuma
+              alteração foi feita.
+            </p>
+            <button class="primary mt-7 w-full">Tentar outra selfie</button>
+            <div class="mt-6 w-full border-t border-border pt-5">
+              <p class="text-sm leading-6 text-muted-foreground">
+                Quer retirar uma foto pública mesmo assim?
+              </p>
+              <a href="#" data-source="photoAlbum.removalChannelUrl" class="secondary mt-3 w-full"
+                >Pedir remoção de uma foto</a
+              >
+              <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                Este botão usa o canal configurado no álbum; o artefato não inventa endereço.
+              </p>
+            </div>
+            <a
+              href="#"
+              class="mt-4 flex min-h-11 items-center text-sm font-bold text-muted-foreground"
+              >Voltar ao álbum</a
+            >
           </div>
         </div>
       </section>

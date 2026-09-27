@@ -48,9 +48,15 @@ const cleanup = (now: number): void => {
 
 /**
  * `true` when the event may be recorded. A null key (no trustworthy IP) and
- * any internal failure answer `true` — the fail-open contract.
+ * any internal failure answer `true` — the fail-open contract. `budget`
+ * defaults to the beacon's generous window; a stricter caller (the C234 selfie
+ * search, which answers a membership oracle) passes its own ceiling while
+ * sharing the same registry, hash and cleanup.
  */
-export const checkContentEventRateLimit = (key: string | null): boolean => {
+export const checkContentEventRateLimit = (
+  key: string | null,
+  budget: number = MAX_EVENTS_PER_WINDOW,
+): boolean => {
   if (!key) return true
 
   try {
@@ -63,7 +69,7 @@ export const checkContentEventRateLimit = (key: string | null): boolean => {
       store.set(key, { count: 1, resetAt: now + WINDOW_MS })
       return true
     }
-    if (existing.count >= MAX_EVENTS_PER_WINDOW) return false
+    if (existing.count >= budget) return false
 
     existing.count += 1
     return true

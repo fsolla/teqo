@@ -18,6 +18,7 @@ import {
   ARCHIVE_PHOTO_CHIP,
   ARCHIVE_PHOTO_FOCUS,
   ARCHIVE_PHOTO_PRIMARY_BUTTON,
+  ARCHIVE_PHOTO_SECONDARY_BUTTON,
 } from './archivePhotoClasses'
 
 const FACET_MENU_HEADINGS: Record<ArchivePhotoAlbumFacet, string> = {
@@ -75,10 +76,13 @@ export const ArchivePhotoFilters = ({
   params,
   facets,
   activeFilters,
+  searchSecondary = false,
 }: {
   params: ArchivePhotoAlbumParams
   facets: ArchivePhotoAlbumFacets
   activeFilters: readonly ArchivePhotoAlbumActiveFilter[]
+  /** C234 — with the selfie entry band above, the album search is the secondary action. */
+  searchSecondary?: boolean
 }) => {
   const facetFilters = activeFilters.filter((filter): filter is FacetFilter => filter.facet !== 'q')
   const termFilter = activeFilters.find((filter) => filter.facet === 'q')
@@ -123,7 +127,10 @@ export const ArchivePhotoFilters = ({
               </Link>
             ) : null}
           </div>
-          <button type="submit" className={`${ARCHIVE_PHOTO_PRIMARY_BUTTON} min-w-28`}>
+          <button
+            type="submit"
+            className={`${searchSecondary ? ARCHIVE_PHOTO_SECONDARY_BUTTON : ARCHIVE_PHOTO_PRIMARY_BUTTON} min-w-28`}
+          >
             Buscar fotos
           </button>
         </div>

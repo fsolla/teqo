@@ -26,6 +26,7 @@ import { ContentPiece } from './collections/ContentPiece'
 import { ElectionCandidate } from './collections/ElectionCandidate'
 import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
+import { FaceSubject } from './collections/FaceSubject'
 import { GoogleCalendarSync } from './collections/GoogleCalendarSync'
 import { InternetSpeechMedia } from './collections/InternetSpeechMedia'
 import { Jingle } from './collections/Jingle'
@@ -139,6 +140,7 @@ export default buildConfig({
     ContentPiece,
     ContentMedia,
     ArchivePhoto,
+    FaceSubject,
     ContentEvent,
     Recording,
     RecordingMedia,

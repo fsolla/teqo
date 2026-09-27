@@ -88,6 +88,7 @@ next-env.d.ts
 /data/acervo-index/
 # C232 — photo-archive cataloguing receipts (pnpm archive:catalog)
 /data/archive/
+/data/face/
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 
@@ -154,6 +155,7 @@ next-env.d.ts
 
 # S15 — MediaPipe wasm runtime, copied from node_modules at dev/build time
 /public/cards/mediapipe/
+/public/fotos/modelos/
 
 /data/encode/
 /data/poster-candidates/

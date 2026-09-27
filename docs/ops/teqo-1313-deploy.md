@@ -1429,6 +1429,65 @@ Rollback: a migration `add_archive_photo_catalog` é aditiva; o rollback funcion
 é limpar o grupo `catalog`/`curatedFields` no admin. Reexecutar nunca duplica nem
 sobrescreve curadoria.
 
+## C234 — busca por selfie no álbum público
+
+A busca por selfie (`/fotos/encontre` + `POST /api/fotos/selfie`) nasce
+**fechada**: a flag `photoAlbum.selfieSearchEnabled` é `false` por default e o
+fluxo só abre com o **Consent de consulta** (`busca-selfie-fotos`) configurado
+no admin — sem ele a página mostra o estado fail-closed e a API recusa (503).
+O índice é A/C (decisão do gate, PR #1370): só rostos de pessoas que aderiram
+entram; não existe índice anônimo do acervo. A selfie nunca sai do aparelho do
+visitante (o navegador envia só o vetor 128-d).
+
+### Abertura (depois do aval jurídico/DPIA registrado)
+
+1. No admin (`/admin`), crie os dois Consentimentos com as chaves exatas:
+   `busca-selfie-fotos` (consulta, texto mostrado no fluxo) e
+   `busca-selfie-indice` (adesão, assinado com a pessoa no enrollment). Sem os
+   dois, o fluxo não abre / ninguém é elegível.
+2. Inscreva cada pessoa que aderiu (selfie com **um** rosto, com a pessoa
+   presente e o consentimento assinado). Rode no homeserver, no serviço de
+   manutenção do alvo (o engine roda local, sem endpoint externo):
+   ```bash
+   cd ~/stack
+   # plano (dry-run: detecta o rosto e resolve o consentimento; não grava)
+   docker compose --profile maintenance run --rm      -v /srv/face-selfies:/app/data/face-selfies:ro      -v /srv/face-reports:/app/data/face/reports      teqo-1313-migrate pnpm faces:enroll        --label "<nome interno>" --selfie /app/data/face-selfies/<arquivo>.jpg
+   # grava (exige TEQO_ENV=production e FACE_ENROLL_CONFIRM=1):
+   docker compose --profile maintenance run --rm      -e TEQO_ENV=production -e FACE_ENROLL_CONFIRM=1      -v /srv/face-selfies:/app/data/face-selfies:ro      -v /srv/face-reports:/app/data/face-reports      teqo-1313-migrate pnpm faces:enroll        --label "<nome interno>" --selfie /app/data/face-selfies/<arquivo>.jpg --apply
+   ```
+3. Indexe o acervo aprovado para os inscritos (canário primeiro):
+   ```bash
+   docker compose --profile maintenance run --rm      -e TEQO_ENV=production -e FACE_INDEX_CONFIRM=1      -v /srv/face-reports:/app/data/face/reports      teqo-1313-migrate pnpm faces:index --apply --limit 20
+   # sem --limit processa todas as aprovadas; adicionar/reenrolar alguém
+   # muda a revisão e a próxima execução reprocessa tudo (~6,5k fotos).
+   docker compose --profile maintenance run --rm      teqo-1313-migrate pnpm faces:index --verify   # inventário read-only; sai 1 com pendências
+   ```
+4. Só então ligue `Busca por selfie` no global **Álbum de fotos** (admin). O
+   kill switch é imediato (sem deploy); desligar fecha a página (404) e a API.
+
+### Remoção e re-consentimento
+
+- **Sair do índice**: a própria pessoa usa "Minha presença" no fluxo (selfie
+  confere o vínculo; o vetor e os links são apagados e o status vira
+  `removed`). O pedido de **remoção de foto** continua no canal do álbum.
+- **Texto do Consent editado**: os inscritos ficam inelegíveis até
+  re-consentimento (o `consentHash` do enrollment é comparado com o texto
+  vigente) — re-rode `faces:enroll --subject <id>` com a pessoa.
+- **Troca de modelo do engine**: `FACE_SEARCH_MODEL` muda ⇒ o índice inteiro
+  fica stale; re-inscreva (`--subject`) e rode `faces:index --refresh`.
+- **Rollback**: desligue a flag; a migration `add_face_subject` é aditiva
+  (tabela `face_subject`, colunas `faces_*` em `archive_photo` e
+  `selfie_search_enabled` no global). Nada do acervo público muda.
+
+### Guardas e recibos
+
+`--apply` exige `TEQO_ENV` casando o banco exato, `FACE_ENROLL_CONFIRM=1` /
+`FACE_INDEX_CONFIRM=1` fora do dev local e as quatro `S3_*` (mídia espelhada);
+`ALLOW_REMOTE_DB` é recusado. Recibos JSON em `data/face/reports/` (nunca
+levam vetor nem bytes de imagem). O engine carrega os mesmos modelos do
+navegador de `node_modules`; a cópia same-origin para o browser é artefato de
+build (`scripts/copy-face-vision-assets.mjs`).
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)

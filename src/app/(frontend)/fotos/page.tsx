@@ -9,6 +9,7 @@ import {
   ArchivePhotoEmptyState,
   ArchivePhotoNoResults,
 } from '@/components/fotos/ArchivePhotoStates'
+import { SelfieSearchEntry } from '@/components/fotos/SelfieSearchEntry'
 import { isArchivePhotoRemovalChannelUrl } from '@/lib/archivePhotoCatalog'
 import {
   ARCHIVE_PHOTO_ALBUM_PATH,
@@ -126,7 +127,17 @@ export default async function FotosPage({
             <ArchivePhotoEmptyState />
           ) : (
             <>
-              <ArchivePhotoFilters params={params} facets={facets} activeFilters={activeFilters} />
+              {album.selfieSearchEnabled === true ? (
+                <div className="mb-8">
+                  <SelfieSearchEntry />
+                </div>
+              ) : null}
+              <ArchivePhotoFilters
+                params={params}
+                facets={facets}
+                activeFilters={activeFilters}
+                searchSecondary={album.selfieSearchEnabled === true}
+              />
 
               <div className="mt-10 flex items-end justify-between gap-4 border-b border-(--campaign-line) pb-4">
                 <div>

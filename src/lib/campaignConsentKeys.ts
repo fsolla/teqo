@@ -30,6 +30,19 @@ export const CAMPAIGN_PUSH_CONSENT_MISSING_MESSAGE =
   'Consentimento de notificações push ainda não configurado.'
 
 /**
+ * C234 — the public selfie search on the photo album. Two keys because the
+ * two biometric uses are distinct: `FACE_SEARCH_CONSENT_KEY` is the temporary
+ * use of the querying person's face to find themselves in the album (the
+ * vector is discarded with the request), while `FACE_INDEX_CONSENT_KEY` is
+ * the enrollment in the search index (the vector is stored until removal).
+ * Both fail closed: without the Consent row with the exact key the flow is
+ * closed, and editing the text invalidates every enrolled subject until
+ * re-consent.
+ */
+export const FACE_SEARCH_CONSENT_KEY = 'busca-selfie-fotos'
+export const FACE_INDEX_CONSENT_KEY = 'busca-selfie-indice'
+
+/**
  * S9 — campaign home "novidades" capture (name + WhatsApp, engagement level
  * toggle). Fail-closed like every public flow: while the admin has not created
  * the Consent row with this key (jurídico-approved text pending), the form

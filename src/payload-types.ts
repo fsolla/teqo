@@ -96,6 +96,7 @@ export interface Config {
     contentPiece: ContentPiece;
     contentMedia: ContentMedia;
     archivePhoto: ArchivePhoto;
+    faceSubject: FaceSubject;
     contentEvent: ContentEvent;
     recording: Recording;
     recordingMedia: RecordingMedia;
@@ -153,6 +154,7 @@ export interface Config {
     contentPiece: ContentPieceSelect<false> | ContentPieceSelect<true>;
     contentMedia: ContentMediaSelect<false> | ContentMediaSelect<true>;
     archivePhoto: ArchivePhotoSelect<false> | ArchivePhotoSelect<true>;
+    faceSubject: FaceSubjectSelect<false> | FaceSubjectSelect<true>;
     contentEvent: ContentEventSelect<false> | ContentEventSelect<true>;
     recording: RecordingSelect<false> | RecordingSelect<true>;
     recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
@@ -1563,6 +1565,13 @@ export interface ArchivePhoto {
    * Tudo o que a busca da lista encontra, normalizado (sem acentos, minúsculas): legenda, texto visível, temas, pessoas, município, álbuns e tags.
    */
   searchText?: string | null;
+  /**
+   * Estado do lote da busca por selfie (C234). Nunca editado à mão.
+   */
+  faces?: {
+    checkedAt?: string | null;
+    checkedKey?: string | null;
+  };
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -1574,6 +1583,58 @@ export interface ArchivePhoto {
   height?: number | null;
   focalX?: number | null;
   focalY?: number | null;
+}
+/**
+ * Pessoas que consentiram entrar no índice da busca por selfie (/fotos/encontre). Operado pela CLI faces:enroll/faces:index; a remoção é registrada no status.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faceSubject".
+ */
+export interface FaceSubject {
+  id: number;
+  /**
+   * Como a assessoria identifica a pessoa; nunca aparece no site.
+   */
+  label: string;
+  /**
+   * O Consent da adesão ao índice (chave estável busca-selfie-indice).
+   */
+  consent: number | Consent;
+  /**
+   * Snapshot do texto aceito no enrollment; se o texto mudar, a pessoa fica inelegível até re-consentir.
+   */
+  consentHash?: string | null;
+  /**
+   * Modelo do descriptor (troca de modelo invalida o índice: re-enrollment).
+   */
+  model?: string | null;
+  /**
+   * Muda a cada enrollment/re-enrollment; é o que marca o lote como stale (o updated_at muda também quando o lote escreve os vínculos).
+   */
+  enrolledAt?: string | null;
+  vector?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Removida: pedido de saída atendido — o vetor é apagado e a pessoa deixa de ser encontrada.
+   */
+  status: 'active' | 'removed';
+  /**
+   * Data do atendimento da saída do índice.
+   */
+  removedAt?: string | null;
+  /**
+   * Derivado do lote (pnpm faces:index): fotos aprovadas em que o descriptor foi encontrado.
+   */
+  matchedPhotos?: (number | ArchivePhoto)[] | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * Eventos anônimos de circulação (abertura, download, compartilhamento).
@@ -2410,6 +2471,10 @@ export interface PayloadLockedDocument {
         value: number | ArchivePhoto;
       } | null)
     | ({
+        relationTo: 'faceSubject';
+        value: number | FaceSubject;
+      } | null)
+    | ({
         relationTo: 'contentEvent';
         value: number | ContentEvent;
       } | null)
@@ -3201,6 +3266,12 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
   municipalityName?: T;
   municipalitySlug?: T;
   searchText?: T;
+  faces?:
+    | T
+    | {
+        checkedAt?: T;
+        checkedKey?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
   url?: T;
@@ -3212,6 +3283,23 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faceSubject_select".
+ */
+export interface FaceSubjectSelect<T extends boolean = true> {
+  label?: T;
+  consent?: T;
+  consentHash?: T;
+  model?: T;
+  enrolledAt?: T;
+  vector?: T;
+  status?: T;
+  removedAt?: T;
+  matchedPhotos?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -3917,6 +4005,10 @@ export interface PhotoAlbum {
    * Link (https://) ou e-mail (mailto:) para pedir a remoção de uma foto. Obrigatório para publicar o álbum ou aprovar uma foto.
    */
   removalChannelUrl?: string | null;
+  /**
+   * Liga a busca por selfie (/fotos/encontre). Nasce desligada: só abra com o consentimento configurado e o aval jurídico/DPIA registrados (C234).
+   */
+  selfieSearchEnabled?: boolean | null;
   updatedAt?: string | null;
   createdAt?: string | null;
 }
@@ -4046,6 +4138,7 @@ export interface SocialFeedSettingsSelect<T extends boolean = true> {
 export interface PhotoAlbumSelect<T extends boolean = true> {
   published?: T;
   removalChannelUrl?: T;
+  selfieSearchEnabled?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;
@@ -4098,6 +4191,7 @@ export interface TaskCreateCollectionExport {
       | 'contentPiece'
       | 'contentMedia'
       | 'archivePhoto'
+      | 'faceSubject'
       | 'contentEvent'
       | 'recording'
       | 'recordingMedia'

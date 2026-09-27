@@ -165,6 +165,12 @@ const deriveArchivePhotoCatalogIndex: CollectionBeforeValidateHook = async ({
 }) => {
   if (!data) return data
 
+  // C234 — the face-index batch only ever writes the hidden `faces` group
+  // (the marker), so it skips the search-text/município derivation entirely;
+  // the curation marking below is already gated on `req.user` and never runs
+  // for a session-less CLI.
+  if (req.context?.faceIndex) return data
+
   if (req.user && !req.context?.archivePhotoCatalog) {
     const changed = changedArchivePhotoCuratedFields({ data, originalDoc })
     if (changed.length > 0) {
@@ -274,6 +280,41 @@ const revalidateArchivePhotosListingAfterChange: CollectionAfterChangeHook = ({ 
 const revalidateArchivePhotosListingAfterDelete: CollectionAfterDeleteHook = ({ doc }) => {
   revalidateArchivePhotosListing()
   return doc
+}
+
+/**
+ * C234 — the batch state of the selfie-search index (`pnpm faces:index`). The
+ * `checkedKey` is what lets the batch skip a photo honestly: it summarizes the
+ * model plus every eligible subject, so a new enrollment (or a model change)
+ * changes the key and the photo is reprocessed. Written only by the CLI; no
+ * admin surface (hidden) and never edited by hand.
+ */
+const facesGroup: Field = {
+  name: 'faces',
+  type: 'group',
+  label: 'Índice facial',
+  admin: {
+    hidden: true,
+    description: 'Estado do lote da busca por selfie (C234). Nunca editado à mão.',
+  },
+  fields: [
+    {
+      name: 'checkedAt',
+      type: 'date',
+      label: 'Verificada em',
+      admin: {
+        readOnly: true,
+      },
+    },
+    {
+      name: 'checkedKey',
+      type: 'text',
+      label: 'Chave do índice',
+      admin: {
+        readOnly: true,
+      },
+    },
+  ],
 }
 
 export const ArchivePhoto: CollectionConfig = {
@@ -502,6 +543,7 @@ export const ArchivePhoto: CollectionConfig = {
           'Tudo o que a busca da lista encontra, normalizado (sem acentos, minúsculas): legenda, texto visível, temas, pessoas, município, álbuns e tags.',
       },
     },
+    facesGroup,
   ],
   upload: true,
 }

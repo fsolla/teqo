@@ -215,6 +215,10 @@ describe('campaign JSON mutation route convention', () => {
       'anonymous public beacon (C213): reads no cookie and no session, so there is no CSRF surface to guard — the write is gated by the published-slug read and throttled in memory; explicit isSameOriginRequest is still a bar-raiser, and the campaign-scoped error envelope does not apply',
     ],
     [
+      'src/app/(frontend)/api/fotos/selfie/route.ts',
+      'anonymous public selfie search (C234): reads no cookie and no session, so there is no CSRF surface to guard — the request is bounded/parsed strictly, throttled in memory and gated server-side by the album kill switch + Consent; explicit isSameOriginRequest is still a bar-raiser, and the campaign-scoped error envelope does not apply',
+    ],
+    [
       'src/app/(campaign)/campanha/api/ai-chat/route.ts',
       'streaming AI endpoint (ReadableStream, not JSON) — cookie-authenticated via campaign-token, origin-checked by cookie path',
     ],
@@ -438,6 +442,10 @@ describe('src/utilities top-level is pinned', () => {
     'activityUi.ts',
     'activityViewModels.ts',
     'advisorData.ts',
+    // C234 — bounded streaming body reader shared by the anonymous JSON routes
+    // (content-events beacon + selfie search); extracted from the beacon route
+    // when it earned a second caller.
+    'boundedRequestBody.ts',
     'calendarFeed.ts',
     'campaignAccess.ts',
     'campaignActionContext.ts',
