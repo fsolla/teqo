@@ -1,0 +1,1133 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#a21c1c" />
+    <title>Design S5 — Construtor fluido do kit na home</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Arimo:wght@400;600;700&family=Exo+2:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+      :root {
+        --red: #a21c1c;
+        --dark: #47130e;
+        --yellow: #ffe607;
+        --cream: #fff8f2;
+        --surface: #f9faff;
+        --band: #ebe9e9;
+        --ink: #211715;
+        --muted: #6c615e;
+        --line: rgb(71 19 14 / 17%);
+        --field: rgb(71 19 14 / 27%);
+        --green: #137333;
+        --display: 'Exo 2', sans-serif;
+        --body: 'Inter', sans-serif;
+        --card: 'Arimo', sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+      body {
+        margin: 0;
+        overflow-x: hidden;
+        background: #15100e;
+        color: #fff8f2;
+        font-family: var(--body);
+        -webkit-font-smoothing: antialiased;
+      }
+      button,
+      input {
+        font: inherit;
+      }
+      button,
+      a {
+        touch-action: manipulation;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      [tabindex]:focus-visible {
+        outline: 3px solid var(--yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 2px var(--dark);
+      }
+      img {
+        display: block;
+        max-width: 100%;
+      }
+      .artifact {
+        width: min(1240px, calc(100% - 48px));
+        margin: 0 auto;
+      }
+      .tier {
+        padding: 10px 18px;
+        border-bottom: 1px solid rgb(255 255 255 / 12%);
+        color: #d4f5dc;
+        text-align: center;
+        font: 800 0.64rem/1 var(--display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .intro {
+        padding: 58px 0 46px;
+      }
+      .kicker,
+      .eyebrow {
+        color: var(--yellow);
+        font: 800 0.68rem/1 var(--display);
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      .intro h1 {
+        max-width: 930px;
+        margin: 12px 0 18px;
+        font: 850 clamp(2.7rem, 6vw, 5.2rem)/0.9 var(--display);
+        letter-spacing: -0.06em;
+        text-wrap: balance;
+      }
+      .intro > p {
+        max-width: 780px;
+        color: rgb(255 248 242 / 67%);
+        font-size: 0.9rem;
+        line-height: 1.7;
+      }
+      .decision-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin-top: 32px;
+        background: rgb(255 255 255 / 14%);
+        border: 1px solid rgb(255 255 255 / 14%);
+      }
+      .decision {
+        min-height: 180px;
+        padding: 23px;
+        background: #211715;
+      }
+      .decision b {
+        color: var(--yellow);
+        font: 800 1.8rem/1 var(--display);
+      }
+      .decision h2 {
+        margin: 38px 0 7px;
+        font: 760 1rem/1.15 var(--display);
+      }
+      .decision p {
+        margin: 0;
+        color: rgb(255 248 242 / 61%);
+        font-size: 0.71rem;
+        line-height: 1.55;
+      }
+      .legend {
+        margin-top: 16px;
+        padding: 13px 16px;
+        border: 1px solid rgb(255 230 7 / 30%);
+        color: rgb(255 248 242 / 68%);
+        font-size: 0.69rem;
+        line-height: 1.5;
+      }
+      .voice {
+        color: #a96e00;
+        font-size: 0.68em;
+        vertical-align: super;
+      }
+      .scene {
+        padding: 32px 0 70px;
+        border-top: 1px solid rgb(255 255 255 / 12%);
+      }
+      .scene-head {
+        display: flex;
+        align-items: baseline;
+        gap: 15px;
+        margin-bottom: 18px;
+      }
+      .scene-head h2 {
+        margin: 0;
+        font: 760 1rem/1.2 var(--display);
+      }
+      .scene-head p {
+        margin: 0;
+        color: rgb(255 255 255 / 52%);
+        font-size: 0.72rem;
+      }
+      .stage {
+        overflow: hidden;
+        background: var(--cream);
+        color: var(--ink);
+        box-shadow: 0 30px 90px rgb(0 0 0 / 42%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .mobile {
+        width: 390px;
+        margin: 0 auto;
+      }
+      .before-band {
+        padding: 26px 64px;
+        background: var(--band);
+        border-bottom: 1px solid var(--line);
+      }
+      .before-band span {
+        color: var(--muted);
+        font-size: 0.65rem;
+      }
+      .builder {
+        padding: 94px 64px 112px;
+        background: var(--cream);
+      }
+      .builder-head {
+        max-width: 800px;
+      }
+      .builder-head .eyebrow {
+        color: var(--red);
+      }
+      .builder-head h3 {
+        margin: 12px 0 0;
+        font: 800 3.5rem/0.96 var(--display);
+        letter-spacing: -0.055em;
+      }
+      .builder-head > p {
+        max-width: 680px;
+        margin: 20px 0 0;
+        color: var(--muted);
+        font-size: 0.87rem;
+        line-height: 1.65;
+      }
+      .builder-grid {
+        display: grid;
+        grid-template-columns: 42% 58%;
+        gap: 1px;
+        margin-top: 56px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .preview-rail {
+        position: relative;
+        padding: 38px;
+        background: var(--dark);
+        color: white;
+      }
+      .sticky {
+        position: sticky;
+        top: 24px;
+      }
+      .live-card {
+        position: relative;
+        width: 236px;
+        aspect-ratio: 3/4;
+        margin: 0 auto;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 23px 55px rgb(0 0 0 / 32%);
+      }
+      .live-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .live-name {
+        position: absolute;
+        top: 30%;
+        left: 20%;
+        max-width: 66%;
+        color: #ffec01;
+        font: 850 1.05rem/0.95 var(--display);
+        text-transform: uppercase;
+      }
+      .live-note {
+        margin: 20px 0 0;
+        color: rgb(255 255 255 / 62%);
+        font-size: 0.64rem;
+        text-align: center;
+      }
+      .mini-tray {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 22px;
+      }
+      .mini-tray div {
+        min-height: 66px;
+        padding: 9px;
+        background: rgb(255 255 255 / 8%);
+        border: 1px solid rgb(255 255 255 / 14%);
+        color: rgb(255 255 255 / 56%);
+        font-size: 0.57rem;
+        line-height: 1.35;
+      }
+      .mini-tray .ready {
+        color: white;
+        border-color: rgb(255 230 7 / 60%);
+      }
+      .controls {
+        padding: 36px 42px 42px;
+        background: white;
+      }
+      .block {
+        padding: 28px 0;
+        border-top: 1px solid var(--line);
+      }
+      .block:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+      .block h4 {
+        margin: 0;
+        font: 740 1.4rem/1.05 var(--display);
+      }
+      .block > p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.55;
+      }
+      .field-label {
+        display: block;
+        margin-top: 18px;
+        font-size: 0.72rem;
+        font-weight: 750;
+      }
+      .field {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 8px;
+        padding: 0 13px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: white;
+        color: var(--ink);
+        font-size: 1rem;
+      }
+      .privacy {
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 0.64rem;
+        line-height: 1.5;
+      }
+      .invite {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 15px;
+        padding: 16px;
+        border: 1px dashed var(--field);
+        background: var(--surface);
+      }
+      .invite strong {
+        display: block;
+        font-size: 0.76rem;
+      }
+      .invite span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.64rem;
+      }
+      .secondary,
+      .primary,
+      .download-one {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 760;
+      }
+      .secondary {
+        flex: 0 0 auto;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        background: white;
+        color: var(--red);
+        font-size: 0.69rem;
+      }
+      .primary {
+        padding: 0 17px;
+        border: 0;
+        background: var(--red);
+        color: white;
+        font-size: 0.71rem;
+      }
+      .primary[disabled] {
+        opacity: 0.42;
+      }
+      .selected {
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        margin-top: 14px;
+        padding: 0 13px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .selected span {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 0.63rem;
+      }
+      .tray {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .piece {
+        min-height: 108px;
+        padding: 12px;
+        background: var(--cream);
+        border: 1px solid var(--line);
+      }
+      .piece strong {
+        display: block;
+        font-size: 0.66rem;
+        line-height: 1.25;
+      }
+      .piece span {
+        display: block;
+        margin-top: 7px;
+        color: var(--green);
+        font-size: 0.59rem;
+        font-weight: 700;
+      }
+      .download-one {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: var(--red);
+        font-size: 0.61rem;
+      }
+      .tray-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 14px;
+        padding: 15px;
+        background: var(--dark);
+        color: white;
+      }
+      .tray-footer strong {
+        font: 740 0.88rem/1.2 var(--display);
+      }
+      .tray-footer p {
+        margin: 4px 0 0;
+        color: rgb(255 255 255 / 62%);
+        font-size: 0.58rem;
+      }
+      .tray-footer .primary {
+        background: white;
+        color: var(--dark);
+      }
+      .studio-link {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 20px;
+        color: var(--red);
+        font-size: 0.71rem;
+        font-weight: 750;
+        text-underline-offset: 4px;
+      }
+      .after-band {
+        padding: 30px 64px;
+        background: var(--red);
+        color: white;
+      }
+      .after-band span {
+        font-size: 0.66rem;
+        opacity: 0.72;
+      }
+      .mobile .before-band,
+      .mobile .after-band {
+        padding: 22px 20px;
+      }
+      .mobile .builder {
+        padding: 74px 20px 86px;
+      }
+      .mobile .builder-head h3 {
+        font-size: 2.5rem;
+      }
+      .mobile .builder-grid {
+        display: block;
+        margin-top: 40px;
+      }
+      .mobile .preview-rail {
+        padding: 28px 18px;
+      }
+      .mobile .sticky {
+        position: static;
+      }
+      .mobile .live-card {
+        width: 176px;
+      }
+      .mobile .controls {
+        padding: 28px 18px 32px;
+      }
+      .mobile .invite {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .mobile .invite .secondary {
+        width: 100%;
+      }
+      .mobile .tray {
+        grid-template-columns: 1fr 1fr;
+      }
+      .mobile .tray-footer {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .mobile .tray-footer .primary {
+        width: 100%;
+      }
+      .states {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 18px;
+      }
+      .state {
+        min-height: 350px;
+        padding: 28px;
+        background: var(--cream);
+        color: var(--ink);
+      }
+      .state.dark {
+        background: var(--dark);
+        color: white;
+      }
+      .tag {
+        display: inline-flex;
+        padding: 6px 8px;
+        border: 1px solid currentColor;
+        font: 760 0.59rem/1 var(--display);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .state h3 {
+        margin: 42px 0 12px;
+        font: 760 1.7rem/1.05 var(--display);
+      }
+      .state p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.74rem;
+        line-height: 1.6;
+      }
+      .state.dark p {
+        color: rgb(255 255 255 / 66%);
+      }
+      .error {
+        margin-top: 20px;
+        padding: 14px;
+        border: 1px solid var(--red);
+        background: white;
+        color: var(--ink);
+      }
+      .error strong {
+        color: var(--red);
+        font-size: 0.7rem;
+      }
+      .error p {
+        margin-top: 5px;
+        font-size: 0.66rem;
+      }
+      .state-preview {
+        width: 130px;
+        margin: 22px auto 0;
+        overflow: hidden;
+        border-radius: 7px;
+        box-shadow: 0 13px 30px rgb(71 19 14 / 20%);
+      }
+      .state-preview img {
+        width: 100%;
+        aspect-ratio: 3/4;
+        object-fit: cover;
+      }
+      .tray-states {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .tray-state {
+        min-height: 390px;
+        padding: 28px;
+        background: var(--cream);
+        color: var(--ink);
+      }
+      .tray-state b {
+        color: var(--red);
+        font: 850 2.5rem/1 var(--display);
+      }
+      .tray-state h3 {
+        margin: 42px 0 10px;
+        font: 760 1.45rem/1.05 var(--display);
+      }
+      .tray-state p {
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.55;
+      }
+      .status-list {
+        margin: 22px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+      .status-list li {
+        display: flex;
+        min-height: 40px;
+        align-items: center;
+        justify-content: space-between;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.67rem;
+      }
+      .status-list .valid {
+        color: var(--green);
+        font-weight: 700;
+      }
+      .access-grid {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+      }
+      .access-card {
+        padding: 30px;
+        background: var(--cream);
+        color: var(--ink);
+      }
+      .access-card h3 {
+        margin: 0;
+        font: 760 1.6rem/1.05 var(--display);
+      }
+      .access-card p,
+      .access-card li {
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.6;
+      }
+      .selfie {
+        margin-top: 22px;
+        padding: 17px;
+        border: 1px solid var(--line);
+        background: white;
+      }
+      .focus {
+        margin-top: 22px;
+        padding: 17px;
+        border: 1px solid var(--line);
+        background: white;
+      }
+      .focus .primary {
+        outline: 3px solid var(--yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 2px var(--dark);
+      }
+      .notes {
+        padding: 24px 0 52px;
+        color: rgb(255 255 255 / 52%);
+        font-size: 0.69rem;
+        line-height: 1.6;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        html {
+          scroll-behavior: auto;
+        }
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+      @media (max-width: 900px) {
+        .decision-row,
+        .states,
+        .tray-states,
+        .access-grid {
+          grid-template-columns: 1fr;
+        }
+        .desktop {
+          margin-left: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="tier">Design tier: openai/gpt-5.6-sol · frontier · gate humano obrigatório</div>
+    <header class="artifact intro">
+      <p class="kicker">S5 · seção #cards da home</p>
+      <h1>Começa com um nome.<br />Vira um kit.</h1>
+      <p>
+        Construtor contínuo dentro da home: prévia viva, convites opcionais e bandeja incremental.
+        Sem passos numerados, página paralela ou modal obrigatório.
+      </p>
+      <div class="decision-row">
+        <article class="decision">
+          <b>01</b>
+          <h2>Fica no fluxo da home</h2>
+          <p>
+            A seção nasce entre conteúdo e participação. A pessoa não troca de contexto para
+            começar.
+          </p>
+        </article>
+        <article class="decision">
+          <b>02</b>
+          <h2>Opcional parece opcional</h2>
+          <p>
+            Foto e dobradinha surgem como convites inline, não como campos pendentes de um
+            formulário longo.
+          </p>
+        </article>
+        <article class="decision">
+          <b>03</b>
+          <h2>Validade é visível</h2>
+          <p>
+            A bandeja cresce só com peças prontas; arte incompleta nunca é mascarada por um CTA.
+          </p>
+        </article>
+      </div>
+      <p class="legend">
+        <strong>† Pendente de revisão de voz:</strong> microcopy nova da seção. Literais do deck,
+        privacidade e erros existentes aparecem sem marca.
+      </p>
+    </header>
+
+    <section class="scene">
+      <div class="artifact scene-head">
+        <h2>Cena 01 · Seção completa desktop · 1280 px</h2>
+        <p>No contexto da home; prévia sticky à esquerda, controles contínuos à direita.</p>
+      </div>
+      <div class="stage desktop mx-auto">
+        <div class="before-band"><span>↑ Faixa anterior: jingles e conteúdo da campanha</span></div>
+        <section id="cards" class="builder">
+          <header class="builder-head">
+            <p class="eyebrow" style="color: var(--red)">Faça parte</p>
+            <h3>Mostre que você está com Solla</h3>
+            <p>
+              Escolha um modelo, coloque seu nome ou sua foto e baixe seu card. Compartilhe com sua
+              gente e fortaleça nossa caminhada.
+            </p>
+          </header>
+          <div class="builder-grid">
+            <aside class="preview-rail">
+              <div class="sticky">
+                <div class="live-card">
+                  <img
+                    src="../../public/cards/name-card-base.jpg"
+                    width="1080"
+                    height="1440"
+                    alt="Prévia viva do card com nome"
+                  /><span class="live-name">MARIA<br />DO CARMO</span>
+                </div>
+                <p class="live-note">
+                  Prévia viva · atualiza enquanto você digita<span class="voice">†</span>
+                </p>
+                <div class="mini-tray">
+                  <div class="ready"><strong>Nome</strong><br />pronto</div>
+                  <div class="ready"><strong>2 perfis</strong><br />prontos</div>
+                  <div class="ready"><strong>Time</strong><br />pronto</div>
+                  <div class="ready"><strong>Estadual</strong><br />pronto</div>
+                  <div class="ready"><strong>Colinha</strong><br />pronta</div>
+                  <div><strong>6 peças</strong><br />na bandeja</div>
+                </div>
+              </div>
+            </aside>
+            <div class="controls">
+              <section class="block">
+                <h4>Comece pelo seu nome<span class="voice">†</span></h4>
+                <p>
+                  O texto usa caixa alta, redução e até 2 linhas. Se não couber com leitura segura,
+                  nenhuma peça é criada.
+                </p>
+                <label class="field-label" for="focus-name">Seu nome</label
+                ><input class="field" id="focus-name" value="Maria do Carmo" autocomplete="off" />
+                <p class="privacy">
+                  Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para
+                  nós.
+                </p>
+              </section>
+              <section class="block">
+                <h4>Quer sua foto?<span class="voice">†</span></h4>
+                <div class="invite">
+                  <div>
+                    <strong>Foto adicionada<span class="voice">†</span></strong
+                    ><span>Arraste para reenquadrar ou use direção e zoom.</span>
+                  </div>
+                  <button class="secondary" type="button">Trocar foto</button>
+                </div>
+                <p class="privacy">Sua foto fica neste aparelho e não é enviada para nós.</p>
+              </section>
+              <section class="block">
+                <h4>Quer sua dobradinha?<span class="voice">†</span></h4>
+                <p>Escolha entre 53 estaduais. A arte de time e a colinha mudam juntas.</p>
+                <div class="selected">Julio Pinheiro <span>13999 · Trocar</span></div>
+                <p class="privacy">
+                  A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é solicitado.
+                </p>
+              </section>
+              <section class="block">
+                <h4>Sua bandeja<span class="voice">†</span></h4>
+                <p>Só peças válidas aparecem aqui.</p>
+                <div class="tray">
+                  <article class="piece">
+                    <strong>Card com seu nome</strong><span>Pronto</span
+                    ><button class="download-one" type="button">Baixar PNG</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Moldura quadrada</strong><span>Pronta</span
+                    ><button class="download-one" type="button">Baixar PNG</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Moldura vertical</strong><span>Pronta</span
+                    ><button class="download-one" type="button">Baixar PNG</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Time de você</strong><span>Pronto</span
+                    ><button class="download-one" type="button">Baixar PNG</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Time do estadual</strong><span>Pronto</span
+                    ><button class="download-one" type="button">Baixar PNG</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Minha colinha</strong><span>Pronta</span
+                    ><button class="download-one" type="button">Baixar PNG</button>
+                  </article>
+                </div>
+                <div class="tray-footer">
+                  <div>
+                    <strong>6 peças prontas<span class="voice">†</span></strong>
+                    <p>card-jorge-solla-&lt;id&gt;.png · telemetria anônima</p>
+                  </div>
+                  <button class="primary" type="button">
+                    Baixar kit<span class="voice">†</span>
+                  </button>
+                </div>
+                <a class="studio-link" href="/cards">Ver todos os modelos e o estúdio completo</a>
+              </section>
+            </div>
+          </div>
+        </section>
+        <div class="after-band"><span>↓ Próxima seção: participação e WhatsApp</span></div>
+      </div>
+    </section>
+
+    <section class="scene">
+      <div class="artifact scene-head">
+        <h2>Cena 02 · Seção mobile · 390 px</h2>
+        <p>Prévia e bandeja inline; nada fixo cobre conteúdo ou foco.</p>
+      </div>
+      <div class="stage mobile">
+        <div class="before-band"><span>↑ Jingles</span></div>
+        <section class="builder">
+          <header class="builder-head">
+            <p class="eyebrow" style="color: var(--red)">Faça parte</p>
+            <h3>Mostre que você está com Solla</h3>
+            <p>
+              Escolha um modelo, coloque seu nome ou sua foto e baixe seu card. Compartilhe com sua
+              gente e fortaleça nossa caminhada.
+            </p>
+          </header>
+          <div class="builder-grid">
+            <aside class="preview-rail">
+              <div class="sticky">
+                <div class="live-card">
+                  <img
+                    src="../../public/cards/name-card-base.jpg"
+                    width="1080"
+                    height="1440"
+                    alt="Prévia viva do card com nome"
+                  /><span class="live-name" style="font-size: 0.8rem">MARIA<br />DO CARMO</span>
+                </div>
+                <p class="live-note">Prévia viva, no fluxo<span class="voice">†</span></p>
+                <div class="mini-tray">
+                  <div class="ready">Nome<br />pronto</div>
+                  <div class="ready">Perfis<br />prontos</div>
+                  <div class="ready">Time<br />pronto</div>
+                  <div class="ready">Colinha<br />pronta</div>
+                </div>
+              </div>
+            </aside>
+            <div class="controls">
+              <section class="block">
+                <h4>Comece pelo seu nome<span class="voice">†</span></h4>
+                <label class="field-label" for="mobile-name">Seu nome</label
+                ><input class="field" id="mobile-name" value="Maria do Carmo" autocomplete="off" />
+                <p class="privacy">
+                  Seu nome e sua foto são processados apenas no seu aparelho e não são enviados para
+                  nós.
+                </p>
+              </section>
+              <section class="block">
+                <h4>Quer sua foto?<span class="voice">†</span></h4>
+                <div class="invite">
+                  <div>
+                    <strong>Foto opcional<span class="voice">†</span></strong
+                    ><span>Recorte e ajuste no aparelho.</span>
+                  </div>
+                  <button class="secondary" type="button">Escolher foto</button>
+                </div>
+                <p class="privacy">Sua foto fica neste aparelho e não é enviada para nós.</p>
+              </section>
+              <section class="block">
+                <h4>Quer sua dobradinha?<span class="voice">†</span></h4>
+                <div class="invite">
+                  <div><strong>53 estaduais</strong><span>Busca por nome e teclado.</span></div>
+                  <button class="secondary" type="button">Escolher estadual</button>
+                </div>
+              </section>
+              <section class="block">
+                <h4>Sua bandeja<span class="voice">†</span></h4>
+                <div class="tray">
+                  <article class="piece">
+                    <strong>Nome</strong><span>Pronto</span
+                    ><button class="download-one" type="button">Baixar</button>
+                  </article>
+                  <article class="piece">
+                    <strong>2 perfis</strong><span>Prontos</span
+                    ><button class="download-one" type="button">Baixar</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Time</strong><span>Pronto</span
+                    ><button class="download-one" type="button">Baixar</button>
+                  </article>
+                  <article class="piece">
+                    <strong>Colinha</strong><span>Pronta</span
+                    ><button class="download-one" type="button">Baixar</button>
+                  </article>
+                </div>
+                <div class="tray-footer">
+                  <div>
+                    <strong>6 peças prontas<span class="voice">†</span></strong>
+                    <p>Sem arte incompleta.</p>
+                  </div>
+                  <button class="primary" type="button">
+                    Baixar kit<span class="voice">†</span>
+                  </button>
+                </div>
+                <a class="studio-link" href="/cards">Ver todos os modelos e o estúdio completo</a>
+              </section>
+            </div>
+          </div>
+        </section>
+        <div class="after-band"><span>↓ Participação</span></div>
+      </div>
+    </section>
+
+    <section class="scene">
+      <div class="artifact scene-head">
+        <h2>Cena 03 · Estados de interação e erros</h2>
+        <p>Divulgação progressiva com recuperação local.</p>
+      </div>
+      <div class="artifact states">
+        <article class="state">
+          <span class="tag">Nome vazio</span>
+          <h3>A bandeja começa vazia</h3>
+          <p>
+            O campo está disponível; nenhuma peça é tratada como pronta e “Baixar kit” permanece
+            bloqueado.
+          </p>
+          <div class="error">
+            <strong>Seu nome</strong>
+            <p>Comece digitando como você é chamado.<span class="voice">†</span></p>
+          </div>
+          <button class="primary" disabled style="margin-top: 18px">
+            Baixar kit<span class="voice">†</span>
+          </button>
+        </article>
+        <article class="state">
+          <span class="tag">Digitando · inválido</span>
+          <h3>Encurte o nome</h3>
+          <p>A prévia tenta caixa alta, redução e 2 linhas antes de falhar.</p>
+          <div class="error">
+            <strong>Não foi possível encaixar esse nome no card.</strong>
+            <p>Use um nome mais curto, como você é chamado.</p>
+          </div>
+          <button class="primary" disabled style="margin-top: 18px">
+            Baixar kit<span class="voice">†</span>
+          </button>
+        </article>
+        <article class="state dark">
+          <span class="tag">Foto adicionada</span>
+          <h3>Prévia viva e reenquadrável</h3>
+          <p>
+            Recorte local, zoom, direção e harmonização têm controles equivalentes para toque e
+            teclado.
+          </p>
+          <div class="state-preview">
+            <img
+              src="../../public/cards/team-card-example.jpg"
+              width="1080"
+              height="1440"
+              alt="Prévia do Time de você com foto"
+            />
+          </div>
+        </article>
+        <article class="state">
+          <span class="tag">Dobradinha escolhida</span>
+          <h3>Julio Pinheiro · 13999</h3>
+          <p>
+            As prévias “Time do estadual” e “Minha colinha” atualizam juntas. Trocar mantém nome e
+            foto da sessão.
+          </p>
+          <div class="state-preview">
+            <img
+              src="../../public/cards/modelo-time-de-voce-com-estadual.jpeg"
+              width="1080"
+              height="1440"
+              alt="Prévia da dobradinha"
+            />
+          </div>
+        </article>
+        <article class="state">
+          <span class="tag">Arquivo inválido</span>
+          <h3>Não foi possível usar esta foto</h3>
+          <div class="error">
+            <strong>Escolha outra imagem e tente novamente.</strong>
+            <p>Sua foto fica neste aparelho e não é enviada para nós.</p>
+          </div>
+          <button class="primary" style="margin-top: 18px">Escolher outra foto</button>
+        </article>
+        <article class="state dark">
+          <span class="tag">Recorte indisponível</span>
+          <h3>Seu navegador está bloqueando o recorte de fundo.</h3>
+          <p>
+            Ative os recursos necessários para este site, tente outro navegador ou siga sem foto.
+          </p>
+          <button class="primary" style="margin-top: 18px">Tentar de novo</button>
+        </article>
+        <article class="state">
+          <span class="tag">Busca sem resultado</span>
+          <h3>Nenhum estadual encontrado.</h3>
+          <div class="error">
+            <strong>Buscar estadual</strong>
+            <p>“nome inexistente”</p>
+            <p>Nenhum estadual encontrado.</p>
+          </div>
+          <button class="secondary" style="margin-top: 18px">
+            Limpar busca<span class="voice">†</span>
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <section class="scene">
+      <div class="artifact scene-head">
+        <h2>Cena 04 · Bandeja vazia → parcial → completa</h2>
+        <p>Somente peças válidas; individual e kit convivem sem prometer transporte.</p>
+      </div>
+      <div class="artifact tray-states">
+        <article class="tray-state">
+          <b>0</b>
+          <h3>Bandeja vazia</h3>
+          <p>Nome ausente ou inválido.</p>
+          <ul class="status-list">
+            <li>Nome <span>aguarda</span></li>
+            <li>Foto <span>opcional</span></li>
+            <li>Dobradinha <span>opcional</span></li>
+          </ul>
+          <button class="primary" disabled style="width: 100%; margin-top: 26px">
+            Baixar kit<span class="voice">†</span>
+          </button>
+        </article>
+        <article class="tray-state">
+          <b>4</b>
+          <h3>Bandeja parcial</h3>
+          <p>Nome e foto válidos; dobradinha pulada.</p>
+          <ul class="status-list">
+            <li class="valid">Card com nome <span>pronto</span></li>
+            <li class="valid">2 molduras <span>prontas</span></li>
+            <li class="valid">Time de você <span>pronto</span></li>
+            <li>Estadual e colinha <span>não incluídos</span></li>
+          </ul>
+          <button class="primary" style="width: 100%; margin-top: 18px">
+            Baixar 4 peças<span class="voice">†</span>
+          </button>
+        </article>
+        <article class="tray-state">
+          <b>6</b>
+          <h3>Bandeja completa</h3>
+          <p>Nome, foto e estadual válidos.</p>
+          <ul class="status-list">
+            <li class="valid">Card com nome <span>pronto</span></li>
+            <li class="valid">2 molduras <span>prontas</span></li>
+            <li class="valid">Time de você <span>pronto</span></li>
+            <li class="valid">Time do estadual <span>pronto</span></li>
+            <li class="valid">Minha colinha <span>pronta</span></li>
+          </ul>
+          <button class="primary" style="width: 100%; margin-top: 18px">
+            Baixar kit<span class="voice">†</span>
+          </button>
+        </article>
+      </div>
+    </section>
+
+    <section class="scene">
+      <div class="artifact scene-head">
+        <h2>Cena 05 · Foco, teclado, movimento reduzido e selfie</h2>
+        <p>Alternativas equivalentes e consentimentos separados.</p>
+      </div>
+      <div class="artifact access-grid">
+        <article class="access-card">
+          <h3>Encontrar fotos é outra ação<span class="voice">†</span></h3>
+          <p>
+            O convite só aparece quando C234 estiver disponível. A foto usada no card não autoriza
+            busca por selfie nem é reaproveitada silenciosamente.
+          </p>
+          <div class="selfie">
+            <strong>Quer encontrar suas fotos da campanha?<span class="voice">†</span></strong>
+            <p>Comece uma ação separada, com explicação e consentimento próprios.</p>
+            <a class="secondary" href="/fotos/encontre"
+              >Conhecer a busca por selfie<span class="voice">†</span></a
+            >
+          </div>
+        </article>
+        <article class="access-card">
+          <h3>Teclado, foco e movimento reduzido</h3>
+          <ul>
+            <li>Nome inválido mantém foco no campo e anuncia o erro inline.</li>
+            <li>↑ ↓ e Enter operam o seletor; Escape fecha e devolve o foco.</li>
+            <li>Arraste da foto tem botões de direção e zoom equivalentes.</li>
+            <li>
+              <code>prefers-reduced-motion</code>: sem transições; prévias e bandeja permanecem
+              inline.
+            </li>
+          </ul>
+          <div class="focus">
+            <strong>Foco visível</strong><br /><br /><button class="primary">Escolher foto</button>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <footer class="artifact notes">
+      <p>
+        <strong>NEEDS ASSET:</strong> foto do visitante é conteúdo da sessão, não ativo versionado.
+        Masters e exemplos oficiais vêm de <code>public/cards/</code>.
+      </p>
+      <p>
+        <strong>Decisão pendente:</strong> o transporte de “Baixar kit”. O design fixa ação e
+        seleção válida; não escolhe ZIP.
+      </p>
+      <p>
+        <strong>Contratos preservados:</strong> <code>#cards</code>, `/cards`,
+        <code>?model=&lt;id&gt;</code>, <code>card-jorge-solla-&lt;id&gt;.png</code> e telemetria
+        anônima <code>abertura|download</code>.
+      </p>
+    </footer>
+  </body>
+</html>

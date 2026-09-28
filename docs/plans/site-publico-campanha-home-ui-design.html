@@ -23,6 +23,7 @@
         --ink: #221713;
         --muted: #705f58;
         --line: rgb(71 19 14 / 18%);
+        --field: rgb(71 19 14 / 26%);
         --blue: #184e92;
         --red-bright: #e4102f;
         --green: #009647;
@@ -1116,6 +1117,264 @@
         line-height: 1.5;
       }
 
+      .home-kit-builder {
+        padding: 112px 72px 126px;
+        background: var(--campaign-cream);
+        border-top: 1px solid var(--line);
+      }
+      .voice-mark {
+        color: #9b6500;
+        font-size: 0.7em;
+        vertical-align: super;
+      }
+      .home-kit-builder > header {
+        max-width: 780px;
+      }
+      .home-kit-builder > header h2 {
+        margin: 0;
+        font: 760 3.45rem/0.98 var(--font-display);
+        letter-spacing: -0.052em;
+      }
+      .home-kit-builder > header > p:last-child {
+        max-width: 650px;
+        margin: 22px 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.65;
+      }
+      .home-builder-layout {
+        display: grid;
+        grid-template-columns: 42% 58%;
+        gap: 1px;
+        margin-top: 62px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .home-builder-preview {
+        position: relative;
+        padding: 38px;
+        background: var(--pt-red-dark);
+        color: white;
+      }
+      .home-builder-preview-inner {
+        position: sticky;
+        top: 24px;
+      }
+      .home-card-live {
+        position: relative;
+        width: 232px;
+        aspect-ratio: 3 / 4;
+        margin: 0 auto;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 22px 52px rgb(0 0 0 / 30%);
+      }
+      .home-card-live img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .home-card-name {
+        position: absolute;
+        top: 30%;
+        left: 20%;
+        max-width: 65%;
+        color: #ffec01;
+        font: 850 1.05rem/0.95 var(--font-display);
+        text-transform: uppercase;
+      }
+      .home-live-label {
+        margin: 22px 0 0;
+        color: rgb(255 255 255 / 65%);
+        font-size: 0.66rem;
+        text-align: center;
+      }
+      .home-kit-mini {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-top: 24px;
+      }
+      .home-kit-mini div {
+        min-height: 66px;
+        padding: 9px;
+        background: rgb(255 255 255 / 9%);
+        border: 1px solid rgb(255 255 255 / 14%);
+        color: rgb(255 255 255 / 62%);
+        font-size: 0.58rem;
+        line-height: 1.35;
+      }
+      .home-kit-mini div.ready {
+        color: white;
+        border-color: rgb(255 230 7 / 60%);
+      }
+      .home-builder-controls {
+        padding: 36px 42px 42px;
+        background: white;
+      }
+      .home-control-block {
+        padding: 28px 0;
+        border-top: 1px solid var(--line);
+      }
+      .home-control-block:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+      .home-control-block h3 {
+        margin: 0;
+        font: 730 1.35rem/1.08 var(--font-display);
+      }
+      .home-control-block > p {
+        margin: 8px 0 0;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.55;
+      }
+      .home-control-block label {
+        display: block;
+        margin-top: 18px;
+        font-size: 0.72rem;
+        font-weight: 750;
+      }
+      .home-control-block input {
+        width: 100%;
+        min-height: 48px;
+        margin-top: 8px;
+        padding: 0 13px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: white;
+        color: var(--ink);
+        font-size: 1rem;
+      }
+      .home-inline-invite {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-top: 16px;
+        padding: 16px;
+        background: var(--campaign-surface);
+        border: 1px dashed var(--field);
+      }
+      .home-inline-invite strong {
+        display: block;
+        font-size: 0.76rem;
+      }
+      .home-inline-invite span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.65rem;
+      }
+      .home-inline-invite button,
+      .home-builder-download,
+      .home-piece-download {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        font-weight: 760;
+      }
+      .home-inline-invite button {
+        flex: 0 0 auto;
+        padding: 0 14px;
+        border: 1px solid var(--line);
+        background: white;
+        color: var(--pt-red);
+        font-size: 0.7rem;
+      }
+      .home-picker-selected {
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        margin-top: 14px;
+        padding: 0 13px;
+        border: 1px solid var(--field);
+        border-radius: 8px;
+        background: white;
+        font-size: 0.72rem;
+        font-weight: 700;
+      }
+      .home-picker-selected span {
+        margin-left: auto;
+        color: var(--muted);
+        font-size: 0.64rem;
+      }
+      .home-privacy {
+        margin: 13px 0 0;
+        color: var(--muted);
+        font-size: 0.64rem;
+        line-height: 1.5;
+      }
+      .home-tray {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 18px;
+      }
+      .home-tray article {
+        min-height: 108px;
+        padding: 12px;
+        background: var(--cream);
+        border: 1px solid var(--line);
+      }
+      .home-tray strong {
+        display: block;
+        font-size: 0.66rem;
+        line-height: 1.25;
+      }
+      .home-tray span {
+        display: block;
+        margin-top: 7px;
+        color: var(--green);
+        font-size: 0.6rem;
+        font-weight: 700;
+      }
+      .home-piece-download {
+        margin-top: 7px;
+        border: 0;
+        background: transparent;
+        color: var(--pt-red);
+        font-size: 0.62rem;
+      }
+      .home-tray-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 14px;
+        padding: 15px;
+        background: var(--pt-red-dark);
+        color: white;
+      }
+      .home-tray-footer strong {
+        font: 740 0.86rem/1.2 var(--font-display);
+      }
+      .home-tray-footer p {
+        margin: 4px 0 0;
+        color: rgb(255 255 255 / 62%);
+        font-size: 0.59rem;
+      }
+      .home-builder-download {
+        padding: 0 16px;
+        border: 0;
+        background: white;
+        color: var(--pt-red-dark);
+        font-size: 0.7rem;
+      }
+      .home-studio-link {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 22px;
+        color: var(--pt-red);
+        font-size: 0.72rem;
+        font-weight: 750;
+        text-underline-offset: 4px;
+      }
+
       .participation {
         display: grid;
         grid-template-columns: 42% 58%;
@@ -1602,6 +1861,45 @@
       }
       .mobile .jingles-note {
         padding-right: 20px;
+      }
+      .mobile .home-kit-builder {
+        padding: 82px 20px 90px;
+      }
+      .mobile .home-kit-builder > header h2 {
+        font-size: 2.5rem;
+      }
+      .mobile .home-builder-layout {
+        display: block;
+        margin-top: 42px;
+      }
+      .mobile .home-builder-preview {
+        padding: 28px 18px;
+      }
+      .mobile .home-builder-preview-inner {
+        position: static;
+      }
+      .mobile .home-card-live {
+        width: 176px;
+      }
+      .mobile .home-builder-controls {
+        padding: 28px 18px 32px;
+      }
+      .mobile .home-inline-invite {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      .mobile .home-inline-invite button {
+        width: 100%;
+      }
+      .mobile .home-tray {
+        grid-template-columns: 1fr 1fr;
+      }
+      .mobile .home-tray-footer {
+        align-items: stretch;
+        flex-direction: column;
+      }
+      .mobile .home-builder-download {
+        width: 100%;
       }
       .mobile .participation {
         display: block;
@@ -2506,7 +2804,7 @@
                     As primeiras peças estão a caminho. Enquanto isso, faça seu card e mostre que
                     você está com Solla.
                   </p>
-                  <a href="/cards">Fazer meu card</a>
+                  <a href="#cards">Fazer meu card</a>
                 </article>
               </div>
             </div>
@@ -2640,6 +2938,128 @@
               aprovada. A faixa some sem jingle publicado e “Fotos” entra na descoberta do footer
               apenas com fotos aprovadas pelo contrato C233.
             </p>
+          </section>
+
+          <section id="cards" class="home-kit-builder" aria-labelledby="desktop-cards-title">
+            <header>
+              <p class="eyebrow">Faça parte</p>
+              <h2 id="desktop-cards-title">Mostre que você está com Solla</h2>
+              <p>
+                Escolha um modelo, coloque seu nome ou sua foto e baixe seu card. Compartilhe com
+                sua gente e fortaleça nossa caminhada.
+              </p>
+            </header>
+            <div class="home-builder-layout">
+              <aside class="home-builder-preview" aria-label="Prévia viva e bandeja do kit">
+                <div class="home-builder-preview-inner">
+                  <div class="home-card-live">
+                    <img
+                      src="../../public/cards/name-card-base.jpg"
+                      width="1080"
+                      height="1440"
+                      alt="Prévia do card com nome"
+                    />
+                    <span class="home-card-name">MARIA<br />DO CARMO</span>
+                  </div>
+                  <p class="home-live-label">
+                    Prévia viva · o nome muda enquanto você digita<span class="voice-mark">†</span>
+                  </p>
+                  <div class="home-kit-mini" aria-label="Peças prontas do kit">
+                    <div class="ready"><strong>Nome</strong><br />pronto</div>
+                    <div class="ready"><strong>2 perfis</strong><br />prontos</div>
+                    <div class="ready"><strong>Time</strong><br />pronto</div>
+                    <div class="ready"><strong>Estadual</strong><br />pronto</div>
+                    <div class="ready"><strong>Colinha</strong><br />pronta</div>
+                    <div><strong>6 peças</strong><br />na bandeja</div>
+                  </div>
+                </div>
+              </aside>
+              <div class="home-builder-controls">
+                <section class="home-control-block">
+                  <h3>Comece pelo seu nome<span class="voice-mark">†</span></h3>
+                  <p>
+                    O texto se ajusta em caixa alta e até 2 linhas. Se não couber com leitura
+                    segura, nenhuma peça incompleta é criada.
+                  </p>
+                  <label for="home-kit-name-desktop">Seu nome</label>
+                  <input id="home-kit-name-desktop" value="Maria do Carmo" autocomplete="off" />
+                  <p class="home-privacy">
+                    Seu nome e sua foto são processados apenas no seu aparelho e não são enviados
+                    para nós.
+                  </p>
+                </section>
+                <section class="home-control-block">
+                  <h3>Quer sua foto?<span class="voice-mark">†</span></h3>
+                  <p>
+                    Opcional. O recorte, o enquadramento e a harmonização acontecem no aparelho.
+                  </p>
+                  <div class="home-inline-invite">
+                    <div>
+                      <strong>Foto adicionada<span class="voice-mark">†</span></strong
+                      ><span>Arraste para reenquadrar ou use os controles de direção e zoom.</span>
+                    </div>
+                    <button type="button">Trocar foto</button>
+                  </div>
+                  <p class="home-privacy">Sua foto fica neste aparelho e não é enviada para nós.</p>
+                </section>
+                <section class="home-control-block">
+                  <h3>Quer sua dobradinha?<span class="voice-mark">†</span></h3>
+                  <p>
+                    Opcional. Escolha entre 53 estaduais; a arte de time e a colinha usam a opção
+                    selecionada.
+                  </p>
+                  <div class="home-picker-selected">Julio Pinheiro <span>13999 · Trocar</span></div>
+                  <p class="home-privacy">
+                    A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é
+                    solicitado.
+                  </p>
+                </section>
+                <section class="home-control-block">
+                  <h3>Sua bandeja<span class="voice-mark">†</span></h3>
+                  <p>Só peças válidas aparecem aqui. Baixe uma por vez ou use a ação do kit.</p>
+                  <div class="home-tray">
+                    <article>
+                      <strong>Card com seu nome</strong><span>Pronto</span
+                      ><button class="home-piece-download" type="button">Baixar PNG</button>
+                    </article>
+                    <article>
+                      <strong>Moldura quadrada</strong><span>Pronta</span
+                      ><button class="home-piece-download" type="button">Baixar PNG</button>
+                    </article>
+                    <article>
+                      <strong>Moldura vertical</strong><span>Pronta</span
+                      ><button class="home-piece-download" type="button">Baixar PNG</button>
+                    </article>
+                    <article>
+                      <strong>Time de você</strong><span>Pronto</span
+                      ><button class="home-piece-download" type="button">Baixar PNG</button>
+                    </article>
+                    <article>
+                      <strong>Time do estadual</strong><span>Pronto</span
+                      ><button class="home-piece-download" type="button">Baixar PNG</button>
+                    </article>
+                    <article>
+                      <strong>Minha colinha</strong><span>Pronta</span
+                      ><button class="home-piece-download" type="button">Baixar PNG</button>
+                    </article>
+                  </div>
+                  <div class="home-tray-footer">
+                    <div>
+                      <strong>6 peças prontas<span class="voice-mark">†</span></strong>
+                      <p>
+                        Arquivos individuais: card-jorge-solla-&lt;id&gt;.png · telemetria anônima.
+                      </p>
+                    </div>
+                    <button class="home-builder-download" type="button">
+                      Baixar kit<span class="voice-mark">†</span>
+                    </button>
+                  </div>
+                  <a class="home-studio-link" href="/cards"
+                    >Ver todos os modelos e o estúdio completo</a
+                  >
+                </section>
+              </div>
+            </div>
           </section>
 
           <section
@@ -3149,7 +3569,7 @@
                     As primeiras peças estão a caminho. Enquanto isso, faça seu card e mostre que
                     você está com Solla.
                   </p>
-                  <a href="/cards">Fazer meu card</a>
+                  <a href="#cards-mobile">Fazer meu card</a>
                 </article>
               </div>
             </div>
@@ -3283,6 +3703,117 @@
               jingle publicado a faixa some; “Fotos” só entra na descoberta do footer com fotos
               aprovadas pelo contrato C233.
             </p>
+          </section>
+
+          <section id="cards-mobile" class="home-kit-builder" aria-labelledby="mobile-cards-title">
+            <header>
+              <p class="eyebrow">Faça parte</p>
+              <h2 id="mobile-cards-title">Mostre que você está com Solla</h2>
+              <p>
+                Escolha um modelo, coloque seu nome ou sua foto e baixe seu card. Compartilhe com
+                sua gente e fortaleça nossa caminhada.
+              </p>
+            </header>
+            <div class="home-builder-layout">
+              <aside class="home-builder-preview" aria-label="Prévia viva e bandeja do kit">
+                <div class="home-builder-preview-inner">
+                  <div class="home-card-live">
+                    <img
+                      src="../../public/cards/name-card-base.jpg"
+                      width="1080"
+                      height="1440"
+                      alt="Prévia do card com nome"
+                    /><span class="home-card-name" style="font-size: 0.8rem"
+                      >MARIA<br />DO CARMO</span
+                    >
+                  </div>
+                  <p class="home-live-label">
+                    Prévia viva · inline, sem cobrir conteúdo ou foco<span class="voice-mark"
+                      >†</span
+                    >
+                  </p>
+                  <div class="home-kit-mini">
+                    <div class="ready"><strong>Nome</strong><br />pronto</div>
+                    <div class="ready"><strong>Perfis</strong><br />prontos</div>
+                    <div class="ready"><strong>Time</strong><br />pronto</div>
+                    <div class="ready"><strong>Estadual</strong><br />pronto</div>
+                    <div class="ready"><strong>Colinha</strong><br />pronta</div>
+                    <div><strong>6 peças</strong><br />na bandeja</div>
+                  </div>
+                </div>
+              </aside>
+              <div class="home-builder-controls">
+                <section class="home-control-block">
+                  <h3>Comece pelo seu nome<span class="voice-mark">†</span></h3>
+                  <p>O card muda enquanto você digita.</p>
+                  <label for="home-kit-name-mobile">Seu nome</label
+                  ><input id="home-kit-name-mobile" value="Maria do Carmo" autocomplete="off" />
+                  <p class="home-privacy">
+                    Seu nome e sua foto são processados apenas no seu aparelho e não são enviados
+                    para nós.
+                  </p>
+                </section>
+                <section class="home-control-block">
+                  <h3>Quer sua foto?<span class="voice-mark">†</span></h3>
+                  <div class="home-inline-invite">
+                    <div>
+                      <strong>Foto opcional<span class="voice-mark">†</span></strong
+                      ><span>Recorte e ajuste no aparelho.</span>
+                    </div>
+                    <button type="button">Escolher foto</button>
+                  </div>
+                  <p class="home-privacy">Sua foto fica neste aparelho e não é enviada para nós.</p>
+                </section>
+                <section class="home-control-block">
+                  <h3>Quer sua dobradinha?<span class="voice-mark">†</span></h3>
+                  <div class="home-inline-invite">
+                    <div>
+                      <strong>53 estaduais</strong
+                      ><span>Busca por nome e navegação por teclado.</span>
+                    </div>
+                    <button type="button">Escolher estadual</button>
+                  </div>
+                  <p class="home-privacy">
+                    A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é
+                    solicitado.
+                  </p>
+                </section>
+                <section class="home-control-block">
+                  <h3>Sua bandeja<span class="voice-mark">†</span></h3>
+                  <p>Só peças válidas aparecem aqui.</p>
+                  <div class="home-tray">
+                    <article>
+                      <strong>Card com nome</strong><span>Pronto</span
+                      ><button class="home-piece-download" type="button">Baixar</button>
+                    </article>
+                    <article>
+                      <strong>2 perfis</strong><span>Prontos</span
+                      ><button class="home-piece-download" type="button">Baixar</button>
+                    </article>
+                    <article>
+                      <strong>Time</strong><span>Pronto</span
+                      ><button class="home-piece-download" type="button">Baixar</button>
+                    </article>
+                    <article>
+                      <strong>Colinha</strong><span>Pronta</span
+                      ><button class="home-piece-download" type="button">Baixar</button>
+                    </article>
+                  </div>
+                  <div class="home-tray-footer">
+                    <div>
+                      <strong>6 peças prontas<span class="voice-mark">†</span></strong>
+                      <p>Sem arte incompleta.</p>
+                    </div>
+                    <button class="home-builder-download" type="button">
+                      Baixar kit<span class="voice-mark">†</span>
+                    </button>
+                  </div>
+                  <a class="home-studio-link" href="/cards"
+                    >Ver todos os modelos e o estúdio completo</a
+                  >
+                </section>
+              </div>
+            </div>
           </section>
 
           <section class="participation" aria-labelledby="mobile-support-title">
@@ -3467,7 +3998,7 @@
             “As primeiras peças estão a caminho. Enquanto isso, faça seu card e mostre que você está
             com Solla.”
           </div>
-          <a href="/cards">Fazer meu card</a>
+          <a href="#cards">Fazer meu card</a>
         </article>
         <article class="state-card">
           <span class="state-tag">Descoberta fail-closed</span>
