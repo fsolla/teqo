@@ -374,6 +374,40 @@
         opacity: 0.97;
       }
 
+      .proof-band {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        padding: 52px 72px 58px;
+        background: white;
+        border-bottom: 1px solid var(--line);
+      }
+      .proof-stat {
+        padding: 0 34px;
+        text-align: center;
+        border-right: 1px solid var(--line);
+      }
+      .proof-stat:last-child {
+        border-right: 0;
+      }
+      .proof-stat strong {
+        display: block;
+        color: var(--pt-red);
+        font: 850 3rem/0.9 var(--font-display);
+        letter-spacing: -0.055em;
+      }
+      .proof-stat span {
+        display: block;
+        margin-top: 10px;
+        font: 650 0.82rem/1.25 var(--font-body);
+      }
+      .proof-recheck {
+        grid-column: 1 / -1;
+        margin: 30px 0 0;
+        color: var(--muted);
+        font-size: 0.63rem;
+        text-align: center;
+      }
+
       .section-shell {
         padding: 112px 72px 126px;
       }
@@ -494,6 +528,66 @@
       }
       .inline-photo {
         display: none;
+      }
+      .inline-photo[data-label='Educação e interior'],
+      .inline-photo[data-label='Democracia'] {
+        background: #7a1712;
+      }
+      .inline-photo[data-label='Educação e interior'] img,
+      .inline-photo[data-label='Democracia'] img {
+        object-fit: contain !important;
+        object-position: center bottom;
+      }
+
+      .election-frame {
+        padding: 104px 72px 116px;
+        background: #57150f;
+        color: white;
+      }
+      .election-frame .eyebrow {
+        color: var(--pt-yellow);
+      }
+      .election-frame h2 {
+        max-width: 900px;
+        margin: 0;
+        font: 770 3.55rem/0.98 var(--font-display);
+        letter-spacing: -0.052em;
+      }
+      .election-frame > p {
+        max-width: 760px;
+        margin: 28px 0 0;
+        color: rgb(255 255 255 / 76%);
+        font-size: 0.96rem;
+        line-height: 1.7;
+      }
+      .election-sequence {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin-top: 62px;
+        background: rgb(255 255 255 / 16%);
+        border: 1px solid rgb(255 255 255 / 16%);
+      }
+      .election-step {
+        min-height: 250px;
+        padding: 30px;
+        background: #48100d;
+      }
+      .election-step b {
+        color: var(--pt-yellow);
+        font: 760 0.66rem/1 var(--font-display);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .election-step h3 {
+        margin: 72px 0 12px;
+        font: 720 1.35rem/1.08 var(--font-display);
+      }
+      .election-step p {
+        margin: 0;
+        color: rgb(255 255 255 / 66%);
+        font-size: 0.75rem;
+        line-height: 1.6;
       }
 
       .case-file {
@@ -654,6 +748,112 @@
         grid-template-columns: 1.25fr 0.75fr;
         gap: 24px;
         margin-top: 66px;
+      }
+      .updates-board {
+        display: grid;
+        grid-template-columns: 1.55fr 1fr 1fr;
+        grid-template-rows: repeat(2, 230px);
+        gap: 14px;
+        margin-top: 56px;
+      }
+      .update-card {
+        position: relative;
+        min-width: 0;
+        overflow: hidden;
+        background: #d8d2cf;
+        color: white;
+      }
+      .update-card:nth-child(1) {
+        background: #8e1915;
+      }
+      .update-card:nth-child(2) {
+        background: #184e92;
+      }
+      .update-card:nth-child(3) {
+        background: #64130f;
+      }
+      .update-card:nth-child(4) {
+        background: #3f211c;
+      }
+      .update-card:nth-child(5) {
+        background: #8d2b21;
+      }
+      .update-card.featured {
+        grid-row: 1 / 3;
+      }
+      .update-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: saturate(0.82) contrast(1.04);
+      }
+      .update-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(0deg, rgb(25 8 6 / 92%), transparent 68%);
+      }
+      .update-media-note {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 2;
+        max-width: 150px;
+        color: rgb(255 255 255 / 64%);
+        font: 700 0.56rem/1.4 var(--font-display);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+      .update-copy {
+        position: absolute;
+        z-index: 2;
+        right: 20px;
+        bottom: 18px;
+        left: 20px;
+      }
+      .update-source {
+        color: var(--pt-yellow);
+        font: 760 0.58rem/1 var(--font-display);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .update-copy h3 {
+        margin: 8px 0 0;
+        font: 700 1rem/1.15 var(--font-card);
+      }
+      .featured .update-copy h3 {
+        max-width: 570px;
+        font-size: 1.48rem;
+      }
+      .update-copy p {
+        margin: 8px 0 0;
+        color: rgb(255 255 255 / 68%);
+        font-size: 0.65rem;
+      }
+      .update-link-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 24px;
+        margin-top: 22px;
+      }
+      .update-link-row p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.68rem;
+        line-height: 1.5;
+      }
+      .update-link-row a {
+        min-height: 44px;
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        color: var(--pt-red);
+        font-weight: 750;
+        font-size: 0.74rem;
+      }
+      .board-controls {
+        display: none;
       }
       .video-panel {
         position: relative;
@@ -997,6 +1197,25 @@
       .mobile .hero-image img {
         object-position: center top;
       }
+      .mobile .proof-band {
+        grid-template-columns: repeat(3, 1fr);
+        padding: 30px 10px 34px;
+      }
+      .mobile .proof-stat {
+        padding: 0 8px;
+      }
+      .mobile .proof-stat strong {
+        font-size: 1.7rem;
+      }
+      .mobile .proof-stat span {
+        margin-top: 7px;
+        font-size: 0.6rem;
+      }
+      .mobile .proof-recheck {
+        margin-top: 22px;
+        padding: 0 16px;
+        font-size: 0.56rem;
+      }
       .mobile .hero-number {
         right: 16px;
         bottom: 12px;
@@ -1062,6 +1281,26 @@
         letter-spacing: 0.07em;
         text-transform: uppercase;
       }
+      .mobile .election-frame {
+        padding: 82px 20px 90px;
+      }
+      .mobile .election-frame h2 {
+        font-size: 2.55rem;
+      }
+      .mobile .election-frame > p {
+        font-size: 0.82rem;
+      }
+      .mobile .election-sequence {
+        grid-template-columns: 1fr;
+        margin-top: 42px;
+      }
+      .mobile .election-step {
+        min-height: 0;
+        padding: 24px;
+      }
+      .mobile .election-step h3 {
+        margin-top: 42px;
+      }
       .mobile .case-file .section-shell {
         padding-top: 82px;
       }
@@ -1116,6 +1355,51 @@
       .mobile .media-grid {
         display: block;
         margin-top: 42px;
+      }
+      .mobile .updates-board {
+        display: flex;
+        gap: 12px;
+        margin-right: -20px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+      }
+      .mobile .update-card,
+      .mobile .update-card.featured {
+        width: 322px;
+        height: 430px;
+        flex: 0 0 322px;
+        scroll-snap-align: start;
+      }
+      .mobile .featured .update-copy h3,
+      .mobile .update-copy h3 {
+        font-size: 1.15rem;
+      }
+      .mobile .update-link-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .mobile .board-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 14px;
+      }
+      .mobile .board-controls > span {
+        color: var(--muted);
+        font-size: 0.66rem;
+      }
+      .mobile .board-control-buttons {
+        display: flex;
+        gap: 8px;
+      }
+      .mobile .board-control-buttons button {
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--line);
+        border-radius: 50%;
+        background: white;
+        color: var(--pt-red-dark);
       }
       .mobile .video-panel {
         min-height: 460px;
@@ -1259,6 +1543,59 @@
         gap: 36px;
         margin-top: 32px;
       }
+      .signature-storyboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-top: 36px;
+      }
+      .signature-frame {
+        display: grid;
+        grid-template-columns: 44% 56%;
+        min-height: 320px;
+        overflow: hidden;
+        background: white;
+        border: 1px solid var(--line);
+      }
+      .signature-frame figure {
+        min-width: 0;
+        margin: 0;
+        background: #7a1712;
+      }
+      .signature-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .signature-frame:nth-child(2) img {
+        object-fit: contain;
+        object-position: center bottom;
+      }
+      .signature-copy {
+        padding: 28px;
+      }
+      .signature-copy span {
+        color: var(--pt-red);
+        font: 760 0.62rem/1 var(--font-display);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .signature-copy h3 {
+        margin: 54px 0 12px;
+        font: 730 1.55rem/1.05 var(--font-display);
+      }
+      .signature-copy p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.72rem;
+        line-height: 1.55;
+      }
+      .signature-map {
+        margin: 18px 0 0;
+        color: var(--muted);
+        font-size: 0.68rem;
+        line-height: 1.55;
+      }
       .motion-column {
         border-top: 1px solid var(--line);
         padding-top: 22px;
@@ -1350,6 +1687,9 @@
         .motion-board-grid {
           grid-template-columns: 1fr;
         }
+        .signature-storyboard {
+          grid-template-columns: 1fr;
+        }
         .viewport.desktop {
           margin-left: 24px;
         }
@@ -1399,7 +1739,7 @@
         <strong>Pendências de publicação:</strong> o número de WhatsApp exibido nos links é o
         placeholder do deck e precisa ser substituído pelo número oficial; o CNPJ preserva o valor
         já publicado, ainda sujeito à conferência do advogado eleitoral; as duas fotografias do caso
-        SAMU estão marcadas como NEEDS ASSET.
+        SAMU e as thumbnails dinâmicas do board estão marcadas como NEEDS ASSET.
       </p>
     </header>
 
@@ -1434,11 +1774,11 @@
           <section class="hero" aria-labelledby="desktop-hero-title">
             <div class="hero-copy">
               <p class="hero-overline">Jorge Solla · Deputado Federal · 1313</p>
-              <h1 id="desktop-hero-title" class="balanced">Um mandato do tamanho da Bahia</h1>
+              <h1 id="desktop-hero-title" class="balanced">Mais Saúde,<br />Mais Futuro</h1>
               <p class="hero-deck pretty">
-                Médico sanitarista. Participou da criação e da implantação do SAMU 192 e assinou as
-                diretrizes do Brasil Sorridente. Leva o mandato aos 417 municípios, da saúde à
-                educação.
+                Médico sanitarista. Criou o SAMU 192 e o Brasil Sorridente. Já comandou a saúde em
+                Vitória da Conquista, na Bahia e no Brasil, e leva o mandato aos 417 municípios, da
+                saúde à educação.
               </p>
               <div class="hero-actions">
                 <a
@@ -1450,10 +1790,8 @@
                 <a class="secondary-link" href="#desktop-principios">Conhecer as bandeiras</a>
               </div>
               <div class="microproofs">
-                <div class="proof">
-                  <strong>SAMU na Bahia</strong>de 14 municípios, em 2007, para 233, em 2010
-                </div>
-                <div class="proof"><strong>128.968 votos</strong>em 2022; 78,9% no interior</div>
+                <div class="proof"><strong>DIAP</strong>entre os 40 melhores da Câmara</div>
+                <div class="proof"><strong>Mais votado</strong>do PT-BA em 2022</div>
               </div>
             </div>
             <figure class="hero-image" aria-label="Retrato de Jorge Solla">
@@ -1466,6 +1804,22 @@
               />
               <figcaption class="hero-number tabular">1313</figcaption>
             </figure>
+          </section>
+
+          <section class="proof-band" aria-label="Experiência e atuação parlamentar">
+            <div class="proof-stat">
+              <strong class="tabular">3.333</strong><span>proposições apresentadas</span>
+            </div>
+            <div class="proof-stat">
+              <strong class="tabular">1.031</strong><span>discursos em Plenário</span>
+            </div>
+            <div class="proof-stat">
+              <strong class="tabular">3º</strong><span>mandato de deputado federal</span>
+            </div>
+            <p class="proof-recheck">
+              Dados mantidos por decisão da coordenação · rechecar na API da Câmara e no SitaqWeb
+              antes do go-live.
+            </p>
           </section>
 
           <section
@@ -1497,6 +1851,19 @@
                 </figure>
                 <figure data-photo="1">
                   <img
+                    src="../../public/JOA00162.avif"
+                    width="495"
+                    height="742"
+                    loading="lazy"
+                    alt=""
+                  />
+                  <figcaption class="manifesto-caption">
+                    <span>Quem cuida do SUS</span>
+                    <p>O cuidado começa por quem mantém o sistema de pé.</p>
+                  </figcaption>
+                </figure>
+                <figure data-photo="2">
+                  <img
                     src="../../public/fundo.avif"
                     width="1920"
                     height="1080"
@@ -1508,7 +1875,20 @@
                     <p>Jornada justa também é uma pauta de saúde.</p>
                   </figcaption>
                 </figure>
-                <figure data-photo="2">
+                <figure class="portrait-asset" data-photo="3">
+                  <img
+                    src="../../public/Jeronimo.avif"
+                    width="177"
+                    height="265"
+                    loading="lazy"
+                    alt=""
+                  />
+                  <figcaption class="manifesto-caption">
+                    <span>Educação e interior</span>
+                    <p>Oportunidade pública também longe da capital.</p>
+                  </figcaption>
+                </figure>
+                <figure data-photo="4">
                   <img
                     src="../../public/52396285023_561ffc0ff6_o.avif"
                     width="1024"
@@ -1517,8 +1897,21 @@
                     alt=""
                   />
                   <figcaption class="manifesto-caption">
-                    <span>Bahia e democracia</span>
-                    <p>Território, participação e soberania no mesmo projeto.</p>
+                    <span>Bahia e soberania</span>
+                    <p>Território e soberania no mesmo projeto.</p>
+                  </figcaption>
+                </figure>
+                <figure class="portrait-asset" data-photo="5">
+                  <img
+                    src="../../public/Lula.avif"
+                    width="216"
+                    height="213"
+                    loading="lazy"
+                    alt=""
+                  />
+                  <figcaption class="manifesto-caption">
+                    <span>Democracia</span>
+                    <p>Instituições fortes e participação popular.</p>
                   </figcaption>
                 </figure>
               </div>
@@ -1545,7 +1938,7 @@
                     />
                   </figure>
                 </article>
-                <article class="chapter" data-chapter="0" data-reveal>
+                <article class="chapter" data-chapter="1" data-reveal>
                   <span class="chapter-index tabular">02 / 06</span>
                   <h3>Valorizar quem cuida do SUS</h3>
                   <p>
@@ -1557,8 +1950,17 @@
                     enfermagem. Coautor da PEC 14/2021, aprovada pelo Senado em 14/07/2026, por 73
                     votos a 1; falta a promulgação.
                   </p>
+                  <figure class="inline-photo" data-label="Quem cuida do SUS">
+                    <img
+                      src="../../public/JOA00162.avif"
+                      width="495"
+                      height="742"
+                      loading="lazy"
+                      alt="Jorge Solla em retrato da campanha"
+                    />
+                  </figure>
                 </article>
-                <article class="chapter" data-chapter="1" data-reveal>
+                <article class="chapter" data-chapter="2" data-reveal>
                   <span class="chapter-index tabular">03 / 06</span>
                   <h3>Descanso não é privilégio. É saúde pública</h3>
                   <p>
@@ -1575,7 +1977,7 @@
                     />
                   </figure>
                 </article>
-                <article class="chapter" data-chapter="2" data-reveal>
+                <article class="chapter" data-chapter="3" data-reveal>
                   <span class="chapter-index tabular">04 / 06</span>
                   <h3>O interior não pode ficar para trás</h3>
                   <p>
@@ -1587,8 +1989,17 @@
                     implantação de campus da UFBA no interior e levou ao Ministério da Educação a
                     proposta de uma universidade federal na Chapada Diamantina.
                   </p>
+                  <figure class="inline-photo" data-label="Educação e interior">
+                    <img
+                      src="../../public/Jeronimo.avif"
+                      width="177"
+                      height="265"
+                      loading="lazy"
+                      alt="Jerônimo Rodrigues em ativo publicado da campanha"
+                    />
+                  </figure>
                 </article>
-                <article class="chapter" data-chapter="2" data-reveal>
+                <article class="chapter" data-chapter="4" data-reveal>
                   <span class="chapter-index tabular">05 / 06</span>
                   <h3>A Bahia no controle do que é da Bahia</h3>
                   <p>
@@ -1610,7 +2021,7 @@
                     />
                   </figure>
                 </article>
-                <article class="chapter" data-chapter="2" data-reveal>
+                <article class="chapter" data-chapter="5" data-reveal>
                   <span class="chapter-index tabular">06 / 06</span>
                   <h3>Democracia sem meias-palavras</h3>
                   <p>
@@ -1622,8 +2033,52 @@
                     sim o ápice de uma escalada autoritária, e que não haverá anistia para
                     golpistas.
                   </p>
+                  <figure class="inline-photo" data-label="Democracia">
+                    <img
+                      src="../../public/Lula.avif"
+                      width="216"
+                      height="213"
+                      loading="lazy"
+                      alt="Lula em ativo publicado da campanha"
+                    />
+                  </figure>
                 </article>
               </div>
+            </div>
+          </section>
+
+          <section class="election-frame" aria-labelledby="desktop-election-title">
+            <p class="eyebrow">Por que essa eleição importa</p>
+            <h2 id="desktop-election-title" class="balanced">
+              Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+            </h2>
+            <p>
+              É no Congresso que se define o orçamento do SUS, o piso da enfermagem, a recompra de
+              Mataripe e o fim da escala 6×1. Reeleger Lula não basta: é preciso eleger uma bancada
+              aliada.
+            </p>
+            <div class="election-sequence" aria-label="Avanço, obstáculo e relevância eleitoral">
+              <article class="election-step">
+                <b>Avanço</b>
+                <h3>A saúde voltou a receber recursos</h3>
+                <p>
+                  Com Lula, o Mais Médicos foi retomado e o novo PAC voltou a investir na estrutura
+                  pública.
+                </p>
+              </article>
+              <article class="election-step">
+                <b>Obstáculo</b>
+                <h3>As decisões passam pelo Congresso</h3>
+                <p>
+                  Orçamento do SUS, piso da enfermagem, jornada de trabalho e soberania precisam de
+                  maioria.
+                </p>
+              </article>
+              <article class="election-step">
+                <b>Escolha</b>
+                <h3>É preciso eleger uma bancada aliada</h3>
+                <p>O voto para deputado decide quem sustenta os avanços e enfrenta os bloqueios.</p>
+              </article>
             </div>
           </section>
 
@@ -1635,11 +2090,11 @@
               </h2>
               <div class="case-intro">
                 <p class="case-role">
-                  <strong>Papel.</strong> Secretário de Atenção à Saúde do Ministério da Saúde
-                  (2003–2005), quando o SAMU 192 foi criado; secretário de Saúde da Bahia (2007 a
-                  janeiro de 2014), quando o serviço foi regionalizado. Antes, em Vitória da
-                  Conquista (1999–2002), acompanhou o Resgate Médico, apontado como origem da ideia
-                  do SAMU.
+                  <strong>Papel.</strong> Criou o piloto do SAMU 192 em Vitória da Conquista
+                  (1999–2002), como secretário municipal de Saúde, e nacionalizou o programa
+                  (2003–2005), como secretário de Atenção à Saúde do Ministério da Saúde, no governo
+                  Lula. Depois, como secretário de Saúde da Bahia (2007 a janeiro de 2014),
+                  regionalizou o serviço no estado.
                 </p>
                 <p class="case-source">
                   <strong>Fonte.</strong><br />Jornal Grande Bahia, 03/01/2011<br />A TARDE,
@@ -1717,16 +2172,16 @@
                 <li class="timeline-item">
                   <time>1999–2002</time>
                   <p>
-                    Secretário Municipal de Saúde de Vitória da Conquista; o Resgate Médico é
-                    apontado como origem da ideia do SAMU 192.
+                    Secretário Municipal de Saúde de Vitória da Conquista: criou o piloto do SAMU
+                    192 na cidade, o Resgate Médico.
                   </p>
                   <span class="sphere">Município</span>
                 </li>
                 <li class="timeline-item">
                   <time>2003–2005</time>
                   <p>
-                    Secretário de Atenção à Saúde: participa da criação e da implantação do SAMU 192
-                    e assina as diretrizes do Brasil Sorridente.
+                    Secretário de Atenção à Saúde: nacionalizou o SAMU 192 e criou o Brasil
+                    Sorridente, assinando as diretrizes da Política Nacional de Saúde Bucal.
                   </p>
                   <span class="sphere">União</span>
                 </li>
@@ -1763,14 +2218,76 @@
             class="media-zone section-shell"
             aria-labelledby="desktop-media-title"
           >
-            <p class="eyebrow">Conteúdo da campanha</p>
+            <p class="eyebrow">Acompanhe de perto</p>
             <h2 id="desktop-media-title" class="section-heading balanced">
-              Voz, imagem e material para levar a campanha adiante.
+              A caminhada, em tempo real
             </h2>
             <p class="section-lead">
-              Mídia só começa quando a pessoa pede. Coleções vazias não viram links quebrados nem
-              vitrines de mentira.
+              Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
             </p>
+            <div class="updates-board" aria-label="Atualizações recentes da campanha">
+              <article class="update-card featured">
+                <span class="update-media-note">NEEDS ASSET · thumbnail dinâmica do snapshot</span>
+                <div class="update-copy">
+                  <span class="update-source">Instagram · há 4 horas</span>
+                  <h3>
+                    Plenária 1313 da Vitória: é hora de reunir, organizar e seguir na caminhada
+                  </h3>
+                  <p>
+                    Snapshot mais recente preservado; a mídia só é atualizada fora do carregamento
+                    da página.
+                  </p>
+                </div>
+              </article>
+              <article class="update-card">
+                <span class="update-media-note">NEEDS ASSET · thumbnail dinâmica</span>
+                <div class="update-copy">
+                  <span class="update-source">Instagram · há 13 horas</span>
+                  <h3>Ontem foi dia de pegar a estrada e seguir pelo interior da Bahia</h3>
+                </div>
+              </article>
+              <article class="update-card">
+                <span class="update-media-note">NEEDS ASSET · thumbnail dinâmica</span>
+                <div class="update-copy">
+                  <span class="update-source">YouTube · 25/09/2026</span>
+                  <h3>Plenária da Vitória 1313</h3>
+                  <p>0 visualizações</p>
+                </div>
+              </article>
+              <article class="update-card">
+                <span class="update-media-note">NEEDS ASSET · thumbnail dinâmica</span>
+                <div class="update-copy">
+                  <span class="update-source">YouTube · 24/09/2026</span>
+                  <h3>Debate: Política Fiscal e seus impactos na vida dos baianos</h3>
+                  <p>175 visualizações</p>
+                </div>
+              </article>
+              <article class="update-card">
+                <span class="update-media-note">NEEDS ASSET · capa publicada</span>
+                <div class="update-copy">
+                  <span class="update-source">Artigo · Política</span>
+                  <h3>
+                    “Bruno Reis foi covarde”, detonou Solla ao rebater o prefeito sobre saúde de
+                    Salvador
+                  </h3>
+                  <p>17/08/2026</p>
+                </div>
+              </article>
+            </div>
+            <div class="board-controls" aria-label="Navegação das atualizações">
+              <span>1 de 5</span>
+              <div class="board-control-buttons">
+                <button type="button" aria-label="Atualização anterior">←</button>
+                <button type="button" aria-label="Próxima atualização">→</button>
+              </div>
+            </div>
+            <div class="update-link-row">
+              <p>
+                Posts visíveis + snapshots elegíveis de YouTube e Instagram, ordenados por data.
+                Falha de feed mantém o último snapshot; zero itens esconde toda a seção.
+              </p>
+              <a href="/artigos">Ver artigos</a>
+            </div>
             <div class="media-grid">
               <article class="video-panel">
                 <img
@@ -1812,8 +2329,7 @@
               </div>
             </div>
             <p class="motion-note">
-              <span></span> Board de atualizações, Jingles e Fotos não aparecem nesta composição
-              enquanto estiverem vazios.
+              <span></span> Jingles e Fotos não aparecem nesta composição enquanto estiverem vazios.
             </p>
           </section>
 
@@ -1949,11 +2465,11 @@
           <section class="hero" aria-labelledby="mobile-hero-title">
             <div class="hero-copy">
               <p class="hero-overline">Jorge Solla · Deputado Federal · 1313</p>
-              <h1 id="mobile-hero-title" class="balanced">Um mandato do tamanho da Bahia</h1>
+              <h1 id="mobile-hero-title" class="balanced">Mais Saúde,<br />Mais Futuro</h1>
               <p class="hero-deck pretty">
-                Médico sanitarista. Participou da criação e da implantação do SAMU 192 e assinou as
-                diretrizes do Brasil Sorridente. Leva o mandato aos 417 municípios, da saúde à
-                educação.
+                Médico sanitarista. Criou o SAMU 192 e o Brasil Sorridente. Já comandou a saúde em
+                Vitória da Conquista, na Bahia e no Brasil, e leva o mandato aos 417 municípios, da
+                saúde à educação.
               </p>
               <div class="hero-actions">
                 <a
@@ -1964,10 +2480,8 @@
                 ><a class="secondary-link" href="#mobile-principios">Ver princípios</a>
               </div>
               <div class="microproofs">
-                <div class="proof">
-                  <strong>SAMU na Bahia</strong>14 municípios em 2007; 233 em 2010
-                </div>
-                <div class="proof"><strong>128.968 votos</strong>78,9% no interior em 2022</div>
+                <div class="proof"><strong>DIAP</strong>entre os 40 melhores da Câmara</div>
+                <div class="proof"><strong>Mais votado</strong>do PT-BA em 2022</div>
               </div>
             </div>
             <figure class="hero-image">
@@ -1980,6 +2494,19 @@
               />
               <figcaption class="hero-number tabular">1313</figcaption>
             </figure>
+          </section>
+
+          <section class="proof-band" aria-label="Experiência e atuação parlamentar">
+            <div class="proof-stat">
+              <strong class="tabular">3.333</strong><span>proposições apresentadas</span>
+            </div>
+            <div class="proof-stat">
+              <strong class="tabular">1.031</strong><span>discursos em Plenário</span>
+            </div>
+            <div class="proof-stat">
+              <strong class="tabular">3º</strong><span>mandato de deputado federal</span>
+            </div>
+            <p class="proof-recheck">Rechecar antes do go-live.</p>
           </section>
 
           <section
@@ -2030,6 +2557,15 @@
                     Titular da comissão especial da PEC 11/2022; coautor da PEC 14/2021, aprovada
                     pelo Senado em 14/07/2026, por 73 votos a 1; falta a promulgação.
                   </p>
+                  <figure class="inline-photo" data-label="Quem cuida do SUS">
+                    <img
+                      src="../../public/JOA00162.avif"
+                      width="495"
+                      height="742"
+                      loading="lazy"
+                      alt="Jorge Solla em retrato da campanha"
+                    />
+                  </figure>
                 </article>
                 <article class="chapter">
                   <span class="chapter-index">03 / 06</span>
@@ -2055,6 +2591,15 @@
                     Universidade pública, instituto federal e escola de qualidade também longe da
                     capital. O lugar onde você nasce não pode decidir até onde você pode estudar.
                   </p>
+                  <figure class="inline-photo" data-label="Educação e interior">
+                    <img
+                      src="../../public/Jeronimo.avif"
+                      width="177"
+                      height="265"
+                      loading="lazy"
+                      alt="Jerônimo Rodrigues em ativo publicado da campanha"
+                    />
+                  </figure>
                 </article>
                 <article class="chapter">
                   <span class="chapter-index">05 / 06</span>
@@ -2084,8 +2629,49 @@
                     Em 8 de janeiro de 2025, afirmou que o 8 de Janeiro não foi um ato isolado, e
                     sim o ápice de uma escalada autoritária.
                   </p>
+                  <figure class="inline-photo" data-label="Democracia">
+                    <img
+                      src="../../public/Lula.avif"
+                      width="216"
+                      height="213"
+                      loading="lazy"
+                      alt="Lula em ativo publicado da campanha"
+                    />
+                  </figure>
                 </article>
               </div>
+            </div>
+          </section>
+
+          <section class="election-frame" aria-labelledby="mobile-election-title">
+            <p class="eyebrow">Por que essa eleição importa</p>
+            <h2 id="mobile-election-title" class="balanced">
+              Eleger deputado é coisa séria. O Congresso tem nas mãos vidas reais e o SUS.
+            </h2>
+            <p>
+              É no Congresso que se define o orçamento do SUS, o piso da enfermagem, a recompra de
+              Mataripe e o fim da escala 6×1. Reeleger Lula não basta: é preciso eleger uma bancada
+              aliada.
+            </p>
+            <div class="election-sequence" aria-label="Avanço, obstáculo e relevância eleitoral">
+              <article class="election-step">
+                <b>Avanço</b>
+                <h3>A saúde voltou a receber recursos</h3>
+                <p>
+                  Com Lula, o Mais Médicos foi retomado e o novo PAC voltou a investir na estrutura
+                  pública.
+                </p>
+              </article>
+              <article class="election-step">
+                <b>Obstáculo</b>
+                <h3>As decisões passam pelo Congresso</h3>
+                <p>Orçamento, piso da enfermagem, jornada e soberania precisam de maioria.</p>
+              </article>
+              <article class="election-step">
+                <b>Escolha</b>
+                <h3>É preciso eleger uma bancada aliada</h3>
+                <p>O voto para deputado decide quem sustenta os avanços e enfrenta os bloqueios.</p>
+              </article>
             </div>
           </section>
 
@@ -2097,8 +2683,9 @@
               </h2>
               <div class="case-intro">
                 <p class="case-role">
-                  <strong>Papel.</strong> Participou da criação e implantação no Ministério da
-                  Saúde; regionalizou o serviço como secretário de Saúde da Bahia.
+                  <strong>Papel.</strong> Criou o piloto do SAMU 192 em Vitória da Conquista e
+                  nacionalizou o programa no Ministério da Saúde; depois, regionalizou o serviço
+                  como secretário de Saúde da Bahia.
                 </p>
                 <p class="case-source">
                   <strong>Fonte.</strong><br />JGB, 03/01/2011 · A TARDE, 14/03/2025
@@ -2144,14 +2731,14 @@
                 </li>
                 <li class="timeline-item">
                   <time>1999–2002</time>
-                  <p>Secretário de Saúde de Vitória da Conquista.</p>
+                  <p>Secretário de Saúde de Vitória da Conquista: criou o piloto do SAMU 192.</p>
                   <span class="sphere">Município</span>
                 </li>
                 <li class="timeline-item">
                   <time>2003–2005</time>
                   <p>
-                    Participa da criação e implantação do SAMU e assina as diretrizes do Brasil
-                    Sorridente.
+                    Nacionalizou o SAMU 192 e criou o Brasil Sorridente, assinando as diretrizes da
+                    Política Nacional de Saúde Bucal.
                   </p>
                   <span class="sphere">União</span>
                 </li>
@@ -2172,11 +2759,53 @@
           </section>
 
           <section class="media-zone section-shell" aria-labelledby="mobile-media-title">
-            <p class="eyebrow">Conteúdo da campanha</p>
-            <h2 id="mobile-media-title" class="section-heading">
-              Voz e material para compartilhar.
-            </h2>
-            <p class="section-lead">Mídia começa com toque. Coleções vazias desaparecem.</p>
+            <p class="eyebrow">Acompanhe de perto</p>
+            <h2 id="mobile-media-title" class="section-heading">A caminhada, em tempo real</h2>
+            <p class="section-lead">
+              Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+            </p>
+            <div class="updates-board" aria-label="Atualizações recentes da campanha">
+              <article class="update-card featured">
+                <span class="update-media-note">NEEDS ASSET · thumbnail dinâmica do snapshot</span>
+                <div class="update-copy">
+                  <span class="update-source">Instagram · há 4 horas</span>
+                  <h3>
+                    Plenária 1313 da Vitória: é hora de reunir, organizar e seguir na caminhada
+                  </h3>
+                  <p>1 de 5 · deslize para ver os próximos</p>
+                </div>
+              </article>
+              <article class="update-card">
+                <span class="update-media-note">NEEDS ASSET · thumbnail dinâmica</span>
+                <div class="update-copy">
+                  <span class="update-source">YouTube · 25/09/2026</span>
+                  <h3>Plenária da Vitória 1313</h3>
+                  <p>0 visualizações</p>
+                </div>
+              </article>
+              <article class="update-card">
+                <span class="update-media-note">NEEDS ASSET · capa publicada</span>
+                <div class="update-copy">
+                  <span class="update-source">Artigo · Política</span>
+                  <h3>
+                    “Bruno Reis foi covarde”, detonou Solla ao rebater o prefeito sobre saúde de
+                    Salvador
+                  </h3>
+                  <p>17/08/2026</p>
+                </div>
+              </article>
+            </div>
+            <div class="board-controls" aria-label="Navegação das atualizações">
+              <span>1 de 5</span>
+              <div class="board-control-buttons">
+                <button type="button" aria-label="Atualização anterior">←</button>
+                <button type="button" aria-label="Próxima atualização">→</button>
+              </div>
+            </div>
+            <div class="update-link-row">
+              <p>Snapshot/lazy; falha mantém o último conteúdo e zero itens esconde a seção.</p>
+              <a href="/artigos">Ver artigos</a>
+            </div>
             <div class="media-grid">
               <article class="video-panel">
                 <img
@@ -2304,6 +2933,51 @@
       <div class="motion-board">
         <p class="eyebrow">Contrato de movimento</p>
         <h2 class="section-heading">Capítulos que avançam. Evidência que permanece.</h2>
+        <div
+          class="signature-storyboard"
+          aria-label="Demonstração da troca de fotografia por capítulo"
+        >
+          <article class="signature-frame">
+            <figure>
+              <img
+                src="../../public/JOA00162.avif"
+                width="495"
+                height="742"
+                loading="lazy"
+                alt="Fotografia exibida no capítulo 2"
+              />
+            </figure>
+            <div class="signature-copy">
+              <span>Scroll · capítulo 02 / 06</span>
+              <h3>Valorizar quem cuida do SUS</h3>
+              <p>Ao centro da viewport, esta fotografia assume a área sticky por crossfade.</p>
+            </div>
+          </article>
+          <article class="signature-frame">
+            <figure>
+              <img
+                src="../../public/Jeronimo.avif"
+                width="177"
+                height="265"
+                loading="lazy"
+                alt="Fotografia diferente exibida no capítulo 4"
+              />
+            </figure>
+            <div class="signature-copy">
+              <span>Scroll · capítulo 04 / 06</span>
+              <h3>O interior não pode ficar para trás</h3>
+              <p>
+                Ao chegar ao capítulo 04, a imagem anterior sai e este ativo entra com escala
+                discreta.
+              </p>
+            </div>
+          </article>
+        </div>
+        <p class="signature-map">
+          <strong>Mapeamento 1:1:</strong> 01 Saúde · 02 Quem cuida · 03 Trabalho digno · 04
+          Educação e interior · 05 Bahia e soberania · 06 Democracia. No mobile e em movimento
+          reduzido, cada fotografia aparece inline no seu próprio capítulo.
+        </p>
         <div class="motion-board-grid">
           <article class="motion-column">
             <h3>Movimento completo</h3>
@@ -2345,8 +3019,8 @@
           <span class="state-tag">Board vazio</span>
           <h3>A seção não ocupa espaço na home.</h3>
           <p>
-            O board de atualizações e o link “Ver todos os conteúdos” não renderizam com zero peças.
-            Na página da coleção, o vazio honesto permanece:
+            O board de atualizações e seus links de descoberta não renderizam com zero itens
+            visíveis. Na página da coleção, o vazio honesto permanece:
           </p>
           <div class="hidden-links-demo">
             “As primeiras peças estão a caminho. Enquanto isso, faça seu card e mostre que você está

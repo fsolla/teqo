@@ -53,8 +53,8 @@ mínimo); **E** = endpoint não visual (preserve-only); **G** = adição gateada
 | 20  | Newsletter da home                        | `CampaignNewsletterSection` + `submitCampaignNewsletter`   | S1/S4 | R    | Consent `campanha-novidades` fail-closed; pixel Lead preservado; estado de recusa desenhado                                                                                                       |
 | 21  | `/cards` (estúdio)                        | `(home)/cards/page.tsx` + `components/cards/*`             | S5    | R    | 6 modelos reais; `?model=` válido; `#cards` da home; nomes de arquivo e telemetria anônima preservados                                                                                            |
 | 22  | Wizard kit completo (extensão)            | `CardsStudio`/`CardComposer` (dono)                        | S5    | R    | Passos nome→foto→dobradinha→kit; nunca gera arte incompleta; foto nunca sai do browser; back/forward na sessão; sem persistência silenciosa                                                       |
-| 23  | `/fotos` (C233)                           | `fotos/page.tsx` + `components/fotos/*`                    | S6    | G    | Só `approved`; kill switch `photoAlbum.published`; canal de remoção; vazio honesto; **abertura exige decisão registrada**                                                                         |
-| 24  | `/fotos/encontre` (C234)                  | `fotos/encontre/page.tsx` + `api/fotos/selfie`             | S7    | G    | `selfieSearchEnabled` fail-closed; Consent por chave; sem score/nome; on-device; **dark até decisão**                                                                                             |
+| 23  | `/fotos` (C233)                           | `fotos/page.tsx` + `components/fotos/*`                    | S6    | R    | Redesenho preserva o contrato C233 (só `approved`; kill switch `photoAlbum.published`; canal de remoção; vazio honesto) — **aberta por decisão de 28/09/2026**                                    |
+| 24  | `/fotos/encontre` (C234)                  | `fotos/encontre/page.tsx` + `api/fotos/selfie`             | S7    | R    | Redesenho preserva o contrato C234 (`selfieSearchEnabled` fail-closed; Consent por chave; sem score/nome; on-device) — **aberta por decisão de 28/09/2026**                                       |
 | 25  | `/api/revalidate`                         | `api/revalidate/route.ts`                                  | —     | P    | Allowlist de tags intocada                                                                                                                                                                        |
 | 26  | `/api/content-events`                     | `api/content-events/route.ts`                              | S2    | P    | Beacon anônimo: schema, rate-limit, catálogos — intocados                                                                                                                                         |
 | 27  | `/api/social-feed/sync`                   | `api/social-feed/sync/route.ts`                            | —     | P    | Auth admin + same-origin — intocado                                                                                                                                                               |
@@ -66,16 +66,16 @@ endpoints de mídia da Central (itens 5/6), não páginas.
 
 ## 3. Fatias
 
-| Fatia  | Escopo                                                                        | Depende                         | Appetite | Design                                      |
-| ------ | ----------------------------------------------------------------------------- | ------------------------------- | -------- | ------------------------------------------- |
-| **S0** | Auditoria, matriz, plano, 1º pacote de design                                 | —                               | —        | campanha home+shell                         |
-| **S1** | Shell de campanha + home (itens 1–2, 20)                                      | S0                              | M        | `site-publico-campanha-home-ui-design.html` |
-| **S2** | Central de Conteúdos, cortes, mídia embutida, jingles (3–9, 26)               | S1 (shell)                      | M        | artefato próprio por superfície             |
-| **S3** | Editorial: artigos, listas, artigo, share-links, `.ics` (10–16, 29)           | S0                              | M        | artefato próprio                            |
-| **S4** | Participação: WhatsApp, abaixo-assinado, privacidade, polish de forms (17–20) | S1                              | S/M      | artefato próprio                            |
-| **S5** | Wizard do kit de apoio (21–22)                                                | S1                              | M        | artefato próprio (estende `/cards`)         |
-| **S6** | Álbum público C233 (23) — gateado                                             | S3 (editorial) + decisão        | S        | artefato C233 aprovado + relatório          |
-| **S7** | Selfie C234 (24) — gateado                                                    | S6 + C231/C232 + Consent + DPIA | —        | artefato C234 aprovado                      |
+| Fatia  | Escopo                                                                        | Depende                   | Appetite | Design                                      |
+| ------ | ----------------------------------------------------------------------------- | ------------------------- | -------- | ------------------------------------------- |
+| **S0** | Auditoria, matriz, plano, 1º pacote de design                                 | —                         | —        | campanha home+shell                         |
+| **S1** | Shell de campanha + home (itens 1–2, 20)                                      | S0                        | M        | `site-publico-campanha-home-ui-design.html` |
+| **S2** | Central de Conteúdos, cortes, mídia embutida, jingles (3–9, 26)               | S1 (shell)                | M        | artefato próprio por superfície             |
+| **S3** | Editorial: artigos, listas, artigo, share-links, `.ics` (10–16, 29)           | S0                        | M        | artefato próprio                            |
+| **S4** | Participação: WhatsApp, abaixo-assinado, privacidade, polish de forms (17–20) | S1                        | S/M      | artefato próprio                            |
+| **S5** | Wizard do kit de apoio (21–22)                                                | S1                        | M        | artefato próprio (estende `/cards`)         |
+| **S6** | Álbum público C233 (23) — aberto (decisão de 28/09/2026)                      | S3 (editorial)            | S        | artefato C233 aprovado (base)               |
+| **S7** | Selfie C234 (24) — aberto (decisão de 28/09/2026)                             | S6 + ops (flag + Consent) | —        | artefato C234 aprovado (base)               |
 
 O núcleo (S1–S5) não depende de S6/S7; bloqueio de uma adição gateada não para
 o resto. Cada fatia exige: reconciliação factual dos claims que publica,
@@ -88,24 +88,27 @@ Corpus de referência: `docs/research/briefing-geral-militancia/` (legível) e
 `data/briefing-geral-militancia/` (ledgers, untracked). Regra: sem fonte
 (ledger + `sourceUrl` + `sourceDate`), não publica.
 
-| Claim atual na home                             | Evidência no corpus                                                                                                                                              | Decisão                                                                                                            |
-| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| "Criou o SAMU 192"                              | Resgate Médico em Vitória da Conquista é **apontado como origem da ideia**; em 2003, como secretário de Atenção à Saúde, **participou da criação e implantação** | **HOLD** — publicar "participou da criação do SAMU 192" (ou formulação equivalente aprovada pela voz)              |
-| "Criou o Brasil Sorridente"                     | "Assinou as diretrizes da Política Nacional de Saúde Bucal, o Brasil Sorridente" (2003–2005)                                                                     | **HOLD** — trocar por "assinou as diretrizes do Brasil Sorridente" / "participou do lançamento"                    |
-| "Mais votado do PT-BA em 2022"                  | Ledger: em 2022 foi **14º mais votado do estado** (128.968 votos; 78,9% do interior); em 2018, **5º**                                                            | **HOLD** — substituir por fato lastreado (ex.: votação de 2022 por território)                                     |
-| "DIAP entre os 40 melhores da Câmara"           | Não consta no corpus                                                                                                                                             | **HOLD** — só publicar com fonte verificada                                                                        |
-| "3.333 proposições" / "1.031 discursos"         | Fonte do plano: API Dados Abertos/SitaqWeb (13/08/2026), fora do corpus                                                                                          | **Re-verificar** na data de publicação ou substituir por números do corpus (SESAB, SAMU, enfermagem, Mais Médicos) |
-| "4 de outubro", "1313", identificação eleitoral | Plano + kit                                                                                                                                                      | Manter; reconferir na publicação                                                                                   |
+| Claim atual na home                             | Corpus                                                                                                                                   | Decisão (coordenação, 28/09/2026)                                                                                                                                        |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "Criou o SAMU 192"                              | Resgate Médico em Vitória da Conquista (1999–2002) apontado como origem da ideia; criação/implantação no Ministério da Saúde (2003–2005) | **APROVADO** — Solla liderou o piloto municipal e a nacionalização; é justo reivindicar a criação. Peças de contexto podem mostrar a trajetória (Conquista → Ministério) |
+| "Criou o Brasil Sorridente"                     | "Assinou as diretrizes da Política Nacional de Saúde Bucal" (2003–2005)                                                                  | **APROVADO** — liderou a implementação; o texto pode dizer que criou                                                                                                     |
+| "Mais votado do PT-BA em 2022"                  | Em 2022: 128.968 votos, 78,9% no interior; 14º no estado, mas o **mais votado entre os federais do PT na Bahia**                         | **APROVADO** — correto no recorte partidário; manter o escopo "do PT-BA" explícito na frase                                                                              |
+| "DIAP entre os 40 melhores da Câmara"           | Fora do corpus                                                                                                                           | **CONFIRMADO** pela coordenação — publicar                                                                                                                               |
+| "3.333 proposições" / "1.031 discursos"         | Fonte do plano: API Dados Abertos/SitaqWeb (13/08/2026)                                                                                  | Manter como no ar; **rechecar** contra a API/SitaqWeb antes do go-live da S1                                                                                             |
+| "4 de outubro", "1313", identificação eleitoral | Plano + kit                                                                                                                              | Manter; reconferir na publicação                                                                                                                                         |
 
-A redação final da fatia passa por `solla-comunicacao` antes de entrar no
-artefato; a atribuição exata do corpus é preservada (autoria ≠ coautoria ≠
-relatoria ≠ voto ≠ articulação ≠ gestão).
+Decisão humana registrada em 28/09/2026 na revisão do pacote de aprovação
+(PR #1381). A redação final da fatia continua passando por `solla-comunicacao`;
+a distinção de esfera (município/estado/União) e de fase (autorizado/pago) do
+resto do conteúdo permanece.
 
 ## 5. Riscos e bloqueios registrados
 
-1. **Timing eleitoral (04/10/2026).** Hoje 28/09/2026. C233/C234 permanecem
-   fechadas por padrão; abrir qualquer superfície pública nova exige decisão
-   registrada (humano + coordenação). O deploy de produção é aprovação humana.
+1. **C233/C234 abertas por decisão de 28/09/2026** — são superfícies
+   implementadas e passam a ser redesenho (S6/S7), não adição gateada. Em
+   produção hoje o álbum mostra o vazio honesto (sem foto `approved`) e a selfie
+   depende do flag operacional + Consent; o redesenho preserva os contratos
+   fail-closed. O deploy de produção é aprovação humana.
 2. **`/abaixo-assinado/1` responde 500 em produção** (id inexistente deveria
    404). Bug público aberto; entra na S4 com teste de regressão (ou hotfix antes).
 3. **`/artigos` com imagem de destaque quebrada** em produção (ícone de erro).
