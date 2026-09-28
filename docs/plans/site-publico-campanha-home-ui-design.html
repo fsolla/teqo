@@ -963,6 +963,182 @@
         height: 12px;
       }
 
+      .jingles-strip {
+        margin-top: 72px;
+        padding: 38px;
+        background: white;
+        border: 1px solid var(--line);
+      }
+      .jingles-heading {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 32px;
+      }
+      .jingles-heading h3 {
+        margin: 0;
+        font: 760 2.35rem/1 var(--font-display);
+        letter-spacing: -0.04em;
+      }
+      .jingles-heading p {
+        max-width: 480px;
+        margin: 12px 0 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.55;
+      }
+      .jingles-heading > a {
+        min-height: 44px;
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        color: var(--pt-red);
+        font-weight: 760;
+        font-size: 0.76rem;
+        text-underline-offset: 4px;
+      }
+      .jingle-list {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 32px;
+      }
+      .jingle-item {
+        display: grid;
+        grid-template-columns: 116px 1fr;
+        min-width: 0;
+        overflow: hidden;
+        background: var(--campaign-cream);
+        border: 1px solid var(--line);
+      }
+      .jingle-cover {
+        position: relative;
+        min-height: 168px;
+        overflow: hidden;
+        background: var(--campaign-band);
+      }
+      .jingle-cover img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .jingle-play {
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+        width: 48px;
+        height: 48px;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-radius: 50%;
+        background: var(--pt-yellow);
+        color: #1d1304;
+        box-shadow: 0 5px 0 #cbb700;
+        font-size: 1rem;
+      }
+      .jingle-item[data-state='playing'] .jingle-play {
+        box-shadow: 0 2px 0 #cbb700;
+        transform: translateY(3px);
+      }
+      .jingle-body {
+        min-width: 0;
+        padding: 18px;
+      }
+      .jingle-rhythm {
+        color: var(--pt-red);
+        font: 760 0.6rem/1 var(--font-display);
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+      .jingle-body h4 {
+        margin: 14px 0 0;
+        font: 730 1.08rem/1.05 var(--font-display);
+      }
+      .jingle-artist {
+        margin: 5px 0 0;
+        color: var(--muted);
+        font-size: 0.68rem;
+        font-weight: 650;
+      }
+      .jingle-status {
+        margin: 17px 0 0;
+        color: var(--muted);
+        font-size: 0.62rem;
+      }
+      .jingle-item[data-state='playing'] .jingle-status {
+        color: var(--pt-red);
+        font-weight: 750;
+      }
+      .jingle-download {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        margin-top: 12px;
+        color: var(--pt-red);
+        font-size: 0.68rem;
+        font-weight: 750;
+        text-underline-offset: 4px;
+      }
+      .degraded-section {
+        outline: 2px dashed rgb(162 28 28 / 45%);
+        outline-offset: -8px;
+      }
+      .degraded-banner {
+        margin: 0 0 30px;
+        padding: 12px 14px;
+        background: #fffbe0;
+        border: 1px dashed var(--pt-red);
+        color: var(--pt-red-dark);
+        font-size: 0.67rem;
+        line-height: 1.6;
+      }
+      .degraded-banner strong {
+        color: var(--pt-red);
+        font-family: var(--font-display);
+        letter-spacing: 0.08em;
+      }
+      .degraded-banner code {
+        padding: 1px 4px;
+        background: rgb(162 28 28 / 8%);
+        font-size: 0.64rem;
+      }
+      .jingle-play svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+      }
+      .jingle-icon-pause {
+        display: none;
+      }
+      .jingle-item[data-state='playing'] .jingle-icon-play {
+        display: none;
+      }
+      .jingle-item[data-state='playing'] .jingle-icon-pause {
+        display: block;
+      }
+      .jingle-status-playing {
+        display: none;
+      }
+      .jingle-item[data-state='playing'] .jingle-status-stopped {
+        display: none;
+      }
+      .jingle-item[data-state='playing'] .jingle-status-playing {
+        display: inline;
+      }
+      .jingles-hint {
+        margin: 10px 0 0;
+        color: var(--pt-red);
+        font-size: 0.7rem;
+        font-weight: 700;
+      }
+      .jingles-note {
+        margin: 20px 0 0;
+        color: var(--muted);
+        font-size: 0.66rem;
+        line-height: 1.5;
+      }
+
       .participation {
         display: grid;
         grid-template-columns: 42% 58%;
@@ -1421,6 +1597,40 @@
       .mobile .media-card {
         padding: 24px;
       }
+      .mobile .jingles-strip {
+        margin-top: 52px;
+        padding: 28px 0 28px 20px;
+      }
+      .mobile .jingles-heading {
+        display: block;
+        padding-right: 20px;
+      }
+      .mobile .jingles-heading h3 {
+        font-size: 1.9rem;
+      }
+      .mobile .jingles-heading > a {
+        margin-top: 14px;
+      }
+      .mobile .jingle-list {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+      }
+      .mobile .jingle-item {
+        width: 310px;
+        flex: 0 0 310px;
+        grid-template-columns: 124px 1fr;
+        scroll-snap-align: start;
+      }
+      .mobile .degraded-banner {
+        margin: 0 20px 22px 0;
+        padding: 10px 12px;
+        font-size: 0.63rem;
+      }
+      .mobile .jingles-note {
+        padding-right: 20px;
+      }
       .mobile .participation {
         display: block;
       }
@@ -1740,6 +1950,12 @@
         placeholder do deck e precisa ser substituído pelo número oficial; o CNPJ preserva o valor
         já publicado, ainda sujeito à conferência do advogado eleitoral; as duas fotografias do caso
         SAMU e as thumbnails dinâmicas do board estão marcadas como NEEDS ASSET.
+      </p>
+      <p class="gate-pending">
+        <strong>DEGRADED:</strong> a seção de jingles das cenas 01 e 02 é proposta do tier degradado
+        (<code>opencode-go/deepseek-v4.1-flash</code>) e não está certificada — exige sign-off
+        humano no gate/PR. O restante do artefato permanece o design S1 sujeito à certificação do
+        designer frontier.
       </p>
     </header>
 
@@ -2328,8 +2544,145 @@
                 </article>
               </div>
             </div>
+            <section
+              class="jingles-strip degraded-section"
+              data-degraded="true"
+              aria-labelledby="desktop-jingles-title"
+            >
+              <p class="degraded-banner" role="note">
+                <strong>DEGRADED</strong> — seção de jingles proposta pelo tier degradado
+                (<code>opencode-go/deepseek-v4.1-flash</code>). Design não certificado: pendente de
+                sign-off humano no gate/PR. O restante do artefato permanece o design S1 sujeito à
+                certificação do designer frontier.
+              </p>
+              <div class="jingles-heading">
+                <div>
+                  <p class="eyebrow">A trilha da nossa caminhada</p>
+                  <h3 id="desktop-jingles-title">Cante, baixe e espalhe</h3>
+                  <p>
+                    Ouça a Rádio Jorge Solla 1313 e os jingles oficiais da campanha. Dê o play e
+                    baixe o seu preferido para levar com você.
+                  </p>
+                  <p class="jingles-hint">Um jingle por vez: ao tocar outro, o anterior para.</p>
+                </div>
+                <a href="/jingles">Ver todos os jingles</a>
+              </div>
+              <div class="jingle-list" aria-label="Jingles publicados">
+                <article class="jingle-item" data-jingle-preview data-state="stopped">
+                  <div class="jingle-cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                      width="640"
+                      height="640"
+                      loading="lazy"
+                      alt="Capa oficial do jingle Forró"
+                    /><button
+                      class="jingle-play"
+                      type="button"
+                      aria-label="Tocar jingle Forró"
+                      aria-pressed="false"
+                    >
+                      <svg class="jingle-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="jingle-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="jingle-body">
+                    <span class="jingle-rhythm">Forró</span>
+                    <h4>Jorge Solla 1313</h4>
+                    <p class="jingle-artist">feat. Felipe Forrozeiro</p>
+                    <p class="jingle-status">
+                      <span class="jingle-status-stopped">Pronto para tocar</span
+                      ><span class="jingle-status-playing">Em reprodução</span>
+                    </p>
+                    <a
+                      class="jingle-download"
+                      href="/jingles"
+                      aria-label="Baixar jingle Forró em MP3"
+                      >↓ Baixar MP3</a
+                    >
+                  </div>
+                </article>
+                <article class="jingle-item" data-jingle-preview data-state="stopped">
+                  <div class="jingle-cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                      width="640"
+                      height="640"
+                      loading="lazy"
+                      alt="Capa oficial do jingle Axé"
+                    /><button
+                      class="jingle-play"
+                      type="button"
+                      aria-label="Tocar jingle Axé"
+                      aria-pressed="false"
+                    >
+                      <svg class="jingle-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="jingle-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="jingle-body">
+                    <span class="jingle-rhythm">Axé</span>
+                    <h4>Jorge Solla 1313</h4>
+                    <p class="jingle-artist">feat. Nagib Barroso</p>
+                    <p class="jingle-status">
+                      <span class="jingle-status-stopped">Pronto para tocar</span
+                      ><span class="jingle-status-playing">Em reprodução</span>
+                    </p>
+                    <a class="jingle-download" href="/jingles" aria-label="Baixar jingle Axé em MP3"
+                      >↓ Baixar MP3</a
+                    >
+                  </div>
+                </article>
+                <article class="jingle-item" data-jingle-preview data-state="stopped">
+                  <div class="jingle-cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-pagodao.jpg"
+                      width="640"
+                      height="640"
+                      loading="lazy"
+                      alt="Capa oficial do jingle Pagodão"
+                    /><button
+                      class="jingle-play"
+                      type="button"
+                      aria-label="Tocar jingle Pagodão"
+                      aria-pressed="false"
+                    >
+                      <svg class="jingle-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="jingle-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="jingle-body">
+                    <span class="jingle-rhythm">Pagodão</span>
+                    <h4>Jorge Solla 1313</h4>
+                    <p class="jingle-artist">feat. É O MT</p>
+                    <p class="jingle-status">
+                      <span class="jingle-status-stopped">Pronto para tocar</span
+                      ><span class="jingle-status-playing">Em reprodução</span>
+                    </p>
+                    <a
+                      class="jingle-download"
+                      href="/jingles"
+                      aria-label="Baixar jingle Pagodão em MP3"
+                      >↓ Baixar MP3</a
+                    >
+                  </div>
+                </article>
+              </div>
+              <p class="jingles-note">Nada toca sozinho: o play é sempre iniciado por você.</p>
+            </section>
             <p class="motion-note">
-              <span></span> Jingles e Fotos não aparecem nesta composição enquanto estiverem vazios.
+              <span></span> Fail-closed: jingles e fotos só aparecem quando houver publicação
+              aprovada. A faixa some sem jingle publicado e “Fotos” entra na descoberta do footer
+              apenas com fotos aprovadas pelo contrato C233.
             </p>
           </section>
 
@@ -2406,6 +2759,7 @@
               <ul>
                 <li><a href="#desktop-principios">Princípios</a></li>
                 <li><a href="#desktop-trabalho">Trabalho</a></li>
+                <li><a href="/jingles">Jingles</a></li>
                 <li><a href="/privacidade">Privacidade</a></li>
               </ul>
             </div>
@@ -2843,6 +3197,146 @@
                 </article>
               </div>
             </div>
+            <section
+              class="jingles-strip degraded-section"
+              data-degraded="true"
+              aria-labelledby="mobile-jingles-title"
+            >
+              <p class="degraded-banner" role="note">
+                <strong>DEGRADED</strong> — seção de jingles proposta pelo tier degradado
+                (<code>opencode-go/deepseek-v4.1-flash</code>). Design não certificado: pendente de
+                sign-off humano no gate/PR. O restante do artefato permanece o design S1 sujeito à
+                certificação do designer frontier.
+              </p>
+              <div class="jingles-heading">
+                <div>
+                  <p class="eyebrow">A trilha da nossa caminhada</p>
+                  <h3 id="mobile-jingles-title">Cante, baixe e espalhe</h3>
+                  <p>
+                    Ouça a Rádio Jorge Solla 1313 e os jingles oficiais da campanha. Dê o play e
+                    baixe o seu preferido para levar com você.
+                  </p>
+                  <p class="jingles-hint">Um jingle por vez: ao tocar outro, o anterior para.</p>
+                </div>
+                <a href="/jingles">Ver todos os jingles</a>
+              </div>
+              <div class="jingle-list" aria-label="Jingles publicados">
+                <article class="jingle-item" data-jingle-preview data-state="stopped">
+                  <div class="jingle-cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-forro.jpg"
+                      width="640"
+                      height="640"
+                      loading="lazy"
+                      alt="Capa oficial do jingle Forró"
+                    /><button
+                      class="jingle-play"
+                      type="button"
+                      aria-label="Tocar jingle Forró"
+                      aria-pressed="false"
+                    >
+                      <svg class="jingle-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="jingle-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="jingle-body">
+                    <span class="jingle-rhythm">Forró</span>
+                    <h4>Jorge Solla 1313</h4>
+                    <p class="jingle-artist">feat. Felipe Forrozeiro</p>
+                    <p class="jingle-status">
+                      <span class="jingle-status-stopped">Pronto para tocar</span
+                      ><span class="jingle-status-playing">Em reprodução</span>
+                    </p>
+                    <a
+                      class="jingle-download"
+                      href="/jingles"
+                      aria-label="Baixar jingle Forró em MP3"
+                      >↓ Baixar MP3</a
+                    >
+                  </div>
+                </article>
+                <article class="jingle-item" data-jingle-preview data-state="stopped">
+                  <div class="jingle-cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-axe.jpg"
+                      width="640"
+                      height="640"
+                      loading="lazy"
+                      alt="Capa oficial do jingle Axé"
+                    /><button
+                      class="jingle-play"
+                      type="button"
+                      aria-label="Tocar jingle Axé"
+                      aria-pressed="false"
+                    >
+                      <svg class="jingle-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="jingle-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="jingle-body">
+                    <span class="jingle-rhythm">Axé</span>
+                    <h4>Jorge Solla 1313</h4>
+                    <p class="jingle-artist">feat. Nagib Barroso</p>
+                    <p class="jingle-status">
+                      <span class="jingle-status-stopped">Pronto para tocar</span
+                      ><span class="jingle-status-playing">Em reprodução</span>
+                    </p>
+                    <a class="jingle-download" href="/jingles" aria-label="Baixar jingle Axé em MP3"
+                      >↓ Baixar MP3</a
+                    >
+                  </div>
+                </article>
+                <article class="jingle-item" data-jingle-preview data-state="stopped">
+                  <div class="jingle-cover">
+                    <img
+                      src="jingles-site-publico-ui-design-assets/capa-pagodao.jpg"
+                      width="640"
+                      height="640"
+                      loading="lazy"
+                      alt="Capa oficial do jingle Pagodão"
+                    /><button
+                      class="jingle-play"
+                      type="button"
+                      aria-label="Tocar jingle Pagodão"
+                      aria-pressed="false"
+                    >
+                      <svg class="jingle-icon-play" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" /></svg
+                      ><svg class="jingle-icon-pause" viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M8 5h3v14H8zM14 5h3v14h-3z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="jingle-body">
+                    <span class="jingle-rhythm">Pagodão</span>
+                    <h4>Jorge Solla 1313</h4>
+                    <p class="jingle-artist">feat. É O MT</p>
+                    <p class="jingle-status">
+                      <span class="jingle-status-stopped">Pronto para tocar</span
+                      ><span class="jingle-status-playing">Em reprodução</span>
+                    </p>
+                    <a
+                      class="jingle-download"
+                      href="/jingles"
+                      aria-label="Baixar jingle Pagodão em MP3"
+                      >↓ Baixar MP3</a
+                    >
+                  </div>
+                </article>
+              </div>
+              <p class="jingles-note">Nada toca sozinho: o play é sempre iniciado por você.</p>
+            </section>
+            <p class="motion-note">
+              <span></span> Fail-closed: jingles e fotos só aparecem com publicação aprovada. Sem
+              jingle publicado a faixa some; “Fotos” só entra na descoberta do footer com fotos
+              aprovadas pelo contrato C233.
+            </p>
           </section>
 
           <section class="participation" aria-labelledby="mobile-support-title">
@@ -2904,6 +3398,7 @@
               <h3>Navegue</h3>
               <ul>
                 <li><a href="#mobile-principios">Princípios</a></li>
+                <li><a href="/jingles">Jingles</a></li>
                 <li><a href="/privacidade">Privacidade</a></li>
               </ul>
             </div>
@@ -3108,6 +3603,32 @@
 
       document.querySelectorAll('form').forEach((form) => {
         form.addEventListener('submit', (event) => event.preventDefault())
+      })
+
+      // Interação mínima de apresentação dos jingles: play/pausa visual e um por vez.
+      document.querySelectorAll('.jingle-list').forEach((list) => {
+        const items = list.querySelectorAll('.jingle-item')
+        items.forEach((item) => {
+          const control = item.querySelector('.jingle-play')
+          if (!control) return
+          control.addEventListener('click', () => {
+            const wasPlaying = item.dataset.state === 'playing'
+            const rhythmOf = (node) =>
+              node.querySelector('.jingle-rhythm')?.textContent?.trim() || 'jingle'
+            items.forEach((other) => {
+              const otherControl = other.querySelector('.jingle-play')
+              other.dataset.state = 'stopped'
+              if (!otherControl) return
+              otherControl.setAttribute('aria-pressed', 'false')
+              otherControl.setAttribute('aria-label', `Tocar jingle ${rhythmOf(other)}`)
+            })
+            if (!wasPlaying) {
+              item.dataset.state = 'playing'
+              control.setAttribute('aria-pressed', 'true')
+              control.setAttribute('aria-label', `Pausar jingle ${rhythmOf(item)}`)
+            }
+          })
+        })
       })
     </script>
   </body>
