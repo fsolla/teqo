@@ -1927,6 +1927,66 @@
         margin: 0 -20px;
         padding: 20px;
       }
+      .mobile .docu-case {
+        display: block;
+        padding: 40px 0;
+      }
+      .mobile .docu-photo {
+        position: static;
+      }
+      .mobile .docu-photo-frame {
+        height: 250px;
+      }
+      .mobile .docu-body h3 {
+        margin-top: 14px;
+        font-size: 1.7rem;
+      }
+      .mobile .docu-lead {
+        font-size: 0.82rem;
+      }
+      .mobile .docu-evidence {
+        grid-template-columns: 1fr;
+      }
+      .mobile .counter-band {
+        padding: 78px 20px 88px;
+      }
+      .mobile .counter-band h2 {
+        font-size: 2.4rem;
+      }
+      .mobile .counter-grid {
+        grid-template-columns: 1fr 1fr;
+        margin-top: 42px;
+      }
+      .mobile .counter {
+        min-height: 0;
+        padding: 22px 18px;
+      }
+      .mobile .counter:nth-child(5) {
+        grid-column: 1 / -1;
+      }
+      .mobile .counter-value {
+        font-size: 2rem;
+      }
+      .mobile .quote-grid {
+        grid-template-columns: 1fr;
+        margin-top: 40px;
+      }
+      .mobile .map-layout {
+        display: block;
+        margin-top: 40px;
+      }
+      .mobile .map-frame {
+        padding: 14px;
+      }
+      .mobile .map-list {
+        margin-top: 28px;
+      }
+      .mobile .timeline-list {
+        padding-left: 22px;
+      }
+      .mobile .scroll-cue {
+        font-size: 0.5rem;
+      }
 
       .state-board {
         width: min(1180px, calc(100% - 48px));
@@ -2161,10 +2221,606 @@
           object-fit: cover;
         }
       }
+      /* ===== DEGRADED (tier degradado — não certifica) ===== */
+      .degraded-banner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 26px;
+        padding: 14px 18px;
+        border: 1px solid var(--pt-yellow);
+        background: rgb(255 230 7 / 12%);
+        color: #fff8f2;
+      }
+      .degraded-badge {
+        flex: 0 0 auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 7px 11px;
+        background: var(--pt-yellow);
+        color: #231506;
+        font: 800 0.66rem/1 var(--font-display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .degraded-banner p {
+        margin: 0;
+        max-width: 880px;
+        font-size: 0.76rem;
+        line-height: 1.55;
+      }
+      .degraded-banner strong {
+        color: var(--pt-yellow);
+      }
+
+      /* ===== Hero cinematográfico (zoom-pan + reveal por máscara) ===== */
+      .hero-image {
+        overflow: hidden;
+      }
+      .hero-image img {
+        transform-origin: 52% 30%;
+      }
+      .motion-ready .hero-image img {
+        animation: hero-zoom-pan 16s cubic-bezier(0.3, 0.7, 0.2, 1) both;
+      }
+      @keyframes hero-zoom-pan {
+        from {
+          transform: scale(1.14) translate3d(1.6%, 1.4%, 0);
+        }
+        to {
+          transform: scale(1.05) translate3d(0, 0, 0);
+        }
+      }
+      .motion-ready .hero-copy > * {
+        animation: hero-mask-reveal 880ms cubic-bezier(0.22, 0.8, 0.2, 1) both;
+      }
+      .motion-ready .hero-copy > :nth-child(1) {
+        animation-delay: 60ms;
+      }
+      .motion-ready .hero-copy > :nth-child(2) {
+        animation-delay: 150ms;
+      }
+      .motion-ready .hero-copy > :nth-child(3) {
+        animation-delay: 240ms;
+      }
+      .motion-ready .hero-copy > :nth-child(4) {
+        animation-delay: 330ms;
+      }
+      .motion-ready .hero-copy > :nth-child(5) {
+        animation-delay: 420ms;
+      }
+      @keyframes hero-mask-reveal {
+        from {
+          clip-path: inset(0 0 100% 0);
+          transform: translateY(14px);
+        }
+        to {
+          clip-path: inset(0 0 0 0);
+          transform: translateY(0);
+        }
+      }
+      .scroll-cue {
+        position: absolute;
+        z-index: 4;
+        left: 50%;
+        bottom: 18px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+        transform: translateX(-50%);
+        color: rgb(255 255 255 / 80%);
+        font: 700 0.56rem/1 var(--font-display);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .scroll-cue i {
+        display: block;
+        width: 2px;
+        height: 32px;
+        background: linear-gradient(var(--pt-yellow), transparent);
+      }
+      .motion-ready .scroll-cue i {
+        animation: cue-bob 2.4s ease-in-out infinite;
+      }
+      @keyframes cue-bob {
+        0%,
+        100% {
+          opacity: 0.35;
+          transform: translateY(-4px);
+        }
+        50% {
+          opacity: 1;
+          transform: translateY(4px);
+        }
+      }
+
+      /* ===== Documentário — casos com foto sticky + ficha de evidência ===== */
+      .documentary {
+        background: white;
+      }
+      .docu-case {
+        display: grid;
+        grid-template-columns: 42% 58%;
+        gap: 56px;
+        padding: 66px 0;
+        border-top: 1px solid var(--line);
+      }
+      .docu-case:first-of-type {
+        border-top: 0;
+        padding-top: 56px;
+      }
+      .docu-photo {
+        position: sticky;
+        top: 18px;
+        align-self: start;
+        margin: 0;
+      }
+      .docu-photo-frame {
+        position: relative;
+        height: 500px;
+        overflow: hidden;
+        background: var(--pt-red-dark);
+      }
+      .docu-photo-frame img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .docu-asset {
+        display: grid;
+        place-content: center;
+        gap: 8px;
+        padding: 24px;
+        border: 1px dashed rgb(255 255 255 / 38%);
+        background: repeating-linear-gradient(
+          -45deg,
+          #57150f,
+          #57150f 10px,
+          #4a110c 10px,
+          #4a110c 20px
+        );
+        color: rgb(255 255 255 / 72%);
+        text-align: center;
+      }
+      .docu-asset strong {
+        display: block;
+        color: var(--pt-yellow);
+        font: 800 0.66rem/1 var(--font-display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .docu-asset small {
+        display: block;
+        max-width: 240px;
+        margin-top: 8px;
+        font-size: 0.64rem;
+        line-height: 1.45;
+      }
+      .docu-photo figcaption {
+        margin-top: 12px;
+        color: var(--muted);
+        font-size: 0.63rem;
+        line-height: 1.5;
+      }
+      .docu-index {
+        color: var(--pt-red);
+        font: 780 0.68rem/1 var(--font-display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .docu-body h3 {
+        max-width: 560px;
+        margin: 16px 0 0;
+        font: 760 2rem/1.03 var(--font-display);
+        letter-spacing: -0.042em;
+      }
+      .docu-lead {
+        max-width: 600px;
+        margin: 18px 0 0;
+        color: #584944;
+        font-size: 0.92rem;
+        line-height: 1.72;
+      }
+      .docu-evidence {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        margin: 30px 0 0;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .evidence-cell {
+        padding: 18px;
+        background: var(--campaign-cream);
+      }
+      .evidence-cell.wide {
+        grid-column: 1 / -1;
+      }
+      .evidence-cell dt {
+        color: var(--pt-red);
+        font: 780 0.58rem/1 var(--font-display);
+        letter-spacing: 0.11em;
+        text-transform: uppercase;
+      }
+      .evidence-cell dd {
+        margin: 10px 0 0;
+        color: #4c3d38;
+        font-size: 0.75rem;
+        line-height: 1.55;
+      }
+
+      /* ===== Contadores animados ===== */
+      .counter-band {
+        padding: 104px 72px 112px;
+        background: var(--pt-red-dark);
+        color: white;
+      }
+      .counter-band .eyebrow {
+        color: var(--pt-yellow);
+      }
+      .counter-band h2 {
+        max-width: 900px;
+        margin: 0;
+        font: 770 3.45rem/0.98 var(--font-display);
+        letter-spacing: -0.052em;
+      }
+      .counter-band > p {
+        max-width: 740px;
+        margin: 26px 0 0;
+        color: rgb(255 255 255 / 74%);
+        font-size: 0.94rem;
+        line-height: 1.7;
+      }
+      .counter-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1px;
+        margin-top: 64px;
+        background: rgb(255 255 255 / 16%);
+        border: 1px solid rgb(255 255 255 / 16%);
+      }
+      .counter {
+        display: flex;
+        flex-direction: column;
+        min-height: 300px;
+        padding: 30px 26px;
+        background: #42100c;
+      }
+      .counter-value {
+        color: var(--pt-yellow);
+        font: 850 clamp(1.9rem, 3vw, 2.75rem)/0.95 var(--font-display);
+        letter-spacing: -0.055em;
+      }
+      .counter-value .counter-arrow {
+        color: rgb(255 255 255 / 65%);
+        font-size: 0.72em;
+      }
+      .counter-label {
+        margin: 18px 0 0;
+        color: white;
+        font: 650 0.82rem/1.35 var(--font-body);
+      }
+      .counter-meta {
+        margin: auto 0 0;
+        padding-top: 24px;
+        color: rgb(255 255 255 / 62%);
+        font-size: 0.64rem;
+        line-height: 1.55;
+      }
+      .counter-meta strong {
+        color: var(--pt-yellow);
+      }
+      .counter-note {
+        grid-column: 1 / -1;
+        margin: 0;
+        padding: 18px 26px;
+        background: #42100c;
+        color: rgb(255 255 255 / 58%);
+        font-size: 0.66rem;
+        line-height: 1.55;
+      }
+
+      /* ===== Pull-quotes ===== */
+      .quotes-band {
+        background: var(--campaign-cream);
+        border-top: 1px solid var(--line);
+      }
+      .quote-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin-top: 58px;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .quote-card {
+        display: flex;
+        flex-direction: column;
+        padding: 34px 30px;
+        background: white;
+      }
+      .quote-card blockquote {
+        margin: 0;
+        color: var(--pt-red-dark);
+        font: 700 1.28rem/1.28 var(--font-display);
+        letter-spacing: -0.02em;
+      }
+      .quote-card blockquote::before {
+        content: '“';
+        margin-right: 3px;
+        color: var(--pt-red);
+        font-size: 2.3rem;
+        line-height: 0;
+        vertical-align: -0.32em;
+      }
+      .quote-occasion {
+        margin: 24px 0 0;
+        color: #584944;
+        font-size: 0.73rem;
+        line-height: 1.6;
+      }
+      .quote-meta {
+        margin: auto 0 0;
+        padding-top: 22px;
+        color: var(--muted);
+        font-size: 0.62rem;
+        line-height: 1.5;
+      }
+
+      /* ===== Mapa do território ===== */
+      .territory {
+        background: var(--campaign-surface);
+      }
+      .map-layout {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 60px;
+        margin-top: 60px;
+        align-items: start;
+      }
+      .map-frame {
+        position: relative;
+        padding: 22px;
+        background: white;
+        border: 1px solid var(--line);
+      }
+      .map-frame svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+      .map-state {
+        fill: #f0e0dd;
+        stroke: var(--pt-red);
+        stroke-width: 1.6;
+      }
+      .map-halo {
+        fill: none;
+        stroke: rgb(162 28 28 / 22%);
+        stroke-width: 10;
+      }
+      .map-pin {
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+      .map-pin circle {
+        fill: var(--green);
+        stroke: white;
+        stroke-width: 1.5;
+      }
+      .map-pin.esfera-uniao circle {
+        fill: var(--blue);
+      }
+      .map-pin.esfera-camara circle {
+        fill: var(--pt-red);
+      }
+      .map-pin.esfera-historico circle {
+        fill: #8a6d3b;
+      }
+      .map-pin text {
+        fill: var(--ink);
+        font: 700 9px var(--font-body);
+      }
+      .map-pin.on text {
+        fill: var(--pt-red-dark);
+      }
+      .motion-ready .map-pin {
+        opacity: 0;
+        transform: scale(0.6);
+        transition:
+          opacity 380ms ease,
+          transform 460ms cubic-bezier(0.2, 0.8, 0.2, 1);
+      }
+      .motion-ready .map-pin.on {
+        opacity: 1;
+        transform: scale(1);
+      }
+      .map-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 20px;
+        margin-top: 18px;
+      }
+      .map-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--muted);
+        font-size: 0.64rem;
+      }
+      .map-legend i {
+        width: 11px;
+        height: 11px;
+        display: inline-block;
+        border-radius: 50%;
+      }
+      .map-legend .lg-estado i {
+        background: var(--green);
+      }
+      .map-legend .lg-uniao i {
+        background: var(--blue);
+      }
+      .map-legend .lg-camara i {
+        background: var(--pt-red);
+      }
+      .map-legend .lg-historico i {
+        background: #8a6d3b;
+      }
+      .map-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .map-item {
+        padding: 17px 0;
+        border-top: 1px solid var(--line);
+      }
+      .map-item:first-child {
+        border-top: 0;
+      }
+      .map-item strong {
+        display: block;
+        font: 740 0.92rem/1.2 var(--font-display);
+      }
+      .map-item .map-sphere {
+        display: inline-flex;
+        margin-top: 8px;
+        padding: 5px 8px;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        font: 700 0.58rem/1 var(--font-card);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .map-item p {
+        margin: 9px 0 0;
+        color: #584944;
+        font-size: 0.74rem;
+        line-height: 1.55;
+      }
+      .map-item .map-src {
+        display: block;
+        margin-top: 7px;
+        color: var(--muted);
+        font-size: 0.6rem;
+      }
+      .map-note {
+        margin: 20px 0 0;
+        color: var(--muted);
+        font-size: 0.64rem;
+        line-height: 1.55;
+      }
+
+      /* ===== Timeline com avanço no scroll ===== */
+      .timeline-wrap {
+        position: relative;
+      }
+      .timeline-rail {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--line);
+      }
+      .timeline-rail-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2px;
+        height: 0;
+        background: var(--pt-red);
+      }
+      .timeline-list {
+        position: relative;
+        padding-left: 30px;
+      }
+
+      /* ===== Cena · motor de movimento ===== */
+      .motor-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-top: 34px;
+      }
+      .motor-frame {
+        padding: 26px;
+        background: white;
+        border: 1px solid var(--line);
+      }
+      .motor-frame > b {
+        color: var(--pt-red);
+        font: 800 0.62rem/1 var(--font-display);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .motor-frame h3 {
+        margin: 14px 0 10px;
+        font: 740 1.35rem/1.05 var(--font-display);
+      }
+      .motor-frame > p {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.75rem;
+        line-height: 1.6;
+      }
+      .motor-modes {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1px;
+        margin: 20px 0 0;
+        background: var(--line);
+        border: 1px solid var(--line);
+      }
+      .motor-mode {
+        padding: 14px;
+        background: var(--campaign-cream);
+      }
+      .motor-mode dt {
+        color: var(--pt-red);
+        font: 780 0.56rem/1 var(--font-display);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .motor-mode dd {
+        margin: 8px 0 0;
+        color: #584944;
+        font-size: 0.66rem;
+        line-height: 1.5;
+      }
+      .motor-guardrails {
+        margin-top: 26px;
+        padding: 18px 20px;
+        background: #211715;
+        color: rgb(255 248 242 / 72%);
+        font-size: 0.72rem;
+        line-height: 1.6;
+      }
+      .motor-guardrails strong {
+        color: var(--pt-yellow);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .timeline-rail {
+          display: none;
+        }
+        .timeline-list {
+          padding-left: 0;
+        }
+        .motion-ready .map-pin {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
       @media (max-width: 900px) {
         .decision-grid,
         .state-board,
-        .motion-board-grid {
+        .motion-board-grid,
+        .motor-grid {
           grid-template-columns: 1fr;
         }
         .signature-storyboard {
@@ -2180,12 +2836,28 @@
     <a class="skip-link" href="#desktop-main">Pular para o conteúdo</a>
 
     <header class="artifact-intro">
-      <p class="artifact-kicker">Gate visual · S1 · 28/09/2026</p>
+      <div class="degraded-banner" role="note">
+        <span class="degraded-badge">DEGRADED · rascunho</span>
+        <p>
+          <strong>Design tier: DEGRADED (opencode-go/deepseek-v4.1-flash).</strong> Esta passada
+          estende o artefato existente com o hero cinematográfico, os capítulos documentais do §10,
+          contadores, mapa, citações e a timeline ampliada.
+          <strong
+            >Isto é um draft do tier degradado: não está certificado e não declara o design
+            aprovado.</strong
+          >
+          Exige sign-off humano no gate/PR e revisão do frontier
+          <code>openai/gpt-5.6-sol</code> antes de qualquer port para <code>src/</code>.
+        </p>
+      </div>
+      <p class="artifact-kicker">Gate visual · S1 · 28/09/2026 · draft DEGRADED</p>
       <h1>Campanha com pulso.<br />Trabalho com registro.</h1>
       <p>
         Shell de campanha e home pública em linguagem editorial/documental. O vermelho mobiliza; o
         creme dá espaço para ler; fotografia e fonte datada sustentam cada capítulo. As cenas abaixo
-        são o alvo visual do port, não implementação.
+        são o alvo visual do port, não implementação. Esta versão amplia a narrativa com um hero
+        cinematográfico, quatro casos documentados, contadores, mapa do território, citações e a
+        trajetória de 14 marcos.
       </p>
       <div class="decision-grid" aria-label="Três decisões visuais">
         <article class="decision">
@@ -2220,6 +2892,13 @@
         placeholder do deck e precisa ser substituído pelo número oficial; o CNPJ preserva o valor
         já publicado, ainda sujeito à conferência do advogado eleitoral; as duas fotografias do caso
         SAMU e as thumbnails dinâmicas do board estão marcadas como NEEDS ASSET.
+        <strong>Novos NEEDS ASSET:</strong> as quatro fotografias dos casos do §10.1 (piso da
+        enfermagem, Mais Médicos, Hemobrás e interiorização) ainda não existem — cada moldura traz o
+        aviso, sem banco de imagens genérico. O mapa da Bahia é uma <em>silhueta esquemática</em>,
+        não cartografia; antes do port ele deve ser trocado por um GeoJSON/topologia real. Todo
+        número segue com ano, fase e fonte; <strong>empenho não é pagamento</strong>.
+        <strong>Alerta de tier:</strong> draft DEGRADED — não certificado; pendente de sign-off
+        humano e do frontier <code>openai/gpt-5.6-sol</code>.
       </p>
     </header>
 
@@ -2283,6 +2962,7 @@
                 alt="Jorge Solla sorrindo, de blazer azul e camisa do PT"
               />
               <figcaption class="hero-number tabular">1313</figcaption>
+              <div class="scroll-cue" aria-hidden="true"><span>Role</span><i></i></div>
             </figure>
           </section>
 
@@ -2607,6 +3287,436 @@
           </section>
 
           <section
+            id="desktop-documentario"
+            class="documentary section-shell"
+            aria-labelledby="desktop-docu-title"
+          >
+            <p class="eyebrow">Trabalho público · casos documentados</p>
+            <h2 id="desktop-docu-title" class="section-heading balanced">
+              Quatro frentes que levaram saúde a quem mora longe da capital.
+            </h2>
+            <p class="section-lead pretty">
+              Cada caso segue a mesma ficha do SAMU: papel, ação, data, status e fonte. A esfera
+              (Município, Estado, União, Câmara) fica explícita para não somar o que é de governos
+              diferentes. O que não tiver fonte não entra.
+            </p>
+
+            <article class="docu-case" data-docu data-reveal>
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: piso da enfermagem"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small
+                      >Ato do piso da enfermagem ou arquivo da comissão especial da PEC 11/2022 —
+                      autorização pendente</small
+                    ></span
+                  >
+                </div>
+                <figcaption>
+                  Foto pendente de autorização/arquivo. Não usar banco de imagens genérico.
+                </figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso C · Câmara</span>
+                <h3>Piso da enfermagem: da comissão especial ao custeio da União</h3>
+                <p class="docu-lead">
+                  Solla foi titular da comissão especial da PEC 11/2022, que virou a EC 124. A Lei
+                  14.434/2022 fixou o piso: R$ 4.750 para enfermeiros, R$ 3.325 para técnicos e R$
+                  2.375 para auxiliares e parteiras. A Lei 14.581/2023 abriu R$ 7,3 bilhões para o
+                  custeio, e o STF liberou o pagamento em 15 de maio de 2023.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Papel</dt>
+                    <dd>
+                      Titular da comissão especial da PEC 11/2022 e integrante do GT do PL 2564/20.
+                      Não foi relator: a relatora foi a deputada Carmen Zanotto.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Ação</dt>
+                    <dd>
+                      A PEC 11/2022 virou a EC 124/2022; a EC 127/2022 obrigou a União a
+                      complementar o pagamento; a Lei 14.581/2023 abriu R$ 7,3 bilhões para o
+                      custeio de 867 mil profissionais.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Data</dt>
+                    <dd>
+                      Leis de 2022 e 2023; STF, 15/05/2023; audiência requerida por Solla em
+                      12/05/2026.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>
+                      Em vigor. Implementação desigual: o Dieese apontou 53,5% dos enfermeiros
+                      abaixo do piso. A fiscalização dos repasses entrou no plano da CFFC.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell wide">
+                    <dt>Fonte</dt>
+                    <dd>
+                      Ficha da PEC 11/2022 (Câmara); Lei 14.434/2022; EC 127/2022; Lei 14.581/2023;
+                      STF, 15/05/2023; Câmara, 12/05/2026.
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+
+            <article class="docu-case" data-docu data-reveal>
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: Mais Médicos e formação de especialistas"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small
+                      >Médico do Mais Médicos em atendimento no interior ou arquivo da comissão
+                      mista da MP 1.165/2023 — autorização pendente</small
+                    ></span
+                  >
+                </div>
+                <figcaption>
+                  Foto pendente de autorização/arquivo. Não usar banco de imagens genérico.
+                </figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso D · Câmara e União</span>
+                <h3>Mais Médicos: médico no interior e especialista em formação</h3>
+                <p class="docu-lead">
+                  Solla foi relator-revisor da comissão mista da MP 1.165/2023. O Mais Médicos foi
+                  retomado e ganhou a formação de especialistas, na Lei 14.621/2023: quem fica 48
+                  meses em área de difícil fixação recebe de 10% a 20% a mais nas bolsas, e egressos
+                  do Fies chegam a 80%. Na primeira fase do programa, em 2013, 317 municípios
+                  baianos pediram 1.382 médicos: a maior adesão do país.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Papel</dt>
+                    <dd>Relator-revisor da comissão mista da MP 1.165/2023.</dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Ação</dt>
+                    <dd>
+                      A MP virou a Lei 14.621/2023: retomou o Mais Médicos e criou a Estratégia
+                      Nacional de Formação de Especialistas, com Revalida quadrimestral e prioridade
+                      para DSEIs, quilombos e comunidades ribeirinhas.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Data</dt>
+                    <dd>
+                      Lei de 14/07/2023; diretrizes em execução na rede federal. Contexto: julho de
+                      2013, primeira fase do programa.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>
+                      Lei em vigor; execução em andamento na rede federal. Adesão histórica da Bahia
+                      registrada.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell wide">
+                    <dt>Fonte</dt>
+                    <dd>
+                      Lei 14.621/2023 (Planalto); briefing §Saúde; saude.research (Correio 24 Horas,
+                      27/07/2013).
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+
+            <article class="docu-case" data-docu data-reveal>
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: fábrica da Hemobrás em Goiana"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small
+                      >Fábrica de Goiana / fracionamento de plasma (Hemobrás) — autorização
+                      pendente</small
+                    ></span
+                  >
+                </div>
+                <figcaption>
+                  Foto pendente de autorização/arquivo. Não usar banco de imagens genérico.
+                </figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso E · Câmara (em análise no Senado)</span>
+                <h3>Hemobrás: o remédio que nasce do sangue doado</h3>
+                <p class="docu-lead">
+                  Ajudou a criar a Hemobrás no Ministério da Saúde e é autor do PL 424/2015, que
+                  permite ao SUS comprar hemoderivados direto da estatal, sem licitação, quando ela
+                  é a única produtora. A Câmara aprovou o projeto em 17 de junho de 2026; agora ele
+                  está no Senado.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Papel</dt>
+                    <dd>
+                      Autor do PL 424/2015; ajudou a criar a Hemobrás no Ministério da Saúde
+                      (2003–2005).
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Ação</dt>
+                    <dd>
+                      O PL 424/2015 considera a licitação não exigível quando a Hemobrás é a única
+                      produtora de hemoderivados: compra pública direta, com controle e
+                      fiscalização.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Data</dt>
+                    <dd>
+                      Câmara, 17/06/2026; fábrica de Goiana ativou o fracionamento do plasma em
+                      13/08/2025; visita técnica requerida pelo mandato em 2023.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>
+                      Projeto aprovado na Câmara, ainda não é lei: aguarda o Senado. Economia
+                      estimada em até R$ 1 bilhão por ano; capacidade de 500 mil litros/ano.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell wide">
+                    <dt>Fonte</dt>
+                    <dd>
+                      Câmara, 17/06/2026; Movimento Econômico, 14/08/2025; REQ 90/2023 (Câmara).
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+
+            <article class="docu-case" data-docu data-reveal>
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: interiorização da saúde na Bahia"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small
+                      >Hospital regional do interior ou UTI da rede estadual (2007–2014) —
+                      autorização pendente</small
+                    ></span
+                  >
+                </div>
+                <figcaption>
+                  Foto pendente de autorização/arquivo. Não usar banco de imagens genérico.
+                </figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso F · Estado</span>
+                <h3>O interior deixou de viajar para se tratar</h3>
+                <p class="docu-lead">
+                  Na Secretaria de Saúde da Bahia, Solla entregou cinco hospitais de grande porte,
+                  entre eles Irecê, Juazeiro e Santo Antônio de Jesus, e mais de 1.200 leitos. As
+                  UTIs passaram de 427 para 789 vagas, a neurocirurgia chegou a Barreiras, Conquista
+                  e Feira de Santana, e o SAMU saiu de 14 para 233 municípios, chegando a 74% da
+                  população. A Saúde da Família chegou a 2.690 equipes, em 99% dos municípios.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Papel</dt>
+                    <dd>
+                      Gestão: secretário de Estado da Saúde da Bahia de 2007 a janeiro de 2014.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Ação</dt>
+                    <dd>
+                      Cinco hospitais de grande porte, +1.200 leitos, UTIs de 427→789, neurocirurgia
+                      interiorizada, SAMU 14→233 (74% da população) e 293 unidades de Saúde da
+                      Família construídas.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Data</dt>
+                    <dd>
+                      Entregas do período 2007–2014, conforme balanços apresentados ao Conselho
+                      Estadual de Saúde (fev/2010 e jan/2011).
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>
+                      Entregue. Nota H-11: o balanço de jan/2011 fala em 36 unidades reformadas ou
+                      ampliadas, critério diferente do de fev/2010 (43) — usar um conjunto por vez.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell wide">
+                    <dt>Fonte</dt>
+                    <dd>JGB, 26/02/2010; JGB, 03/01/2011; briefing §Interior.</dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+          </section>
+
+          <section
+            id="desktop-contadores"
+            class="counter-band"
+            aria-labelledby="desktop-counter-title"
+          >
+            <p class="eyebrow">Resultado em número</p>
+            <h2 id="desktop-counter-title" class="balanced">
+              O que o mandato entregou, com ano, fase e fonte.
+            </h2>
+            <p>
+              Cada contador leva ano e fase. Nada aqui soma exercícios diferentes, e empenho nunca
+              vira pagamento. Os números animam ao entrar na tela; sem movimento, aparecem no valor
+              final.
+            </p>
+            <div class="counter-grid" aria-label="Contadores de resultado">
+              <article class="counter" data-counter data-reveal>
+                <span class="counter-value tabular"
+                  ><span
+                    data-count
+                    data-to="3.1"
+                    data-decimals="1"
+                    data-prefix="R$ "
+                    data-suffix=" bi"
+                    >R$ 3,1 bi</span
+                  ></span
+                >
+                <p class="counter-label">a mais na saúde da Bahia</p>
+                <p class="counter-meta">
+                  2007–2010 · <strong>entregue</strong><br />Fonte: JGB, 03/01/2011
+                </p>
+              </article>
+              <article class="counter" data-counter data-reveal>
+                <span class="counter-value tabular"
+                  ><span data-count data-to="14" data-from="0">14</span>
+                  <span class="counter-arrow" aria-hidden="true">→</span>
+                  <span data-count data-to="233" data-from="14">233</span></span
+                >
+                <p class="counter-label">municípios com SAMU na Bahia</p>
+                <p class="counter-meta">
+                  2007–2010 · <strong>entregue</strong><br />Fonte: JGB, 03/01/2011
+                </p>
+              </article>
+              <article class="counter" data-counter data-reveal>
+                <span class="counter-value tabular"
+                  ><span data-count data-to="427" data-from="0">427</span>
+                  <span class="counter-arrow" aria-hidden="true">→</span>
+                  <span data-count data-to="789" data-from="427">789</span></span
+                >
+                <p class="counter-label">leitos de UTI na rede estadual</p>
+                <p class="counter-meta">
+                  2007–2010 · <strong>entregue</strong><br />Fonte: JGB, 03/01/2011
+                </p>
+              </article>
+              <article class="counter" data-counter data-reveal>
+                <span class="counter-value tabular"
+                  ><span
+                    data-count
+                    data-to="7.3"
+                    data-decimals="1"
+                    data-prefix="R$ "
+                    data-suffix=" bi"
+                    >R$ 7,3 bi</span
+                  ></span
+                >
+                <p class="counter-label">para o custeio do piso da enfermagem</p>
+                <p class="counter-meta">
+                  2023 · <strong>lei</strong> (867 mil profissionais)<br />Fonte: Lei 14.581/2023;
+                  STF, 15/05/2023
+                </p>
+              </article>
+              <article class="counter" data-counter data-reveal>
+                <span class="counter-value tabular"
+                  ><span
+                    data-count
+                    data-to="9.5"
+                    data-decimals="1"
+                    data-prefix="R$ "
+                    data-suffix=" mi"
+                    >R$ 9,5 mi</span
+                  ></span
+                >
+                <p class="counter-label">pagos em emendas na atenção primária</p>
+                <p class="counter-meta">
+                  2026 · <strong>pago</strong><br />Fonte: Câmara, emendas 2026 (25/09/2026)
+                </p>
+              </article>
+              <p class="counter-note">
+                Fase sempre explícita: entregue, pago, autorizado ou lei. Emenda não substitui o
+                custeio local; empenho não é pagamento. Números conferidos contra os balanços
+                oficiais e a fonte de cada linha.
+              </p>
+            </div>
+          </section>
+
+          <section
+            id="desktop-citacoes"
+            class="quotes-band section-shell"
+            aria-labelledby="desktop-quotes-title"
+          >
+            <p class="eyebrow">Em suas palavras</p>
+            <h2 id="desktop-quotes-title" class="section-heading balanced">
+              Citações com ocasião, data e fonte.
+            </h2>
+            <p class="section-lead">
+              Frase inteira, sem corte que mude o sentido. Cada citação vem com o contexto em que
+              foi dita e a fonte que a registrou.
+            </p>
+            <div class="quote-grid">
+              <article class="quote-card" data-reveal>
+                <blockquote>O SUS é a maior conquista do povo brasileiro.</blockquote>
+                <p class="quote-occasion">
+                  Agenda da saúde em Salvador, na assinatura de convênio das Obras Sociais Irmã
+                  Dulce.
+                </p>
+                <p class="quote-meta">
+                  <strong>Data:</strong> 02/09/2025<br /><strong>Fonte:</strong> Política 10,
+                  02/09/2025
+                </p>
+              </article>
+              <article class="quote-card" data-reveal>
+                <blockquote>
+                  O 8 de janeiro não foi um ato isolado, foi o ápice de uma escalada autoritária.
+                  Não haverá anistia para golpistas.
+                </blockquote>
+                <p class="quote-occasion">Dois anos dos atos golpistas de 8 de janeiro.</p>
+                <p class="quote-meta">
+                  <strong>Data:</strong> 08/01/2025<br /><strong>Fonte:</strong> A TARDE, 08/01/2025
+                </p>
+              </article>
+              <article class="quote-card" data-reveal>
+                <blockquote>
+                  Conseguimos ter uma gestão estratégica, participativa do SUS, com o fortalecimento
+                  do controle social.
+                </blockquote>
+                <p class="quote-occasion">
+                  Balanço da SESAB na 160ª Reunião Ordinária do Conselho Estadual de Saúde.
+                </p>
+                <p class="quote-meta">
+                  <strong>Data:</strong> 25/02/2010<br /><strong>Fonte:</strong> JGB, 26/02/2010
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section
             id="desktop-trajetoria"
             class="trajectory section-shell"
             aria-labelledby="desktop-trajectory-title"
@@ -2618,79 +3728,284 @@
             <div class="trajectory-grid">
               <aside class="trajectory-aside">
                 As etiquetas de esfera deixam claro onde cada experiência aconteceu. Município,
-                Estado, União e Câmara não se misturam.
+                Estado, União e Câmara não se misturam. A linha avança conforme você desce a página;
+                sem movimento, todos os 14 marcos nascem visíveis.
               </aside>
-              <ol class="timeline-list">
-                <li class="timeline-item">
-                  <time>1961</time>
-                  <p>Nasce em Salvador, em 11 de abril.</p>
-                  <span class="sphere">Origem</span>
-                </li>
-                <li class="timeline-item">
-                  <time>1979</time>
-                  <p>
-                    Inicia a militância no Congresso de Reconstrução da UNE; preside o Diretório
-                    Acadêmico de Medicina e é diretor do DCE da UFBA.
-                  </p>
-                  <span class="sphere">Militância</span>
-                </li>
-                <li class="timeline-item">
-                  <time>1979–1984</time>
-                  <p>Forma-se em Medicina pela UFBA e participa da fundação do PT na Bahia.</p>
-                  <span class="sphere">Formação</span>
-                </li>
-                <li class="timeline-item">
-                  <time>1985–1987</time>
-                  <p>Residência em Medicina Social pela UFBA/Inamps.</p>
-                  <span class="sphere">Formação</span>
-                </li>
-                <li class="timeline-item">
-                  <time>1987–1993</time>
-                  <p>Torna-se médico do quadro da UFBA e conclui o mestrado em Saúde Coletiva.</p>
-                  <span class="sphere">Formação</span>
-                </li>
-                <li class="timeline-item">
-                  <time>1999–2002</time>
-                  <p>
-                    Secretário Municipal de Saúde de Vitória da Conquista: criou o piloto do SAMU
-                    192 na cidade, o Resgate Médico.
-                  </p>
-                  <span class="sphere">Município</span>
-                </li>
-                <li class="timeline-item">
-                  <time>2003–2005</time>
-                  <p>
-                    Secretário de Atenção à Saúde: nacionalizou o SAMU 192 e criou o Brasil
-                    Sorridente, assinando as diretrizes da Política Nacional de Saúde Bucal.
-                  </p>
-                  <span class="sphere">União</span>
-                </li>
-                <li class="timeline-item">
-                  <time>2007–2014</time>
-                  <p>
-                    Secretário de Saúde da Bahia nos dois mandatos de Jaques Wagner; conclui o
-                    doutorado em Clínica Médica em 2009.
-                  </p>
-                  <span class="sphere">Estado</span>
-                </li>
-                <li class="timeline-item">
-                  <time>2015</time>
-                  <p>
-                    Toma posse como deputado federal pela Bahia; foi eleito em 2014 com 125.159
-                    votos.
-                  </p>
-                  <span class="sphere">Câmara</span>
-                </li>
-                <li class="timeline-item">
-                  <time>2018–2023</time>
-                  <p>
-                    Reeleito em 2018 e em 2022; desde março de 2023 é titular da Comissão de Saúde e
-                    vice-líder da Federação Brasil da Esperança.
-                  </p>
-                  <span class="sphere">Câmara</span>
-                </li>
-              </ol>
+              <div class="timeline-wrap">
+                <div class="timeline-rail" aria-hidden="true">
+                  <div class="timeline-rail-fill"></div>
+                </div>
+                <ol class="timeline-list">
+                  <li class="timeline-item">
+                    <time>1961</time>
+                    <p>Nasce em Salvador, em 11 de abril.</p>
+                    <span class="sphere">Origem</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1979</time>
+                    <p>
+                      Inicia a militância no Congresso de Reconstrução da UNE; preside o Diretório
+                      Acadêmico de Medicina e dirige o DCE da UFBA.
+                    </p>
+                    <span class="sphere">Militância</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1979–1984</time>
+                    <p>
+                      Forma-se em Medicina pela UFBA e participa da fundação do PT na Bahia (1980).
+                    </p>
+                    <span class="sphere">Formação e militância</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1985–1987</time>
+                    <p>Residência em Medicina Social pela UFBA/Inamps.</p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1987–1993</time>
+                    <p>
+                      Médico do quadro da UFBA (1987); mestrado em Saúde Coletiva (1993);
+                      pesquisador do Instituto de Saúde Coletiva.
+                    </p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1989–1998</time>
+                    <p>
+                      Sanitarista da SESAB (distrito de Itapagipe e coordenação do PACS/PSF);
+                      consultor do Ministério da Saúde (1995–1999); professor na Escola Bahiana de
+                      Medicina (1998).
+                    </p>
+                    <span class="sphere">Estado e União</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1999–2002</time>
+                    <p>
+                      Secretário Municipal de Saúde de Vitória da Conquista; criou o piloto do SAMU
+                      192 (Resgate Médico).
+                    </p>
+                    <span class="sphere">Município</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2003–2005</time>
+                    <p>
+                      Secretário de Atenção à Saúde do Ministério da Saúde: nacionalizou o SAMU 192
+                      e criou o Brasil Sorridente (diretrizes assinadas).
+                    </p>
+                    <span class="sphere">União</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2006–2009</time>
+                    <p>
+                      Doutorado em Clínica Médica (UFRJ), com tese sobre a implantação do SUS em
+                      Vitória da Conquista, publicada em livro (2010).
+                    </p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2007–2014</time>
+                    <p>
+                      Secretário de Saúde da Bahia, nos dois mandatos de Jaques Wagner; recebe a
+                      Comenda Dois de Julho em novembro de 2013.
+                    </p>
+                    <span class="sphere">Estado</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2014–2022</time>
+                    <p>
+                      Eleito deputado federal em 2014 (125.159 votos); reeleito em 2018 (135.657, 5º
+                      do estado) e em 2022 (128.968); toma posse nas 55ª, 56ª e 57ª legislaturas.
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2015–2019</time>
+                    <p>
+                      Autor do PL 424/2015 (Hemobrás), do PL 371/2015 (rótulos de agrotóxicos) e do
+                      PL 2077/2019, que virou a Lei 14.196/2021 (Fiocruz e Butantan); apresenta o PL
+                      6836/2017 (saúde bucal); em 2019, entra com a ação popular que suspende o
+                      corte de 30% na UFBA.
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2020–2022</time>
+                    <p>
+                      Coautor do PL 5384/2020 (cotas permanentes, Lei 14.723/2023); 3º signatário da
+                      PEC 14/2021; titular da comissão especial da PEC 11/2022 (piso da enfermagem);
+                      vota "Não" à privatização da Eletrobras e dos Correios.
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2023–2026</time>
+                    <p>
+                      Titular da Comissão de Saúde (desde março de 2023), vice-líder da Federação
+                      Brasil da Esperança e suplente na CFFC; relator-revisor da MP 1.165/2023 (Lei
+                      14.621/2023); relator do PL 2113/2022 (piso dos ACS e ACE); autor do PL
+                      424/2015, aprovado pela Câmara em 17/06/2026 e em análise no Senado.
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                </ol>
+              </div>
             </div>
+          </section>
+
+          <section
+            id="desktop-territorio"
+            class="territory section-shell"
+            aria-labelledby="desktop-map-title"
+          >
+            <p class="eyebrow">Território e interior</p>
+            <h2 id="desktop-map-title" class="section-heading balanced">
+              Um mandato do tamanho da Bahia.
+            </h2>
+            <p class="section-lead pretty">
+              Os 417 municípios no mapa do mandato. Cada pino é um fato datado, com a esfera no
+              rótulo; o recorte de 2022 é leitura histórica, sem projeção e sem cenário eleitoral —
+              presença não vira voto. A lista ao lado repete todo o conteúdo do mapa em texto.
+            </p>
+            <div class="map-layout">
+              <figure class="map-frame" aria-label="Mapa esquemático dos fatos do mandato na Bahia">
+                <svg
+                  viewBox="0 0 360 430"
+                  role="img"
+                  aria-label="Silhueta esquemática da Bahia com pinos dos fatos do mandato"
+                >
+                  <ellipse class="map-halo" cx="196" cy="208" rx="152" ry="188" />
+                  <path
+                    class="map-state"
+                    d="M70 62 L118 46 L172 56 L214 42 L256 56 L286 92 L302 132 L289 176 L297 216 L286 256 L270 296 L250 331 L214 361 L174 376 L139 371 L114 341 L94 301 L79 256 L69 211 L59 166 L54 121 L61 86 Z"
+                  />
+                  <g class="map-pin" data-pin="bahia">
+                    <circle cx="196" cy="208" r="9" />
+                    <text x="196" y="234" text-anchor="middle">Bahia</text>
+                  </g>
+                  <g class="map-pin esfera-uniao" data-pin="itaberaba">
+                    <circle cx="214" cy="190" r="5" />
+                    <text x="224" y="193">Itaberaba</text>
+                  </g>
+                  <g class="map-pin esfera-uniao" data-pin="seabra">
+                    <circle cx="176" cy="174" r="5" />
+                    <text x="167" y="171" text-anchor="end">Seabra</text>
+                  </g>
+                  <g class="map-pin" data-pin="barreiras">
+                    <circle cx="104" cy="175" r="5" />
+                    <text x="114" y="178">Barreiras</text>
+                  </g>
+                  <g class="map-pin" data-pin="irece">
+                    <circle cx="141" cy="150" r="5" />
+                    <text x="151" y="153">Irecê</text>
+                  </g>
+                  <g class="map-pin" data-pin="juazeiro">
+                    <circle cx="150" cy="96" r="5" />
+                    <text x="160" y="99">Juazeiro</text>
+                  </g>
+                  <g class="map-pin" data-pin="feira">
+                    <circle cx="252" cy="204" r="5" />
+                    <text x="244" y="214" text-anchor="end">Feira de Santana</text>
+                  </g>
+                  <g class="map-pin" data-pin="saj">
+                    <circle cx="246" cy="240" r="5" />
+                    <text x="256" y="243">Santo Antônio de Jesus</text>
+                  </g>
+                  <g class="map-pin" data-pin="conquista">
+                    <circle cx="176" cy="300" r="5" />
+                    <text x="186" y="303">Vitória da Conquista</text>
+                  </g>
+                  <g class="map-pin esfera-historico" data-pin="amargosa">
+                    <circle cx="230" cy="250" r="5" />
+                    <text x="221" y="253" text-anchor="end">Amargosa</text>
+                  </g>
+                  <g class="map-pin esfera-historico" data-pin="salvador">
+                    <circle cx="287" cy="206" r="5" />
+                    <text x="297" y="209">Salvador</text>
+                  </g>
+                  <g class="map-pin esfera-camara" data-pin="teixeira">
+                    <circle cx="256" cy="336" r="5" />
+                    <text x="247" y="339" text-anchor="end">Teixeira de Freitas</text>
+                  </g>
+                </svg>
+                <figcaption class="map-legend">
+                  <span class="lg-estado"><i aria-hidden="true"></i>Estado (gestão SESAB)</span>
+                  <span class="lg-uniao"><i aria-hidden="true"></i>União (novo PAC)</span>
+                  <span class="lg-camara"><i aria-hidden="true"></i>Câmara (emenda)</span>
+                  <span class="lg-historico"
+                    ><i aria-hidden="true"></i>Leitura histórica (2022)</span
+                  >
+                </figcaption>
+                <p class="map-note">
+                  <strong>Fase:</strong> entregue (2007–2010) · autorizado/em andamento (2025) ·
+                  leitura histórica sem projeção (2022). Silhueta esquemática, não cartográfica —
+                  trocar por topologia real antes do port.
+                </p>
+              </figure>
+              <ul class="map-list" aria-label="Lista textual dos fatos do mapa">
+                <li class="map-item">
+                  <strong>Estado da Bahia — SAMU</strong>
+                  <span class="map-sphere">Estado 2007–2010 · União 2025</span>
+                  <p>
+                    SAMU: 14 municípios em 2007, 233 em 2010 (74% da população) e 100% do estado em
+                    março de 2025.
+                  </p>
+                  <span class="map-src">Fonte: JGB, 03/01/2011; A TARDE, 14/03/2025.</span>
+                </li>
+                <li class="map-item">
+                  <strong>Itaberaba e Seabra — ambulâncias do novo PAC</strong>
+                  <span class="map-sphere">União · autorizado</span>
+                  <p>
+                    Ambulâncias do novo PAC entregues em março de 2025, fechando a cobertura do SAMU
+                    na Bahia. R$ 243,5 milhões autorizados e 789 ambulâncias para 559 cidades do
+                    país, 12 destinadas a nove municípios baianos.
+                  </p>
+                  <span class="map-src">Fonte: A TARDE, 14/03/2025.</span>
+                </li>
+                <li class="map-item">
+                  <strong
+                    >Barreiras, Vitória da Conquista e Feira de Santana — neurocirurgia</strong
+                  >
+                  <span class="map-sphere">Estado · entregue</span>
+                  <p>Neurocirurgia interiorizada: deixou de ficar só em Salvador e Itabuna.</p>
+                  <span class="map-src">Fonte: JGB, 03/01/2011.</span>
+                </li>
+                <li class="map-item">
+                  <strong>Irecê, Juazeiro e Santo Antônio de Jesus — hospitais regionais</strong>
+                  <span class="map-sphere">Estado · entregue</span>
+                  <p>Hospitais regionais entregues na gestão estadual.</p>
+                  <span class="map-src">Fonte: JGB, 26/02/2010.</span>
+                </li>
+                <li class="map-item">
+                  <strong>Interior da Bahia — votação de 2022</strong>
+                  <span class="map-sphere">Leitura histórica · sem projeção</span>
+                  <p>
+                    78,9% dos votos de 2022 vieram do interior: 101.704 de 128.968. Amargosa foi o
+                    maior colégio do interior, com 7.602 votos (39,9% dos válidos), e Solla foi o
+                    mais votado para deputado federal em seis municípios da região.
+                  </p>
+                  <span class="map-src">Fonte: TSE, 02/10/2022.</span>
+                </li>
+                <li class="map-item">
+                  <strong>Salvador — votação de 2022</strong>
+                  <span class="map-sphere">Leitura histórica · sem projeção</span>
+                  <p>
+                    27.264 votos em 2022 (21,1% do total). Bases: São Caetano (890), Pernambués
+                    (719), Cosme de Farias (647) e Paripe (597).
+                  </p>
+                  <span class="map-src">Fonte: TSE / Radar Congresso em Foco, 02/10/2022.</span>
+                </li>
+                <li class="map-item">
+                  <strong>Teixeira de Freitas — emenda</strong>
+                  <span class="map-sphere">Câmara · pago</span>
+                  <p>R$ 300 mil pagos em atenção básica (2016).</p>
+                  <span class="map-src">Fonte: Câmara, emendas 2016.</span>
+                </li>
+              </ul>
+            </div>
+            <p class="map-note">
+              As emendas de custeio do Fundo Nacional de Saúde (2024–2026) têm destino oficial "No
+              Estado da Bahia", sem município executor; por isso não aparecem pinadas por cidade.
+            </p>
           </section>
 
           <section
@@ -3223,6 +4538,7 @@
                 alt="Jorge Solla sorrindo, de blazer azul e camisa do PT"
               />
               <figcaption class="hero-number tabular">1313</figcaption>
+              <div class="scroll-cue" aria-hidden="true"><span>Role</span><i></i></div>
             </figure>
           </section>
 
@@ -3441,50 +4757,485 @@
             </div>
           </section>
 
+          <section class="documentary section-shell" aria-labelledby="mobile-docu-title">
+            <p class="eyebrow">Trabalho público · casos documentados</p>
+            <h2 id="mobile-docu-title" class="section-heading">
+              Quatro frentes que levaram saúde ao interior.
+            </h2>
+            <p class="section-lead">
+              Mesma ficha do SAMU: papel, ação, data, status e fonte. No celular a foto entra no
+              fluxo, antes da ficha, e nada depende de gesto.
+            </p>
+
+            <article class="docu-case">
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: piso da enfermagem"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small>Piso da enfermagem — autorização pendente</small></span
+                  >
+                </div>
+                <figcaption>Foto pendente. Não usar banco genérico.</figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso C · Câmara</span>
+                <h3>Piso da enfermagem: da comissão ao custeio</h3>
+                <p class="docu-lead">
+                  Titular da comissão especial da PEC 11/2022, que virou a EC 124. A Lei 14.434/2022
+                  fixou o piso: R$ 4.750 para enfermeiros, R$ 3.325 para técnicos e R$ 2.375 para
+                  auxiliares e parteiras. A Lei 14.581/2023 abriu R$ 7,3 bilhões para o custeio.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Papel</dt>
+                    <dd>
+                      Titular da comissão especial; não foi relator (relatora: Carmen Zanotto).
+                    </dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>
+                      Em vigor. Dieese apontou 53,5% dos enfermeiros abaixo do piso; fiscalização no
+                      plano da CFFC.
+                    </dd>
+                  </div>
+                  <div class="evidence-cell wide">
+                    <dt>Fonte</dt>
+                    <dd>PEC 11/2022 (Câmara); Leis 14.434/2022 e 14.581/2023; STF, 15/05/2023.</dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+
+            <article class="docu-case">
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: Mais Médicos"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small>Mais Médicos — autorização pendente</small></span
+                  >
+                </div>
+                <figcaption>Foto pendente. Não usar banco genérico.</figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso D · Câmara e União</span>
+                <h3>Mais Médicos: médico no interior</h3>
+                <p class="docu-lead">
+                  Relator-revisor da comissão mista da MP 1.165/2023, que virou a Lei 14.621/2023:
+                  retomou o Mais Médicos e criou a formação de especialistas. Em 2013, 317
+                  municípios baianos pediram 1.382 médicos, a maior adesão do país.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>Lei de 14/07/2023 em vigor; execução na rede federal.</dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Fonte</dt>
+                    <dd>Lei 14.621/2023; briefing §Saúde; Correio 24 Horas, 27/07/2013.</dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+
+            <article class="docu-case">
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: Hemobrás"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small>Hemobrás / fábrica de Goiana — autorização pendente</small></span
+                  >
+                </div>
+                <figcaption>Foto pendente. Não usar banco genérico.</figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso E · Câmara</span>
+                <h3>Hemobrás: o remédio do sangue doado</h3>
+                <p class="docu-lead">
+                  Autor do PL 424/2015, que permite ao SUS comprar hemoderivados direto da estatal,
+                  sem licitação, quando ela é a única produtora. A Câmara aprovou em 17/06/2026;
+                  agora está no Senado.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>Aprovado na Câmara, não é lei: aguarda o Senado.</dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Fonte</dt>
+                    <dd>Câmara, 17/06/2026; Movimento Econômico, 14/08/2025.</dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+
+            <article class="docu-case">
+              <figure class="docu-photo">
+                <div
+                  class="docu-photo-frame docu-asset"
+                  role="img"
+                  aria-label="Foto pendente: interiorização da saúde"
+                >
+                  <span
+                    ><strong>NEEDS ASSET</strong
+                    ><small>Hospital regional do interior — autorização pendente</small></span
+                  >
+                </div>
+                <figcaption>Foto pendente. Não usar banco genérico.</figcaption>
+              </figure>
+              <div class="docu-body">
+                <span class="docu-index">Caso F · Estado</span>
+                <h3>O interior deixou de viajar para se tratar</h3>
+                <p class="docu-lead">
+                  Cinco hospitais de grande porte, +1.200 leitos, UTIs de 427→789, neurocirurgia
+                  interiorizada, SAMU 14→233 (74% da população) e 2.690 equipes de Saúde da Família,
+                  em 99% dos municípios.
+                </p>
+                <dl class="docu-evidence">
+                  <div class="evidence-cell">
+                    <dt>Status</dt>
+                    <dd>Entregue (2007–2014). Nota H-11: usar um balanço de reformas por vez.</dd>
+                  </div>
+                  <div class="evidence-cell">
+                    <dt>Fonte</dt>
+                    <dd>JGB, 26/02/2010; JGB, 03/01/2011; briefing §Interior.</dd>
+                  </div>
+                </dl>
+              </div>
+            </article>
+          </section>
+
+          <section class="counter-band" aria-labelledby="mobile-counter-title">
+            <p class="eyebrow">Resultado em número</p>
+            <h2 id="mobile-counter-title">Com ano, fase e fonte.</h2>
+            <p>Cada contador anima ao entrar na tela; sem movimento, mostra o valor final.</p>
+            <div class="counter-grid" aria-label="Contadores de resultado">
+              <article class="counter">
+                <span class="counter-value tabular"
+                  ><span
+                    data-count
+                    data-to="3.1"
+                    data-decimals="1"
+                    data-prefix="R$ "
+                    data-suffix=" bi"
+                    >R$ 3,1 bi</span
+                  ></span
+                >
+                <p class="counter-label">a mais na saúde da Bahia</p>
+                <p class="counter-meta">2007–2010 · <strong>entregue</strong> · JGB, 03/01/2011</p>
+              </article>
+              <article class="counter">
+                <span class="counter-value tabular"
+                  ><span data-count data-to="14">14</span>
+                  <span class="counter-arrow" aria-hidden="true">→</span>
+                  <span data-count data-to="233" data-from="14">233</span></span
+                >
+                <p class="counter-label">municípios com SAMU</p>
+                <p class="counter-meta">2007–2010 · <strong>entregue</strong> · JGB, 03/01/2011</p>
+              </article>
+              <article class="counter">
+                <span class="counter-value tabular"
+                  ><span data-count data-to="427">427</span>
+                  <span class="counter-arrow" aria-hidden="true">→</span>
+                  <span data-count data-to="789" data-from="427">789</span></span
+                >
+                <p class="counter-label">leitos de UTI</p>
+                <p class="counter-meta">2007–2010 · <strong>entregue</strong> · JGB, 03/01/2011</p>
+              </article>
+              <article class="counter">
+                <span class="counter-value tabular"
+                  ><span
+                    data-count
+                    data-to="7.3"
+                    data-decimals="1"
+                    data-prefix="R$ "
+                    data-suffix=" bi"
+                    >R$ 7,3 bi</span
+                  ></span
+                >
+                <p class="counter-label">custeio do piso da enfermagem</p>
+                <p class="counter-meta">2023 · <strong>lei</strong> · Lei 14.581/2023</p>
+              </article>
+              <article class="counter">
+                <span class="counter-value tabular"
+                  ><span
+                    data-count
+                    data-to="9.5"
+                    data-decimals="1"
+                    data-prefix="R$ "
+                    data-suffix=" mi"
+                    >R$ 9,5 mi</span
+                  ></span
+                >
+                <p class="counter-label">pagos em emendas na atenção primária</p>
+                <p class="counter-meta">2026 · <strong>pago</strong> · Câmara, 25/09/2026</p>
+              </article>
+              <p class="counter-note">
+                Empenho não é pagamento; emenda não substitui o custeio local.
+              </p>
+            </div>
+          </section>
+
+          <section class="quotes-band section-shell" aria-labelledby="mobile-quotes-title">
+            <p class="eyebrow">Em suas palavras</p>
+            <h2 id="mobile-quotes-title" class="section-heading">Com ocasião, data e fonte.</h2>
+            <div class="quote-grid">
+              <article class="quote-card">
+                <blockquote>O SUS é a maior conquista do povo brasileiro.</blockquote>
+                <p class="quote-occasion">
+                  Agenda da saúde em Salvador; convênio das Obras Sociais Irmã Dulce.
+                </p>
+                <p class="quote-meta">02/09/2025 · Política 10</p>
+              </article>
+              <article class="quote-card">
+                <blockquote>
+                  O 8 de janeiro não foi um ato isolado, foi o ápice de uma escalada autoritária.
+                  Não haverá anistia para golpistas.
+                </blockquote>
+                <p class="quote-occasion">Dois anos dos atos golpistas de 8 de janeiro.</p>
+                <p class="quote-meta">08/01/2025 · A TARDE</p>
+              </article>
+              <article class="quote-card">
+                <blockquote>
+                  Conseguimos ter uma gestão estratégica, participativa do SUS, com o fortalecimento
+                  do controle social.
+                </blockquote>
+                <p class="quote-occasion">Balanço da SESAB na 160ª Reunião do Conselho Estadual.</p>
+                <p class="quote-meta">25/02/2010 · JGB, 26/02/2010</p>
+              </article>
+            </div>
+          </section>
+
           <section class="trajectory section-shell" aria-labelledby="mobile-trajectory-title">
             <p class="eyebrow">Trajetória</p>
             <h2 id="mobile-trajectory-title" class="section-heading">
               Da formação no SUS ao mandato.
             </h2>
             <div class="trajectory-grid">
-              <aside class="trajectory-aside">Cada marco preserva sua esfera institucional.</aside>
-              <ol class="timeline-list">
-                <li class="timeline-item">
-                  <time>1961</time>
-                  <p>Nasce em Salvador.</p>
-                  <span class="sphere">Origem</span>
+              <aside class="trajectory-aside">
+                Cada marco preserva sua esfera institucional. A trilha avança com o scroll; sem
+                movimento, os 14 marcos aparecem completos.
+              </aside>
+              <div class="timeline-wrap">
+                <div class="timeline-rail" aria-hidden="true">
+                  <div class="timeline-rail-fill"></div>
+                </div>
+                <ol class="timeline-list">
+                  <li class="timeline-item">
+                    <time>1961</time>
+                    <p>Nasce em Salvador, em 11 de abril.</p>
+                    <span class="sphere">Origem</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1979</time>
+                    <p>Militância na UNE; Diretório Acadêmico de Medicina e DCE da UFBA.</p>
+                    <span class="sphere">Militância</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1979–1984</time>
+                    <p>Forma-se em Medicina pela UFBA e participa da fundação do PT na Bahia.</p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1985–1987</time>
+                    <p>Residência em Medicina Social pela UFBA/Inamps.</p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1987–1993</time>
+                    <p>Médico da UFBA; mestrado em Saúde Coletiva; pesquisador do ISC.</p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1989–1998</time>
+                    <p>Sanitarista da SESAB; consultor do Ministério da Saúde; docente.</p>
+                    <span class="sphere">Estado e União</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>1999–2002</time>
+                    <p>Secretário de Saúde de Vitória da Conquista: criou o piloto do SAMU 192.</p>
+                    <span class="sphere">Município</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2003–2005</time>
+                    <p>
+                      Nacionalizou o SAMU 192 e criou o Brasil Sorridente, assinando as diretrizes
+                      da Política Nacional de Saúde Bucal.
+                    </p>
+                    <span class="sphere">União</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2006–2009</time>
+                    <p>Doutorado em Clínica Médica (UFRJ), tese publicada em livro (2010).</p>
+                    <span class="sphere">Formação</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2007–2014</time>
+                    <p>Secretário de Saúde da Bahia; Comenda Dois de Julho em 2013.</p>
+                    <span class="sphere">Estado</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2014–2022</time>
+                    <p>
+                      Deputado federal em 2014, 2018 e 2022; posses nas 55ª, 56ª e 57ª legislaturas.
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2015–2019</time>
+                    <p>Autor do PL 424/2015 (Hemobrás) e do PL 6836/2017 (saúde bucal).</p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2020–2022</time>
+                    <p>
+                      Coautor das cotas permanentes; titular da comissão especial da PEC 11/2022
+                      (piso da enfermagem).
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                  <li class="timeline-item">
+                    <time>2023–2026</time>
+                    <p>
+                      Titular da Comissão de Saúde; relator-revisor da MP 1.165/2023; autor do PL
+                      424/2015, aprovado na Câmara em 17/06/2026.
+                    </p>
+                    <span class="sphere">Câmara</span>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <section class="territory section-shell" aria-labelledby="mobile-map-title">
+            <p class="eyebrow">Território e interior</p>
+            <h2 id="mobile-map-title" class="section-heading">Um mandato do tamanho da Bahia.</h2>
+            <p class="section-lead">
+              Cada pino é um fato datado, com esfera no rótulo. A lista abaixo repete o mapa em
+              texto; o recorte de 2022 é leitura histórica, sem projeção.
+            </p>
+            <div class="map-layout">
+              <figure class="map-frame" aria-label="Mapa esquemático dos fatos do mandato na Bahia">
+                <svg
+                  viewBox="0 0 360 430"
+                  role="img"
+                  aria-label="Silhueta esquemática da Bahia com pinos dos fatos do mandato"
+                >
+                  <ellipse class="map-halo" cx="196" cy="208" rx="152" ry="188" />
+                  <path
+                    class="map-state"
+                    d="M70 62 L118 46 L172 56 L214 42 L256 56 L286 92 L302 132 L289 176 L297 216 L286 256 L270 296 L250 331 L214 361 L174 376 L139 371 L114 341 L94 301 L79 256 L69 211 L59 166 L54 121 L61 86 Z"
+                  />
+                  <g class="map-pin" data-pin="bahia">
+                    <circle cx="196" cy="208" r="9" />
+                    <text x="196" y="234" text-anchor="middle">Bahia</text>
+                  </g>
+                  <g class="map-pin esfera-uniao" data-pin="itaberaba">
+                    <circle cx="214" cy="190" r="5" />
+                    <text x="224" y="193">Itaberaba</text>
+                  </g>
+                  <g class="map-pin esfera-uniao" data-pin="seabra">
+                    <circle cx="176" cy="174" r="5" />
+                    <text x="167" y="171" text-anchor="end">Seabra</text>
+                  </g>
+                  <g class="map-pin" data-pin="barreiras">
+                    <circle cx="104" cy="175" r="5" />
+                    <text x="114" y="178">Barreiras</text>
+                  </g>
+                  <g class="map-pin" data-pin="irece">
+                    <circle cx="141" cy="150" r="5" />
+                    <text x="151" y="153">Irecê</text>
+                  </g>
+                  <g class="map-pin" data-pin="juazeiro">
+                    <circle cx="150" cy="96" r="5" />
+                    <text x="160" y="99">Juazeiro</text>
+                  </g>
+                  <g class="map-pin" data-pin="feira">
+                    <circle cx="252" cy="204" r="5" />
+                    <text x="244" y="214" text-anchor="end">Feira de Santana</text>
+                  </g>
+                  <g class="map-pin" data-pin="saj">
+                    <circle cx="246" cy="240" r="5" />
+                    <text x="256" y="243">Santo Antônio de Jesus</text>
+                  </g>
+                  <g class="map-pin" data-pin="conquista">
+                    <circle cx="176" cy="300" r="5" />
+                    <text x="186" y="303">Vitória da Conquista</text>
+                  </g>
+                  <g class="map-pin esfera-historico" data-pin="amargosa">
+                    <circle cx="230" cy="250" r="5" />
+                    <text x="221" y="253" text-anchor="end">Amargosa</text>
+                  </g>
+                  <g class="map-pin esfera-historico" data-pin="salvador">
+                    <circle cx="287" cy="206" r="5" />
+                    <text x="297" y="209">Salvador</text>
+                  </g>
+                  <g class="map-pin esfera-camara" data-pin="teixeira">
+                    <circle cx="256" cy="336" r="5" />
+                    <text x="247" y="339" text-anchor="end">Teixeira de Freitas</text>
+                  </g>
+                </svg>
+                <figcaption class="map-legend">
+                  <span class="lg-estado"><i aria-hidden="true"></i>Estado</span>
+                  <span class="lg-uniao"><i aria-hidden="true"></i>União</span>
+                  <span class="lg-camara"><i aria-hidden="true"></i>Câmara</span>
+                  <span class="lg-historico"><i aria-hidden="true"></i>2022 (histórico)</span>
+                </figcaption>
+                <p class="map-note">
+                  <strong>Fase:</strong> entregue (2007–2010) · autorizado (2025) · leitura
+                  histórica (2022). Silhueta esquemática, não cartográfica.
+                </p>
+              </figure>
+              <ul class="map-list" aria-label="Lista textual dos fatos do mapa">
+                <li class="map-item">
+                  <strong>Bahia — SAMU</strong>
+                  <span class="map-sphere">Estado · União</span>
+                  <p>SAMU: 14 municípios em 2007, 233 em 2010 (74%) e 100% em março de 2025.</p>
+                  <span class="map-src">JGB, 03/01/2011; A TARDE, 14/03/2025.</span>
                 </li>
-                <li class="timeline-item">
-                  <time>1979–1984</time>
-                  <p>Forma-se em Medicina pela UFBA e participa da fundação do PT na Bahia.</p>
-                  <span class="sphere">Formação</span>
+                <li class="map-item">
+                  <strong>Itaberaba e Seabra — novo PAC</strong>
+                  <span class="map-sphere">União · autorizado</span>
+                  <p>Ambulâncias entregues em 2025 fecharam a cobertura do SAMU na Bahia.</p>
+                  <span class="map-src">A TARDE, 14/03/2025.</span>
                 </li>
-                <li class="timeline-item">
-                  <time>1999–2002</time>
-                  <p>Secretário de Saúde de Vitória da Conquista: criou o piloto do SAMU 192.</p>
-                  <span class="sphere">Município</span>
+                <li class="map-item">
+                  <strong>Barreiras, Conquista e Feira — neurocirurgia</strong>
+                  <span class="map-sphere">Estado · entregue</span>
+                  <p>Neurocirurgia interiorizada, além de Salvador e Itabuna.</p>
+                  <span class="map-src">JGB, 03/01/2011.</span>
                 </li>
-                <li class="timeline-item">
-                  <time>2003–2005</time>
-                  <p>
-                    Nacionalizou o SAMU 192 e criou o Brasil Sorridente, assinando as diretrizes da
-                    Política Nacional de Saúde Bucal.
-                  </p>
-                  <span class="sphere">União</span>
+                <li class="map-item">
+                  <strong>Irecê, Juazeiro e Santo Antônio de Jesus — hospitais</strong>
+                  <span class="map-sphere">Estado · entregue</span>
+                  <p>Hospitais regionais entregues na gestão estadual.</p>
+                  <span class="map-src">JGB, 26/02/2010.</span>
                 </li>
-                <li class="timeline-item">
-                  <time>2007–2014</time>
-                  <p>Secretário de Saúde da Bahia.</p>
-                  <span class="sphere">Estado</span>
+                <li class="map-item">
+                  <strong>Interior e Salvador — votação de 2022</strong>
+                  <span class="map-sphere">Leitura histórica · sem projeção</span>
+                  <p>78,9% dos votos vieram do interior (101.704 de 128.968).</p>
+                  <span class="map-src">TSE, 02/10/2022.</span>
                 </li>
-                <li class="timeline-item">
-                  <time>2015–2023</time>
-                  <p>
-                    Deputado federal pela Bahia; titular da Comissão de Saúde desde março de 2023.
-                  </p>
-                  <span class="sphere">Câmara</span>
+                <li class="map-item">
+                  <strong>Teixeira de Freitas — emenda</strong>
+                  <span class="map-sphere">Câmara · pago</span>
+                  <p>R$ 300 mil pagos em atenção básica (2016).</p>
+                  <span class="map-src">Câmara, emendas 2016.</span>
                 </li>
-              </ol>
+              </ul>
             </div>
           </section>
 
@@ -4044,6 +5795,150 @@
       </div>
     </section>
 
+    <section class="scene" aria-labelledby="motor-scene-title">
+      <div class="scene-label">
+        <h2 id="motor-scene-title">Cena 05 · Motor de movimento</h2>
+        <p>
+          Storyboard do que se move, em três regimes: normal, mobile e
+          <code>prefers-reduced-motion</code>. O conteúdo nunca depende do movimento.
+        </p>
+      </div>
+      <div class="motion-board">
+        <p class="eyebrow">Contrato de movimento · DEGRADED</p>
+        <h2 class="section-heading">Cinco motores, um conteúdo.</h2>
+
+        <div class="motor-grid">
+          <article class="motor-frame">
+            <b>Motor 01 · Hero</b>
+            <h3>Zoom-pan sutil + reveal por máscara + indicador de scroll</h3>
+            <p>
+              O retrato abre com escala de 1,14 → 1,05 em 16 s (zoom-pan lento, sem parallax). A
+              copy entra por máscara, linha a linha, em 60–420 ms. O indicador de scroll pulsa no
+              rodapé da imagem.
+            </p>
+            <dl class="motor-modes">
+              <div class="motor-mode">
+                <dt>Normal</dt>
+                <dd>Zoom-pan uma vez, ao carregar. Máscara escalonada na copy. Cue pulsando.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Mobile</dt>
+                <dd>Mesmo zoom-pan, alvo de toque de 44 px no CTA; cue abaixo da imagem.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Reduzido</dt>
+                <dd>Sem zoom-pan, sem máscara, sem pulso. Retrato estático e copy visível.</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="motor-frame">
+            <b>Motor 02 · Scrub dos capítulos</b>
+            <h3>Foto sticky que troca por crossfade</h3>
+            <p>
+              No desktop, a fotografia fica sticky enquanto os seis capítulos passam; a imagem muda
+              por crossfade e escala 97% → 100%. Nenhuma seção é travada: a rolagem é do usuário.
+            </p>
+            <dl class="motor-modes">
+              <div class="motor-mode">
+                <dt>Normal</dt>
+                <dd>Crossfade 560 ms; capítulo ativo detectado pela viewport central.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Mobile</dt>
+                <dd>Sem sticky: cada foto entra no fluxo depois do capítulo relacionado.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Reduzido</dt>
+                <dd>Dissolução desligada; foto inline por capítulo, ordem e copy idênticas.</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="motor-frame">
+            <b>Motor 03 · Contadores</b>
+            <h3>Números que sobem ao entrar na tela</h3>
+            <p>
+              Cada contador anima do valor inicial ao final em ~1,3 s, com easing de saída. Os
+              números de esfera/ano/fase e a fonte ficam estáticos desde o primeiro quadro.
+            </p>
+            <dl class="motor-modes">
+              <div class="motor-mode">
+                <dt>Normal</dt>
+                <dd>Contagem uma vez, ao entrar; valores em pt-BR com separador de milhar.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Mobile</dt>
+                <dd>Mesma contagem em grade 2 colunas; rótulo e fonte sempre visíveis.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Reduzido</dt>
+                <dd>Sem contagem: o valor final aparece direto, sem piscar nem saltar.</dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="motor-frame">
+            <b>Motor 04 · Mapa</b>
+            <h3>Pinos que aparecem em sequência + lista equivalente</h3>
+            <p>
+              Os pinos surgem em escala 0,6 → 1 quando o mapa entra na tela, com atraso escalonado.
+              A lista textual ao lado carrega o mesmo conteúdo, item por item, com fonte e esfera.
+            </p>
+            <dl class="motor-modes">
+              <div class="motor-mode">
+                <dt>Normal</dt>
+                <dd>
+                  Stagger de ~70 ms por pino; legenda de esfera e nota de fase sempre visíveis.
+                </dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Mobile</dt>
+                <dd>Mapa menor acima da lista; pinos aparecem sem depender de hover.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Reduzido</dt>
+                <dd>
+                  Todos os pinos nascem visíveis, sem escala; lista textual é o caminho principal.
+                </dd>
+              </div>
+            </dl>
+          </article>
+
+          <article class="motor-frame">
+            <b>Motor 05 · Timeline</b>
+            <h3>Trilha que avança conforme o scroll</h3>
+            <p>
+              Uma trilha de 2 px preenche na cor da marca conforme os 14 marcos entram na tela. É
+              leitura de progresso, não controle: nada trava, nada é sequestrado.
+            </p>
+            <dl class="motor-modes">
+              <div class="motor-mode">
+                <dt>Normal</dt>
+                <dd>Preenchimento contínuo ligado ao scroll; itens marcam sua esfera.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Mobile</dt>
+                <dd>Trilha mais estreita; lista condensa os marcos sem perder esfera.</dd>
+              </div>
+              <div class="motor-mode">
+                <dt>Reduzido</dt>
+                <dd>Trilha escondida; os 14 marcos aparecem completos e visíveis.</dd>
+              </div>
+            </dl>
+          </article>
+        </div>
+
+        <p class="motor-guardrails">
+          <strong>Guardrails:</strong> sem scroll hijacking, sem autoplay, sem cursor customizado.
+          Toda animação é de apresentação, com <code>prefers-reduced-motion</code> respeitado em
+          cada motor. Onde há movimento, o estado final é o mesmo conteúdo estático — nada existe só
+          durante a animação. <strong>DEGRADED:</strong> storyboard pendente de sign-off humano e do
+          frontier <code>openai/gpt-5.6-sol</code>.
+        </p>
+      </div>
+    </section>
+
     <script>
       const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
       const revealTargets = document.querySelectorAll('[data-reveal]')
@@ -4107,6 +6002,97 @@
           })
         })
       })
+
+      // Contadores: sobem ao entrar na tela; com movimento reduzido, valor final direto.
+      const formatCounter = (span, value) => {
+        const decimals = Number(span.dataset.decimals || 0)
+        const prefix = span.dataset.prefix || ''
+        const suffix = span.dataset.suffix || ''
+        const text = value.toLocaleString('pt-BR', {
+          minimumFractionDigits: decimals,
+          maximumFractionDigits: decimals,
+        })
+        span.textContent = `${prefix}${text}${suffix}`
+      }
+      const counterSpans = Array.from(document.querySelectorAll('[data-count]'))
+      const countOnce = (span) => {
+        if (span.dataset.counted === '1') return
+        span.dataset.counted = '1'
+        const to = Number(span.dataset.to)
+        const from = Number(span.dataset.from || 0)
+        if (reduceMotion) {
+          formatCounter(span, to)
+          return
+        }
+        const duration = 1300
+        const started = performance.now()
+        const step = (now) => {
+          const t = Math.min(1, (now - started) / duration)
+          const eased = 1 - Math.pow(1 - t, 3)
+          formatCounter(span, from + (to - from) * eased)
+          if (t < 1) requestAnimationFrame(step)
+        }
+        requestAnimationFrame(step)
+      }
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        counterSpans.forEach((span) => formatCounter(span, Number(span.dataset.to)))
+      } else {
+        const counterObserver = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return
+              entry.target.querySelectorAll('[data-count]').forEach(countOnce)
+            }),
+          { threshold: 0.35 },
+        )
+        document.querySelectorAll('[data-counter]').forEach((node) => counterObserver.observe(node))
+      }
+
+      // Mapa: pinos aparecem em sequência quando o mapa entra na tela.
+      const mapFrames = document.querySelectorAll('.map-frame')
+      const showAllPins = (frame) =>
+        frame.querySelectorAll('.map-pin').forEach((pin) => pin.classList.add('on'))
+      if (reduceMotion || !('IntersectionObserver' in window)) {
+        mapFrames.forEach(showAllPins)
+      } else {
+        const mapObserver = new IntersectionObserver(
+          (entries) =>
+            entries.forEach((entry) => {
+              if (!entry.isIntersecting) return
+              entry.target
+                .querySelectorAll('.map-pin')
+                .forEach((pin, index) => setTimeout(() => pin.classList.add('on'), index * 70))
+              mapObserver.unobserve(entry.target)
+            }),
+          { threshold: 0.25 },
+        )
+        mapFrames.forEach((frame) => mapObserver.observe(frame))
+      }
+
+      // Timeline: a trilha avança com o scroll (progresso, não controle).
+      const railFills = document.querySelectorAll('.timeline-rail-fill')
+      if (railFills.length && !reduceMotion) {
+        const paintRails = () => {
+          railFills.forEach((fill) => {
+            const wrap = fill.closest('.timeline-wrap')
+            if (!wrap) return
+            const rect = wrap.getBoundingClientRect()
+            const total = rect.height || 1
+            const progress = Math.min(
+              1,
+              Math.max(0, (window.innerHeight * 0.8 - rect.top) / (total * 0.9)),
+            )
+            fill.style.height = `${progress * 100}%`
+          })
+        }
+        window.addEventListener('scroll', paintRails, { passive: true })
+        window.addEventListener('resize', paintRails)
+        paintRails()
+      } else {
+        railFills.forEach((fill) => {
+          fill.style.height = '100%'
+        })
+      }
     </script>
   </body>
 </html>
