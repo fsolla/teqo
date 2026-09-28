@@ -10,7 +10,7 @@
 | Severidade          | alta (bloqueia subir gravações reais de horas no acervo de comunicação em produção)     |
 | Ambiente            | produção (sintoma e diagnóstico read-only) + worktree `fix/14` (correção e verificação) |
 | Issue(s)            | sem Issue (relato humano direto no `/bug-fix`)                                          |
-| PR do fix           | #— (aberto neste worktree)                                                              |
+| PR do fix           | #1382                                                                                   |
 | Detectado por       | humano (operador da campanha)                                                           |
 
 ## Timeline
@@ -20,7 +20,7 @@
 | Início provável    | 2026-09-18                    | O C199 (gravações enviadas no acervo, commit d0f606a5) entrou com upload de arquivo inteiro em um único request; qualquer upload acima de ~100 MB já era recusado pelo edge do Cloudflare. O C199-large (remoção do teto de 4 GiB, commit 57b0d168, deploy verde em 2026-09-26 17:40) não mudou isso. |
 | Detecção           | 2026-09-28, hora não apurada  | O humano relatou que subir um `.mp4` de 6 GB em `/campanha › Acervo › Gravações › "Enviar gravação"` "está falhando"; o diálogo mostra erro genérico e a mensagem exata na tela é não apurada.                                                                                                        |
 | Diagnóstico        | 2026-09-28                    | Reprodução read-only em produção: `curl -sSI https://jorgesolla1313.com.br/` → `server: cloudflare`; `POST` de 150 MB para um caminho inexistente (`/__cf-upload-limit-probe-does-not-exist`, não escreve nada) → `413 Payload Too Large` da Cloudflare, encerrando após ~3,2 MB enviados.            |
-| Correção mergeada  | pendente                      | Correção implementada e verificada localmente; PR aberto neste worktree, CI pendente.                                                                                                                                                                                                                 |
+| Correção mergeada  | pendente                      | Correção implementada e verificada localmente; PR #1382 aberto, CI pendente.                                                                                                                                                                                                                          |
 | Deploy             | pendente                      | O merge dispara o deploy; produção depende de approve humano no environment `production`.                                                                                                                                                                                                             |
 | Verificado em prod | pendente — confirmação humana | Pendente a confirmação do humano de que o upload de 6 GB funciona em produção.                                                                                                                                                                                                                        |
 
