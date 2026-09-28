@@ -110,6 +110,10 @@ const campaignRecordingDetailHref = (id: number): string =>
 export const CAMPAIGN_RECORDING_UPLOAD_HREF =
   `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/enviar` as const
 
+/** C199-fix — one in-flight chunked upload session: POST a part, DELETE aborts. */
+export const campaignRecordingUploadSessionHref = (id: number): string =>
+  `${CAMPAIGN_RECORDING_UPLOAD_HREF}/${id}`
+
 export const CAMPAIGN_RECORDING_STATUS_HREF =
   `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/status` as const
 

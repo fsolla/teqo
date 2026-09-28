@@ -228,7 +228,11 @@ describe('campaign JSON mutation route convention', () => {
     ],
     [
       'src/app/(campaign)/campanha/(app)/comunicacao/acervo/gravacoes/enviar/route.ts',
-      'raw-body recording upload (the video streams to disk, metadata in the query) — cookie-authenticated via campaign-token + explicit same-origin check; cannot ride the JSON wrapper',
+      'raw-body recording upload session start (bodyless; metadata in the query) — cookie-authenticated via campaign-token + explicit same-origin check; cannot ride the JSON wrapper',
+    ],
+    [
+      'src/app/(campaign)/campanha/(app)/comunicacao/acervo/gravacoes/enviar/[id]/route.ts',
+      'one raw-body part of a chunked recording upload (the part streams to disk, index in the query) + idempotent abort of the session (DELETE) — cookie-authenticated via campaign-token + explicit same-origin check; cannot ride the JSON wrapper',
     ],
     [
       'src/app/(campaign)/campanha/(app)/comunicacao/conteudos/enviar/route.ts',

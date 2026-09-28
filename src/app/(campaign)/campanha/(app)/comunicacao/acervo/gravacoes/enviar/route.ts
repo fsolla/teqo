@@ -4,54 +4,55 @@ import { getPayload } from 'payload'
 
 import { canReadCommunicationCatalog } from '@/lib/campaignRoles'
 import {
-  RECORDING_FILE_TYPE_MESSAGE,
   RECORDING_TITLE_REQUIRED_MESSAGE,
-  recordingFileTypeAllowed,
+  RECORDING_UPLOAD_CHUNK_BYTES,
   toRecordingViewModel,
 } from '@/lib/recording'
 import {
   RECORDING_FILE_NAME_MESSAGE,
   RECORDING_FORBIDDEN_MESSAGE,
   RECORDING_GENERIC_ERROR_MESSAGE,
+  RECORDING_UPLOAD_NO_SPACE_MESSAGE,
   recordingUploadMetadataSchema,
 } from '@/lib/schemas/recording'
 import { getCampaignUser } from '@/utilities/campaignAuth'
 import { CAMPAIGN_AUTH_REQUIRED_MESSAGE } from '@/utilities/campaignFormActionError'
 import { campaignJsonMutationErrorResponse } from '@/utilities/campaignJsonMutationRoute'
-import {
-  receiveRecordingUpload,
-  RECORDING_BODY_MISSING_MESSAGE,
-} from '@/utilities/recordings/recordingUpload'
+import { startRecordingUpload } from '@/utilities/recordings/recordingUpload'
 import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
-import type { RecordingUploadResponse } from '../types'
+import type { RecordingUploadStartResponse } from '../types'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * C199 — accepts one recording upload as a RAW body: the request body IS the
- * video, the metadata travels in the query string. A route handler instead of a
- * server action because a multi-GB file must stream to disk (the action default
- * of 1 MB and the FormData buffer of hours of video are both unacceptable); XHR
- * still gives the dialog a real `upload.onprogress`.
+ * C199-fix — starts one recording upload. The production edge (Cloudflare
+ * Tunnel) refuses any request body above ~100 MB with a 413 before the app
+ * sees it, so the file cannot travel in one request: this bodyless call
+ * creates the visible row and the on-disk session, then the dialog POSTs the
+ * file in parts to `.../gravacoes/enviar/[id]`.
  *
  * It cannot ride `campaignJsonMutationRoute` (JSON-body wrapper), so it repeats
  * the same-origin guard and the error envelope explicitly and is allowlisted in
  * the `codebaseConventions` sweep, like the multipart `ai-transcribe` route.
  */
 
-const errorResponse = (message: string, status: number): NextResponse<RecordingUploadResponse> =>
+const errorResponse = (
+  message: string,
+  status: number,
+): NextResponse<RecordingUploadStartResponse> =>
   NextResponse.json({ status: 'error', message }, { status })
 
 const SAFE_MESSAGES = [
   RECORDING_FORBIDDEN_MESSAGE,
   RECORDING_TITLE_REQUIRED_MESSAGE,
   RECORDING_FILE_NAME_MESSAGE,
-  RECORDING_FILE_TYPE_MESSAGE,
-  RECORDING_BODY_MISSING_MESSAGE,
+  RECORDING_UPLOAD_NO_SPACE_MESSAGE,
 ]
 
-export const POST = async (request: Request): Promise<NextResponse<RecordingUploadResponse>> => {
+export const POST = async (
+  request: Request,
+): Promise<NextResponse<RecordingUploadStartResponse>> => {
   if (!isSameOriginRequest(request)) {
     return errorResponse('Requisição inválida.', 403)
   }
@@ -67,22 +68,18 @@ export const POST = async (request: Request): Promise<NextResponse<RecordingUplo
     title: searchParams.get('title') ?? '',
     recordedAt: searchParams.get('recordedAt') ?? undefined,
     filename: searchParams.get('filename') ?? '',
+    size: searchParams.get('size') ?? '',
   })
   if (!parsed.success) {
     return errorResponse(parsed.error.issues[0]?.message ?? RECORDING_GENERIC_ERROR_MESSAGE, 400)
   }
 
-  if (!recordingFileTypeAllowed(request.headers.get('content-type'))) {
-    return errorResponse(RECORDING_FILE_TYPE_MESSAGE, 400)
-  }
-
   try {
     const payload = await getPayload({ config })
-    const { id } = await receiveRecordingUpload({
+    const { id } = await startRecordingUpload({
       payload,
       actor: user,
       metadata: parsed.data,
-      body: request.body,
     })
 
     const recording = await payload.findByID({
@@ -99,9 +96,10 @@ export const POST = async (request: Request): Promise<NextResponse<RecordingUplo
       user,
       overrideAccess: false,
     })
-    return NextResponse.json<RecordingUploadResponse>({
+    return NextResponse.json<RecordingUploadStartResponse>({
       status: 'success',
       recording: toRecordingViewModel(recording),
+      chunkSize: RECORDING_UPLOAD_CHUNK_BYTES,
     })
   } catch (error) {
     return campaignJsonMutationErrorResponse(error, {

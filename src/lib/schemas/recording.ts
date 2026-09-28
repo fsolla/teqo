@@ -26,6 +26,32 @@ export const RECORDING_GENERIC_ERROR_MESSAGE =
 /** The recording upload arrived without a file name. */
 export const RECORDING_FILE_NAME_MESSAGE = 'Nome de arquivo inválido.'
 
+/** The declared file size arrived missing or invalid. */
+const RECORDING_FILE_SIZE_MESSAGE = 'Tamanho de arquivo inválido.'
+
+/** C199-fix — one chunk arrived out of order (or duplicated). */
+export const RECORDING_CHUNK_OUT_OF_ORDER_MESSAGE =
+  'Uma parte do envio chegou fora de ordem. Envie a gravação novamente.'
+
+/** C199-fix — one request carried more bytes than a chunk may carry. */
+export const RECORDING_CHUNK_TOO_LARGE_MESSAGE = 'Uma parte do envio excedeu o tamanho permitido.'
+
+/** C199-fix — the bytes received do not match the declared file size. */
+export const RECORDING_UPLOAD_SIZE_MISMATCH_MESSAGE =
+  'O envio não corresponde ao tamanho do arquivo informado. Envie a gravação novamente.'
+
+/** C199-fix — the upload session state is gone (restart or manual cleanup). */
+export const RECORDING_UPLOAD_SESSION_LOST_MESSAGE =
+  'O envio da gravação foi interrompido. Comece de novo.'
+
+/** C199-fix — chunks of a recording that is no longer uploading. */
+export const RECORDING_UPLOAD_NOT_IN_PROGRESS_MESSAGE =
+  'Este envio de gravação não está mais em andamento.'
+
+/** C199-fix — the server has no disk room for the declared file plus margin. */
+export const RECORDING_UPLOAD_NO_SPACE_MESSAGE =
+  'Espaço insuficiente no servidor para receber esta gravação. Avise a equipe.'
+
 /** Filename sanity: no path parts, no empties — the temp file keeps the extension. */
 const uploadFilename = z
   .string()
@@ -34,7 +60,7 @@ const uploadFilename = z
   .max(255, RECORDING_FILE_NAME_MESSAGE)
   .refine((value) => !value.includes('/') && !value.includes('\\'), RECORDING_FILE_NAME_MESSAGE)
 
-/** Metadata of the raw-body upload (`POST .../gravacoes/enviar`). */
+/** Metadata of the chunked upload (`POST .../gravacoes/enviar`). */
 export const recordingUploadMetadataSchema = z.object({
   title: z
     .string()
@@ -46,6 +72,13 @@ export const recordingUploadMetadataSchema = z.object({
     ),
   recordedAt: trimmedOptionalText(32),
   filename: uploadFilename,
+  /** Declared size of the whole file; the server finalizes only when it matches. */
+  size: z
+    .string()
+    .trim()
+    .regex(/^\d+$/, RECORDING_FILE_SIZE_MESSAGE)
+    .transform(Number)
+    .refine((value) => Number.isSafeInteger(value) && value >= 0, RECORDING_FILE_SIZE_MESSAGE),
 })
 
 export type RecordingUploadMetadata = z.infer<typeof recordingUploadMetadataSchema>
