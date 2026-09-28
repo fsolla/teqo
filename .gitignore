@@ -167,5 +167,8 @@ next-env.d.ts
 # Briefing Geral de Militância (interno; repo público).
 /data/briefing-geral-militancia/
 /docs/research/briefing-geral-militancia/
+# Redesign do site público — notas internas de programa (repo público).
+/data/site-redesign/
+
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
