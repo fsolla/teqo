@@ -1080,29 +1080,6 @@
         font-weight: 750;
         text-underline-offset: 4px;
       }
-      .degraded-section {
-        outline: 2px dashed rgb(162 28 28 / 45%);
-        outline-offset: -8px;
-      }
-      .degraded-banner {
-        margin: 0 0 30px;
-        padding: 12px 14px;
-        background: #fffbe0;
-        border: 1px dashed var(--pt-red);
-        color: var(--pt-red-dark);
-        font-size: 0.67rem;
-        line-height: 1.6;
-      }
-      .degraded-banner strong {
-        color: var(--pt-red);
-        font-family: var(--font-display);
-        letter-spacing: 0.08em;
-      }
-      .degraded-banner code {
-        padding: 1px 4px;
-        background: rgb(162 28 28 / 8%);
-        font-size: 0.64rem;
-      }
       .jingle-play svg {
         width: 18px;
         height: 18px;
@@ -1623,11 +1600,6 @@
         grid-template-columns: 124px 1fr;
         scroll-snap-align: start;
       }
-      .mobile .degraded-banner {
-        margin: 0 20px 22px 0;
-        padding: 10px 12px;
-        font-size: 0.63rem;
-      }
       .mobile .jingles-note {
         padding-right: 20px;
       }
@@ -1950,12 +1922,6 @@
         placeholder do deck e precisa ser substituído pelo número oficial; o CNPJ preserva o valor
         já publicado, ainda sujeito à conferência do advogado eleitoral; as duas fotografias do caso
         SAMU e as thumbnails dinâmicas do board estão marcadas como NEEDS ASSET.
-      </p>
-      <p class="gate-pending">
-        <strong>DEGRADED:</strong> a seção de jingles das cenas 01 e 02 é proposta do tier degradado
-        (<code>opencode-go/deepseek-v4.1-flash</code>) e não está certificada — exige sign-off
-        humano no gate/PR. O restante do artefato permanece o design S1 sujeito à certificação do
-        designer frontier.
       </p>
     </header>
 
@@ -2544,17 +2510,7 @@
                 </article>
               </div>
             </div>
-            <section
-              class="jingles-strip degraded-section"
-              data-degraded="true"
-              aria-labelledby="desktop-jingles-title"
-            >
-              <p class="degraded-banner" role="note">
-                <strong>DEGRADED</strong> — seção de jingles proposta pelo tier degradado
-                (<code>opencode-go/deepseek-v4.1-flash</code>). Design não certificado: pendente de
-                sign-off humano no gate/PR. O restante do artefato permanece o design S1 sujeito à
-                certificação do designer frontier.
-              </p>
+            <section class="jingles-strip" aria-labelledby="desktop-jingles-title">
               <div class="jingles-heading">
                 <div>
                   <p class="eyebrow">A trilha da nossa caminhada</p>
@@ -3197,17 +3153,7 @@
                 </article>
               </div>
             </div>
-            <section
-              class="jingles-strip degraded-section"
-              data-degraded="true"
-              aria-labelledby="mobile-jingles-title"
-            >
-              <p class="degraded-banner" role="note">
-                <strong>DEGRADED</strong> — seção de jingles proposta pelo tier degradado
-                (<code>opencode-go/deepseek-v4.1-flash</code>). Design não certificado: pendente de
-                sign-off humano no gate/PR. O restante do artefato permanece o design S1 sujeito à
-                certificação do designer frontier.
-              </p>
+            <section class="jingles-strip" aria-labelledby="mobile-jingles-title">
               <div class="jingles-heading">
                 <div>
                   <p class="eyebrow">A trilha da nossa caminhada</p>
