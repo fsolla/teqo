@@ -27,6 +27,11 @@ vi.mock('@/utilities/campaignAuth', () => ({
 
 import { GET } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/gravacoes/[id]/arquivo/route'
 import {
+  DELETE as abortUploadRoute,
+  POST as receiveChunkRoute,
+} from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/gravacoes/enviar/[id]/route'
+import { POST as startUploadRoute } from '@/app/(campaign)/campanha/(app)/comunicacao/acervo/gravacoes/enviar/route'
+import {
   deleteRecordingForActor,
   getRecordingStatusesForActor,
   labelRecordingSpeakerForActor,
@@ -34,8 +39,11 @@ import {
 } from '@/app/(campaign)/campanha/actions/recording'
 import { getMunicipalityCatalogEntry } from '@/lib/municipalityCatalog'
 import {
+  RECORDING_CHUNK_OUT_OF_ORDER_MESSAGE,
+  RECORDING_CHUNK_TOO_LARGE_MESSAGE,
   RECORDING_FORBIDDEN_MESSAGE,
   RECORDING_SPEAKER_UNKNOWN_MESSAGE,
+  RECORDING_UPLOAD_SIZE_MISMATCH_MESSAGE,
 } from '@/lib/schemas/recording'
 import { normalizeForSearch } from '@/lib/speechSearch'
 import type { CampaignUser, RecordingMedia } from '@/payload-types'
@@ -51,7 +59,11 @@ import {
   loadRecordingFilterOptions,
   loadRecordingsPageData,
 } from '@/utilities/recordings/recordingPageData'
-import { receiveRecordingUpload } from '@/utilities/recordings/recordingUpload'
+import { receiveRecordingChunk, startRecordingUpload } from '@/utilities/recordings/recordingUpload'
+import {
+  createRecordingUploadSession,
+  readRecordingUploadSession,
+} from '@/utilities/recordings/recordingUploadSession'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -325,28 +337,55 @@ describe('uploaded recordings (C199)', () => {
     expect(segments.docs).toHaveLength(0)
   })
 
-  it('streams an upload to the private media and hands the row to the job', async () => {
-    const bytes = Buffer.from('raw-body-upload')
-    const body = new ReadableStream<Uint8Array>({
+  const streamOf = (bytes: Buffer): ReadableStream<Uint8Array> =>
+    new ReadableStream<Uint8Array>({
       start(controller) {
         controller.enqueue(bytes)
         controller.close()
       },
     })
+
+  it('receives a recording in ordered parts and hands the row to the job on the last one', async () => {
+    const chunks = [Buffer.from('part-'), Buffer.from('by-pa'), Buffer.from('rt')]
+    const bytes = Buffer.concat(chunks)
     const scheduled: number[] = []
 
-    const { id } = await receiveRecordingUpload({
+    const { id } = await startRecordingUpload({
       payload,
       actor: communicator,
       metadata: {
         title: 'Giro pelo interior',
         filename: 'giro interior.m4v',
         recordedAt: undefined,
+        size: bytes.length,
       },
-      body,
-      startJob: (recordingId) => scheduled.push(recordingId),
     })
     createdRecordingIds.add(id)
+
+    // The row is visible as `uploading` right after the start, before any part.
+    const started = await payload.findByID({
+      collection: 'recording',
+      id,
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(started.status).toBe('uploading')
+    expect(started.title).toBe('Giro pelo interior')
+
+    const receive = (index: number, body: Buffer) =>
+      receiveRecordingChunk({
+        payload,
+        actor: communicator,
+        recordingId: id,
+        index,
+        body: streamOf(body),
+        chunkSize: chunks[0].length,
+        startJob: (recordingId) => scheduled.push(recordingId),
+      })
+
+    await expect(receive(0, chunks[0])).resolves.toEqual({ done: false })
+    await expect(receive(1, chunks[1])).resolves.toEqual({ done: false })
+    await expect(receive(2, chunks[2])).resolves.toEqual({ done: true })
 
     const recording = await payload.findByID({
       collection: 'recording',
@@ -366,30 +405,253 @@ describe('uploaded recordings (C199)', () => {
     if (media && typeof media === 'object') {
       createdMediaIds.add(media.id)
       expect(media.filename).toContain('giro_interior')
+      expect(media.filesize).toBe(bytes.length)
     }
+
+    // The temp session is gone once the upload was committed.
+    await expect(readRecordingUploadSession(id)).resolves.toBeNull()
 
     const response = await callFileRoute({ recordingId: id, user: communicator })
     expect(response.status).toBe(200)
     expect(Buffer.from(await response.arrayBuffer())).toEqual(bytes)
   })
 
-  it('accepts a recording above the payload buffer boundary through the multipart seam', async () => {
-    const bytes = Buffer.from('plenaria-de-horas')
-    const body = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(bytes)
-        controller.close()
+  it('serves the chunked upload wire contract through the two routes', async () => {
+    const bytes = Buffer.from('rota-fatiada')
+    getCampaignUserMock.mockResolvedValue(communicator)
+
+    const params = new URLSearchParams({
+      title: 'Via rota',
+      filename: 'via rota.mp4',
+      size: String(bytes.length),
+    })
+    const startResponse = await startUploadRoute(
+      new Request(
+        `http://localhost/campanha/comunicacao/acervo/gravacoes/enviar?${params.toString()}`,
+        { method: 'POST' },
+      ),
+    )
+    expect(startResponse.status).toBe(200)
+    const started = (await startResponse.json()) as {
+      status: string
+      recording: { id: number; status: string }
+      chunkSize: number
+    }
+    expect(started.status).toBe('success')
+    expect(started.recording.status).toBe('uploading')
+    expect(started.chunkSize).toBeGreaterThan(0)
+    createdRecordingIds.add(started.recording.id)
+
+    const chunkResponse = await receiveChunkRoute(
+      new Request(
+        `http://localhost/campanha/comunicacao/acervo/gravacoes/enviar/${started.recording.id}?index=0`,
+        { method: 'POST', body: bytes },
+      ),
+      { params: Promise.resolve({ id: String(started.recording.id) }) },
+    )
+    expect(chunkResponse.status).toBe(200)
+    const done = (await chunkResponse.json()) as {
+      status: string
+      done: boolean
+      recording: { id: number; status: string }
+    }
+    expect(done.status).toBe('success')
+    expect(done.done).toBe(true)
+    expect(done.recording.status).toBe('processing')
+
+    const recording = await payload.findByID({
+      collection: 'recording',
+      id: started.recording.id,
+      depth: 1,
+      overrideAccess: true,
+    })
+    if (recording.media && typeof recording.media === 'object') {
+      createdMediaIds.add(recording.media.id)
+    }
+  })
+
+  it('aborts an in-flight upload and never touches a finalized recording', async () => {
+    const bytes = Buffer.from('abortar')
+    getCampaignUserMock.mockResolvedValue(communicator)
+
+    const aborted = await startRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: {
+        title: 'Abortada',
+        filename: 'abortada.mp4',
+        recordedAt: undefined,
+        size: bytes.length,
       },
     })
+    createdRecordingIds.add(aborted.id)
+
+    const abortResponse = await abortUploadRoute(
+      new Request(`http://localhost/campanha/comunicacao/acervo/gravacoes/enviar/${aborted.id}`, {
+        method: 'DELETE',
+      }),
+      { params: Promise.resolve({ id: String(aborted.id) }) },
+    )
+    expect(abortResponse.status).toBe(200)
+    expect(await abortResponse.json()).toEqual({ status: 'success', aborted: true })
+
+    const rows = await payload.find({
+      collection: 'recording',
+      where: { id: { equals: aborted.id } },
+      overrideAccess: true,
+    })
+    expect(rows.docs).toHaveLength(0)
+    await expect(readRecordingUploadSession(aborted.id)).resolves.toBeNull()
+
+    // A finalized recording survives a stray abort (e.g. the dialog losing the
+    // response of the part that completed the upload).
+    const kept = await startRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: {
+        title: 'Mantida',
+        filename: 'mantida.mp4',
+        recordedAt: undefined,
+        size: bytes.length,
+      },
+    })
+    createdRecordingIds.add(kept.id)
+    await receiveRecordingChunk({
+      payload,
+      actor: communicator,
+      recordingId: kept.id,
+      index: 0,
+      body: streamOf(bytes),
+      chunkSize: bytes.length,
+      startJob: () => undefined,
+    })
+
+    const stray = await abortUploadRoute(
+      new Request(`http://localhost/campanha/comunicacao/acervo/gravacoes/enviar/${kept.id}`, {
+        method: 'DELETE',
+      }),
+      { params: Promise.resolve({ id: String(kept.id) }) },
+    )
+    expect(stray.status).toBe(200)
+    const keptRow = await payload.findByID({
+      collection: 'recording',
+      id: kept.id,
+      depth: 1,
+      overrideAccess: true,
+    })
+    expect(keptRow.status).toBe('processing')
+    if (keptRow.media && typeof keptRow.media === 'object') {
+      createdMediaIds.add(keptRow.media.id)
+    }
+  })
+
+  it('refuses a part out of order and discards the session', async () => {
+    const { id } = await startRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: { title: 'Fora de ordem', filename: 'ordem.mp4', recordedAt: undefined, size: 10 },
+    })
+    createdRecordingIds.add(id)
+
+    await expect(
+      receiveRecordingChunk({
+        payload,
+        actor: communicator,
+        recordingId: id,
+        index: 3,
+        body: streamOf(Buffer.from('xxxxx')),
+        chunkSize: 5,
+      }),
+    ).rejects.toThrow(RECORDING_CHUNK_OUT_OF_ORDER_MESSAGE)
+
+    // A refused part aborts the whole session: no phantom "Enviando" row and
+    // no temp file left behind.
+    const rows = await payload.find({
+      collection: 'recording',
+      where: { id: { equals: id } },
+      overrideAccess: true,
+    })
+    expect(rows.docs).toHaveLength(0)
+    await expect(readRecordingUploadSession(id)).resolves.toBeNull()
+  })
+
+  it('refuses a part bigger than the agreed part size or beyond the declared size', async () => {
+    const { id } = await startRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: { title: 'Além do teto', filename: 'alem.mp4', recordedAt: undefined, size: 8 },
+    })
+    createdRecordingIds.add(id)
+
+    await expect(
+      receiveRecordingChunk({
+        payload,
+        actor: communicator,
+        recordingId: id,
+        index: 0,
+        body: streamOf(Buffer.alloc(6)),
+        chunkSize: 5,
+      }),
+    ).rejects.toThrow(RECORDING_CHUNK_TOO_LARGE_MESSAGE)
+
+    const restarted = await startRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: {
+        title: 'Além do declarado',
+        filename: 'declarado.mp4',
+        recordedAt: undefined,
+        size: 8,
+      },
+    })
+    createdRecordingIds.add(restarted.id)
+
+    await expect(
+      receiveRecordingChunk({
+        payload,
+        actor: communicator,
+        recordingId: restarted.id,
+        index: 0,
+        body: streamOf(Buffer.from('12345')),
+        chunkSize: 5,
+      }),
+    ).resolves.toEqual({ done: false })
+    await expect(
+      receiveRecordingChunk({
+        payload,
+        actor: communicator,
+        recordingId: restarted.id,
+        index: 1,
+        body: streamOf(Buffer.from('67890')),
+        chunkSize: 5,
+      }),
+    ).rejects.toThrow(RECORDING_UPLOAD_SIZE_MISMATCH_MESSAGE)
+  })
+
+  it('accepts a recording above the payload buffer boundary through the multipart seam', async () => {
+    const bytes = Buffer.from('plenaria-de-horas')
     const scheduled: number[] = []
     const uploaded: { filename?: string; filesize: number }[] = []
     const removed: string[] = []
 
-    const { id } = await receiveRecordingUpload({
+    const { id } = await startRecordingUpload({
       payload,
       actor: communicator,
-      metadata: { title: 'Sessão longa', filename: 'sessao longa.MP4', recordedAt: undefined },
-      body,
+      metadata: {
+        title: 'Sessão longa',
+        filename: 'sessao longa.MP4',
+        recordedAt: undefined,
+        size: bytes.length,
+      },
+    })
+    createdRecordingIds.add(id)
+
+    const { done } = await receiveRecordingChunk({
+      payload,
+      actor: communicator,
+      recordingId: id,
+      index: 0,
+      body: streamOf(bytes),
       largeThresholdBytes: 0,
       startJob: (recordingId) => scheduled.push(recordingId),
       uploadLarge: async ({ filename }) => {
@@ -405,7 +667,7 @@ describe('uploaded recordings (C199)', () => {
         removed.push(filename)
       },
     })
-    createdRecordingIds.add(id)
+    expect(done).toBe(true)
 
     const recording = await payload.findByID({
       collection: 'recording',
@@ -431,20 +693,26 @@ describe('uploaded recordings (C199)', () => {
   })
 
   it('removes the multipart object and leaves no phantom row when the large upload fails', async () => {
-    const body = new ReadableStream<Uint8Array>({
-      start(controller) {
-        controller.enqueue(Buffer.from('falha-grande'))
-        controller.close()
+    const removed: string[] = []
+    const { id } = await startRecordingUpload({
+      payload,
+      actor: communicator,
+      metadata: {
+        title: 'Grande que falha',
+        filename: 'falha.mp4',
+        recordedAt: undefined,
+        size: 12,
       },
     })
-    const removed: string[] = []
+    createdRecordingIds.add(id)
 
     await expect(
-      receiveRecordingUpload({
+      receiveRecordingChunk({
         payload,
         actor: communicator,
-        metadata: { title: 'Grande que falha', filename: 'falha.mp4', recordedAt: undefined },
-        body,
+        recordingId: id,
+        index: 0,
+        body: streamOf(Buffer.from('falha-grande')),
         largeThresholdBytes: 0,
         startJob: () => undefined,
         uploadLarge: async () => {
@@ -464,6 +732,7 @@ describe('uploaded recordings (C199)', () => {
     expect(rows.docs).toHaveLength(0)
     expect(removed).toHaveLength(1)
     expect(removed[0]).toContain('falha')
+    await expect(readRecordingUploadSession(id)).resolves.toBeNull()
   })
 
   it('preserves a long recording transcript and its search text', async () => {
@@ -797,12 +1066,18 @@ describe('uploaded recordings (C199)', () => {
       }),
     ).toBe(false)
 
-    // An `uploading` row abandoned mid-stream has no usable file: reaped away.
+    // An `uploading` row abandoned mid-stream has no usable file: reaped away,
+    // and its chunked-upload session dir goes with it.
     const orphan = await createRecording({
       status: 'uploading',
       title: 'Upload interrompido',
       withMedia: false,
     })
+    await createRecordingUploadSession(orphan.recording.id, {
+      uploadName: 'interrompido.mp4',
+      expectedBytes: 1024,
+    })
+    expect(await readRecordingUploadSession(orphan.recording.id)).not.toBeNull()
     expect(
       await reapStaleRecording(payload, {
         id: orphan.recording.id,
@@ -814,6 +1089,7 @@ describe('uploaded recordings (C199)', () => {
     await expect(
       payload.findByID({ collection: 'recording', id: orphan.recording.id, overrideAccess: true }),
     ).rejects.toThrow()
+    await expect(readRecordingUploadSession(orphan.recording.id)).resolves.toBeNull()
   })
 
   it('polls the visible statuses and deletes a recording with its media', async () => {

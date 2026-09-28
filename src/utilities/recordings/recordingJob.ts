@@ -44,6 +44,7 @@ import {
   recordingFacetWriteData,
   type RecordingFacetClassifier,
 } from '@/utilities/recordings/recordingClassification'
+import { removeRecordingUploadSession } from '@/utilities/recordings/recordingUploadSession'
 import { classifySpeech } from '@/utilities/speech/speechClassifier'
 
 /**
@@ -366,6 +367,11 @@ export const reapStaleRecording = async (
       // Intentional admin bypass: the reaper repairs a row the system owns.
       overrideAccess: true,
     })
+    if (deleted.docs.length > 0) {
+      // C199-fix — the row owned a chunked upload session; without it the temp
+      // copy of a multi-GB recording would sit in the disk forever.
+      await removeRecordingUploadSession(recording.id)
+    }
     return deleted.docs.length > 0
   }
 

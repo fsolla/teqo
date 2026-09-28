@@ -748,23 +748,30 @@ test.describe('communication vertical (C154/C162)', () => {
       expect(denied.status()).toBe(404)
     })
 
-    test('the upload route refuses cross-origin and advisor actors', async ({
+    test('the upload routes refuse cross-origin and advisor actors', async ({
       campaign,
       campaignRequest,
     }) => {
       const user = await campaign.fixtures.createCampaignUser('communicator')
       const request = await campaignRequest(user, user.password)
       const uploadUrl = '/campanha/comunicacao/acervo/gravacoes/enviar?title=Teste&filename=t.mp4'
+      const chunkUrl = '/campanha/comunicacao/acervo/gravacoes/enviar/1?index=0'
 
       const crossOrigin = await request.post(uploadUrl, {
         headers: { Origin: 'https://evil.example' },
       })
       expect(crossOrigin.status()).toBe(403)
+      const crossOriginChunk = await request.post(chunkUrl, {
+        headers: { Origin: 'https://evil.example' },
+      })
+      expect(crossOriginChunk.status()).toBe(403)
 
       const advisor = await campaign.fixtures.createCampaignUser('advisor')
       const advisorRequest = await campaignRequest(advisor, advisor.password)
       const denied = await advisorRequest.post(uploadUrl)
       expect(denied.status()).toBe(403)
+      const deniedChunk = await advisorRequest.post(chunkUrl)
+      expect(deniedChunk.status()).toBe(403)
     })
 
     test('the grouped detail renders the speaker blocks, the warning and the identify action', async ({

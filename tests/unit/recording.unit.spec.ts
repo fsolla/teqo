@@ -10,9 +10,12 @@ import {
   RECORDING_FAILURE_INTERRUPTED,
   RECORDING_STATUSES,
   RECORDING_STEPS,
+  RECORDING_UPLOAD_CHUNK_BYTES,
+  RECORDING_UPLOAD_EDGE_LIMIT_BYTES,
   recordingFailureMessage,
   recordingFileTypeAllowed,
   recordingStatusLabels,
+  recordingUploadFitsInDisk,
   toRecordingViewModel,
 } from '@/lib/recording'
 import {
@@ -77,6 +80,27 @@ describe('recording vocabulary (C199)', () => {
   it('formats sizes in pt-BR without imposing a ceiling', () => {
     expect(formatRecordingFileSize(4.6 * 1024 ** 3)).toBe('4,6 GB')
     expect(formatRecordingFileSize(24 * 1024 ** 3)).toBe('24 GB')
+  })
+
+  it('keeps every upload request under the production edge ceiling', () => {
+    // Production is behind the Cloudflare Tunnel: the edge answers `413 Payload
+    // Too Large` for a request body above ~100 MB BEFORE the app sees it (probed
+    // against prod, a 150 MB body answered 413). The dialog slices the file into
+    // parts of `RECORDING_UPLOAD_CHUNK_BYTES`, so raising it past the edge limit
+    // would silently break every multi-GB recording upload again.
+    expect(RECORDING_UPLOAD_CHUNK_BYTES).toBeGreaterThanOrEqual(1024 * 1024)
+    expect(RECORDING_UPLOAD_CHUNK_BYTES).toBeLessThan(RECORDING_UPLOAD_EDGE_LIMIT_BYTES)
+  })
+
+  it('demands room for the declared file plus a margin before the upload starts', () => {
+    const sixGiB = 6 * 1024 ** 3
+    expect(recordingUploadFitsInDisk({ freeBytes: 20 * 1024 ** 3, expectedBytes: sixGiB })).toBe(
+      true,
+    )
+    expect(
+      recordingUploadFitsInDisk({ freeBytes: sixGiB + 100 * 1024 ** 2, expectedBytes: sixGiB }),
+    ).toBe(false)
+    expect(recordingUploadFitsInDisk({ freeBytes: Number.NaN, expectedBytes: 0 })).toBe(false)
   })
 
   it('formats the byte range below 1 KB honestly', () => {

@@ -30,6 +30,42 @@ export const isRecordingStatus = (value: unknown): value is RecordingStatus =>
 /** One owner for the persisted field limits (collection, schema and dialog). */
 export const RECORDING_TITLE_MAX_LENGTH = 200
 
+/**
+ * Every request body that crosses the production edge (Cloudflare Tunnel) must
+ * stay under the edge's request ceiling — a bigger single request is refused
+ * with `413 Payload Too Large` BEFORE the app sees it (probed against prod:
+ * 150 MB answered 413 after ~3 MB). The dialog therefore slices the file into
+ * parts of this size; 16 MiB keeps a wide margin under the ~100 MB edge limit
+ * and still moves hours of video in few requests.
+ */
+export const RECORDING_UPLOAD_CHUNK_BYTES = 16 * 1024 * 1024
+
+/** The edge ceiling the chunk size must stay under (Cloudflare: ~100 MB). */
+export const RECORDING_UPLOAD_EDGE_LIMIT_BYTES = 100 * 1024 * 1024
+
+/**
+ * Free-space margin the upload start demands beyond the declared file size:
+ * the temp copy must fit with room for the post-upload job (which downloads
+ * the same file again) and the running container. Failing here is honest and
+ * immediate; failing mid-way wastes hours of transfer.
+ */
+const RECORDING_UPLOAD_DISK_MARGIN_BYTES = 512 * 1024 * 1024
+
+/** Pure budget check of the upload start (the fs call lives in the session owner). */
+export const recordingUploadFitsInDisk = ({
+  freeBytes,
+  expectedBytes,
+  marginBytes = RECORDING_UPLOAD_DISK_MARGIN_BYTES,
+}: {
+  freeBytes: number
+  expectedBytes: number
+  marginBytes?: number
+}): boolean => Number.isFinite(freeBytes) && freeBytes - expectedBytes >= marginBytes
+
+/** A proxy/edge refused the request body (413) before the app ever saw it. */
+export const RECORDING_UPLOAD_REJECTED_MESSAGE =
+  'O servidor recusou uma parte do envio por tamanho. Tente novamente; se persistir, avise a equipe.'
+
 /** C200 — the human label the team types for one speaker cluster. */
 export const RECORDING_SPEAKER_LABEL_MAX_LENGTH = 120
 export const RECORDING_SPEAKER_LABEL_REQUIRED_MESSAGE = 'Informe o nome do falante.'

@@ -25,6 +25,7 @@ import { onPayloadTransactionCommit, withPayloadTransaction } from '@/utilities/
 import { acquireTextAdvisoryLocks } from '@/utilities/postgresTransactionLocks'
 import { reapStaleRecording } from '@/utilities/recordings/recordingJob'
 import { startRecordingJobInBackground } from '@/utilities/recordings/recordingScheduler'
+import { removeRecordingUploadSession } from '@/utilities/recordings/recordingUploadSession'
 
 /**
  * C199 — mutations of one uploaded recording: retry the failed transcription,
@@ -265,6 +266,10 @@ export const deleteRecordingForActor = async (input: {
       })
     }
   })
+
+  // C199-fix — a row deleted mid-upload owns a temp session with the partial
+  // file; the row is gone and nothing else would ever clean it.
+  await removeRecordingUploadSession(parsed.recordingId)
 
   return { deleted: true }
 }
