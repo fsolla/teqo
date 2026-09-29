@@ -2,7 +2,12 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
-import { ARCHIVE_PHOTO_SLUG, archivePhotoAlt, type ArchivePhotoImport } from '@/lib/archivePhoto'
+import {
+  ARCHIVE_PHOTO_SLUG,
+  archivePhotoAlt,
+  type ArchivePhotoExifEntry,
+  type ArchivePhotoImport,
+} from '@/lib/archivePhoto'
 import type { ArchivePhoto } from '@/payload-types'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 
@@ -138,6 +143,41 @@ export const ingestArchivePhoto = async (
       status: 'failed',
       flickrId: record.flickrId,
       stage: 'ingest',
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+export type ArchivePhotoExifUpdateResult =
+  | { status: 'updated'; flickrId: string; id: number; entries: number }
+  | { status: 'failed'; flickrId: string; error: string }
+
+/**
+ * C231 — rewrites ONLY the stored `exif` of one existing row: the
+ * `--refresh-metadata` backfill for rows ingested before the mapper understood
+ * the API's `{ _content }` leaves. The Flickr answer is the source of truth (an
+ * empty answer clears the field), the deterministic order of
+ * `archivePhotoExifEntries` makes an unchanged row comparable by the caller,
+ * and every failure is returned, never thrown — the caller owns the receipt.
+ * Same documented CLI bypass as the ingestion (trusted actor, no session).
+ */
+export const updateArchivePhotoExif = async (
+  payload: Payload,
+  { id, flickrId, exif }: { id: number; flickrId: string; exif: ArchivePhotoExifEntry[] },
+): Promise<ArchivePhotoExifUpdateResult> => {
+  try {
+    await payload.update({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      data: { exif },
+      // Intentional bypass: the maintenance CLI is a trusted actor with no session.
+      overrideAccess: true,
+    })
+    return { status: 'updated', flickrId, id, entries: exif.length }
+  } catch (error) {
+    return {
+      status: 'failed',
+      flickrId,
       error: error instanceof Error ? error.message : String(error),
     }
   }

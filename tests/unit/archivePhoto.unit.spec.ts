@@ -139,6 +139,27 @@ describe('archivePhotoExifEntries (C231)', () => {
     ])
     expect(archivePhotoExifEntries(null)).toEqual([])
   })
+
+  it("unwraps the JSON API's { _content } leaves and still accepts plain strings", () => {
+    expect(
+      archivePhotoExifEntries([
+        { tag: 'Make', label: 'Fabricante', raw: { _content: 'Canon' } },
+        {
+          tag: 'Model',
+          label: 'Modelo',
+          raw: { _content: 'Canon EOS' },
+          clean: { _content: 'Canon EOS R6' },
+        },
+        { tag: 'Artist', label: 'Autor', raw: { _content: '   ' } },
+        { tag: 'Unknown', label: 'Desconhecido', raw: { outro: 'x' } },
+        { tag: 'Software', label: 'Software', clean: 'Tezza' },
+      ]),
+    ).toEqual([
+      { tag: 'Make', label: 'Fabricante', value: 'Canon' },
+      { tag: 'Model', label: 'Modelo', value: 'Canon EOS R6' },
+      { tag: 'Software', label: 'Software', value: 'Tezza' },
+    ])
+  })
 })
 
 describe('archivePhotoImportFromFlickr (C231)', () => {

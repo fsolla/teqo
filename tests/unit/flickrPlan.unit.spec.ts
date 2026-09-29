@@ -8,11 +8,13 @@ import {
   collectArchiveListing,
   formatArchiveBytes,
   formatArchiveInventory,
+  formatArchiveRefresh,
   formatArchiveReport,
   parseArchiveCliArgs,
   planArchiveEntries,
   summarizeArchiveInventory,
   summarizeArchivePlan,
+  summarizeArchiveRefresh,
   summarizeArchiveResults,
 } from '../../scripts/lib/flickrPlan.mjs'
 
@@ -209,6 +211,23 @@ describe('summaries (C231)', () => {
     })
   })
 
+  it('summarizes the refresh results with the entries written and failures', () => {
+    expect(
+      summarizeArchiveRefresh([
+        { flickrId: '1', status: 'updated', entries: 42 },
+        { flickrId: '2', status: 'unchanged', entries: 0 },
+        { flickrId: '3', status: 'failed', error: 'HTTP 500' },
+        { flickrId: '4', status: 'updated', entries: 7 },
+      ]),
+    ).toEqual({
+      updated: 2,
+      unchanged: 1,
+      failed: 1,
+      entries: 49,
+      failures: [{ flickrId: '3', error: 'HTTP 500' }],
+    })
+  })
+
   it('summarizes the stored inventory per album and per metadata gap', () => {
     const inventory = summarizeArchiveInventory([
       {
@@ -310,6 +329,25 @@ describe('receipt formatting (C231)', () => {
     expect(formatArchiveBytes(2 * 1024 * 1024)).toBe('2.0 MiB')
   })
 
+  it('formats the refresh report with the touched rows and the failures', () => {
+    const lines = formatArchiveRefresh({
+      durationMs: 2500,
+      summary: {
+        updated: 120,
+        unchanged: 10,
+        failed: 1,
+        entries: 4200,
+        failures: [{ flickrId: '9', error: 'HTTP 500' }],
+      },
+    })
+    const text = lines.join('\n')
+    expect(text).toContain('refresh (metadados): atualizadas: 120')
+    expect(text).toContain('inalteradas: 10')
+    expect(text).toContain('entradas EXIF: 4200')
+    expect(text).toContain('tempo: 2.5s')
+    expect(text).toContain('- 9: HTTP 500')
+  })
+
   it('stamps the report file name', () => {
     expect(archivePhotoReportStamp('2026-09-26T06:20:39.123Z')).toBe('2026-09-26T06-20-39-123Z')
   })
@@ -320,6 +358,7 @@ describe('parseArchiveCliArgs (C231)', () => {
     expect(parseArchiveCliArgs([])).toEqual({
       apply: false,
       verify: false,
+      refreshMetadata: false,
       limit: null,
       page: 1,
       out: 'data/flickr',
@@ -332,11 +371,27 @@ describe('parseArchiveCliArgs (C231)', () => {
       parseArchiveCliArgs(['--apply', '--limit', '5', '--page', '3', '--out', 'data/fotos']),
     ).toMatchObject({ apply: true, verify: false, limit: 5, page: 3, out: 'data/fotos' })
     expect(parseArchiveCliArgs(['--verify'])).toMatchObject({ verify: true, apply: false })
+    expect(parseArchiveCliArgs(['--refresh-metadata'])).toMatchObject({
+      refreshMetadata: true,
+      apply: false,
+      verify: false,
+    })
+    expect(parseArchiveCliArgs(['--refresh-metadata', '--limit', '5'])).toMatchObject({
+      refreshMetadata: true,
+      limit: 5,
+    })
     expect(parseArchiveCliArgs(['--help'])).toMatchObject({ help: true })
   })
 
   it('refuses exclusive modes, invalid numbers, escaping --out and unknown flags', () => {
     expect(() => parseArchiveCliArgs(['--apply', '--verify'])).toThrow(/mutuamente exclusivos/)
+    expect(() => parseArchiveCliArgs(['--apply', '--refresh-metadata'])).toThrow(
+      /mutuamente exclusivos/,
+    )
+    expect(() => parseArchiveCliArgs(['--verify', '--refresh-metadata'])).toThrow(
+      /mutuamente exclusivos/,
+    )
+    expect(() => parseArchiveCliArgs(['--refresh-metadata', '--page', '2'])).toThrow(/--page/)
     expect(() => parseArchiveCliArgs(['--limit', '0'])).toThrow(/--limit/)
     expect(() => parseArchiveCliArgs(['--limit', 'abc'])).toThrow(/--limit/)
     expect(() => parseArchiveCliArgs(['--page', '0'])).toThrow(/--page/)

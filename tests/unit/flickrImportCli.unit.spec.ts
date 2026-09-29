@@ -74,6 +74,34 @@ describe('flickr:import write guards (C231)', () => {
     expect(output(result)).toContain('S3_BUCKET')
   })
 
+  it('refuses --refresh-metadata without the intent flag, before the key check', () => {
+    const result = run(['--refresh-metadata'])
+
+    expect(result.status).toBe(1)
+    expect(output(result)).toContain('FLICKR_IMPORT_CONFIRM=1')
+    expect(output(result)).toContain('--refresh-metadata')
+    expect(output(result)).not.toContain('FLICKR_API_KEY')
+  })
+
+  it('requires the declared TEQO_ENV for --refresh-metadata once the intent flag is set', () => {
+    const result = run(['--refresh-metadata'], { FLICKR_IMPORT_CONFIRM: '1' })
+
+    expect(result.status).toBe(1)
+    expect(output(result)).toContain('TEQO_ENV')
+  })
+
+  it('does not demand S3 for the metadata-only refresh (dies on the missing key instead)', () => {
+    const result = run(['--refresh-metadata'], {
+      FLICKR_IMPORT_CONFIRM: '1',
+      TEQO_ENV: 'production',
+      FLICKR_API_KEY: '',
+    })
+
+    expect(result.status).toBe(1)
+    expect(output(result)).toContain('FLICKR_API_KEY')
+    expect(output(result)).not.toContain('S3_BUCKET')
+  })
+
   it('refuses an unknown argument before touching anything', () => {
     const result = run(['--force'])
 

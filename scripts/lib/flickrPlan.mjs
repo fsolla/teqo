@@ -31,7 +31,7 @@ const VIDEO_MEDIA = 'video'
 const BYTES_PER_MIB = 1024 * 1024
 
 const USAGE =
-  'uso: `pnpm flickr:import [--apply|--verify] [--limit <n>] [--page <n>] [--out <dir>]`'
+  'uso: `pnpm flickr:import [--apply|--verify|--refresh-metadata] [--limit <n>] [--page <n>] [--out <dir>]`'
 
 export const ARCHIVE_PHOTO_DEFAULT_OUT_DIR = 'data/flickr'
 
@@ -43,12 +43,13 @@ export const archivePhotoReportStamp = (runAt) => runAt.replace(/[:.]/g, '-')
  * errors carry the usage line.
  *
  * @param {string[]} [argv]
- * @returns {{ apply: boolean, verify: boolean, limit: number | null, page: number, out: string, help: boolean }}
+ * @returns {{ apply: boolean, verify: boolean, refreshMetadata: boolean, limit: number | null, page: number, out: string, help: boolean }}
  */
 export const parseArchiveCliArgs = (argv = process.argv.slice(2)) => {
   const options = {
     apply: false,
     verify: false,
+    refreshMetadata: false,
     limit: null,
     page: 1,
     out: ARCHIVE_PHOTO_DEFAULT_OUT_DIR,
@@ -67,6 +68,7 @@ export const parseArchiveCliArgs = (argv = process.argv.slice(2)) => {
     if (arg === '--help' || arg === '-h') options.help = true
     else if (arg === '--apply') options.apply = true
     else if (arg === '--verify') options.verify = true
+    else if (arg === '--refresh-metadata') options.refreshMetadata = true
     else if (arg === '--limit') options.limit = Number(value())
     else if (arg === '--page') options.page = Number(value())
     else if (arg === '--out') options.out = value()
@@ -74,14 +76,20 @@ export const parseArchiveCliArgs = (argv = process.argv.slice(2)) => {
   }
 
   if (options.help) return options
-  if (options.apply && options.verify) {
-    throw new Error(`--apply e --verify são mutuamente exclusivos — ${USAGE}.`)
+  const modes = [options.apply, options.verify, options.refreshMetadata].filter(Boolean).length
+  if (modes > 1) {
+    throw new Error(`--apply, --verify e --refresh-metadata são mutuamente exclusivos — ${USAGE}.`)
   }
   if (options.limit !== null && (!Number.isInteger(options.limit) || options.limit < 1)) {
     throw new Error('--limit deve ser >= 1.')
   }
   if (!Number.isInteger(options.page) || options.page < 1) {
     throw new Error('--page deve ser >= 1.')
+  }
+  if (options.refreshMetadata && options.page !== 1) {
+    throw new Error(
+      `--page não se aplica a --refresh-metadata (a varredura é das linhas do acervo) — ${USAGE}.`,
+    )
   }
   if (options.out.split(/[\\/]/).includes('..')) {
     throw new Error('--out não pode escapar do diretório do repo (sem "..").')
@@ -275,6 +283,22 @@ export const summarizeArchiveResults = (results) => ({
 })
 
 /**
+ * The `--refresh-metadata` results: rows updated/unchanged, the EXIF entries
+ * written and the named failures — no row is silently dropped.
+ *
+ * @param {Array<{ status: string, flickrId: string, entries?: number | null, error?: string | null }>} results
+ */
+export const summarizeArchiveRefresh = (results) => ({
+  updated: results.filter((result) => result.status === 'updated').length,
+  unchanged: results.filter((result) => result.status === 'unchanged').length,
+  failed: results.filter((result) => result.status === 'failed').length,
+  entries: results.reduce((total, result) => total + (Number(result.entries) || 0), 0),
+  failures: results
+    .filter((result) => result.status === 'failed')
+    .map((result) => ({ flickrId: result.flickrId, error: result.error ?? null })),
+})
+
+/**
  * The `--verify` inventory over the stored rows (read-only, no Flickr, no
  * bucket): counts, bytes, per-album coverage, metadata gaps and rows without
  * a stored filename (the one broken state this check fails on).
@@ -385,6 +409,22 @@ export const formatArchiveInventory = (inventory) => {
   }
   if (inventory.missingFilename.length > 0) {
     lines.push(`${label} sem arquivo armazenado: ${inventory.missingFilename.join(', ')}`)
+  }
+  return lines
+}
+
+/** `--refresh-metadata` human lines (rows touched + named failures). */
+export const formatArchiveRefresh = (report) => {
+  const label = REPORT_LABEL
+  const lines = [
+    `${label} refresh (metadados): atualizadas: ${report.summary.updated} · inalteradas: ${report.summary.unchanged} · falhas: ${report.summary.failed} · entradas EXIF: ${report.summary.entries}`,
+    `${label} tempo: ${(report.durationMs / 1000).toFixed(1)}s`,
+  ]
+  if (report.summary.failures.length > 0) {
+    lines.push(`${label} falhas:`)
+    for (const failure of report.summary.failures) {
+      lines.push(`  - ${failure.flickrId}: ${failure.error ?? 'erro'}`)
+    }
   }
   return lines
 }

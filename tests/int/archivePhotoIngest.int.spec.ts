@@ -13,6 +13,7 @@ import {
   findArchivePhotoByFlickrId,
   ingestArchivePhoto,
   listArchivePhotos,
+  updateArchivePhotoExif,
 } from '@/utilities/flickr/archivePhotoIngest'
 
 import { ARCHIVE_PHOTO_JPEG_BYTES } from '../helpers/archivePhotoFixture'
@@ -154,6 +155,47 @@ describe('ingestArchivePhoto (C231)', () => {
     if (result.status !== 'failed') return
     expect(result.error.length).toBeGreaterThan(0)
     expect(await findArchivePhotoByFlickrId(payload, item.flickrId)).toBeNull()
+  })
+
+  it('refreshes only the stored exif of an existing row (C231 backfill)', async () => {
+    const item = record('53123456794', { exif: [] })
+    const created = await ingestArchivePhoto(payload, item, {
+      filePath: await writeOriginal(item.flickrId),
+    })
+    if (created.status !== 'created') throw new Error('archive photo fixture was not created')
+
+    const refreshed = await updateArchivePhotoExif(payload, {
+      id: created.id,
+      flickrId: item.flickrId,
+      exif: [
+        { tag: 'Make', label: 'Fabricante', value: 'Canon' },
+        { tag: 'Model', label: 'Modelo', value: 'Canon EOS R6' },
+      ],
+    })
+    expect(refreshed).toMatchObject({ status: 'updated', entries: 2 })
+
+    const found = await payload.find({
+      collection: ARCHIVE_PHOTO_SLUG,
+      where: { flickrId: { equals: item.flickrId } },
+      depth: 0,
+      limit: 1,
+      overrideAccess: true,
+    })
+    expect(found.docs[0]?.exif).toEqual([
+      { tag: 'Make', label: 'Fabricante', value: 'Canon' },
+      { tag: 'Model', label: 'Modelo', value: 'Canon EOS R6' },
+    ])
+    // Only the exif changed: the metadata ingested with the original stays.
+    expect(found.docs[0]?.title).toBe(item.title)
+
+    const failed = await updateArchivePhotoExif(payload, {
+      id: 9_999_999,
+      flickrId: '53123456799',
+      exif: [],
+    })
+    expect(failed).toMatchObject({ status: 'failed', flickrId: '53123456799' })
+    if (failed.status !== 'failed') return
+    expect(failed.error.length).toBeGreaterThan(0)
   })
 
   it('reads only with the communication roles', async () => {

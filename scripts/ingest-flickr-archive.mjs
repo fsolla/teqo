@@ -14,17 +14,24 @@
  *                                      dev and the complete S3_* envs
  *   pnpm flickr:import --verify        read-only inventory of the stored
  *                                      archive (no Flickr, no bucket)
+ *   pnpm flickr:import --refresh-metadata
+ *                                      re-fetches the EXIF of the rows already
+ *                                      in the archive and updates only what
+ *                                      changed (backfill; DB-only write,
+ *                                      needs FLICKR_API_KEY but no S3)
  *
  * Options: --limit <n> (canary), --page <n> (listing start page), --out <dir>
  * (receipts, default `data/flickr`), --help. `--limit` caps the photos
  * processed; the album walk still covers every album so a canary never loses
- * memberships.
+ * memberships. In the refresh mode `--limit` caps the rows visited.
  *
- * Guards: --apply refuses a non-local/production target without the intent
- * flag (C155) and demands the declared TEQO_ENV matching the exact database
- * name (C195/C231); a remote target also demands the complete S3_* set. The
- * API key lives in FLICKR_API_KEY (env only, never the repo) and the account
- * NSID in FLICKR_USER_ID.
+ * Guards: --apply and --refresh-metadata refuse a non-local/production target
+ * without the intent flag (C155) and demand the declared TEQO_ENV matching the
+ * exact database name (C195/C231); --apply on a remote target also demands the
+ * complete S3_* set (the original never lands on ephemeral disk) while the
+ * metadata-only refresh writes just the database. The API key lives in
+ * FLICKR_API_KEY (env only, never the repo) and the account NSID in
+ * FLICKR_USER_ID.
  *
  * Runbook: on the homeserver, inside the compose maintenance service with the
  * stack env file — see docs/ops/teqo-1313-deploy.md.
@@ -36,6 +43,7 @@ import { dirname, join } from 'node:path'
 import { getPayload } from 'payload'
 
 import {
+  archivePhotoExifEntries,
   archivePhotoImportFromFlickr,
   archivePhotoStorageFilename,
 } from '../src/lib/archivePhoto.ts'
@@ -57,11 +65,13 @@ import {
   collectArchiveListing,
   formatArchiveBytes,
   formatArchiveInventory,
+  formatArchiveRefresh,
   formatArchiveReport,
   parseArchiveCliArgs,
   planArchiveEntries,
   summarizeArchiveInventory,
   summarizeArchivePlan,
+  summarizeArchiveRefresh,
   summarizeArchiveResults,
 } from './lib/flickrPlan.mjs'
 
@@ -90,21 +100,24 @@ Modos (mutuamente exclusivos; o default é o plano):
   (sem flag)         plano/dry-run — lista, mapeia e reporta; sem download nem escrita
   --apply            baixa os originais e cria as linhas/objetos no alvo
   --verify           inventário read-only do que já está no acervo (sem Flickr)
+  --refresh-metadata re-busca o EXIF das linhas existentes e atualiza o que mudou
+                     (backfill; escreve só no banco, exige FLICKR_API_KEY)
 
 Opções:
-  --limit <n>        processa no máximo n fotos (a varredura de álbuns continua completa)
-  --page <n>         começa a listagem na página n (retomada)
+  --limit <n>        processa no máximo n fotos; no refresh, no máximo n linhas
+  --page <n>         começa a listagem na página n (retomada; não vale no refresh)
   --out <dir>        diretório dos recibos (default ${ARCHIVE_PHOTO_DEFAULT_OUT_DIR})
   --help             esta ajuda
 
 Ambiente:
   FLICKR_API_KEY     chave da API do Flickr (nunca no repo)
-  FLICKR_USER_ID     NSID da conta (ex.: 12345678@N00)
+  FLICKR_USER_ID     NSID da conta (ex.: 12345678@N00; não exigido no --refresh-metadata)
   DATABASE_URL       alvo (obrigatório em todos os modos)
 
---apply em alvo não-local/produção exige ${WRITE_CONFIRM_FLAG}=1, TEQO_ENV=${envLines}
-casando o banco exato e as quatro envs S3_* (o original nunca vai para disco
-efêmero). O dry-run e o --verify são read-only.
+--apply e --refresh-metadata em alvo não-local/produção exigem ${WRITE_CONFIRM_FLAG}=1
+e TEQO_ENV=${envLines} casando o banco exato; o --apply exige também as quatro
+envs S3_* (o original nunca vai para disco efêmero). O dry-run e o --verify são
+read-only.
 `
 
 class StageError extends Error {
@@ -238,39 +251,49 @@ async function main() {
   }
 
   if (!process.env.DATABASE_URL) die('DATABASE_URL não definida; recusando continuar.')
-  const mode = options.apply ? 'apply' : options.verify ? 'verify' : 'plan'
+  const mode = options.apply
+    ? 'apply'
+    : options.verify
+      ? 'verify'
+      : options.refreshMetadata
+        ? 'refresh-metadata'
+        : 'plan'
   const runAt = new Date().toISOString()
   console.log(`[flickr:import] alvo: ${databaseTarget()} | modo: ${mode}`)
 
-  if (mode === 'apply') {
+  if (mode === 'apply' || mode === 'refresh-metadata') {
     assertWriteConfirm({
       label: 'flickr:import',
       flag: WRITE_CONFIRM_FLAG,
-      command: 'pnpm flickr:import --apply',
+      command: `pnpm flickr:import --${mode === 'apply' ? 'apply' : 'refresh-metadata'}`,
     })
     const target = assertEnvironmentDatabaseTarget()
-    const { resolveS3StorageEnv } = await import('../src/utilities/mediaStorage.ts')
-    const storage = resolveS3StorageEnv(process.env)
-    if (mirroredMediaRequired({ s3Enabled: storage.enabled })) {
-      die(
-        `escrita em produção/remoto (${target.environment}) exige mídia espelhada: configure S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID e S3_SECRET_ACCESS_KEY; sem elas o original iria para disco local efêmero.`,
-      )
+    if (mode === 'apply') {
+      const { resolveS3StorageEnv } = await import('../src/utilities/mediaStorage.ts')
+      const storage = resolveS3StorageEnv(process.env)
+      if (mirroredMediaRequired({ s3Enabled: storage.enabled })) {
+        die(
+          `escrita em produção/remoto (${target.environment}) exige mídia espelhada: configure S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID e S3_SECRET_ACCESS_KEY; sem elas o original iria para disco local efêmero.`,
+        )
+      }
     }
   }
 
-  if (mode !== 'verify') {
-    if (!process.env.FLICKR_API_KEY?.trim()) {
-      die('FLICKR_API_KEY ausente — configure a chave da API do Flickr (veja .env.example).')
-    }
-    if (!process.env.FLICKR_USER_ID?.trim()) {
-      die('FLICKR_USER_ID ausente — informe o NSID da conta (ex.: 12345678@N00).')
-    }
+  if (mode !== 'verify' && !process.env.FLICKR_API_KEY?.trim()) {
+    die('FLICKR_API_KEY ausente — configure a chave da API do Flickr (veja .env.example).')
+  }
+  if ((mode === 'plan' || mode === 'apply') && !process.env.FLICKR_USER_ID?.trim()) {
+    die('FLICKR_USER_ID ausente — informe o NSID da conta (ex.: 12345678@N00).')
   }
 
   const config = (await import('../src/payload.config.ts')).default
   const { downloadUrlToFile } = await import('../src/utilities/media/downloadToFile.ts')
-  const { findArchivePhotoByFlickrId, ingestArchivePhoto, listArchivePhotos } =
-    await import('../src/utilities/flickr/archivePhotoIngest.ts')
+  const {
+    findArchivePhotoByFlickrId,
+    ingestArchivePhoto,
+    listArchivePhotos,
+    updateArchivePhotoExif,
+  } = await import('../src/utilities/flickr/archivePhotoIngest.ts')
   const payload = await getPayload({ config })
   const startedAt = Date.now()
 
@@ -291,6 +314,57 @@ async function main() {
       die(
         `${inventory.missingFilename.length} foto(s) sem arquivo armazenado — acervo inconsistente.`,
       )
+    }
+    process.exit(0)
+  }
+
+  if (mode === 'refresh-metadata') {
+    const client = createFlickrClient({ apiKey: process.env.FLICKR_API_KEY })
+    const rows = await listArchivePhotos(payload)
+    const selected = options.limit === null ? rows : rows.slice(0, options.limit)
+    console.log(
+      `[flickr:import] refresh de metadados (EXIF) de ${selected.length} linha(s) do acervo...`,
+    )
+    const results = []
+    for (const row of selected) {
+      const flickrId = String(row.flickrId)
+      try {
+        const rawExif = await withStage('metadata', () => client.getExif(flickrId))
+        const exif = archivePhotoExifEntries(rawExif)
+        const current = Array.isArray(row.exif) ? row.exif : []
+        if (JSON.stringify(current) === JSON.stringify(exif)) {
+          results.push({ flickrId, status: 'unchanged', entries: exif.length })
+          continue
+        }
+        const updated = await updateArchivePhotoExif(payload, { id: row.id, flickrId, exif })
+        if (updated.status === 'failed') {
+          results.push({ flickrId, status: 'failed', error: updated.error })
+          console.log(`[flickr:import]   falha refresh ${flickrId}: ${updated.error}`)
+          continue
+        }
+        results.push({ flickrId, status: 'updated', entries: exif.length })
+        console.log(`[flickr:import]   atualizada ${flickrId} (${exif.length} entrada(s) EXIF)`)
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error)
+        results.push({ flickrId, status: 'failed', error: message })
+        console.log(`[flickr:import]   falha metadata ${flickrId}: ${message}`)
+      }
+    }
+
+    const summary = summarizeArchiveRefresh(results)
+    const report = {
+      runAt,
+      mode,
+      target: databaseTarget(),
+      total: selected.length,
+      summary,
+      durationMs: Date.now() - startedAt,
+    }
+    const reportPath = await writeReport(options, report, '-refresh')
+    for (const line of formatArchiveRefresh(report)) console.log(line)
+    console.log(`\n[flickr:import] recibo JSON: ${reportPath}`)
+    if (summary.updated + summary.unchanged === 0 && results.length > 0) {
+      die('nenhuma linha foi refrescada — falhas listadas no recibo.')
     }
     process.exit(0)
   }
