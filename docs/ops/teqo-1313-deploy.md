@@ -1511,6 +1511,71 @@ levam vetor nem bytes de imagem). O engine carrega os mesmos modelos do
 navegador de `node_modules`; a cópia same-origin para o browser é artefato de
 build (`scripts/copy-face-vision-assets.mjs`).
 
+## C230-followup — importação do Instagram para a Central de Conteúdos
+
+O comando `pnpm content:instagram:import` traz as mídias recentes do perfil
+oficial `@depjorgesolla` para a Central pelo caminho oficial (Graph API da
+própria conta; a credencial é a do global `Social Feed`): cada novidade vira
+uma peça no pipeline C220 (download do arquivo do próprio perfil, transcrição e
+catalogação) e, com `--publish`, é publicada ao fim do lote o que terminou
+`pronto` — falha fica rascunho e é nomeada no recibo. Reexecutar converge
+("novas / já estavam / falharam com motivo") e nunca duplica: a identidade é o
+post, não a grafia da URL. Nada de scraping, terceiro ou stories; a mídia de
+terceiro nunca é baixada (o match é dentro do feed da própria conta).
+
+O dry-run é o padrão e não escreve (lê o feed e o banco):
+
+```bash
+# no homeserver:
+ssh homeserver
+cd ~/stack
+# 1) plano (dry-run; mostra janela, candidatos e peça-link previstos):
+docker compose --profile maintenance run --rm \
+  -v /srv/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:import --days 60
+# 2) canário no alvo (exige TEQO_ENV + confirmação; as 4 S3_* são obrigatórias):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e CONTENT_INSTAGRAM_IMPORT_CONFIRM=1 \
+  -v /srv/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:import --apply --publish --limit 2
+# 3) lote completo — rode em tmux: o processamento baixa, transcreve e cataloga
+#    cada peça em sequência (docker compose run sem -d segura a sessão SSH):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e CONTENT_INSTAGRAM_IMPORT_CONFIRM=1 \
+  -v /srv/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:import --apply --publish --days 60
+```
+
+Os recibos JSON ficam em `data/content-instagram/` do container — monte o
+volume acima para preservá-los. Com `--publish`, o CLI revalida a Central
+pública ao final pela rota oficial de revalidação
+(`POST {NEXT_PUBLIC_SITE_URL}/api/revalidate?tag=contentPieces`, com
+`REVALIDATE_SECRET` do env do stack — a tag entrou na allowlist do endpoint,
+como o álbum do C233); se a revalidação falhar, o
+recibo nomeia o motivo e o fallback manual no homeserver é
+`curl -X POST http://localhost:1313/api/revalidate?tag=contentPieces -H "x-revalidate-secret: $REVALIDATE_SECRET"`
+(no staging, `:1314`). Guardas: fora de teste o
+`TEQO_ENV=staging|production` é obrigatório com o **nome exato** do banco
+(`teqo_staging`/`teqo_1313`); `ALLOW_REMOTE_DB` é recusado; sem as 4 `S3_*` o
+`--apply` recusa (o job gravaria em disco efêmero); e
+`CONTENT_INSTAGRAM_IMPORT_CONFIRM=1` é exigido em alvo não-local. Sem
+credencial no global o comando falha fechado com a mensagem de produto; o token
+nunca entra em recibo/log.
+
+**Rede:** o job baixa o arquivo do CDN do Instagram e a rota IPv4 do container
+é instável (post-mortem `2026-09-25-instagram-cdn-ipv4-instavel.md`) — o
+serviço de manutenção usado precisa estar anexado à rede `teqo-ipv6` do stack
+(a mesma do container de produção). Sem ela, parte dos vídeos vira peça-link
+por `indisponivel` (honesto, mas não é o desejado).
+
+**Reprocessar uma falha:** um `falhou` fica rascunho e a reimportação **pula**
+o que já existe — o retry é o botão "Reprocessar" da ficha (C211), não uma
+segunda rodada do CLI. `--limit` deixa a cauda no lote: rode de novo (o CLI
+pula o que já entrou).
+
+Rollback: nada de schema. O kill switch é despublicar/apagar as peças no admin
+(a Central pública atualiza na hora pelo tag `contentPieces`).
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)

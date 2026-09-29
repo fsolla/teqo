@@ -15,6 +15,14 @@ export const REVALIDATE_PRIVACY_POLICY_CACHE_TAG = getGlobalCacheTag('privacy-po
 const REVALIDATE_ARCHIVE_PHOTOS_TAG = getCollectionListingTag('archivePhoto')
 
 /**
+ * C230-followup — the Central de Conteúdos listing tag: the Instagram import
+ * CLI writes straight to the DB (outside any request, so the collection hook's
+ * `revalidateTag` is a no-op in that process) and busts it through this
+ * endpoint after publishing. Derived from the same owner as the hook.
+ */
+export const REVALIDATE_CONTENT_PIECES_TAG = getCollectionListingTag('contentPiece')
+
+/**
  * Cache tag of the campaign home content board's external feeds (`unstable_cache`
  * entry of `getYouTubeFeed`). The `SocialFeedSettings` global's `afterChange`
  * busts it; the runbook tag is also allowlisted here for direct-DB writes.
@@ -28,6 +36,7 @@ const ALLOWED_REVALIDATE_TAGS = [
   MUNICIPALITY_CATALOG_CACHE_TAG,
   REVALIDATE_SOCIAL_FEED_TAG,
   REVALIDATE_ARCHIVE_PHOTOS_TAG,
+  REVALIDATE_CONTENT_PIECES_TAG,
 ] as const
 
 type AllowedRevalidateTag = (typeof ALLOWED_REVALIDATE_TAGS)[number]

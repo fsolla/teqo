@@ -407,7 +407,7 @@ export const createContentPieceFromProfilePostForActor = async (input: {
 
   if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
 
-  const outcome = await createContentPieceFromProfilePost({ payload, actor, url: parsed.url })
+  const { outcome } = await createContentPieceFromProfilePost({ payload, actor, url: parsed.url })
   return { outcome }
 }
 

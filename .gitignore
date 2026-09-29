@@ -84,6 +84,8 @@ next-env.d.ts
 /data/falas-web/
 # C231 — Flickr photo-archive cache + receipts (pnpm flickr:import)
 /data/flickr/
+# C230-followup — Instagram content import receipts (pnpm content:instagram:import)
+/data/content-instagram/
 # C229 — speech semantic index reports (pnpm acervo:index)
 /data/acervo-index/
 # C232 — photo-archive cataloguing receipts (pnpm archive:catalog)

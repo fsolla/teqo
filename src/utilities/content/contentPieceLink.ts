@@ -84,8 +84,11 @@ const matchesInstagramShortcode =
 /**
  * C230 — the one identity probe of the vertical: a post is already catalogued
  * when ANY canonical spelling of its shortcode is a `sourceUrl`. The paste
- * path (C220) and the profile importer (C230) share it, so pasting `/p/ABC/`
- * answers "já está na Central" for a piece that entered as `/reel/ABC/`.
+ * path (C220), the profile importer (C230) and the ops import CLI share it, so
+ * pasting `/p/ABC/` answers "já está na Central" for a piece that entered as
+ * `/reel/ABC/`. `actor: null` is the ops/system mode: the probe runs with the
+ * intentional admin bypass (the pipeline owns those rows), never for a request
+ * path.
  */
 export const contentPieceExistsForPostIdentity = async ({
   payload,
@@ -93,7 +96,7 @@ export const contentPieceExistsForPostIdentity = async ({
   link,
 }: {
   payload: Payload
-  actor: CampaignUser
+  actor: CampaignUser | null
   link: ContentPieceLink
 }): Promise<boolean> => {
   const found = await payload.find({
@@ -102,8 +105,9 @@ export const contentPieceExistsForPostIdentity = async ({
     depth: 0,
     limit: 1,
     pagination: false,
-    user: actor,
-    overrideAccess: false,
+    // Intentional admin bypass only for the ops/system mode (`actor: null`);
+    // every request path passes the acting campaign user.
+    ...(actor ? { user: actor, overrideAccess: false } : { overrideAccess: true }),
   })
   return found.docs.length > 0
 }
