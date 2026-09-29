@@ -90,7 +90,7 @@ export const contentPieceLinkRequestSchema = z.object({
  * real date, order, not in the future — so the wire never carries an
  * impossible window.
  */
-export const contentPieceProfileImportWindowSchema = z.discriminatedUnion('mode', [
+const contentPieceProfileImportWindowSchema = z.discriminatedUnion('mode', [
   z.object({ mode: z.literal('recent') }),
   z.object({
     mode: z.literal('period'),

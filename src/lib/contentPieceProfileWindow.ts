@@ -29,7 +29,7 @@ export type ContentPieceProfileWindow =
 /** The feed post the window filter needs: the shared metadata + its timestamp. */
 export type ContentPieceProfileWindowPost = ContentPieceProfilePost & { timestamp: string }
 
-export type ContentPieceProfileWindowCandidate = {
+type ContentPieceProfileWindowCandidate = {
   url: string
   shortcode: string
   linkOnlyReason: ContentPieceProfileLinkOnlyReason | null
