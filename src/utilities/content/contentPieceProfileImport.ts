@@ -56,6 +56,12 @@ export type ContentPieceProfileImportListing = {
 
 export type ContentPieceProfileImportOutcome = 'created' | 'existing'
 
+export type ContentPieceProfileImportCreation = {
+  outcome: ContentPieceProfileImportOutcome
+  /** The created row; null when the identity already existed (no new piece). */
+  contentPieceId: number | null
+}
+
 const cataloguedSourceUrls = async ({
   payload,
   actor,
@@ -191,6 +197,10 @@ export const listContentPieceProfileImportCandidates = async ({
  * peça-link reason), transcribes and catalogues — the importer never
  * downloads anything itself. `existing` covers the race with another actor
  * (the identity probe lost) and the unique index is the last barrier.
+ *
+ * `actor: null` is the ops/system mode used by the content import CLI: the
+ * same shape and probe, with the intentional admin bypass of the pipeline
+ * (the caller runs the job inline instead of scheduling it after a response).
  */
 export const createContentPieceFromProfilePost = async ({
   payload,
@@ -199,16 +209,18 @@ export const createContentPieceFromProfilePost = async ({
   startJob = startContentPieceJobInBackground,
 }: {
   payload: Payload
-  actor: CampaignUser
+  actor: CampaignUser | null
   url: string
   startJob?: (contentPieceId: number) => void
-}): Promise<ContentPieceProfileImportOutcome> => {
+}): Promise<ContentPieceProfileImportCreation> => {
   const link = parseContentPieceLink(url)
   if (!link || link.origin !== 'instagram') {
     throw new Error(CONTENT_PIECE_LINK_INVALID_MESSAGE)
   }
 
-  if (await contentPieceExistsForPostIdentity({ payload, actor, link })) return 'existing'
+  if (await contentPieceExistsForPostIdentity({ payload, actor, link })) {
+    return { outcome: 'existing', contentPieceId: null }
+  }
 
   try {
     const piece = await payload.create({
@@ -223,15 +235,18 @@ export const createContentPieceFromProfilePost = async ({
         step: 'extraindo',
       },
       depth: 0,
-      user: actor,
-      overrideAccess: false,
+      // Intentional admin bypass only for the ops/system mode (`actor: null`);
+      // every request path passes the acting campaign user.
+      ...(actor ? { user: actor, overrideAccess: false } : { overrideAccess: true }),
     })
     startJob(piece.id)
-    return 'created'
+    return { outcome: 'created', contentPieceId: piece.id }
   } catch (error) {
     // A concurrent import can still hit the unique index; it is the same
     // duplicate the identity probe answers.
-    if (isContentPieceSourceUrlDuplicateError(error)) return 'existing'
+    if (isContentPieceSourceUrlDuplicateError(error)) {
+      return { outcome: 'existing', contentPieceId: null }
+    }
     throw error
   }
 }

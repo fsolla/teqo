@@ -1739,13 +1739,14 @@ describe('content pieces (C211)', () => {
       const marker = Date.now().toString(36)
       const started: number[] = []
 
-      const outcome = await createContentPieceFromProfilePost({
+      const result = await createContentPieceFromProfilePost({
         payload,
         actor: communicator,
         url: `https://www.instagram.com/reel/CR${marker}/`,
         startJob: (id) => started.push(id),
       })
-      expect(outcome).toBe('created')
+      expect(result.outcome).toBe('created')
+      expect(result.contentPieceId).not.toBeNull()
 
       const rows = await payload.find({
         collection: 'contentPiece',
@@ -1781,8 +1782,49 @@ describe('content pieces (C211)', () => {
           url: `https://www.instagram.com/p/CR${marker}/`,
           startJob: (id) => started.push(id),
         }),
-      ).resolves.toBe('existing')
+      ).resolves.toEqual({ outcome: 'existing', contentPieceId: null })
       expect(started).toHaveLength(1)
+    })
+
+    // The ops import CLI creates without an actor (system mode) and needs the
+    // created id to run the job inline: same shape, admin bypass, no stamp.
+    it('creates in system mode without an actor and returns the created id', async () => {
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+      const started: number[] = []
+
+      const result = await createContentPieceFromProfilePost({
+        payload,
+        actor: null,
+        url: `https://www.instagram.com/reel/SYS${marker}/`,
+        startJob: (id) => started.push(id),
+      })
+      expect(result.outcome).toBe('created')
+      expect(result.contentPieceId).not.toBeNull()
+
+      const row = await payload.findByID({
+        collection: 'contentPiece',
+        id: result.contentPieceId!,
+        depth: 0,
+        overrideAccess: true,
+      })
+      createdPieceIds.add(row.id)
+      expect(row).toMatchObject({
+        title: `Instagram · SYS${marker}`,
+        status: 'rascunho',
+        processingStatus: 'processando',
+      })
+      expect(row.createdBy ?? null).toBeNull()
+      expect(started).toEqual([row.id])
+
+      // The system probe shares the identity predicate: no twin on re-run.
+      await expect(
+        createContentPieceFromProfilePost({
+          payload,
+          actor: null,
+          url: `https://www.instagram.com/p/SYS${marker}/`,
+        }),
+      ).resolves.toEqual({ outcome: 'existing', contentPieceId: null })
     })
 
     it('refuses a non-Instagram URL in the profile creator', async () => {

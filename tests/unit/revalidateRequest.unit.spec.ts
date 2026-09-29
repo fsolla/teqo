@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { getGlobalCacheTag } from '@/utilities/globals'
 import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipality/municipalityCatalogCache'
 import {
+  REVALIDATE_CONTENT_PIECES_TAG,
   REVALIDATE_POSTS_TAG,
   REVALIDATE_PRIVACY_POLICY_CACHE_TAG,
   resolveRevalidateTag,
@@ -30,6 +31,11 @@ describe('resolveRevalidateTag', () => {
     expect(resolveRevalidateTag(MUNICIPALITY_CATALOG_CACHE_TAG, null)).toEqual({
       ok: true,
       tag: MUNICIPALITY_CATALOG_CACHE_TAG,
+    })
+    // C230-followup — the import CLI busts the Central's listing through here.
+    expect(resolveRevalidateTag(REVALIDATE_CONTENT_PIECES_TAG, null)).toEqual({
+      ok: true,
+      tag: REVALIDATE_CONTENT_PIECES_TAG,
     })
   })
 

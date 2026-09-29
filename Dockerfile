@@ -19,6 +19,11 @@ FROM base AS migrator
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# C230-followup — the maintenance image is also the runtime of the operational
+# CLIs, and the Central content import job (`content:instagram:import`) extracts
+# audio with ffmpeg; the runbook executes it in this service. The deps/builder
+# stages still never pay for it.
+RUN apk add --no-cache ffmpeg
 # Bake the package manager INTO the image: `pnpm migrate` runs at CONTAINER
 # START, so without a corepack cache the runtime downloads pnpm from
 # registry.npmjs.org — the maintenance container's outbound is not guaranteed
@@ -75,8 +80,9 @@ FROM base AS runner
 WORKDIR /app
 
 # C167 — `ffmpeg` cuts the exact [início,fim] excerpt of an acervo speech
-# (speechCutJob). Only the runner stage pays for it: the deps/builder/migrator
-# stages never run it. `FFMPEG_PATH` can still override the binary.
+# (speechCutJob). Only the runner and migrator stages pay for it (the migrator
+# is the maintenance CLI runtime, see above): deps/builder never run it.
+# `FFMPEG_PATH` can still override the binary.
 RUN apk add --no-cache ffmpeg
 
 ENV NODE_ENV=production

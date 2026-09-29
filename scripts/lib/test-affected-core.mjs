@@ -86,6 +86,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/graficosInstagramRender.mjs',
   'scripts/lib/imageFill.mjs',
   'scripts/lib/imageResize.mjs',
+  'scripts/lib/instagramContentPlan.mjs',
   'scripts/lib/issues-panel.mjs',
   'scripts/lib/markdown-ansi.mjs',
   'scripts/lib/mediaBinaries.mjs',
