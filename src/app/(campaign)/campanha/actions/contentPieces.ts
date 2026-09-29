@@ -21,6 +21,7 @@ import {
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
   contentPieceDeleteRequestSchema,
   contentPieceLinkRequestSchema,
+  contentPieceProfileImportRequestSchema,
   contentPiecePublicationRequestSchema,
   contentPieceRetryRequestSchema,
   contentPieceStatusRequestSchema,
@@ -385,14 +386,16 @@ export const addContentPieceByLinkForActor = async (input: {
  * Central by the identity of the post, never by the URL spelling. The listing
  * persists nothing; the confirmation creates the pieces one by one.
  */
-export const listContentPieceProfileImportCandidatesForActor =
-  async (): Promise<ContentPieceProfileImportListing> => {
-    const { payload, actor } = await getCampaignActionContext()
+export const listContentPieceProfileImportCandidatesForActor = async (
+  input: unknown = {},
+): Promise<ContentPieceProfileImportListing> => {
+  const window = contentPieceProfileImportRequestSchema.parse(input)
+  const { payload, actor } = await getCampaignActionContext()
 
-    if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
 
-    return listContentPieceProfileImportCandidates({ payload, actor })
-  }
+  return listContentPieceProfileImportCandidates({ payload, actor, window })
+}
 
 /**
  * C230 — creates ONE draft from ONE listed media through the C220 pipeline

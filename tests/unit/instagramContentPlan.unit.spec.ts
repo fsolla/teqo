@@ -3,6 +3,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  contentPieceProfileFeedIdentityUrls,
+  planContentPieceProfileWindow,
+} from '@/lib/contentPieceProfileWindow'
+
+import {
   formatInstagramContentReport,
   instagramContentFeedIdentityUrls,
   instagramContentReportStamp,
@@ -85,81 +90,12 @@ describe('content:instagram:import arguments', () => {
   })
 })
 
-describe('planInstagramContentWindow', () => {
-  const from = '2026-08-01T00:00:00.000Z'
-  const to = '2026-09-30T00:00:00.000Z'
-
-  it('keeps the window novelties, newest first, and classifies each link-only kind', () => {
-    const plan = planInstagramContentWindow({
-      posts: [
-        post('NOVO'),
-        post('CARROSSEL', { mediaType: 'CAROUSEL_ALBUM', mediaUrl: null }),
-        post('PROTEGIDO', { mediaUrl: null }),
-      ],
-      existingSourceUrls: [],
-      from,
-      to,
-    })
-
-    expect(plan.found).toBe(3)
-    expect(plan.existingCount).toBe(0)
-    expect(plan.outsideWindow).toBe(0)
-    expect(plan.malformed).toBe(0)
-    expect(plan.candidates).toEqual([
-      {
-        url: 'https://www.instagram.com/reel/NOVO/',
-        shortcode: 'NOVO',
-        linkOnlyReason: null,
-        timestamp: '2026-09-20T12:00:00.000Z',
-        mediaType: 'REEL',
-      },
-      expect.objectContaining({ shortcode: 'CARROSSEL', linkOnlyReason: 'carrossel' }),
-      expect.objectContaining({ shortcode: 'PROTEGIDO', linkOnlyReason: 'indisponivel' }),
-    ])
-  })
-
-  it('drops what the Central already carries in ANY spelling and counts the rest', () => {
-    const plan = planInstagramContentWindow({
-      posts: [
-        post('JA', { permalink: 'https://www.instagram.com/reel/JA/' }),
-        post('FORA', { timestamp: '2026-07-01T00:00:00.000Z' }),
-        post('SEMID', { permalink: 'https://example.com/no-id/' }),
-        post('REPETIDA'),
-        post('REPETIDA', { permalink: 'https://www.instagram.com/p/REPETIDA/' }),
-      ],
-      // The catalogue carries the same post under the `p` kind.
-      existingSourceUrls: ['https://www.instagram.com/p/JA/'],
-      from,
-      to,
-    })
-
-    expect(plan.found).toBe(3)
-    expect(plan.existingCount).toBe(1)
-    expect(plan.existingShortcodes).toEqual(['JA'])
-    expect(plan.outsideWindow).toBe(1)
-    expect(plan.malformed).toBe(1)
-    expect(plan.feedDuplicates).toBe(1)
-    expect(plan.candidates.map((candidate) => candidate.shortcode)).toEqual(['REPETIDA'])
-  })
-})
-
-describe('instagramContentFeedIdentityUrls', () => {
-  it('spells every canonical kind of each parseable post once', () => {
-    const urls = instagramContentFeedIdentityUrls([
-      post('A'),
-      post('B', { permalink: 'https://www.instagram.com/p/B/' }),
-      post('A', { permalink: 'https://www.instagram.com/p/A/' }),
-      post('X', { permalink: 'https://example.com/x/' }),
-    ])
-
-    expect(urls).toEqual([
-      'https://www.instagram.com/p/A/',
-      'https://www.instagram.com/reel/A/',
-      'https://www.instagram.com/tv/A/',
-      'https://www.instagram.com/p/B/',
-      'https://www.instagram.com/reel/B/',
-      'https://www.instagram.com/tv/B/',
-    ])
+describe('planner re-exports (C235)', () => {
+  it('keeps the CLI names bound to the single owner in src/lib', () => {
+    // The window policy is pinned by its owner spec; here only the delegation
+    // contract of the CLI shell matters.
+    expect(planInstagramContentWindow).toBe(planContentPieceProfileWindow)
+    expect(instagramContentFeedIdentityUrls).toBe(contentPieceProfileFeedIdentityUrls)
   })
 })
 

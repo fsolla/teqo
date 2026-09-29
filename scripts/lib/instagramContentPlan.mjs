@@ -8,10 +8,15 @@
  */
 
 import {
-  contentPiecePostIdentityUrls,
-  contentPieceProfileCandidateFromPost,
-  parseContentPieceLink,
-} from '../../src/lib/contentPiece.ts'
+  contentPieceProfileFeedIdentityUrls,
+  planContentPieceProfileWindow,
+} from '../../src/lib/contentPieceProfileWindow.ts'
+
+// C235 — the window filter and the identity dedupe moved to their single owner
+// in `src/lib` (the server importer reads the same policy); the names below are
+// the CLI contract this module has always exported.
+export const planInstagramContentWindow = planContentPieceProfileWindow
+export const instagramContentFeedIdentityUrls = contentPieceProfileFeedIdentityUrls
 
 /** Default recency window of one import run (the request's 60 days). */
 const INSTAGRAM_CONTENT_DEFAULT_DAYS = 60
@@ -79,104 +84,6 @@ export const parseInstagramContentCliArgs = (argv = process.argv.slice(2)) => {
     throw new Error('--out não pode escapar do diretório do repo (sem "..").')
   }
   return options
-}
-
-/**
- * The identity URLs of every parseable post of the feed — what the dedupe
- * query asks the Central for in ONE `sourceUrl in` lookup. A permalink the
- * catalogue cannot parse contributes nothing (it never becomes a candidate).
- *
- * @param {Array<{ permalink: string, mediaType: string, mediaUrl?: string | null }>} posts
- * @returns {string[]}
- */
-export const instagramContentFeedIdentityUrls = (posts) => {
-  const urls = new Set()
-  for (const post of posts) {
-    const candidate = contentPieceProfileCandidateFromPost(post)
-    if (!candidate) continue
-    const link = parseContentPieceLink(candidate.url)
-    if (!link) continue
-    for (const url of contentPiecePostIdentityUrls(link)) urls.add(url)
-  }
-  return [...urls]
-}
-
-/**
- * Filters the feed to the recency window and splits it into novelties, pieces
- * the Central already had and posts that cannot be imported (outside the
- * window, unparseable permalink or a repeated identity inside the feed).
- * Candidates keep the feed order (newest first).
- *
- * `found` counts the parseable posts inside the window: candidates + already
- * catalogued + repeated identities.
- *
- * @param {{
- *   posts: Array<{ permalink: string, mediaType: string, mediaUrl?: string | null, timestamp: string }>,
- *   existingSourceUrls?: string[],
- *   from: string,
- *   to: string,
- * }} input
- */
-export const planInstagramContentWindow = ({ posts, existingSourceUrls = [], from, to }) => {
-  const fromMs = Date.parse(from)
-  const toMs = Date.parse(to)
-  if (!Number.isFinite(fromMs) || !Number.isFinite(toMs)) {
-    throw new Error('janela inválida: from/to precisam ser instantes ISO.')
-  }
-
-  const existing = new Set(existingSourceUrls)
-  const seen = new Set()
-  const candidates = []
-  const existingShortcodes = []
-  let outsideWindow = 0
-  let malformed = 0
-  let feedDuplicates = 0
-
-  for (const post of posts) {
-    const timestamp = Date.parse(post.timestamp)
-    if (!Number.isFinite(timestamp) || timestamp < fromMs || timestamp > toMs) {
-      // An item without a usable timestamp cannot be placed in the window.
-      if (!Number.isFinite(timestamp)) malformed += 1
-      else outsideWindow += 1
-      continue
-    }
-
-    const candidate = contentPieceProfileCandidateFromPost(post)
-    const link = candidate ? parseContentPieceLink(candidate.url) : null
-    if (!candidate || !link) {
-      malformed += 1
-      continue
-    }
-
-    const identityUrls = contentPiecePostIdentityUrls(link)
-    if (identityUrls.some((url) => existing.has(url))) {
-      existingShortcodes.push(link.shortcode)
-      continue
-    }
-    if (identityUrls.some((url) => seen.has(url))) {
-      feedDuplicates += 1
-      continue
-    }
-    identityUrls.forEach((url) => seen.add(url))
-    candidates.push({
-      url: candidate.url,
-      shortcode: link.shortcode,
-      linkOnlyReason: candidate.linkOnlyReason,
-      timestamp: post.timestamp,
-      mediaType: post.mediaType,
-    })
-  }
-
-  return {
-    window: { from, to },
-    found: candidates.length + existingShortcodes.length + feedDuplicates,
-    existingCount: existingShortcodes.length,
-    existingShortcodes,
-    feedDuplicates,
-    malformed,
-    outsideWindow,
-    candidates,
-  }
 }
 
 /**

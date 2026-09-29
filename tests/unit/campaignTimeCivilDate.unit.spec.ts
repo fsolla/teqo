@@ -8,9 +8,11 @@ import {
   formatBahiaCivilDate,
   formatBahiaCivilDateTimeLabel,
   formatBahiaEventDateLabel,
+  formatCivilDateLabel,
   hourOptions,
   minuteOptionsForStep,
   subtractBahiaCivilDays,
+  subtractBahiaCivilMonths,
   timeStepMinutes,
 } from '@/lib/campaignTime'
 
@@ -21,6 +23,17 @@ describe('Bahia civil date helpers (B57)', () => {
 
   it('subtracts whole civil days', () => {
     expect(subtractBahiaCivilDays('2026-08-08', 7)).toBe('2026-08-01')
+  })
+
+  it('subtracts whole civil months, clamping the day to the target month', () => {
+    expect(subtractBahiaCivilMonths('2026-08-31', 6)).toBe('2026-02-28')
+    expect(subtractBahiaCivilMonths('2024-08-31', 6)).toBe('2024-02-29')
+    expect(subtractBahiaCivilMonths('2026-03-15', 6)).toBe('2025-09-15')
+    expect(subtractBahiaCivilMonths('2026-01-15', 1)).toBe('2025-12-15')
+  })
+
+  it('formats a Bahia civil date anchor as a pt-BR day label', () => {
+    expect(formatCivilDateLabel('2026-08-01')).toBe('01/08/2026')
   })
 
   it('counts calendar days between civil dates', () => {

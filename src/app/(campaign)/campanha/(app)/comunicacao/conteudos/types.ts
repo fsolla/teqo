@@ -10,13 +10,15 @@ export type ContentPieceLinkResponse =
   | { status: 'success'; piece: ContentPieceViewModel }
   | { status: 'error'; message: string }
 
-/** Wire contract of `POST .../conteudos/importar` (C230) — profile listing. */
+/** Wire contract of `POST .../conteudos/importar` (C230/C235) — profile listing. */
 export type ContentPieceProfileImportCandidatesResponse =
   | {
       status: 'success'
       found: number
       existingCount: number
       candidates: ContentPieceProfileCandidate[]
+      /** The official API did not reach the requested window start (C235). */
+      truncated: boolean
     }
   | { status: 'error'; message: string }
 
