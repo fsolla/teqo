@@ -1,0 +1,1108 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>DEGRADED — C235 · Importar qualquer janela do perfil</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-sidebar: var(--sidebar);
+        --color-destructive: var(--destructive);
+      }
+
+      [data-theme='campaign'] {
+        --radius: 0.5rem;
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --card: #ffffff;
+        --primary: #c51414;
+        --primary-foreground: #ffffff;
+        --secondary: #f5f5f4;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --destructive: #b42318;
+        --border: rgb(28 25 23 / 12%);
+        --sidebar: #fafaf9;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      .board {
+        background: #efeeec;
+        background-image: radial-gradient(rgb(28 25 23 / 8%) 0.7px, transparent 0.7px);
+        background-size: 16px 16px;
+      }
+      .frame {
+        box-shadow: 0 18px 52px rgb(28 25 23 / 10%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .scene-label::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #d6d3d1;
+      }
+
+      .btn {
+        display: inline-flex;
+        min-height: 44px;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      .btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      .btn-primary {
+        background: var(--primary);
+        color: white;
+      }
+      .btn-outline {
+        border-color: var(--border);
+        background: white;
+        color: var(--foreground);
+      }
+      .btn-ghost {
+        background: transparent;
+        color: var(--muted-foreground);
+      }
+      .btn-disabled {
+        border-color: var(--border);
+        background: #f5f5f4;
+        color: #a8a29e;
+        cursor: not-allowed;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 650;
+        line-height: 1.25;
+      }
+      .badge-ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .badge-work {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .badge-draft {
+        background: #f4f4f5;
+        color: #57534e;
+      }
+      .badge-link {
+        background: #eef0f3;
+        color: #46505c;
+      }
+      .badge-default {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+
+      .field {
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 8px;
+        background: white;
+        padding: 9px 12px;
+        font-size: 14px;
+      }
+
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: white;
+        padding: 5px 10px;
+        font-size: 12px;
+        color: #57534e;
+      }
+
+      .modal {
+        width: 512px;
+        max-height: 620px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        padding: 32px;
+        box-shadow: 0 24px 70px rgb(0 0 0 / 28%);
+      }
+      .modal-mobile {
+        width: calc(100% - 32px);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: white;
+        padding: 24px;
+        box-shadow: 0 20px 60px rgb(0 0 0 / 30%);
+      }
+
+      /* Window chooser — presentation only. */
+      .window-option {
+        display: flex;
+        width: 100%;
+        cursor: pointer;
+        gap: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: white;
+        padding: 14px;
+        text-align: left;
+      }
+      .window-option.is-selected {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 1px var(--primary);
+      }
+      .window-option .dot {
+        display: grid;
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        place-items: center;
+        margin-top: 2px;
+        border: 2px solid #d6d3d1;
+        border-radius: 999px;
+      }
+      .window-option .dot::after {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: transparent;
+      }
+      .window-option.is-selected .dot {
+        border-color: var(--primary);
+      }
+      .window-option.is-selected .dot::after {
+        background: var(--primary);
+      }
+      .period-fields {
+        display: none;
+        padding: 12px 2px 0 30px;
+      }
+
+      .spinner {
+        width: 18px;
+        height: 18px;
+        border: 2px solid #e7e5e4;
+        border-top-color: var(--primary);
+        border-radius: 999px;
+        animation: spin 0.9s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .spinner {
+          animation: none;
+          border-color: var(--primary);
+        }
+      }
+    </style>
+  </head>
+
+  <body class="board min-h-screen text-foreground antialiased">
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <div class="rounded-xl border-2 border-amber-400 bg-amber-50 p-4" role="note">
+        <div class="flex items-start gap-3">
+          <svg
+            class="mt-0.5 size-5 shrink-0 text-amber-600"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+            <path d="M12 9v4m0 4h.01" />
+          </svg>
+          <div>
+            <b class="text-sm text-amber-900">DEGRADED — design NÃO certificado; requer sign-off humano.</b>
+            <p class="mt-1 text-xs leading-5 text-amber-900">
+              Produzido no tier de fallback (<b>opencode-go/deepseek-v4.1-flash</b>). Tokens, copy e
+              cenas seguem a doutrina, mas isto <b>não é design aprovado</b> e não pode ir ao gate
+              sem confirmação humana explícita.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <header class="max-w-3xl">
+        <span class="badge bg-primary text-white">C235 · design do gate (DEGRADED)</span>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Importar qualquer janela do perfil</h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          Mesmo diálogo do C230 ganhando a escolha da janela: <b>Recentes</b> continua o padrão e o
+          recorte por período é gesto explícito. Janela maior mostra o tamanho honesto (novas · já
+          estavam · total) antes de criar. Tudo entra como <b>Rascunho</b>; nada é publicado.
+        </p>
+        <p class="mt-2 text-xs leading-5 text-stone-500">
+          Números de cena são ilustrativos do design. Tokens reais: <code>data-theme="campaign"</code>,
+          Inter, Mandate Red <code>#c51414</code>. Nenhuma mudança de <code>DESIGN.md</code> é proposta
+          aqui (token-neutral) — qualquer evolução de regra fica para o frontier/humano.
+        </p>
+      </header>
+
+      <!-- ============================= CENA 01 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 01</span>
+          <h2>Desktop 1280 · passo da janela — “Recentes” é o padrão</h2>
+        </div>
+        <div class="desktop frame relative mx-auto min-h-[760px] overflow-hidden rounded-xl border bg-white">
+          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button
+              class="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <header>
+              <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="18" height="18" x="3" y="3" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
+              <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                Escolha quais publicações de <b class="text-foreground">@depjorgesolla</b> procurar.
+                Só as que ainda não estão na Central entram, sempre como rascunho.
+              </p>
+            </header>
+
+            <div class="mt-5">
+              <p class="text-sm font-semibold">Qual janela de publicações?</p>
+              <p class="mt-0.5 text-xs text-muted-foreground">
+                O recorte usa a data de publicação do post.
+              </p>
+
+              <div class="window-choice mt-3 space-y-2" role="radiogroup" aria-label="Janela de publicações">
+                <div class="window-block">
+                  <button type="button" role="radio" aria-checked="true" class="window-option is-selected">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="min-w-0">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <b class="text-sm">Recentes</b>
+                        <span class="badge badge-default">Padrão</span>
+                      </span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                        As publicações mais novas do perfil. É o comportamento de sempre.
+                      </span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="window-block">
+                  <button type="button" role="radio" aria-checked="false" class="window-option">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="min-w-0">
+                      <span class="flex items-center gap-2">
+                        <b class="text-sm">Período</b>
+                      </span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                        Escolha desde uma data; a data final é opcional.
+                      </span>
+                    </span>
+                  </button>
+                  <div class="period-fields">
+                    <div class="grid grid-cols-2 gap-3">
+                      <label class="block">
+                        <span class="text-xs font-medium text-muted-foreground">Desde</span>
+                        <input class="field mt-1" value="01/08/2026" aria-label="Data inicial" />
+                      </label>
+                      <label class="block">
+                        <span class="text-xs font-medium text-muted-foreground">Até (opcional)</span>
+                        <input class="field mt-1" placeholder="dd/mm/aaaa" aria-label="Data final opcional" />
+                      </label>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                      <span class="chip">Últimos 30 dias</span>
+                      <span class="chip">Últimos 6 meses</span>
+                      <span class="chip">Este ano</span>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">Sem data final, a busca vai até hoje.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 space-y-2 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground">
+              <p class="flex gap-2">
+                <svg class="mt-0.5 size-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                <span><b class="text-foreground">Somente novidades</b> — o que já está é reconhecido, sem cópias.</span>
+              </p>
+              <p class="flex gap-2">
+                <svg class="mt-0.5 size-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                <span><b class="text-foreground">Tudo entra como Rascunho</b> — nada é publicado automaticamente.</span>
+              </p>
+              <p class="flex gap-2">
+                <svg class="mt-0.5 size-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                <span><b class="text-foreground">Só o perfil oficial, pela API oficial</b> — sem scraping.</span>
+              </p>
+            </div>
+
+            <footer class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Cancelar</button>
+              <button class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                Buscar publicações
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================= CENA 02 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 02</span>
+          <h2>Desktop 1280 · passo da janela — Período é gesto explícito</h2>
+        </div>
+        <div class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white">
+          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button
+              class="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <header>
+              <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 2v4M16 2v4" />
+                  <rect width="18" height="18" x="3" y="4" rx="2" />
+                  <path d="M3 10h18" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
+              <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                Traga o acervo de um período de <b class="text-foreground">@depjorgesolla</b> que ficou
+                fora das importações recentes.
+              </p>
+            </header>
+
+            <div class="mt-5">
+              <p class="text-sm font-semibold">Qual janela de publicações?</p>
+              <p class="mt-0.5 text-xs text-muted-foreground">
+                O recorte usa a data de publicação do post.
+              </p>
+
+              <div class="window-choice mt-3 space-y-2" role="radiogroup" aria-label="Janela de publicações">
+                <div class="window-block">
+                  <button type="button" role="radio" aria-checked="false" class="window-option">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="min-w-0">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <b class="text-sm">Recentes</b>
+                        <span class="badge badge-draft">Padrão</span>
+                      </span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                        As publicações mais novas do perfil. É o comportamento de sempre.
+                      </span>
+                    </span>
+                  </button>
+                </div>
+
+                <div class="window-block">
+                  <button type="button" role="radio" aria-checked="true" class="window-option is-selected">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="min-w-0">
+                      <span class="flex items-center gap-2">
+                        <b class="text-sm">Período</b>
+                      </span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">
+                        Escolha desde uma data; a data final é opcional.
+                      </span>
+                    </span>
+                  </button>
+                  <div class="period-fields" style="display: block">
+                    <div class="grid grid-cols-2 gap-3">
+                      <label class="block">
+                        <span class="text-xs font-medium text-muted-foreground">Desde</span>
+                        <input class="field mt-1" value="01/08/2026" aria-label="Data inicial" />
+                      </label>
+                      <label class="block">
+                        <span class="text-xs font-medium text-muted-foreground">Até (opcional)</span>
+                        <input class="field mt-1" value="31/08/2026" aria-label="Data final opcional" />
+                      </label>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                      <span class="chip">Últimos 30 dias</span>
+                      <span class="chip">Últimos 6 meses</span>
+                      <span class="chip">Este ano</span>
+                    </div>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                      Deixe “Até” em branco para buscar até hoje.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="mt-4 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground">
+              <b class="text-foreground">Sem scraping.</b>
+              Só o perfil oficial @depjorgesolla, pela API oficial. A janela escolhida é varrida pela
+              data de publicação; o que já está na Central não vira cópia.
+            </div>
+
+            <footer class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Cancelar</button>
+              <button class="btn btn-primary">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.3-4.3" />
+                </svg>
+                Buscar publicações
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================= CENA 03 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 03</span>
+          <h2>Desktop 1280 · tamanho honesto da janela antes de criar (guardrail)</h2>
+        </div>
+        <div class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white">
+          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button
+              class="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <header>
+              <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect width="18" height="18" x="3" y="3" rx="5" />
+                  <circle cx="12" cy="12" r="4" />
+                  <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
+              <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                A janela escolhida tem <b class="text-foreground">96 publicações</b>. Confira o tamanho
+                antes de criar os rascunhos.
+              </p>
+            </header>
+
+            <div class="mt-5 space-y-3">
+              <div class="flex items-center gap-2 rounded-lg border bg-stone-50 px-3.5 py-2.5 text-xs">
+                <svg class="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 2v4M16 2v4" />
+                  <rect width="18" height="18" x="3" y="4" rx="2" />
+                  <path d="M3 10h18" />
+                </svg>
+                <span class="font-medium">Período</span>
+                <span class="text-muted-foreground">01/08/2026 → hoje</span>
+                <span class="ml-auto text-xs font-medium text-primary">Trocar</span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-2">
+                <div class="rounded-lg border border-green-200 bg-green-50 p-3">
+                  <b class="block text-xl tabular-nums text-green-800">84</b>
+                  <span class="text-xs font-medium text-green-800">novas a criar</span>
+                </div>
+                <div class="rounded-lg border bg-stone-50 p-3">
+                  <b class="block text-xl tabular-nums">12</b>
+                  <span class="text-xs font-medium text-muted-foreground">já estavam</span>
+                </div>
+                <div class="rounded-lg border p-3">
+                  <b class="block text-xl tabular-nums">96</b>
+                  <span class="text-xs font-medium text-muted-foreground">total na janela</span>
+                </div>
+              </div>
+
+              <div class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900">
+                <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <path d="M12 9v4m0 4h.01" />
+                </svg>
+                <div>
+                  <b class="text-sm">Janela grande.</b> 84 rascunhos serão criados de uma vez. Nada é
+                  publicado — tudo entra como rascunho para revisão na lista.
+                </div>
+              </div>
+
+              <p class="rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground">
+                Reexecutar a mesma janela não duplica: o que já está é reconhecido pela identidade do
+                post. Pode demorar um pouco em janelas grandes.
+              </p>
+            </div>
+
+            <footer class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Voltar</button>
+              <button class="btn btn-primary">Importar 84 publicações</button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================= CENA 04 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 04</span>
+          <h2>Desktop 1280 · progresso de janela grande — pode demorar</h2>
+        </div>
+        <div class="desktop frame relative mx-auto min-h-[720px] overflow-hidden rounded-xl border bg-white">
+          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <header>
+              <div class="flex items-center gap-3">
+                <div class="spinner shrink-0" aria-hidden="true"></div>
+                <div>
+                  <h3 class="text-lg font-semibold leading-tight">Importando do perfil</h3>
+                  <p class="mt-1 text-sm text-muted-foreground">Mantenha esta janela aberta até concluir.</p>
+                </div>
+              </div>
+            </header>
+
+            <div class="mt-6 rounded-xl border p-4">
+              <div class="flex items-start gap-3">
+                <div class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-green-100 text-green-700">
+                  <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                </div>
+                <div>
+                  <b class="text-sm">Janela encontrada · 96 avaliadas</b>
+                  <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                    84 novas · 12 já estavam. A busca foi feita em @depjorgesolla pela API oficial.
+                  </p>
+                </div>
+              </div>
+              <div class="my-3 ml-3 h-5 border-l border-dashed"></div>
+              <div class="flex items-start gap-3">
+                <div class="spinner mt-0.5 shrink-0"></div>
+                <div class="min-w-0 flex-1">
+                  <b class="text-sm">Importando 37 de 84…</b>
+                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow="44" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da importação">
+                    <div class="h-full w-[44%] rounded-full bg-primary"></div>
+                  </div>
+                  <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                    Criando apenas as novidades como rascunho e reconhecendo o que já estava na Central.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p class="mt-4 rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground">
+              <b class="text-foreground">Pode demorar</b> — a janela é grande e cada mídia é preparada
+              uma a uma. O resultado final separa novas, já existentes e falhas; nenhuma falha fica
+              escondida.
+            </p>
+            <footer class="mt-6 flex justify-end">
+              <button class="btn btn-disabled" disabled>
+                <span class="spinner !size-4 !border-stone-300 !border-t-stone-500"></span>Importando…
+              </button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================= CENA 05 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 05</span>
+          <h2>Desktop 1280 · recibo final (novas / já estavam / falharam com motivo)</h2>
+        </div>
+        <div class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white">
+          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+          <div class="absolute inset-0 bg-black/60"></div>
+          <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <button
+              class="absolute right-3 top-3 grid size-8 place-items-center rounded-md text-muted-foreground"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+            <header>
+              <div class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700">
+                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+              </div>
+              <h3 class="text-lg font-semibold">Importação concluída</h3>
+              <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                As novidades já estão na Central como rascunho. Nada foi publicado.
+              </p>
+              <p class="mt-1 text-xs text-muted-foreground">Período · 01/08/2026 → hoje</p>
+            </header>
+
+            <div class="mt-5 grid grid-cols-3 gap-2">
+              <div class="rounded-lg border border-green-200 bg-green-50 p-3">
+                <b class="block text-xl tabular-nums text-green-800">84</b>
+                <span class="text-xs font-medium text-green-800">novas criadas</span>
+              </div>
+              <div class="rounded-lg border bg-stone-50 p-3">
+                <b class="block text-xl tabular-nums">12</b>
+                <span class="text-xs font-medium text-muted-foreground">já estavam</span>
+              </div>
+              <div class="rounded-lg border border-red-200 bg-red-50 p-3">
+                <b class="block text-xl tabular-nums text-red-800">1</b>
+                <span class="text-xs font-medium text-red-800">falhou</span>
+              </div>
+            </div>
+
+            <div class="mt-4 overflow-hidden rounded-lg border text-xs">
+              <div class="flex items-start gap-3 border-b p-3.5">
+                <span class="badge badge-link shrink-0">Peça-link</span>
+                <div>
+                  <b class="text-sm">1 carrossel · criado como peça-link</b>
+                  <p class="mt-1 leading-5 text-muted-foreground">
+                    A API oficial não ofereceu um arquivo único. A publicação entrou pelo link, com
+                    este motivo na ficha.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 border-b p-3.5">
+                <span class="badge badge-link shrink-0">Peça-link</span>
+                <div>
+                  <b class="text-sm">1 áudio protegido · criado como peça-link</b>
+                  <p class="mt-1 leading-5 text-muted-foreground">
+                    O arquivo não pôde ser extraído pela via oficial. A publicação não foi descartada.
+                  </p>
+                </div>
+              </div>
+              <div class="flex items-start gap-3 bg-red-50 p-3.5">
+                <svg class="mt-0.5 size-4 shrink-0 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4m0 4h.01" />
+                </svg>
+                <div>
+                  <b class="text-sm text-red-900">1 publicação não foi importada</b>
+                  <p class="mt-1 leading-5 text-red-800">
+                    Falha de rede ao preparar a peça. Tente importar novamente; as peças já criadas não
+                    serão duplicadas.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <footer class="mt-6 flex justify-end gap-2">
+              <button class="btn btn-outline">Fechar</button>
+              <button class="btn btn-primary">Ver os rascunhos</button>
+            </footer>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================= CENA 06 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 06</span>
+          <h2>Estados críticos · vazio · falha com retry · fail-closed · corte/limite oficial</h2>
+        </div>
+        <div class="grid gap-8 xl:grid-cols-2">
+          <!-- 6a janela vazia -->
+          <div class="frame relative min-h-[600px] overflow-hidden rounded-xl border bg-white">
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2">
+              <header>
+                <div class="mb-4 grid size-10 place-items-center rounded-full border bg-stone-50 text-stone-600">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8 2v4M16 2v4" />
+                    <rect width="18" height="18" x="3" y="4" rx="2" />
+                    <path d="M3 10h18" />
+                    <path d="m14 14-4 4m0-4 4 4" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-semibold">Nenhuma publicação neste período</h3>
+                <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                  Nada de <b class="text-foreground">@depjorgesolla</b> foi publicado entre
+                  <b class="text-foreground">01/06/2026</b> e <b class="text-foreground">30/06/2026</b>.
+                </p>
+              </header>
+              <p class="mt-4 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground">
+                O recorte está vazio. Confira as datas ou importe as publicações recentes do perfil.
+              </p>
+              <footer class="mt-6 flex justify-end gap-2">
+                <button class="btn btn-outline">Fechar</button>
+                <button class="btn btn-primary">Escolher outra janela</button>
+              </footer>
+            </article>
+          </div>
+
+          <!-- 6b falha de API/rede com retry -->
+          <div class="frame relative min-h-[600px] overflow-hidden rounded-xl border bg-white">
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2">
+              <header>
+                <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect width="18" height="18" x="3" y="3" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-semibold">Importar do perfil</h3>
+                <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                  A janela de <b class="text-foreground">01/08/2026 → hoje</b> não pôde ser buscada
+                  agora.
+                </p>
+              </header>
+              <div class="mt-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs leading-5 text-red-800" role="alert">
+                <svg class="mt-0.5 size-4 shrink-0 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 8v4m0 4h.01" />
+                </svg>
+                <div>
+                  <b class="text-red-900">Não foi possível buscar as publicações.</b> A API oficial não
+                  respondeu (falha de rede ou limite momentâneo). Nada foi criado.
+                </div>
+              </div>
+              <footer class="mt-6 flex justify-end gap-2">
+                <button class="btn btn-outline">Cancelar</button>
+                <button class="btn btn-primary">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                    <path d="M21 3v5h-5" />
+                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                    <path d="M8 16H3v5" />
+                  </svg>
+                  Tentar de novo
+                </button>
+              </footer>
+            </article>
+          </div>
+
+          <!-- 6c fail-closed sem credencial (superfície da lista) -->
+          <div class="frame overflow-hidden rounded-xl border bg-white">
+            <div class="flex min-h-[520px]">
+              <aside class="w-60 shrink-0 border-r bg-sidebar p-3">
+                <div class="flex h-12 items-center gap-2 px-2">
+                  <div class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white">S</div>
+                  <div>
+                    <b class="text-sm">Solla</b>
+                    <p class="text-xs text-muted-foreground">Campanha</p>
+                  </div>
+                </div>
+                <div class="mt-5 rounded-md px-3 py-2 text-sm font-semibold">Comunicação</div>
+                <div class="ml-4 border-l pl-3">
+                  <div class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border">Conteúdos</div>
+                </div>
+              </aside>
+              <div class="min-w-0 flex-1">
+                <header class="h-11 border-b"></header>
+                <div class="p-6">
+                  <div class="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 class="text-lg font-semibold">Conteúdos</h3>
+                      <p class="mt-1 text-sm text-muted-foreground">Peças que alimentam a Central pública. Rascunhos não aparecem no site.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                      <div class="text-right">
+                        <button class="btn btn-disabled" disabled>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <rect width="18" height="18" x="3" y="3" rx="5" />
+                            <circle cx="12" cy="12" r="4" />
+                          </svg>
+                          Importar do perfil
+                        </button>
+                        <p class="mt-1.5 text-xs font-medium text-muted-foreground">Instagram ainda não configurado</p>
+                      </div>
+                      <button class="btn btn-outline">Adicionar por link</button>
+                    </div>
+                  </div>
+                  <div class="mt-5 rounded-xl border p-4">
+                    <div class="h-12 rounded-lg bg-stone-100"></div>
+                    <div class="mt-3 h-12 rounded-lg bg-stone-100"></div>
+                  </div>
+                  <div class="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                    <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4m0 4h.01" />
+                    </svg>
+                    <span><b>Instagram ainda não configurado.</b> A importação pelo perfil fica indisponível até a credencial oficial existir. Não há atalho por scraping nesta tela.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 6d corte/limite oficial -->
+          <div class="frame relative min-h-[600px] overflow-hidden rounded-xl border bg-white">
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2">
+              <header>
+                <div class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                </div>
+                <h3 class="text-lg font-semibold">Importação concluída</h3>
+                <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
+                  As novidades já estão na Central como rascunho. Nada foi publicado.
+                </p>
+                <p class="mt-1 text-xs text-muted-foreground">Período · 01/01/2024 → hoje</p>
+              </header>
+
+              <div class="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900">
+                <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <path d="M12 9v4m0 4h.01" />
+                </svg>
+                <div>
+                  <b class="text-sm">A janela pedida é maior do que a via oficial alcança.</b> O Instagram
+                  entrega as <b>10K mídias mais recentes</b>; importamos o que foi possível neste
+                  recorte. Reexecutar a mesma janela continua de onde parou, sem duplicar.
+                </div>
+              </div>
+
+              <div class="mt-4 grid grid-cols-3 gap-2">
+                <div class="rounded-lg border border-green-200 bg-green-50 p-3">
+                  <b class="block text-xl tabular-nums text-green-800">64</b>
+                  <span class="text-xs font-medium text-green-800">novas criadas</span>
+                </div>
+                <div class="rounded-lg border bg-stone-50 p-3">
+                  <b class="block text-xl tabular-nums">9</b>
+                  <span class="text-xs font-medium text-muted-foreground">já estavam</span>
+                </div>
+                <div class="rounded-lg border p-3">
+                  <b class="block text-xl tabular-nums">0</b>
+                  <span class="text-xs font-medium text-muted-foreground">falharam</span>
+                </div>
+              </div>
+
+              <footer class="mt-6 flex justify-end gap-2">
+                <button class="btn btn-outline">Fechar</button>
+                <button class="btn btn-primary">Ver os rascunhos</button>
+              </footer>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================= CENA 07 ============================= -->
+      <section>
+        <div class="scene-label mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 07</span>
+          <h2>Mobile 390 · passo de período cabe sem quebrar</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame relative min-h-[860px] overflow-hidden border bg-white">
+            <header class="flex h-14 items-center bg-primary px-4 text-white">
+              <b class="text-sm">Conteúdos</b>
+            </header>
+            <div class="p-4 opacity-35">
+              <div class="h-6 w-40 rounded bg-stone-300"></div>
+              <div class="mt-3 h-11 rounded bg-stone-200"></div>
+              <div class="mt-3 h-36 rounded-xl bg-stone-200"></div>
+            </div>
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal-mobile absolute left-4 right-4 top-1/2 max-h-[780px] -translate-y-1/2 overflow-hidden">
+              <header>
+                <div class="mb-3 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8 2v4M16 2v4" />
+                    <rect width="18" height="18" x="3" y="4" rx="2" />
+                    <path d="M3 10h18" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
+                <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                  Escolha a janela de <b class="text-foreground">@depjorgesolla</b>. Só novidades, como
+                  rascunho.
+                </p>
+              </header>
+
+              <div class="window-choice mt-4 space-y-2" role="radiogroup" aria-label="Janela de publicações">
+                <div class="window-block">
+                  <button type="button" role="radio" aria-checked="false" class="window-option">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="min-w-0">
+                      <span class="flex flex-wrap items-center gap-2">
+                        <b class="text-sm">Recentes</b>
+                        <span class="badge badge-draft">Padrão</span>
+                      </span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">As mais novas do perfil.</span>
+                    </span>
+                  </button>
+                </div>
+                <div class="window-block">
+                  <button type="button" role="radio" aria-checked="true" class="window-option is-selected">
+                    <span class="dot" aria-hidden="true"></span>
+                    <span class="min-w-0">
+                      <span class="flex items-center gap-2"><b class="text-sm">Período</b></span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">Desde uma data; o “até” é opcional.</span>
+                    </span>
+                  </button>
+                  <div class="period-fields !pl-0" style="display: block">
+                    <div class="space-y-2">
+                      <label class="block">
+                        <span class="text-xs font-medium text-muted-foreground">Desde</span>
+                        <input class="field mt-1" value="01/08/2026" aria-label="Data inicial" />
+                      </label>
+                      <label class="block">
+                        <span class="text-xs font-medium text-muted-foreground">Até (opcional)</span>
+                        <input class="field mt-1" placeholder="dd/mm/aaaa" aria-label="Data final opcional" />
+                      </label>
+                    </div>
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                      <span class="chip">Últimos 30 dias</span>
+                      <span class="chip">Últimos 6 meses</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p class="mt-3 rounded-lg border bg-stone-50 p-3 text-xs leading-5 text-muted-foreground">
+                <b class="text-foreground">Sem scraping.</b> Só o perfil oficial, pela API oficial. Tudo
+                entra como rascunho.
+              </p>
+
+              <footer class="mt-4 flex flex-col gap-2">
+                <button class="btn btn-primary w-full">Buscar publicações</button>
+                <button class="btn btn-outline w-full">Cancelar</button>
+              </footer>
+            </article>
+          </div>
+
+          <!-- CENA 08 -->
+          <div class="phone frame relative min-h-[860px] overflow-hidden border bg-white">
+            <header class="flex h-14 items-center bg-primary px-4 text-white">
+              <b class="text-sm">Conteúdos</b>
+            </header>
+            <div class="p-4 opacity-35">
+              <div class="h-6 w-40 rounded bg-stone-300"></div>
+              <div class="mt-3 h-11 rounded bg-stone-200"></div>
+              <div class="mt-3 h-36 rounded-xl bg-stone-200"></div>
+            </div>
+            <div class="absolute inset-0 bg-black/60"></div>
+            <article class="modal-mobile absolute left-4 right-4 top-1/2 max-h-[800px] -translate-y-1/2 overflow-hidden">
+              <header>
+                <div class="mb-3 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
+                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <rect width="18" height="18" x="3" y="3" rx="5" />
+                    <circle cx="12" cy="12" r="4" />
+                    <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
+                <p class="mt-1 text-sm leading-5 text-muted-foreground">
+                  A janela tem <b class="text-foreground">96 publicações</b>. Confira antes de criar.
+                </p>
+              </header>
+
+              <div class="mt-4 flex items-center gap-2 rounded-lg border bg-stone-50 px-3 py-2 text-xs">
+                <svg class="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M8 2v4M16 2v4" />
+                  <rect width="18" height="18" x="3" y="4" rx="2" />
+                  <path d="M3 10h18" />
+                </svg>
+                <span class="text-muted-foreground">01/08/2026 → hoje</span>
+                <span class="ml-auto font-medium text-primary">Trocar</span>
+              </div>
+
+              <div class="mt-3 grid grid-cols-3 gap-1.5">
+                <div class="rounded-lg border border-green-200 bg-green-50 p-2">
+                  <b class="block text-lg text-green-800">84</b>
+                  <span class="text-[10px] font-medium text-green-800">novas</span>
+                </div>
+                <div class="rounded-lg border p-2">
+                  <b class="block text-lg">12</b>
+                  <span class="text-[10px] text-muted-foreground">já estavam</span>
+                </div>
+                <div class="rounded-lg border p-2">
+                  <b class="block text-lg">96</b>
+                  <span class="text-[10px] text-muted-foreground">total</span>
+                </div>
+              </div>
+
+              <div class="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                  <path d="M12 9v4m0 4h.01" />
+                </svg>
+                <span><b>Janela grande.</b> 84 rascunhos de uma vez. Nada é publicado.</span>
+              </div>
+
+              <p class="mt-3 text-xs leading-5 text-muted-foreground">
+                Reexecutar não duplica. Pode demorar um pouco.
+              </p>
+
+              <footer class="mt-4 flex flex-col gap-2">
+                <button class="btn btn-primary w-full">Importar 84 publicações</button>
+                <button class="btn btn-outline w-full">Voltar</button>
+              </footer>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      // Apresentação apenas: alterna a opção de janela (Recentes ↔ Período).
+      // Nenhuma lógica de produto, rede ou persistência.
+      document.querySelectorAll('.window-choice').forEach(function (choice) {
+        var options = Array.prototype.slice.call(choice.querySelectorAll('.window-option'));
+        options.forEach(function (option) {
+          option.addEventListener('click', function () {
+            options.forEach(function (other) {
+              var selected = other === option;
+              other.classList.toggle('is-selected', selected);
+              other.setAttribute('aria-checked', selected ? 'true' : 'false');
+            });
+            choice.querySelectorAll('.window-block').forEach(function (block) {
+              var opt = block.querySelector('.window-option');
+              var fields = block.querySelector('.period-fields');
+              if (fields) fields.style.display = opt.classList.contains('is-selected') ? 'block' : 'none';
+            });
+          });
+        });
+        choice.querySelectorAll('.window-block').forEach(function (block) {
+          var opt = block.querySelector('.window-option');
+          var fields = block.querySelector('.period-fields');
+          if (fields) fields.style.display = opt.classList.contains('is-selected') ? 'block' : 'none';
+        });
+      });
+    </script>
+  </body>
+</html>
