@@ -257,7 +257,9 @@
             <path d="M12 9v4m0 4h.01" />
           </svg>
           <div>
-            <b class="text-sm text-amber-900">DEGRADED — design NÃO certificado; requer sign-off humano.</b>
+            <b class="text-sm text-amber-900"
+              >DEGRADED — design NÃO certificado; requer sign-off humano.</b
+            >
             <p class="mt-1 text-xs leading-5 text-amber-900">
               Produzido no tier de fallback (<b>opencode-go/deepseek-v4.1-flash</b>). Tokens, copy e
               cenas seguem a doutrina, mas isto <b>não é design aprovado</b> e não pode ir ao gate
@@ -269,16 +271,19 @@
 
       <header class="max-w-3xl">
         <span class="badge bg-primary text-white">C235 · design do gate (DEGRADED)</span>
-        <h1 class="mt-4 text-3xl font-semibold tracking-tight">Importar qualquer janela do perfil</h1>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">
+          Importar qualquer janela do perfil
+        </h1>
         <p class="mt-2 text-sm leading-6 text-muted-foreground">
           Mesmo diálogo do C230 ganhando a escolha da janela: <b>Recentes</b> continua o padrão e o
           recorte por período é gesto explícito. Janela maior mostra o tamanho honesto (novas · já
           estavam · total) antes de criar. Tudo entra como <b>Rascunho</b>; nada é publicado.
         </p>
         <p class="mt-2 text-xs leading-5 text-stone-500">
-          Números de cena são ilustrativos do design. Tokens reais: <code>data-theme="campaign"</code>,
-          Inter, Mandate Red <code>#c51414</code>. Nenhuma mudança de <code>DESIGN.md</code> é proposta
-          aqui (token-neutral) — qualquer evolução de regra fica para o frontier/humano.
+          Números de cena são ilustrativos do design. Tokens reais:
+          <code>data-theme="campaign"</code>, Inter, Mandate Red <code>#c51414</code>. Nenhuma
+          mudança de <code>DESIGN.md</code> é proposta aqui (token-neutral) — qualquer evolução de
+          regra fica para o frontier/humano.
         </p>
       </header>
 
@@ -288,8 +293,12 @@
           <span>CENA 01</span>
           <h2>Desktop 1280 · passo da janela — “Recentes” é o padrão</h2>
         </div>
-        <div class="desktop frame relative mx-auto min-h-[760px] overflow-hidden rounded-xl border bg-white">
-          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+        <div
+          class="desktop frame relative mx-auto min-h-[760px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
           <div class="absolute inset-0 bg-black/60"></div>
           <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <button
@@ -300,7 +309,16 @@
             </button>
             <header>
               <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
-                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <rect width="18" height="18" x="3" y="3" rx="5" />
                   <circle cx="12" cy="12" r="4" />
                   <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
@@ -319,9 +337,18 @@
                 O recorte usa a data de publicação do post.
               </p>
 
-              <div class="window-choice mt-3 space-y-2" role="radiogroup" aria-label="Janela de publicações">
+              <div
+                class="window-choice mt-3 space-y-2"
+                role="radiogroup"
+                aria-label="Janela de publicações"
+              >
                 <div class="window-block">
-                  <button type="button" role="radio" aria-checked="true" class="window-option is-selected">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="true"
+                    class="window-option is-selected"
+                  >
                     <span class="dot" aria-hidden="true"></span>
                     <span class="min-w-0">
                       <span class="flex flex-wrap items-center gap-2">
@@ -354,8 +381,14 @@
                         <input class="field mt-1" value="01/08/2026" aria-label="Data inicial" />
                       </label>
                       <label class="block">
-                        <span class="text-xs font-medium text-muted-foreground">Até (opcional)</span>
-                        <input class="field mt-1" placeholder="dd/mm/aaaa" aria-label="Data final opcional" />
+                        <span class="text-xs font-medium text-muted-foreground"
+                          >Até (opcional)</span
+                        >
+                        <input
+                          class="field mt-1"
+                          placeholder="dd/mm/aaaa"
+                          aria-label="Data final opcional"
+                        />
                       </label>
                     </div>
                     <div class="mt-2 flex flex-wrap gap-1.5">
@@ -363,31 +396,85 @@
                       <span class="chip">Últimos 6 meses</span>
                       <span class="chip">Este ano</span>
                     </div>
-                    <p class="mt-2 text-xs text-muted-foreground">Sem data final, a busca vai até hoje.</p>
+                    <p class="mt-2 text-xs text-muted-foreground">
+                      Sem data final, a busca vai até hoje.
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div class="mt-4 space-y-2 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground">
+            <div
+              class="mt-4 space-y-2 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground"
+            >
               <p class="flex gap-2">
-                <svg class="mt-0.5 size-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                <span><b class="text-foreground">Somente novidades</b> — o que já está é reconhecido, sem cópias.</span>
+                <svg
+                  class="mt-0.5 size-3.5 shrink-0 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span
+                  ><b class="text-foreground">Somente novidades</b> — o que já está é reconhecido,
+                  sem cópias.</span
+                >
               </p>
               <p class="flex gap-2">
-                <svg class="mt-0.5 size-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                <span><b class="text-foreground">Tudo entra como Rascunho</b> — nada é publicado automaticamente.</span>
+                <svg
+                  class="mt-0.5 size-3.5 shrink-0 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span
+                  ><b class="text-foreground">Tudo entra como Rascunho</b> — nada é publicado
+                  automaticamente.</span
+                >
               </p>
               <p class="flex gap-2">
-                <svg class="mt-0.5 size-3.5 shrink-0 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-                <span><b class="text-foreground">Só o perfil oficial, pela API oficial</b> — sem scraping.</span>
+                <svg
+                  class="mt-0.5 size-3.5 shrink-0 text-primary"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.4"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span
+                  ><b class="text-foreground">Só o perfil oficial, pela API oficial</b> — sem
+                  scraping.</span
+                >
               </p>
             </div>
 
             <footer class="mt-6 flex justify-end gap-2">
               <button class="btn btn-outline">Cancelar</button>
               <button class="btn btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
@@ -404,8 +491,12 @@
           <span>CENA 02</span>
           <h2>Desktop 1280 · passo da janela — Período é gesto explícito</h2>
         </div>
-        <div class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white">
-          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+        <div
+          class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
           <div class="absolute inset-0 bg-black/60"></div>
           <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <button
@@ -416,7 +507,16 @@
             </button>
             <header>
               <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
-                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M8 2v4M16 2v4" />
                   <rect width="18" height="18" x="3" y="4" rx="2" />
                   <path d="M3 10h18" />
@@ -424,8 +524,8 @@
               </div>
               <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
               <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
-                Traga o acervo de um período de <b class="text-foreground">@depjorgesolla</b> que ficou
-                fora das importações recentes.
+                Traga o acervo de um período de <b class="text-foreground">@depjorgesolla</b> que
+                ficou fora das importações recentes.
               </p>
             </header>
 
@@ -435,7 +535,11 @@
                 O recorte usa a data de publicação do post.
               </p>
 
-              <div class="window-choice mt-3 space-y-2" role="radiogroup" aria-label="Janela de publicações">
+              <div
+                class="window-choice mt-3 space-y-2"
+                role="radiogroup"
+                aria-label="Janela de publicações"
+              >
                 <div class="window-block">
                   <button type="button" role="radio" aria-checked="false" class="window-option">
                     <span class="dot" aria-hidden="true"></span>
@@ -452,7 +556,12 @@
                 </div>
 
                 <div class="window-block">
-                  <button type="button" role="radio" aria-checked="true" class="window-option is-selected">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="true"
+                    class="window-option is-selected"
+                  >
                     <span class="dot" aria-hidden="true"></span>
                     <span class="min-w-0">
                       <span class="flex items-center gap-2">
@@ -470,8 +579,14 @@
                         <input class="field mt-1" value="01/08/2026" aria-label="Data inicial" />
                       </label>
                       <label class="block">
-                        <span class="text-xs font-medium text-muted-foreground">Até (opcional)</span>
-                        <input class="field mt-1" value="31/08/2026" aria-label="Data final opcional" />
+                        <span class="text-xs font-medium text-muted-foreground"
+                          >Até (opcional)</span
+                        >
+                        <input
+                          class="field mt-1"
+                          value="31/08/2026"
+                          aria-label="Data final opcional"
+                        />
                       </label>
                     </div>
                     <div class="mt-2 flex flex-wrap gap-1.5">
@@ -487,16 +602,26 @@
               </div>
             </div>
 
-            <div class="mt-4 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground">
+            <div
+              class="mt-4 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground"
+            >
               <b class="text-foreground">Sem scraping.</b>
-              Só o perfil oficial @depjorgesolla, pela API oficial. A janela escolhida é varrida pela
-              data de publicação; o que já está na Central não vira cópia.
+              Só o perfil oficial @depjorgesolla, pela API oficial. A janela escolhida é varrida
+              pela data de publicação; o que já está na Central não vira cópia.
             </div>
 
             <footer class="mt-6 flex justify-end gap-2">
               <button class="btn btn-outline">Cancelar</button>
               <button class="btn btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <circle cx="11" cy="11" r="8" />
                   <path d="m21 21-4.3-4.3" />
                 </svg>
@@ -513,8 +638,12 @@
           <span>CENA 03</span>
           <h2>Desktop 1280 · tamanho honesto da janela antes de criar (guardrail)</h2>
         </div>
-        <div class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white">
-          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+        <div
+          class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
           <div class="absolute inset-0 bg-black/60"></div>
           <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <button
@@ -525,7 +654,16 @@
             </button>
             <header>
               <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
-                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <rect width="18" height="18" x="3" y="3" rx="5" />
                   <circle cx="12" cy="12" r="4" />
                   <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
@@ -533,14 +671,25 @@
               </div>
               <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
               <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
-                A janela escolhida tem <b class="text-foreground">96 publicações</b>. Confira o tamanho
-                antes de criar os rascunhos.
+                A janela escolhida tem <b class="text-foreground">96 publicações</b>. Confira o
+                tamanho antes de criar os rascunhos.
               </p>
             </header>
 
             <div class="mt-5 space-y-3">
-              <div class="flex items-center gap-2 rounded-lg border bg-stone-50 px-3.5 py-2.5 text-xs">
-                <svg class="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <div
+                class="flex items-center gap-2 rounded-lg border bg-stone-50 px-3.5 py-2.5 text-xs"
+              >
+                <svg
+                  class="size-4 shrink-0 text-muted-foreground"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M8 2v4M16 2v4" />
                   <rect width="18" height="18" x="3" y="4" rx="2" />
                   <path d="M3 10h18" />
@@ -565,20 +714,33 @@
                 </div>
               </div>
 
-              <div class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900">
-                <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <div
+                class="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900"
+              >
+                <svg
+                  class="mt-0.5 size-4 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+                  />
                   <path d="M12 9v4m0 4h.01" />
                 </svg>
                 <div>
-                  <b class="text-sm">Janela grande.</b> 84 rascunhos serão criados de uma vez. Nada é
-                  publicado — tudo entra como rascunho para revisão na lista.
+                  <b class="text-sm">Janela grande.</b> 84 rascunhos serão criados de uma vez. Nada
+                  é publicado — tudo entra como rascunho para revisão na lista.
                 </div>
               </div>
 
               <p class="rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground">
-                Reexecutar a mesma janela não duplica: o que já está é reconhecido pela identidade do
-                post. Pode demorar um pouco em janelas grandes.
+                Reexecutar a mesma janela não duplica: o que já está é reconhecido pela identidade
+                do post. Pode demorar um pouco em janelas grandes.
               </p>
             </div>
 
@@ -596,8 +758,12 @@
           <span>CENA 04</span>
           <h2>Desktop 1280 · progresso de janela grande — pode demorar</h2>
         </div>
-        <div class="desktop frame relative mx-auto min-h-[720px] overflow-hidden rounded-xl border bg-white">
-          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+        <div
+          class="desktop frame relative mx-auto min-h-[720px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
           <div class="absolute inset-0 bg-black/60"></div>
           <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <header>
@@ -605,15 +771,30 @@
                 <div class="spinner shrink-0" aria-hidden="true"></div>
                 <div>
                   <h3 class="text-lg font-semibold leading-tight">Importando do perfil</h3>
-                  <p class="mt-1 text-sm text-muted-foreground">Mantenha esta janela aberta até concluir.</p>
+                  <p class="mt-1 text-sm text-muted-foreground">
+                    Mantenha esta janela aberta até concluir.
+                  </p>
                 </div>
               </div>
             </header>
 
             <div class="mt-6 rounded-xl border p-4">
               <div class="flex items-start gap-3">
-                <div class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-green-100 text-green-700">
-                  <svg class="size-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                <div
+                  class="mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-green-100 text-green-700"
+                >
+                  <svg
+                    class="size-3.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
                 </div>
                 <div>
                   <b class="text-sm">Janela encontrada · 96 avaliadas</b>
@@ -627,24 +808,33 @@
                 <div class="spinner mt-0.5 shrink-0"></div>
                 <div class="min-w-0 flex-1">
                   <b class="text-sm">Importando 37 de 84…</b>
-                  <div class="mt-2 h-2 overflow-hidden rounded-full bg-muted" role="progressbar" aria-valuenow="44" aria-valuemin="0" aria-valuemax="100" aria-label="Progresso da importação">
+                  <div
+                    class="mt-2 h-2 overflow-hidden rounded-full bg-muted"
+                    role="progressbar"
+                    aria-valuenow="44"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-label="Progresso da importação"
+                  >
                     <div class="h-full w-[44%] rounded-full bg-primary"></div>
                   </div>
                   <p class="mt-2 text-xs leading-5 text-muted-foreground">
-                    Criando apenas as novidades como rascunho e reconhecendo o que já estava na Central.
+                    Criando apenas as novidades como rascunho e reconhecendo o que já estava na
+                    Central.
                   </p>
                 </div>
               </div>
             </div>
 
             <p class="mt-4 rounded-lg bg-muted/70 p-3 text-xs leading-5 text-muted-foreground">
-              <b class="text-foreground">Pode demorar</b> — a janela é grande e cada mídia é preparada
-              uma a uma. O resultado final separa novas, já existentes e falhas; nenhuma falha fica
-              escondida.
+              <b class="text-foreground">Pode demorar</b> — a janela é grande e cada mídia é
+              preparada uma a uma. O resultado final separa novas, já existentes e falhas; nenhuma
+              falha fica escondida.
             </p>
             <footer class="mt-6 flex justify-end">
               <button class="btn btn-disabled" disabled>
-                <span class="spinner !size-4 !border-stone-300 !border-t-stone-500"></span>Importando…
+                <span class="spinner !size-4 !border-stone-300 !border-t-stone-500"></span
+                >Importando…
               </button>
             </footer>
           </article>
@@ -657,8 +847,12 @@
           <span>CENA 05</span>
           <h2>Desktop 1280 · recibo final (novas / já estavam / falharam com motivo)</h2>
         </div>
-        <div class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white">
-          <div class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"></div>
+        <div
+          class="desktop frame relative mx-auto min-h-[800px] overflow-hidden rounded-xl border bg-white"
+        >
+          <div
+            class="absolute inset-0 bg-[linear-gradient(90deg,#fafaf9_0_240px,#fff_240px)] opacity-80"
+          ></div>
           <div class="absolute inset-0 bg-black/60"></div>
           <article class="modal absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
             <button
@@ -668,8 +862,21 @@
               ×
             </button>
             <header>
-              <div class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700">
-                <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+              <div
+                class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700"
+              >
+                <svg
+                  class="size-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.3"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
               </div>
               <h3 class="text-lg font-semibold">Importação concluída</h3>
               <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
@@ -709,20 +916,30 @@
                 <div>
                   <b class="text-sm">1 áudio protegido · criado como peça-link</b>
                   <p class="mt-1 leading-5 text-muted-foreground">
-                    O arquivo não pôde ser extraído pela via oficial. A publicação não foi descartada.
+                    O arquivo não pôde ser extraído pela via oficial. A publicação não foi
+                    descartada.
                   </p>
                 </div>
               </div>
               <div class="flex items-start gap-3 bg-red-50 p-3.5">
-                <svg class="mt-0.5 size-4 shrink-0 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <svg
+                  class="mt-0.5 size-4 shrink-0 text-red-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 8v4m0 4h.01" />
                 </svg>
                 <div>
                   <b class="text-sm text-red-900">1 publicação não foi importada</b>
                   <p class="mt-1 leading-5 text-red-800">
-                    Falha de rede ao preparar a peça. Tente importar novamente; as peças já criadas não
-                    serão duplicadas.
+                    Falha de rede ao preparar a peça. Tente importar novamente; as peças já criadas
+                    não serão duplicadas.
                   </p>
                 </div>
               </div>
@@ -746,10 +963,23 @@
           <!-- 6a janela vazia -->
           <div class="frame relative min-h-[600px] overflow-hidden rounded-xl border bg-white">
             <div class="absolute inset-0 bg-black/60"></div>
-            <article class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2">
+            <article
+              class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2"
+            >
               <header>
-                <div class="mb-4 grid size-10 place-items-center rounded-full border bg-stone-50 text-stone-600">
-                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div
+                  class="mb-4 grid size-10 place-items-center rounded-full border bg-stone-50 text-stone-600"
+                >
+                  <svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="M8 2v4M16 2v4" />
                     <rect width="18" height="18" x="3" y="4" rx="2" />
                     <path d="M3 10h18" />
@@ -759,10 +989,13 @@
                 <h3 class="text-lg font-semibold">Nenhuma publicação neste período</h3>
                 <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
                   Nada de <b class="text-foreground">@depjorgesolla</b> foi publicado entre
-                  <b class="text-foreground">01/06/2026</b> e <b class="text-foreground">30/06/2026</b>.
+                  <b class="text-foreground">01/06/2026</b> e
+                  <b class="text-foreground">30/06/2026</b>.
                 </p>
               </header>
-              <p class="mt-4 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground">
+              <p
+                class="mt-4 rounded-lg border bg-stone-50 p-3.5 text-xs leading-5 text-muted-foreground"
+              >
                 O recorte está vazio. Confira as datas ou importe as publicações recentes do perfil.
               </p>
               <footer class="mt-6 flex justify-end gap-2">
@@ -775,10 +1008,23 @@
           <!-- 6b falha de API/rede com retry -->
           <div class="frame relative min-h-[600px] overflow-hidden rounded-xl border bg-white">
             <div class="absolute inset-0 bg-black/60"></div>
-            <article class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2">
+            <article
+              class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2"
+            >
               <header>
-                <div class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
-                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div
+                  class="mb-4 grid size-10 place-items-center rounded-full bg-red-50 text-primary"
+                >
+                  <svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     <rect width="18" height="18" x="3" y="3" rx="5" />
                     <circle cx="12" cy="12" r="4" />
                     <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
@@ -790,20 +1036,40 @@
                   agora.
                 </p>
               </header>
-              <div class="mt-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs leading-5 text-red-800" role="alert">
-                <svg class="mt-0.5 size-4 shrink-0 text-red-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <div
+                class="mt-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs leading-5 text-red-800"
+                role="alert"
+              >
+                <svg
+                  class="mt-0.5 size-4 shrink-0 text-red-700"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 8v4m0 4h.01" />
                 </svg>
                 <div>
-                  <b class="text-red-900">Não foi possível buscar as publicações.</b> A API oficial não
-                  respondeu (falha de rede ou limite momentâneo). Nada foi criado.
+                  <b class="text-red-900">Não foi possível buscar as publicações.</b> A API oficial
+                  não respondeu (falha de rede ou limite momentâneo). Nada foi criado.
                 </div>
               </div>
               <footer class="mt-6 flex justify-end gap-2">
                 <button class="btn btn-outline">Cancelar</button>
                 <button class="btn btn-primary">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
                     <path d="M21 3v5h-5" />
                     <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
@@ -820,7 +1086,11 @@
             <div class="flex min-h-[520px]">
               <aside class="w-60 shrink-0 border-r bg-sidebar p-3">
                 <div class="flex h-12 items-center gap-2 px-2">
-                  <div class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white">S</div>
+                  <div
+                    class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                  >
+                    S
+                  </div>
                   <div>
                     <b class="text-sm">Solla</b>
                     <p class="text-xs text-muted-foreground">Campanha</p>
@@ -828,7 +1098,11 @@
                 </div>
                 <div class="mt-5 rounded-md px-3 py-2 text-sm font-semibold">Comunicação</div>
                 <div class="ml-4 border-l pl-3">
-                  <div class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border">Conteúdos</div>
+                  <div
+                    class="rounded-md bg-white px-3 py-2 text-sm font-semibold text-primary ring-1 ring-border"
+                  >
+                    Conteúdos
+                  </div>
                 </div>
               </aside>
               <div class="min-w-0 flex-1">
@@ -837,18 +1111,30 @@
                   <div class="flex items-start justify-between gap-4">
                     <div>
                       <h3 class="text-lg font-semibold">Conteúdos</h3>
-                      <p class="mt-1 text-sm text-muted-foreground">Peças que alimentam a Central pública. Rascunhos não aparecem no site.</p>
+                      <p class="mt-1 text-sm text-muted-foreground">
+                        Peças que alimentam a Central pública. Rascunhos não aparecem no site.
+                      </p>
                     </div>
                     <div class="flex items-start gap-2">
                       <div class="text-right">
                         <button class="btn btn-disabled" disabled>
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <svg
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            aria-hidden="true"
+                          >
                             <rect width="18" height="18" x="3" y="3" rx="5" />
                             <circle cx="12" cy="12" r="4" />
                           </svg>
                           Importar do perfil
                         </button>
-                        <p class="mt-1.5 text-xs font-medium text-muted-foreground">Instagram ainda não configurado</p>
+                        <p class="mt-1.5 text-xs font-medium text-muted-foreground">
+                          Instagram ainda não configurado
+                        </p>
                       </div>
                       <button class="btn btn-outline">Adicionar por link</button>
                     </div>
@@ -857,12 +1143,27 @@
                     <div class="h-12 rounded-lg bg-stone-100"></div>
                     <div class="mt-3 h-12 rounded-lg bg-stone-100"></div>
                   </div>
-                  <div class="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                    <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <div
+                    class="mt-4 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"
+                  >
+                    <svg
+                      class="mt-0.5 size-4 shrink-0"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
                       <circle cx="12" cy="12" r="10" />
                       <path d="M12 8v4m0 4h.01" />
                     </svg>
-                    <span><b>Instagram ainda não configurado.</b> A importação pelo perfil fica indisponível até a credencial oficial existir. Não há atalho por scraping nesta tela.</span>
+                    <span
+                      ><b>Instagram ainda não configurado.</b> A importação pelo perfil fica
+                      indisponível até a credencial oficial existir. Não há atalho por scraping
+                      nesta tela.</span
+                    >
                   </div>
                 </div>
               </div>
@@ -872,10 +1173,25 @@
           <!-- 6d corte/limite oficial -->
           <div class="frame relative min-h-[600px] overflow-hidden rounded-xl border bg-white">
             <div class="absolute inset-0 bg-black/60"></div>
-            <article class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2">
+            <article
+              class="modal absolute left-1/2 top-1/2 w-[480px] -translate-x-1/2 -translate-y-1/2"
+            >
               <header>
-                <div class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700">
-                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+                <div
+                  class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700"
+                >
+                  <svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.3"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
                 </div>
                 <h3 class="text-lg font-semibold">Importação concluída</h3>
                 <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
@@ -884,15 +1200,29 @@
                 <p class="mt-1 text-xs text-muted-foreground">Período · 01/01/2024 → hoje</p>
               </header>
 
-              <div class="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900">
-                <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <div
+                class="mt-4 flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3.5 text-xs leading-5 text-amber-900"
+              >
+                <svg
+                  class="mt-0.5 size-4 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+                  />
                   <path d="M12 9v4m0 4h.01" />
                 </svg>
                 <div>
-                  <b class="text-sm">A janela pedida é maior do que a via oficial alcança.</b> O Instagram
-                  entrega as <b>10K mídias mais recentes</b>; importamos o que foi possível neste
-                  recorte. Reexecutar a mesma janela continua de onde parou, sem duplicar.
+                  <b class="text-sm">A janela pedida é maior do que a via oficial alcança.</b> O
+                  Instagram entrega as <b>10K mídias mais recentes</b>; importamos o que foi
+                  possível neste recorte. Reexecutar a mesma janela continua de onde parou, sem
+                  duplicar.
                 </div>
               </div>
 
@@ -937,10 +1267,23 @@
               <div class="mt-3 h-36 rounded-xl bg-stone-200"></div>
             </div>
             <div class="absolute inset-0 bg-black/60"></div>
-            <article class="modal-mobile absolute left-4 right-4 top-1/2 max-h-[780px] -translate-y-1/2 overflow-hidden">
+            <article
+              class="modal-mobile absolute left-4 right-4 top-1/2 max-h-[780px] -translate-y-1/2 overflow-hidden"
+            >
               <header>
-                <div class="mb-3 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
-                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div
+                  class="mb-3 grid size-10 place-items-center rounded-full bg-red-50 text-primary"
+                >
+                  <svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     <path d="M8 2v4M16 2v4" />
                     <rect width="18" height="18" x="3" y="4" rx="2" />
                     <path d="M3 10h18" />
@@ -948,12 +1291,16 @@
                 </div>
                 <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
                 <p class="mt-1 text-sm leading-5 text-muted-foreground">
-                  Escolha a janela de <b class="text-foreground">@depjorgesolla</b>. Só novidades, como
-                  rascunho.
+                  Escolha a janela de <b class="text-foreground">@depjorgesolla</b>. Só novidades,
+                  como rascunho.
                 </p>
               </header>
 
-              <div class="window-choice mt-4 space-y-2" role="radiogroup" aria-label="Janela de publicações">
+              <div
+                class="window-choice mt-4 space-y-2"
+                role="radiogroup"
+                aria-label="Janela de publicações"
+              >
                 <div class="window-block">
                   <button type="button" role="radio" aria-checked="false" class="window-option">
                     <span class="dot" aria-hidden="true"></span>
@@ -962,16 +1309,25 @@
                         <b class="text-sm">Recentes</b>
                         <span class="badge badge-draft">Padrão</span>
                       </span>
-                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">As mais novas do perfil.</span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground"
+                        >As mais novas do perfil.</span
+                      >
                     </span>
                   </button>
                 </div>
                 <div class="window-block">
-                  <button type="button" role="radio" aria-checked="true" class="window-option is-selected">
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="true"
+                    class="window-option is-selected"
+                  >
                     <span class="dot" aria-hidden="true"></span>
                     <span class="min-w-0">
                       <span class="flex items-center gap-2"><b class="text-sm">Período</b></span>
-                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground">Desde uma data; o “até” é opcional.</span>
+                      <span class="mt-0.5 block text-xs leading-5 text-muted-foreground"
+                        >Desde uma data; o “até” é opcional.</span
+                      >
                     </span>
                   </button>
                   <div class="period-fields !pl-0" style="display: block">
@@ -981,8 +1337,14 @@
                         <input class="field mt-1" value="01/08/2026" aria-label="Data inicial" />
                       </label>
                       <label class="block">
-                        <span class="text-xs font-medium text-muted-foreground">Até (opcional)</span>
-                        <input class="field mt-1" placeholder="dd/mm/aaaa" aria-label="Data final opcional" />
+                        <span class="text-xs font-medium text-muted-foreground"
+                          >Até (opcional)</span
+                        >
+                        <input
+                          class="field mt-1"
+                          placeholder="dd/mm/aaaa"
+                          aria-label="Data final opcional"
+                        />
                       </label>
                     </div>
                     <div class="mt-2 flex flex-wrap gap-1.5">
@@ -993,9 +1355,11 @@
                 </div>
               </div>
 
-              <p class="mt-3 rounded-lg border bg-stone-50 p-3 text-xs leading-5 text-muted-foreground">
-                <b class="text-foreground">Sem scraping.</b> Só o perfil oficial, pela API oficial. Tudo
-                entra como rascunho.
+              <p
+                class="mt-3 rounded-lg border bg-stone-50 p-3 text-xs leading-5 text-muted-foreground"
+              >
+                <b class="text-foreground">Sem scraping.</b> Só o perfil oficial, pela API oficial.
+                Tudo entra como rascunho.
               </p>
 
               <footer class="mt-4 flex flex-col gap-2">
@@ -1016,10 +1380,23 @@
               <div class="mt-3 h-36 rounded-xl bg-stone-200"></div>
             </div>
             <div class="absolute inset-0 bg-black/60"></div>
-            <article class="modal-mobile absolute left-4 right-4 top-1/2 max-h-[800px] -translate-y-1/2 overflow-hidden">
+            <article
+              class="modal-mobile absolute left-4 right-4 top-1/2 max-h-[800px] -translate-y-1/2 overflow-hidden"
+            >
               <header>
-                <div class="mb-3 grid size-10 place-items-center rounded-full bg-red-50 text-primary">
-                  <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <div
+                  class="mb-3 grid size-10 place-items-center rounded-full bg-red-50 text-primary"
+                >
+                  <svg
+                    class="size-5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    aria-hidden="true"
+                  >
                     <rect width="18" height="18" x="3" y="3" rx="5" />
                     <circle cx="12" cy="12" r="4" />
                     <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" />
@@ -1027,12 +1404,24 @@
                 </div>
                 <h3 class="text-lg font-semibold leading-tight">Importar do perfil</h3>
                 <p class="mt-1 text-sm leading-5 text-muted-foreground">
-                  A janela tem <b class="text-foreground">96 publicações</b>. Confira antes de criar.
+                  A janela tem <b class="text-foreground">96 publicações</b>. Confira antes de
+                  criar.
                 </p>
               </header>
 
-              <div class="mt-4 flex items-center gap-2 rounded-lg border bg-stone-50 px-3 py-2 text-xs">
-                <svg class="size-4 shrink-0 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <div
+                class="mt-4 flex items-center gap-2 rounded-lg border bg-stone-50 px-3 py-2 text-xs"
+              >
+                <svg
+                  class="size-4 shrink-0 text-muted-foreground"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
                   <path d="M8 2v4M16 2v4" />
                   <rect width="18" height="18" x="3" y="4" rx="2" />
                   <path d="M3 10h18" />
@@ -1056,9 +1445,22 @@
                 </div>
               </div>
 
-              <div class="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
-                <svg class="mt-0.5 size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+              <div
+                class="mt-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900"
+              >
+                <svg
+                  class="mt-0.5 size-4 shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"
+                  />
                   <path d="M12 9v4m0 4h.01" />
                 </svg>
                 <span><b>Janela grande.</b> 84 rascunhos de uma vez. Nada é publicado.</span>
@@ -1082,27 +1484,29 @@
       // Apresentação apenas: alterna a opção de janela (Recentes ↔ Período).
       // Nenhuma lógica de produto, rede ou persistência.
       document.querySelectorAll('.window-choice').forEach(function (choice) {
-        var options = Array.prototype.slice.call(choice.querySelectorAll('.window-option'));
+        var options = Array.prototype.slice.call(choice.querySelectorAll('.window-option'))
         options.forEach(function (option) {
           option.addEventListener('click', function () {
             options.forEach(function (other) {
-              var selected = other === option;
-              other.classList.toggle('is-selected', selected);
-              other.setAttribute('aria-checked', selected ? 'true' : 'false');
-            });
+              var selected = other === option
+              other.classList.toggle('is-selected', selected)
+              other.setAttribute('aria-checked', selected ? 'true' : 'false')
+            })
             choice.querySelectorAll('.window-block').forEach(function (block) {
-              var opt = block.querySelector('.window-option');
-              var fields = block.querySelector('.period-fields');
-              if (fields) fields.style.display = opt.classList.contains('is-selected') ? 'block' : 'none';
-            });
-          });
-        });
+              var opt = block.querySelector('.window-option')
+              var fields = block.querySelector('.period-fields')
+              if (fields)
+                fields.style.display = opt.classList.contains('is-selected') ? 'block' : 'none'
+            })
+          })
+        })
         choice.querySelectorAll('.window-block').forEach(function (block) {
-          var opt = block.querySelector('.window-option');
-          var fields = block.querySelector('.period-fields');
-          if (fields) fields.style.display = opt.classList.contains('is-selected') ? 'block' : 'none';
-        });
-      });
+          var opt = block.querySelector('.window-option')
+          var fields = block.querySelector('.period-fields')
+          if (fields)
+            fields.style.display = opt.classList.contains('is-selected') ? 'block' : 'none'
+        })
+      })
     </script>
   </body>
 </html>
