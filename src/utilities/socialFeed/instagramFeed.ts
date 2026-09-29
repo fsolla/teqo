@@ -148,10 +148,12 @@ export const pickInstagramThumbnail = (item: {
 }
 
 /**
- * Hard ceiling of pages one feed load may walk (defensive): the Graph API
- * returns `limit` items per page, so a 500-media window needs 10 — 20 covers
- * it with room, and a pathological API that always answers a cursor cannot
- * loop forever.
+ * Default hard ceiling of pages one feed load may walk (defensive): the Graph
+ * API returns `limit` items per page, so a 500-media window needs 10 — 20
+ * covers it with room, and a pathological API that always answers a cursor
+ * cannot loop forever. A caller asking for a deeper window (the C235 10K
+ * period import) raises the ceiling implicitly through `maxResults`; the
+ * default floor keeps the small windows exactly as before.
  */
 const INSTAGRAM_MAX_MEDIA_PAGES = 20
 
@@ -270,8 +272,14 @@ export const loadInstagramFeed = async ({
 
     const pageSize = Math.min(Math.max(maxResults, 1), INSTAGRAM_MAX_RESULTS_CAP)
     const posts: InstagramPost[] = []
+    // The defensive ceiling follows the requested window (never below the
+    // C220/board default) so a 10K-media period walk is not cut at 1000.
+    const pageCeiling = Math.max(
+      INSTAGRAM_MAX_MEDIA_PAGES,
+      Math.ceil(Math.max(maxResults, 1) / INSTAGRAM_MAX_RESULTS_CAP),
+    )
     let after: string | undefined
-    for (let page = 0; page < INSTAGRAM_MAX_MEDIA_PAGES; page += 1) {
+    for (let page = 0; page < pageCeiling; page += 1) {
       const mediaParams = new URLSearchParams({
         fields: MEDIA_FIELDS,
         limit: String(pageSize),

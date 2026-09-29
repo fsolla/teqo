@@ -182,6 +182,19 @@ export const subtractBahiaCivilDays = (civilDate: string, days: number): string 
 }
 
 /**
+ * Subtract whole civil months from a Bahia civil date anchor (`aaaa-mm-dd`),
+ * clamping the day to the target month (31/08 − 6 = 28/02) — the C235
+ * "last N months" shortcuts never invent a date that does not exist.
+ */
+export const subtractBahiaCivilMonths = (civilDate: string, months: number): string => {
+  const [year, month, day] = civilDate.split('-').map(Number)
+  const target = new Date(Date.UTC(year, month - 1 - months, 1))
+  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0))
+  target.setUTCDate(Math.min(day, lastDay.getUTCDate()))
+  return `${target.getUTCFullYear()}-${pad(target.getUTCMonth() + 1)}-${pad(target.getUTCDate())}`
+}
+
+/**
  * Latest of two ISO timestamps, ignoring nulls. String comparison is only
  * sound because every writer here produces fixed-width UTC — Payload's own
  * `createdAt`/`updatedAt` and our `new Date().toISOString()` hooks. An offset
@@ -228,6 +241,16 @@ export const formatBahiaCivilDateTimeLabel = (civil: string): string => {
   if (!match) return civil
   const [, year, month, day, hour, minute] = match
   return `${day}/${month}/${year} às ${hour}:${minute}`
+}
+
+/**
+ * pt-BR label of a Bahia civil date anchor (`aaaa-mm-dd` → `dd/mm/aaaa`) —
+ * the C235 window inputs speak date-only, same string arithmetic as the
+ * datetime label below.
+ */
+export const formatCivilDateLabel = (civil: string): string => {
+  const [year = '', month = '', day = ''] = civil.split('-')
+  return `${day}/${month}/${year}`
 }
 
 /**

@@ -23,8 +23,8 @@ export const POST = campaignJsonMutationRoute(
     safeMessages: CONTENT_PIECE_PROFILE_IMPORT_SAFE_MESSAGES,
     genericMessage: CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
   },
-  async () => {
-    const listing = await listContentPieceProfileImportCandidatesForActor()
+  async (body) => {
+    const listing = await listContentPieceProfileImportCandidatesForActor(body)
     return NextResponse.json<ContentPieceProfileImportCandidatesResponse>({
       status: 'success',
       ...listing,

@@ -61,6 +61,7 @@ import {
 } from '@/lib/contentPieceFrame'
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
+  CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
   CONTENT_PIECE_LINK_INVALID_MESSAGE,
   CONTENT_PIECE_NOT_FOUND_MESSAGE,
@@ -90,6 +91,7 @@ import {
 import { loadContentPieceListPageData } from '@/utilities/content/contentPiecePageData'
 import {
   CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW,
+  CONTENT_PIECE_PROFILE_IMPORT_SCAN_LIMIT,
   createContentPieceFromProfilePost,
   listContentPieceProfileImportCandidates,
 } from '@/utilities/content/contentPieceProfileImport'
@@ -106,7 +108,7 @@ import {
 } from '@/utilities/content/contentPieceUpload'
 import { getCollectionListingTag } from '@/utilities/documents'
 import { runFfmpeg } from '@/utilities/media/ffmpeg'
-import type { InstagramPost } from '@/utilities/socialFeed/instagramFeed'
+import type { InstagramPost, LoadInstagramFeedArgs } from '@/utilities/socialFeed/instagramFeed'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 
@@ -1924,6 +1926,168 @@ describe('content pieces (C211)', () => {
       createdPieceIds.add(rows.docs[0]!.id)
       await expect(createContentPieceFromProfilePostForActor({ url })).resolves.toEqual({
         outcome: 'existing',
+      })
+    })
+  })
+
+  describe('C235 — import a chosen window', () => {
+    it('scans the period with the date early-stop, the edge ceiling and the window filter', async () => {
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+      await createPiece({
+        title: 'Peça já catalogada na janela',
+        origin: 'instagram',
+        withMedia: false,
+        sourceUrl: `https://www.instagram.com/p/JA${marker}/`,
+      })
+
+      const received: LoadInstagramFeedArgs[] = []
+      const listing = await listContentPieceProfileImportCandidates({
+        payload,
+        actor: communicator,
+        window: { mode: 'period', since: '2026-08-01', until: '2026-09-20' },
+        now: new Date('2026-09-29T12:00:00.000Z'),
+        loadFeed: async (feedArgs) => {
+          received.push(feedArgs)
+          return {
+            username: 'depjorgesolla',
+            posts: [
+              instagramPost({
+                id: 'dentro',
+                permalink: `https://www.instagram.com/reel/DE${marker}/`,
+                timestamp: '2026-09-15T12:00:00.000Z',
+              }),
+              // The same post the Central already has, served under another kind.
+              instagramPost({
+                id: 'ja',
+                permalink: `https://www.instagram.com/reel/JA${marker}/`,
+                timestamp: '2026-09-10T12:00:00.000Z',
+              }),
+              instagramPost({
+                id: 'depois',
+                permalink: `https://www.instagram.com/reel/DP${marker}/`,
+                timestamp: '2026-09-25T12:00:00.000Z',
+              }),
+              // The early-stop proof: the page walked past the requested start.
+              instagramPost({
+                id: 'antes',
+                permalink: `https://www.instagram.com/reel/AN${marker}/`,
+                timestamp: '2026-07-20T12:00:00.000Z',
+              }),
+            ],
+          }
+        },
+      })
+
+      expect(received).toHaveLength(1)
+      expect(received[0]!.maxResults).toBe(CONTENT_PIECE_PROFILE_IMPORT_SCAN_LIMIT)
+      const shouldStopAt = received[0]!.shouldStopAt!
+      expect(shouldStopAt(instagramPost({ timestamp: '2026-07-31T23:59:59.000Z' }))).toBe(true)
+      expect(shouldStopAt(instagramPost({ timestamp: '2026-08-01T03:00:00.000Z' }))).toBe(false)
+
+      expect(listing.found).toBe(2)
+      expect(listing.existingCount).toBe(1)
+      expect(listing.candidates).toEqual([
+        { url: `https://www.instagram.com/reel/DE${marker}/`, linkOnlyReason: null },
+      ])
+      expect(listing.truncated).toBe(false)
+    })
+
+    it('denounces the window when the official API did not reach its start', async () => {
+      await setInstagramSettings(true)
+      const marker = Date.now().toString(36)
+
+      const listing = await listContentPieceProfileImportCandidates({
+        payload,
+        actor: communicator,
+        window: { mode: 'period', since: '2026-08-01' },
+        now: new Date('2026-09-29T12:00:00.000Z'),
+        loadFeed: async () => ({
+          username: 'depjorgesolla',
+          posts: [
+            instagramPost({
+              permalink: `https://www.instagram.com/reel/DS${marker}/`,
+              timestamp: '2026-09-15T12:00:00.000Z',
+            }),
+          ],
+        }),
+      })
+
+      expect(listing.found).toBe(1)
+      expect(listing.truncated).toBe(true)
+    })
+
+    it('keeps the recency read as the default: 12 media, no scan bounds, never truncated', async () => {
+      await setInstagramSettings(true)
+      const received: LoadInstagramFeedArgs[] = []
+
+      const listing = await listContentPieceProfileImportCandidates({
+        payload,
+        actor: communicator,
+        loadFeed: async (feedArgs) => {
+          received.push(feedArgs)
+          return { username: null, posts: [] }
+        },
+      })
+
+      expect(received[0]!.maxResults).toBe(CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW)
+      expect(received[0]!.shouldStopAt).toBeUndefined()
+      expect(listing).toEqual({ found: 0, existingCount: 0, candidates: [], truncated: false })
+    })
+
+    it('refuses an impossible period before touching the feed', async () => {
+      await setInstagramSettings(true)
+      let called = false
+
+      await expect(
+        listContentPieceProfileImportCandidates({
+          payload,
+          actor: communicator,
+          window: { mode: 'period', since: '2026-02-30' },
+          now: new Date('2026-09-29T12:00:00.000Z'),
+          loadFeed: async () => {
+            called = true
+            return { username: null, posts: [] }
+          },
+        }),
+      ).rejects.toThrow('Informe uma data inicial válida.')
+      expect(called).toBe(false)
+    })
+
+    it('rejects an invalid period in the listing route without touching the feed', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+      await setInstagramSettings(true)
+
+      const response = await postProfileImport(
+        new Request('http://localhost/campanha/comunicacao/conteudos/importar', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+          body: JSON.stringify({
+            mode: 'period',
+            since: '2026-02-30',
+            until: '2026-02-01',
+          }),
+        }),
+      )
+
+      expect(response.status).toBe(400)
+      await expect(response.json()).resolves.toEqual({
+        status: 'error',
+        message: CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
+      })
+
+      // A body that forgot the mode is never silently downgraded to recents.
+      const missingMode = await postProfileImport(
+        new Request('http://localhost/campanha/comunicacao/conteudos/importar', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', origin: 'http://localhost' },
+          body: JSON.stringify({ since: '2026-08-01', until: '2026-08-31' }),
+        }),
+      )
+      expect(missingMode.status).toBe(400)
+      await expect(missingMode.json()).resolves.toEqual({
+        status: 'error',
+        message: CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
       })
     })
   })

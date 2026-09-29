@@ -339,6 +339,35 @@ describe('loadInstagramFeed', () => {
     expect(mediaCalls[1]).toContain('limit=3')
   })
 
+  it('caps the walk at 20 pages by default and follows a deeper window (C235)', async () => {
+    const pages = 22
+    const deepFetch = async (input: string) => {
+      calls.push(input)
+      if (!input.includes('/media')) return fakeResponse({ username: 'depjorgesolla' })
+      const after = /after=page-(\d+)/.exec(input)?.[1]
+      const pageIndex = after ? Number(after) : 0
+      const next = pageIndex + 1
+      return fakeResponse({
+        data: [MEDIA_ITEM(`post${pageIndex}`)],
+        ...(next < pages ? { paging: { cursors: { after: `page-${next}` } } } : {}),
+      })
+    }
+
+    calls.length = 0
+    const capped = await loadInstagramFeed({ ...args, maxResults: 100, fetchImpl: deepFetch })
+    expect(capped.posts).toHaveLength(20)
+
+    calls.length = 0
+    // A 1100-media window needs 22 pages of 50 — the ceiling follows it.
+    const raised = await loadInstagramFeed({
+      ...args,
+      maxResults: 1_100,
+      fetchImpl: deepFetch,
+    })
+    expect(raised.posts).toHaveLength(pages)
+    expect(calls.filter((call) => call.includes('/media'))).toHaveLength(pages)
+  })
+
   it('stops at the page that holds the searched post and never asks a deeper cursor', async () => {
     calls.length = 0
     const result = await loadInstagramFeed({

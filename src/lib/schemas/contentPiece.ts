@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
   CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
   CONTENT_PIECE_INSTITUTION_MAX_LENGTH,
@@ -10,6 +11,7 @@ import {
   CONTENT_PIECE_TITLE_MAX_LENGTH,
   CONTENT_PIECE_TYPES,
 } from '@/lib/contentPiece'
+import { contentPieceProfilePeriodError } from '@/lib/contentPieceProfileWindow'
 import { trimmedNullableText } from '@/lib/schemas/primitives'
 import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
 
@@ -82,11 +84,36 @@ export const contentPieceLinkRequestSchema = z.object({
 })
 
 /**
- * C230 — list the novelties of the official profile: the request carries no
- * input (the window is the server's decision), so the schema only keeps the
- * envelope honest.
+ * C235 — the window of the profile import: the default recency slice (`{}` or
+ * `recent`, the C230 contract) or an explicit civil period (`since` required,
+ * `until` optional). The period is validated against the Bahia civil day —
+ * real date, order, not in the future — so the wire never carries an
+ * impossible window.
  */
-export const contentPieceProfileImportRequestSchema = z.object({})
+export const contentPieceProfileImportWindowSchema = z.discriminatedUnion('mode', [
+  z.object({ mode: z.literal('recent') }),
+  z.object({
+    mode: z.literal('period'),
+    since: z.string().trim(),
+    until: z.string().trim().nullish(),
+  }),
+])
+
+export const contentPieceProfileImportRequestSchema = z.preprocess(
+  (value) =>
+    value && typeof value === 'object' && Object.keys(value).length === 0
+      ? { mode: 'recent' }
+      : value,
+  contentPieceProfileImportWindowSchema.superRefine((window, context) => {
+    if (window.mode !== 'period') return
+    const message = contentPieceProfilePeriodError({
+      since: window.since,
+      until: window.until ?? null,
+      today: formatBahiaCivilDate(new Date()),
+    })
+    if (message) context.addIssue({ code: 'custom', message })
+  }),
+)
 
 /** The editable catalogue of one piece (the ficha form). */
 export const contentPieceUpdateRequestSchema = z.object({

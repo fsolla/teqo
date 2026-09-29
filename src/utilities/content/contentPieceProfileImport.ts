@@ -2,14 +2,20 @@ import 'server-only'
 
 import type { Payload } from 'payload'
 
+import { formatBahiaCivilDate } from '@/lib/campaignTime'
 import {
   contentPieceLinkTitle,
-  contentPiecePostIdentityUrls,
-  contentPieceProfileCandidateFromPost,
   parseContentPieceLink,
-  type ContentPieceLink,
   type ContentPieceProfileCandidate,
 } from '@/lib/contentPiece'
+import {
+  contentPieceProfileFeedIdentityUrls,
+  contentPieceProfilePeriodBounds,
+  contentPieceProfilePeriodError,
+  contentPieceProfileWindowStartReached,
+  planContentPieceProfileWindow,
+  type ContentPieceProfileWindow,
+} from '@/lib/contentPieceProfileWindow'
 import {
   CONTENT_PIECE_LINK_INVALID_MESSAGE,
   CONTENT_PIECE_PROFILE_IMPORT_FEED_ERROR_MESSAGE,
@@ -39,8 +45,25 @@ import {
 /** The recency window of one import (12 media ≈ the profile's last days). */
 export const CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW = 12
 
+/**
+ * C235 — the scan ceiling of one period import: the official edge itself only
+ * answers the 10K most recently created media, so this is the real limit of
+ * the walk, not a product cap.
+ */
+export const CONTENT_PIECE_PROFILE_IMPORT_SCAN_LIMIT = 10_000
+
 /** A hung Graph API must not hold the confirm dialog until the job reaper. */
 const CONTENT_PIECE_PROFILE_IMPORT_FEED_TIMEOUT_MS = 30_000
+
+/** A period walk can cost many pages; the honest ceiling is still the edge. */
+const CONTENT_PIECE_PROFILE_IMPORT_PERIOD_FEED_TIMEOUT_MS = 120_000
+
+/**
+ * The catalogue identity lookup asks `sourceUrl in (...)`; a 10K-media window
+ * spells up to 30K URLs, so the probe runs in bounded chunks instead of one
+ * oversized statement.
+ */
+const CONTENT_PIECE_PROFILE_IMPORT_IDENTITY_LOOKUP_CHUNK = 2_000
 
 type FeedLoader = typeof loadInstagramFeed
 type FetchLike = (input: string, requestInit?: RequestInit) => Promise<Response>
@@ -52,6 +75,12 @@ export type ContentPieceProfileImportListing = {
   existingCount: number
   /** The novelties, in feed order (newest first). */
   candidates: ContentPieceProfileCandidate[]
+  /**
+   * True when the official API did not reach the start of the requested window
+   * (edge limit, page ceiling or end of pagination): the receipt says the
+   * window was not fully covered. Always false for the recency window.
+   */
+  truncated: boolean
 }
 
 export type ContentPieceProfileImportOutcome = 'created' | 'existing'
@@ -71,24 +100,31 @@ const cataloguedSourceUrls = async ({
   actor: CampaignUser
   identityUrls: readonly string[]
 }): Promise<Set<string>> => {
-  if (identityUrls.length === 0) return new Set()
+  const unique = [...new Set(identityUrls)]
+  const catalogued = new Set<string>()
 
-  const found = await payload.find({
-    collection: 'contentPiece',
-    where: { sourceUrl: { in: [...new Set(identityUrls)] } },
-    depth: 0,
-    limit: 0,
-    pagination: false,
-    select: { sourceUrl: true },
-    user: actor,
-    overrideAccess: false,
-  })
+  for (
+    let index = 0;
+    index < unique.length;
+    index += CONTENT_PIECE_PROFILE_IMPORT_IDENTITY_LOOKUP_CHUNK
+  ) {
+    const chunk = unique.slice(index, index + CONTENT_PIECE_PROFILE_IMPORT_IDENTITY_LOOKUP_CHUNK)
+    const found = await payload.find({
+      collection: 'contentPiece',
+      where: { sourceUrl: { in: chunk } },
+      depth: 0,
+      limit: 0,
+      pagination: false,
+      select: { sourceUrl: true },
+      user: actor,
+      overrideAccess: false,
+    })
+    for (const doc of found.docs) {
+      if (typeof doc.sourceUrl === 'string' && doc.sourceUrl) catalogued.add(doc.sourceUrl)
+    }
+  }
 
-  return new Set(
-    found.docs
-      .map((doc) => doc.sourceUrl)
-      .filter((sourceUrl): sourceUrl is string => Boolean(sourceUrl)),
-  )
+  return catalogued
 }
 
 /** True when the official credential is armed — what arms the import button. */
@@ -106,16 +142,28 @@ export const readContentPieceProfileImportAvailability = async (
  * unconfigured credential never reaches the API, and a feed failure becomes
  * the honest product message instead of a raw transport error. A refreshed
  * token is persisted best-effort, exactly like the link path.
+ *
+ * C235 — the recency window keeps the C230 one-page read; a period window
+ * scans cursor pages with a date early-stop (the feed is newest-first, so the
+ * first post older than the requested start ends the walk) up to the edge's
+ * own 10K-media limit, and denounces the bounds actually applied.
  */
 const loadConfiguredInstagramFeed = async ({
   payload,
   loadFeed,
   fetchImpl,
+  window,
+  now,
 }: {
   payload: Payload
   loadFeed: FeedLoader
   fetchImpl: FetchLike
-}): Promise<Awaited<ReturnType<FeedLoader>>> => {
+  window: ContentPieceProfileWindow
+  now: Date
+}): Promise<{
+  feed: Awaited<ReturnType<FeedLoader>>
+  bounds: { fromIso: string; toIso: string | null } | null
+}> => {
   // Intentional admin bypass: the global's read access is admin-only, and the
   // listing is already behind the communication gate; the token stays inside
   // this call and never reaches the wire or a log.
@@ -124,14 +172,35 @@ const loadConfiguredInstagramFeed = async ({
     throw new Error(CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE)
   }
 
+  if (window.mode === 'period') {
+    const error = contentPieceProfilePeriodError({
+      since: window.since,
+      until: window.until ?? null,
+      today: formatBahiaCivilDate(now),
+    })
+    if (error) throw new Error(error)
+  }
+  const bounds =
+    window.mode === 'period'
+      ? contentPieceProfilePeriodBounds({ since: window.since, until: window.until ?? null })
+      : null
+  const fromMs = bounds ? Date.parse(bounds.fromIso) : null
+
   let feed: Awaited<ReturnType<FeedLoader>>
   try {
     feed = await loadFeed({
       accessToken: settings.instagramAccessToken as string,
       userId: settings.instagramUserId as string,
-      maxResults: CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW,
+      maxResults: bounds
+        ? CONTENT_PIECE_PROFILE_IMPORT_SCAN_LIMIT
+        : CONTENT_PIECE_PROFILE_IMPORT_INSTAGRAM_WINDOW,
+      ...(fromMs !== null ? { shouldStopAt: (post) => Date.parse(post.timestamp) < fromMs } : {}),
       fetchImpl,
-      signal: AbortSignal.timeout(CONTENT_PIECE_PROFILE_IMPORT_FEED_TIMEOUT_MS),
+      signal: AbortSignal.timeout(
+        bounds
+          ? CONTENT_PIECE_PROFILE_IMPORT_PERIOD_FEED_TIMEOUT_MS
+          : CONTENT_PIECE_PROFILE_IMPORT_FEED_TIMEOUT_MS,
+      ),
     })
   } catch {
     // Token expired, API down: the operator reads the retry copy, never a
@@ -142,52 +211,64 @@ const loadConfiguredInstagramFeed = async ({
   if (feed.refreshedAccessToken) {
     await persistInstagramAccessToken(payload, feed.refreshedAccessToken).catch(() => undefined)
   }
-  return feed
+  return { feed, bounds }
 }
 
 /**
  * Lists the window's novelties, already deduplicated by post identity: `found`
- * is what the API answered with (parseable), `existingCount` what the Central
- * already had and `candidates` what the confirmation will create, newest
- * first.
+ * is what the API answered with inside the window (parseable), `existingCount`
+ * what the Central already had, `candidates` what the confirmation will
+ * create, newest first, and `truncated` when the official API did not reach
+ * the requested start.
+ *
+ * The recency mode is the C230 behavior untouched (12 media, one page); the
+ * period mode is the C235 window — the planner is the same owner for both.
  */
 export const listContentPieceProfileImportCandidates = async ({
   payload,
   actor,
+  window = { mode: 'recent' },
   loadFeed = loadInstagramFeed,
   fetchImpl = fetch,
+  now = new Date(),
 }: {
   payload: Payload
   actor: CampaignUser
+  window?: ContentPieceProfileWindow
   loadFeed?: FeedLoader
   fetchImpl?: FetchLike
+  now?: Date
 }): Promise<ContentPieceProfileImportListing> => {
-  const feed = await loadConfiguredInstagramFeed({ payload, loadFeed, fetchImpl })
-
-  const parsed: { link: ContentPieceLink; candidate: ContentPieceProfileCandidate }[] = []
-  for (const post of feed.posts) {
-    const candidate = contentPieceProfileCandidateFromPost(post)
-    if (!candidate) continue
-    const link = parseContentPieceLink(candidate.url)
-    if (!link) continue
-    parsed.push({ link, candidate })
-  }
+  const { feed, bounds } = await loadConfiguredInstagramFeed({
+    payload,
+    loadFeed,
+    fetchImpl,
+    window,
+    now,
+  })
 
   const catalogued = await cataloguedSourceUrls({
     payload,
     actor,
-    identityUrls: parsed.flatMap(({ link }) => contentPiecePostIdentityUrls(link)),
+    identityUrls: contentPieceProfileFeedIdentityUrls(feed.posts),
   })
-  const candidates = parsed
-    .filter(({ link }) =>
-      contentPiecePostIdentityUrls(link).every((identityUrl) => !catalogued.has(identityUrl)),
-    )
-    .map(({ candidate }) => candidate)
+  const plan = planContentPieceProfileWindow({
+    posts: feed.posts,
+    existingSourceUrls: [...catalogued],
+    from: bounds?.fromIso ?? null,
+    to: bounds?.toIso ?? null,
+  })
 
   return {
-    found: parsed.length,
-    existingCount: parsed.length - candidates.length,
-    candidates,
+    found: plan.found,
+    existingCount: plan.existingCount,
+    candidates: plan.candidates.map(({ url, linkOnlyReason }) => ({ url, linkOnlyReason })),
+    truncated:
+      feed.posts.length > 0 &&
+      !contentPieceProfileWindowStartReached({
+        posts: feed.posts,
+        fromIso: bounds?.fromIso ?? null,
+      }),
   }
 }
 
