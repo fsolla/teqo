@@ -176,6 +176,19 @@ export const archivePhotoGeoFrom = (
 }
 
 /**
+ * The `clean`/`raw` leaves of the JSON API answer arrive wrapped as
+ * `{ _content: "…" }` (Flickr's XML heritage); plain strings appear in older
+ * shapes and fixtures. Both are accepted, everything else drops.
+ */
+const contentScalar = (value: unknown): string | null => {
+  if (typeof value === 'string') return trimmed(value)
+  if (value !== null && typeof value === 'object') {
+    return trimmed((value as Record<string, unknown>)._content)
+  }
+  return null
+}
+
+/**
  * Normalizes `flickr.photos.getExif` (when it answered) into the stored json:
  * one entry per tag, empty values dropped, deterministic order.
  */
@@ -187,7 +200,7 @@ export const archivePhotoExifEntries = (value: unknown): ArchivePhotoExifEntry[]
     const entry = raw as Record<string, unknown>
     const tag = trimmed(entry.tag) ?? trimmed(entry.tagspace)
     const label = trimmed(entry.label) ?? tag
-    const value = trimmed(entry.clean) ?? trimmed(entry.raw)
+    const value = contentScalar(entry.clean) ?? contentScalar(entry.raw)
     if (tag === null || label === null || value === null) continue
     entries.push({ tag, label, value })
   }
@@ -250,10 +263,7 @@ export const archivePhotoImportFromFlickr = ({
   const originalUrl = original ?? fallback
   if (originalUrl === null) return { ok: false, reason: 'original' }
 
-  const description =
-    item.description !== null && typeof item.description === 'object'
-      ? trimmed((item.description as Record<string, unknown>)._content)
-      : trimmed(item.description)
+  const description = contentScalar(item.description)
 
   const license = licenseOrNull(item.license)
 

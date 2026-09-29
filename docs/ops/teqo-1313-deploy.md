@@ -1363,12 +1363,35 @@ docker compose --profile maintenance run --rm \
 ```
 
 Os recibos JSON ficam em `data/flickr/reports/` do container — monte um volume
-(`-v /srv/flickr-reports:/app/data/flickr`) para preservá-los. Guardas: fora de
+(`-v $HOME/flickr-reports:/app/data/flickr`) para preservá-los. Guardas: fora de
 teste o `TEQO_ENV=staging|production` é obrigatório com o **nome exato** do
 banco (`teqo_staging`/`teqo_1313`); `ALLOW_REMOTE_DB` é recusado; sem as 4
 `S3_*` o `--apply` recusa (o container gravaria em disco efêmero); e
 `FLICKR_IMPORT_CONFIRM=1` é exigido em alvo não-local. A chave da API nunca
 entra em recibo/log.
+
+### Backfill de EXIF (`--refresh-metadata`)
+
+Fotos ingeridas antes da correção do mapper gravaram `exif: []` (a API devolve
+`raw`/`clean` como `{ _content }`). O modo re-busca o EXIF das linhas
+existentes, atualiza só o que mudou e escreve apenas no banco — exige
+`FLICKR_API_KEY` e as guardas de escrita, mas **não** exige S3:
+
+```bash
+# no homeserver (canary e depois o lote completo):
+docker compose --profile maintenance run --rm \
+  -v $HOME/flickr-reports:/app/data/flickr \
+  -e TEQO_ENV=production -e FLICKR_IMPORT_CONFIRM=1 \
+  teqo-1313-migrate pnpm flickr:import --refresh-metadata --limit 5
+docker compose --profile maintenance run --rm \
+  -v $HOME/flickr-reports:/app/data/flickr \
+  -e TEQO_ENV=production -e FLICKR_IMPORT_CONFIRM=1 \
+  teqo-1313-migrate pnpm flickr:import --refresh-metadata
+```
+
+O recibo (`flickr-*-refresh.json`) conta atualizadas/inalteradas/falhas com
+motivo; o `--verify` mostra a cobertura (`EXIF: N`). O modo é idempotente:
+reexecutar converge e linhas inalteradas não são reescritas.
 
 Rollback: a migration `add_archive_photo` é aditiva. O rollback funcional é
 apagar as linhas do `archivePhoto` no admin (o objeto correspondente no bucket
