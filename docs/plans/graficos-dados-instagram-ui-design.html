@@ -726,6 +726,246 @@
       .story-canvas.delta .story-title {
         font-size: 64px;
       }
+
+      /* ------------------------------------------------------------------ */
+      /* CENA 02F · C237 · DEGRADED — colunas emparelhadas por categoria:    */
+      /* duas barras por categoria (inicial em cinza, recente em vermelho).  */
+      /* Escrita inline no tier degradado (quota do frontier esgotada);      */
+      /* exige sign-off humano — não certificada.                            */
+      /* ------------------------------------------------------------------ */
+      .paired-grade {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        margin-top: 26px;
+      }
+      .paired-legend {
+        flex: none;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        gap: 26px;
+        margin-bottom: 16px;
+        color: #57534e;
+        font-size: 28px;
+        line-height: 1;
+        font-weight: 700;
+      }
+      .paired-legend span {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .paired-swatch {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 18px;
+      }
+      .paired-swatch.initial {
+        background: var(--bar);
+      }
+      .paired-swatch.final {
+        background: var(--solla);
+      }
+      .paired-columns {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        align-items: end;
+        gap: 30px;
+        padding: 0 5px 46px;
+        border-bottom: 3px solid var(--bar-strong);
+      }
+      .paired-pair {
+        position: relative;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 12px;
+        height: 100%;
+      }
+      .paired-bar-cell {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        width: 50%;
+        max-width: 86px;
+        height: 100%;
+      }
+      .paired-value {
+        margin-bottom: 10px;
+        color: var(--ink);
+        text-align: center;
+        font-size: 31px;
+        line-height: 1;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .paired-bar {
+        background: var(--bar);
+      }
+      .paired-bar.recent {
+        background: var(--solla);
+      }
+      .paired-label {
+        position: absolute;
+        bottom: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #57534e;
+        text-align: center;
+        white-space: nowrap;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 650;
+      }
+      .feed-canvas.paired .chart-headline {
+        max-width: 900px;
+        font-size: 60px;
+      }
+      .feed-canvas.paired .chart-subtitle {
+        margin-top: 18px;
+        font-size: 28px;
+      }
+      .story-canvas.paired .story-title {
+        font-size: 60px;
+      }
+      .story-canvas.paired .paired-grade {
+        margin-top: 40px;
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* CENA 02G · C238 · DEGRADED — motion das colunas emparelhadas.       */
+      /* Mesmas classes/var do renderer; a demo do gate roda em loop (o      */
+      /* export roda uma vez e segura o estado final).                       */
+      /* ------------------------------------------------------------------ */
+      @keyframes motion-sweep {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+      @keyframes motion-rise {
+        from {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @keyframes motion-fade {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes motion-grow {
+        from {
+          transform: scaleY(0);
+        }
+        to {
+          transform: scaleY(1);
+        }
+      }
+      .motion .motion-sweep,
+      .motion .motion-rise,
+      .motion .motion-fade,
+      .motion .motion-grow {
+        animation-fill-mode: backwards;
+        animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+        animation-duration: var(--mud, 0.5s);
+        animation-delay: var(--md, 0s);
+      }
+      .motion .motion-sweep {
+        animation-name: motion-sweep;
+        transform-origin: left center;
+      }
+      .motion .motion-rise {
+        animation-name: motion-rise;
+      }
+      .motion .motion-fade {
+        animation-name: motion-fade;
+      }
+      .motion .motion-grow {
+        animation-name: motion-grow;
+        transform-origin: bottom center;
+      }
+
+      /* ------------------------------------------------------------------ */
+      /* CENA 02H · C239 — demos do motion da coluna de 2 períodos e da      */
+      /* âncora (feed). Escopos só do gate; o port usa as classes do renderer.*/
+      /* ------------------------------------------------------------------ */
+      .motion-column-demo .columns {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 320px));
+        justify-content: center;
+        align-items: end;
+        gap: 26px;
+        padding: 0 0 46px;
+        border-bottom: 3px solid var(--bar-strong);
+      }
+      .motion-column-demo .column-cell {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        height: 100%;
+      }
+      .motion-column-demo .column-value {
+        margin-bottom: 10px;
+        text-align: center;
+        font-size: 31px;
+        line-height: 1;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+      }
+      .motion-column-demo .column {
+        background: var(--bar);
+      }
+      .motion-column-demo .column.recent {
+        background: var(--solla);
+      }
+      .motion-column-demo .column-label {
+        position: absolute;
+        bottom: -40px;
+        left: 0;
+        width: 100%;
+        color: #57534e;
+        text-align: center;
+        white-space: nowrap;
+        font-size: 30px;
+        line-height: 1;
+        font-weight: 650;
+      }
+      .motion-anchor-demo .anchor {
+        padding-top: 20px;
+      }
+      .motion-anchor-demo .anchor-number {
+        color: var(--solla);
+        font-size: 300px;
+        line-height: 0.86;
+        letter-spacing: -0.065em;
+        font-weight: 900;
+        font-variant-numeric: tabular-nums;
+      }
+      .motion-anchor-demo .anchor-copy {
+        max-width: 760px;
+        margin: 40px 0 0;
+        font-size: 52px;
+        line-height: 1.12;
+        font-weight: 750;
+      }
       .degraded-banner {
         display: flex;
         flex-wrap: wrap;
@@ -1027,25 +1267,33 @@
       <div
         class="mb-6 rounded-2xl border border-[#184e92]/30 bg-[#184e92]/[0.05] p-5 sm:p-6"
         role="note"
-        aria-label="Base C203 e revisões C205, C206 e C207 aprovadas no gate humano de 2026-09-19"
+        aria-label="Base C203 e revisões C205, C206 e C207 aprovadas no gate humano de 2026-09-19; C237 e C238 com sign-off humano (2026-09-29 e 2026-09-30); C239 degradada aguardando gate"
       >
         <div class="flex flex-wrap items-start gap-x-5 gap-y-3">
           <span
             class="inline-flex items-center rounded-md bg-[#184e92] px-3 py-1 text-sm font-black tracking-[0.14em] text-white"
-            >BASE C203 APROVADA · C205/C206/C207 APROVADAS</span
+            >BASE C203 APROVADA · C205/C206/C207 APROVADAS · C237 SIGN-OFF · C238 SIGN-OFF · C239
+            MOTION DEGRADED</span
           >
           <div class="max-w-3xl">
             <p class="text-sm font-extrabold text-[#184e92]">
               Base C203 aprovada em 2026-09-19 · revisões C205, C206 e C207 aprovadas no gate em
-              2026-09-19.
+              2026-09-19 · C237 aprovada por sign-off humano em 2026-09-29 · C238 (motion do par
+              emparelhado) aprovada por sign-off humano em 2026-09-30 · C239 (extensão do motion)
+              degradada, aguardando gate humano.
             </p>
             <p class="mt-1 text-sm leading-6 text-stone-700">
               O aceite C203 permanece intacto. A C205 revisa no lugar a CENA 02D — linha temporal de
               três séries — e supera a C204, que nunca foi certificada. A C206 revisa somente o
               rodapé compartilhado para ampliar a marca oficial. A C207 estende a C205 com o último
-              período projetado (CENA 02E).
+              período projetado (CENA 02E). A C237 (CENA 02F) acrescenta as colunas emparelhadas por
+              categoria no tier degradado — aprovada por sign-off humano em 2026-09-29. A C238 (CENA
+              02G) acrescenta o motion do par emparelhado — aprovado por sign-off humano em
+              2026-09-30 — e a C239 (CENA 02H) o estende à coluna de 2 períodos e ao número-âncora,
+              aguardando gate.
               <strong
-                >As três são a fonte de verdade do port desde o gate humano de 2026-09-19.</strong
+                >As revisões certificadas seguem sendo a fonte de verdade do port desde o gate
+                humano de 2026-09-19.</strong
               >
             </p>
           </div>
@@ -1056,6 +1304,15 @@
         <div class="flex flex-wrap items-center gap-2">
           <span class="scene-label border-blue-200 bg-blue-50 text-[#184e92]"
             >C207 · aprovada no gate de 2026-09-19</span
+          >
+          <span class="scene-label border-solla/50 bg-[#fff5f5] text-[#7f1d1d]"
+            >C237 · DEGRADED · sign-off humano 2026-09-29</span
+          >
+          <span class="scene-label border-solla/50 bg-[#fff5f5] text-[#7f1d1d]"
+            >C238 · DEGRADED · sign-off humano 2026-09-30</span
+          >
+          <span class="scene-label border-solla/50 bg-[#fff5f5] text-[#7f1d1d]"
+            >C239 · motion DEGRADED · aguardando gate</span
           >
           <span class="scene-label">Base C203 aprovada · C205/C206 aprovadas</span>
           <span class="scene-label">Instagram feed + Stories</span>
@@ -3701,6 +3958,910 @@
         </div>
       </section>
 
+      <!-- ================================================================== -->
+      <!-- CENA 02F · C237 — colunas emparelhadas por categoria (inicial em   -->
+      <!-- cinza, recente em vermelho). DEGRADED · escrita inline no tier 4   -->
+      <!-- (quota do designer frontier esgotada); exige sign-off humano antes -->
+      <!-- do porte. A base C203 e todas as demais cenas permanecem intactas. -->
+      <!-- ================================================================== -->
+      <section
+        class="scene-card mt-10 border-2 border-dashed border-solla/60 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="paired-title"
+      >
+        <div class="degraded-banner">
+          <span class="degraded-badge">DEGRADED · SIGN-OFF HUMANO 2026-09-29</span>
+          <span
+            >Proposta criada no tier degradado (o frontier
+            <span class="rule-code">gpt-5.6-sol</span>
+            bateu no limite de uso e o fallback foi interrompido) e
+            <strong>aprovada por sign-off humano</strong> em 2026-09-29 — visual como está. Portada
+            classe-a-classe no renderer e nos testes na mesma data; a certificação pelo designer
+            frontier segue pendente.</span
+          >
+        </div>
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02F · C237 · OITAVA VARIAÇÃO · SIGN-OFF HUMANO 2026-09-29
+            </p>
+            <h2 id="paired-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · colunas emparelhadas por categoria (2006 → 2026)
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"><span class="measure-dot"></span>1080 × 1350</span>
+            <span class="measure-tag">chartType: delta + pairedColumns</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas paired"
+                aria-label="Exemplo de colunas emparelhadas por categoria para feed, com dados da rede estadual de saúde da Bahia"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule"></div>
+                  <p class="chart-context">Variação no período</p>
+                  <h3 class="chart-headline">
+                    Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero
+                  </h3>
+                  <p class="chart-subtitle">
+                    Leitos por tipo na rede estadual · cirurgia: 966 → 2.750
+                  </p>
+
+                  <div
+                    class="paired-grade tabular"
+                    role="img"
+                    aria-label="Colunas emparelhadas por categoria. Cirurgia geral: 592 leitos em 2006 e 1.433 em 2026. Ortopedia: 182 e 755. Neurocirurgia: 42 e 170. Oncologia: 0 e 134. A coluna cinza é o início do período; a vermelha é o dado mais recente."
+                  >
+                    <div class="paired-legend">
+                      <span><i class="paired-swatch initial"></i>2006</span>
+                      <span><i class="paired-swatch final"></i>2026</span>
+                    </div>
+                    <div
+                      class="paired-columns"
+                      style="grid-template-columns: repeat(4, minmax(0, 1fr))"
+                    >
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">592</span>
+                          <span class="paired-bar" style="height: 41.3%"></span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">1.433</span>
+                          <span class="paired-bar recent" style="height: 100%"></span>
+                        </div>
+                        <span class="paired-label">Cirurgia geral</span>
+                      </div>
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">182</span>
+                          <span class="paired-bar" style="height: 12.7%"></span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">755</span>
+                          <span class="paired-bar recent" style="height: 52.7%"></span>
+                        </div>
+                        <span class="paired-label">Ortopedia</span>
+                      </div>
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">42</span>
+                          <span class="paired-bar" style="height: 2.9%"></span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">170</span>
+                          <span class="paired-bar recent" style="height: 11.9%"></span>
+                        </div>
+                        <span class="paired-label">Neurocirurgia</span>
+                      </div>
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">0</span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value">134</span>
+                          <span class="paired-bar recent" style="height: 9.4%"></span>
+                        </div>
+                        <span class="paired-label">Oncologia</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <footer class="chart-footer">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> DATASUS / Ministério da Saúde<br />Nota: oncologia:
+                      não havia leitos na rede estadual em 2006.
+                    </p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">
+                O PAR · CINZA = INÍCIO, VERMELHO = RECENTE
+              </p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Duas barras por categoria, base zero comum: a inicial em
+                <span class="rule-code">#d6d3d1</span> e a mais recente no vermelho oficial
+                <span class="rule-code">#e4102f</span> — o dado positivo é o recente, compartilhado
+                por todos os pares (sem vencedor, sem hierarquia, como a valência da CENA 02A).
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">COR NUNCA SOZINHA</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Legenda de períodos com swatches (2006 cinza / 2026 vermelho), valor sobre cada
+                barra (tabular, pt-BR) e rótulo da categoria sob o par. O vermelho continua sendo o
+                único destaque da peça; o azul de marca não entra no dado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">INICIAL ZERO = SEM BARRA CINZA</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Quando <span class="rule-code">initial = 0</span> (oncologia), a barra cinza
+                simplesmente não existe: o valor “0” fica na linha de base e só a barra vermelha
+                ocupa o par. Nada de <span class="rule-code">min-height</span> inflando a barra
+                zero.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">MESMA ESCALA NOS DOIS LADOS DO PAR</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                A escala é o maior <span class="rule-code">final</span> (aqui 1.433) e vale para as
+                duas barras: a cinza de ortopedia mostra 182/1.433 e não uma barra “cheia” que
+                esconderia a diferença. Sem eixo truncado, sem 3D, sem pizza.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-8 border-t border-stone-200 pt-6">
+          <p class="text-xs font-bold text-brand-dark">
+            ADAPTAÇÃO STORIES · MESMA REGRA, PAR E RÓTULO INTEIROS
+          </p>
+          <h3 class="mt-1 text-lg font-bold tracking-tight">
+            Stories 9:16 · as quatro categorias entre as faixas seguras
+          </h3>
+          <p class="mt-2 max-w-3xl text-sm leading-5 text-stone-600">
+            O story mantém os 4 pares (8 barras) dentro de y=250…1670, com o mesmo par de tons e a
+            legenda de períodos. A headline longa recompõe em 60 px; nenhum par é cortado.
+          </p>
+
+          <div class="story-stage mt-6">
+            <article
+              class="story-canvas paired"
+              aria-label="Adaptação das colunas emparelhadas para Stories, com faixas seguras de 250 pixels"
+            >
+              <span class="safe-label top">250 px · evitar conteúdo essencial</span>
+              <span class="safe-label bottom">250 px · evitar conteúdo essencial</span>
+              <div class="story-content">
+                <div class="top-rule"></div>
+                <p class="chart-context">Variação no período</p>
+                <h3 class="story-title">
+                  Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero
+                </h3>
+                <p class="story-sub">Leitos por tipo na rede estadual · cirurgia: 966 → 2.750</p>
+                <div
+                  class="paired-grade tabular"
+                  role="img"
+                  aria-label="Colunas emparelhadas por categoria. Cirurgia geral: 592 leitos em 2006 e 1.433 em 2026. Ortopedia: 182 e 755. Neurocirurgia: 42 e 170. Oncologia: 0 e 134."
+                >
+                  <div class="paired-legend">
+                    <span><i class="paired-swatch initial"></i>2006</span>
+                    <span><i class="paired-swatch final"></i>2026</span>
+                  </div>
+                  <div
+                    class="paired-columns"
+                    style="grid-template-columns: repeat(4, minmax(0, 1fr))"
+                  >
+                    <div class="paired-pair">
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">592</span>
+                        <span class="paired-bar" style="height: 41.3%"></span>
+                      </div>
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">1.433</span>
+                        <span class="paired-bar recent" style="height: 100%"></span>
+                      </div>
+                      <span class="paired-label">Cirurgia geral</span>
+                    </div>
+                    <div class="paired-pair">
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">182</span>
+                        <span class="paired-bar" style="height: 12.7%"></span>
+                      </div>
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">755</span>
+                        <span class="paired-bar recent" style="height: 52.7%"></span>
+                      </div>
+                      <span class="paired-label">Ortopedia</span>
+                    </div>
+                    <div class="paired-pair">
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">42</span>
+                        <span class="paired-bar" style="height: 2.9%"></span>
+                      </div>
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">170</span>
+                        <span class="paired-bar recent" style="height: 11.9%"></span>
+                      </div>
+                      <span class="paired-label">Neurocirurgia</span>
+                    </div>
+                    <div class="paired-pair">
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">0</span>
+                      </div>
+                      <div class="paired-bar-cell">
+                        <span class="paired-value">134</span>
+                        <span class="paired-bar recent" style="height: 9.4%"></span>
+                      </div>
+                      <span class="paired-label">Oncologia</span>
+                    </div>
+                  </div>
+                </div>
+                <footer class="story-footer">
+                  <div class="story-source">
+                    <strong>Fonte:</strong> DATASUS / Ministério da Saúde · Nota: oncologia: não
+                    havia leitos na rede estadual em 2006.
+                  </div>
+                  <div class="brand-logo-frame">
+                    <img
+                      src="../../public/campaign-kit/jorge-solla-positivo.png"
+                      alt="Jorge Solla — Deputado Federal"
+                    />
+                  </div>
+                </footer>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <div class="mt-7 border-t border-stone-200 pt-6" aria-labelledby="paired-rules-title">
+          <p class="text-xs font-bold text-brand-dark">
+            REGRAS DA VARIANTE DE COLUNAS EMPARELHADAS (DEGRADED)
+          </p>
+          <h3 id="paired-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato visual proposto para o porte classe-a-classe — pendente de sign-off
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Entrada, teto e ordem</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Mesmo dado da barra de variação: N categorias com
+                <span class="rule-code">initial</span> e <span class="rule-code">final</span>,
+                <span class="rule-code">0 ≤ initial ≤ final</span>, com
+                <span class="rule-code">startLabel</span>/<span class="rule-code">endLabel</span>.
+                Máximo <strong>4</strong> categorias: com 4 pares o rótulo de categoria (30 px,
+                nowrap) ainda cabe no par + gap; acima disso o builder <strong>pergunta</strong> em
+                vez de colidir rótulos. Ordem: final desc (a mesma do delta).
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Tons e regra do vermelho</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Par fixo por categoria: inicial = <span class="rule-code">#d6d3d1</span>, recente =
+                <span class="rule-code">#e4102f</span> (o dado positivo compartilhado por todos os
+                pares). Sem <span class="rule-code">highlight</span>, sem setas, sem “amplia/recua”,
+                sem hierarquia de vencedor. O vermelho marca só a barra recente de cada par; o azul
+                <span class="rule-code">#184e92</span> não entra no dado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Períodos, valores e zero</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Legenda de períodos com swatches (inicial cinza / recente vermelho) acima do plot;
+                valor sobre cada barra (tabular, pt-BR); rótulo da categoria sob o par.
+                <span class="rule-code">initial = 0</span> → sem barra cinza (o “0” fica na base).
+                Sem <span class="rule-code">min-height</span> em barra zero; base zero real.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Feed · 1080×1350</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Padding 76/84/58; headline <strong>60 px</strong>; subtítulo 28 px; plot margin-top
+                26. Legenda 28 px (swatch 18 px, gap 26); colunas: 4 pares, gap 30, padding-bottom
+                46; barra máx 86 px, gap interno 12; valores 31 px; rótulo 30 px (bottom −40).
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Quadrado · 1080×1080</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Padding 56/84/48; headline 54 px; subtítulo 28 px; plot margin-top 20. Legenda 26
+                px; valores 30 px; rótulo 30 px (bottom −36); mesmas 4 categorias, sem corte.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Story · 1080×1920</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Faixas de 250 px; conteúdo padding 306/84/310; headline 60 px; plot margin-top 40.
+                Legenda 28 px; valores 31 px; rótulo 30 px; 4 pares inteiros entre y=250 e y=1670.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-dashed border-solla/60 bg-white p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Fail-closed (proposto)</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">final &lt; initial</span> (retração) → recusar: barra de
+                base zero não representa queda; sugerir a linha de 2 séries.
+                <span class="rule-code">initial</span> ausente → perguntar.
+                <span class="rule-code">final ≤ 0</span> → recusar. Mais de 4 categorias →
+                perguntar/agrupar. <span class="rule-code">highlight</span> → recusar (o par de tons
+                é fixo). Sem <span class="rule-code">source</span> → recusar. Nada de interpolar,
+                completar ou abreviar sozinho.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Mapa de classes proposto</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Grade: <span class="rule-code">paired-grade</span>; legenda
+                <span class="rule-code">paired-legend</span> +
+                <span class="rule-code">paired-swatch initial</span> /
+                <span class="rule-code">paired-swatch final</span>; colunas
+                <span class="rule-code">paired-columns</span> (grid de N pares); par
+                <span class="rule-code">paired-pair</span>; célula de barra
+                <span class="rule-code">paired-bar-cell</span>; valor
+                <span class="rule-code">paired-value</span>; barra
+                <span class="rule-code">paired-bar</span> (+
+                <span class="rule-code">.recent</span> para a vermelha; ausente quando
+                <span class="rule-code">initial = 0</span>); rótulo
+                <span class="rule-code">paired-label</span>. Reaproveitados:
+                <span class="rule-code">top-rule</span>,
+                <span class="rule-code">chart-context</span>,
+                <span class="rule-code">chart-headline</span>,
+                <span class="rule-code">chart-subtitle</span>,
+                <span class="rule-code">chart-footer</span>,
+                <span class="rule-code">source-line</span>,
+                <span class="rule-code">brand-logo-frame</span> e o PNG oficial inteiro.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================== -->
+      <!-- CENA 02G · C238 — motion das colunas emparelhadas (6s @ 30fps,     -->
+      <!-- frames determinísticos + ffmpeg local). DEGRADED · inline no tier  -->
+      <!-- 4; exige sign-off humano antes de valer como certificada.          -->
+      <!-- ================================================================== -->
+      <section
+        class="scene-card mt-10 border-2 border-dashed border-solla/60 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="motion-title"
+      >
+        <div class="degraded-banner">
+          <span class="degraded-badge">DEGRADED · SIGN-OFF HUMANO 2026-09-30</span>
+          <span
+            >Motion do par emparelhado escrito no tier degradado (frontier sem quota) e
+            <strong>aprovado por sign-off humano</strong> em 2026-09-30 — visual como está. A demo
+            ao lado roda em loop para o gate; o export roda uma vez e segura o estado final —
+            exatamente o PNG aprovado.</span
+          >
+        </div>
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02G · C238 · MOTION DO PAR EMPARELHADO · SIGN-OFF HUMANO 2026-09-30
+            </p>
+            <h2 id="motion-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · 6s @ 30fps, sem 3D e sem loop no export
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"
+              ><span class="measure-dot"></span>1080 × 1350 · 180 frames</span
+            >
+            <span class="measure-tag">H.264 · yuv420p · faststart</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas paired motion motion-demo"
+                aria-label="Demonstração em loop do motion das colunas emparelhadas no feed"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule motion-sweep" style="--md: 0s; --mud: 0.45s"></div>
+                  <p class="chart-context motion-rise" style="--md: 0.2s; --mud: 0.45s">
+                    Variação no período
+                  </p>
+                  <h3 class="chart-headline motion-rise" style="--md: 0.35s; --mud: 0.55s">
+                    Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero
+                  </h3>
+                  <p class="chart-subtitle motion-rise" style="--md: 0.65s; --mud: 0.45s">
+                    Leitos por tipo na rede estadual · cirurgia: 966 → 2.750
+                  </p>
+
+                  <div
+                    class="paired-grade tabular"
+                    role="img"
+                    aria-label="Colunas emparelhadas por categoria. Cirurgia geral: 592 leitos em 2006 e 1.433 em 2026. Ortopedia: 182 e 755. Neurocirurgia: 42 e 170. Oncologia: 0 e 134."
+                  >
+                    <div class="paired-legend motion-fade" style="--md: 0.8s; --mud: 0.4s">
+                      <span><i class="paired-swatch initial"></i>2006</span>
+                      <span><i class="paired-swatch final"></i>2026</span>
+                    </div>
+                    <div
+                      class="paired-columns"
+                      style="grid-template-columns: repeat(4, minmax(0, 1fr))"
+                    >
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 1.9s; --mud: 0.3s"
+                            >592</span
+                          >
+                          <span
+                            class="paired-bar motion-grow"
+                            style="height: 41.3%; --md: 1.1s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 1.9s; --mud: 0.3s"
+                            >1.433</span
+                          >
+                          <span
+                            class="paired-bar recent motion-grow"
+                            style="height: 100%; --md: 1.1s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <span class="paired-label motion-fade" style="--md: 1.25s; --mud: 0.3s"
+                          >Cirurgia geral</span
+                        >
+                      </div>
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 2.2s; --mud: 0.3s"
+                            >182</span
+                          >
+                          <span
+                            class="paired-bar motion-grow"
+                            style="height: 12.7%; --md: 1.4s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 2.2s; --mud: 0.3s"
+                            >755</span
+                          >
+                          <span
+                            class="paired-bar recent motion-grow"
+                            style="height: 52.7%; --md: 1.4s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <span class="paired-label motion-fade" style="--md: 1.55s; --mud: 0.3s"
+                          >Ortopedia</span
+                        >
+                      </div>
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 2.5s; --mud: 0.3s"
+                            >42</span
+                          >
+                          <span
+                            class="paired-bar motion-grow"
+                            style="height: 2.9%; --md: 1.7s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 2.5s; --mud: 0.3s"
+                            >170</span
+                          >
+                          <span
+                            class="paired-bar recent motion-grow"
+                            style="height: 11.9%; --md: 1.7s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <span class="paired-label motion-fade" style="--md: 1.85s; --mud: 0.3s"
+                          >Neurocirurgia</span
+                        >
+                      </div>
+                      <div class="paired-pair">
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 2.8s; --mud: 0.3s"
+                            >0</span
+                          >
+                        </div>
+                        <div class="paired-bar-cell">
+                          <span class="paired-value motion-rise" style="--md: 2.8s; --mud: 0.3s"
+                            >134</span
+                          >
+                          <span
+                            class="paired-bar recent motion-grow"
+                            style="height: 9.4%; --md: 2s; --mud: 0.75s"
+                          ></span>
+                        </div>
+                        <span class="paired-label motion-fade" style="--md: 2.15s; --mud: 0.3s"
+                          >Oncologia</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <footer class="chart-footer motion-fade" style="--md: 3.1s; --mud: 0.5s">
+                    <p class="source-line">
+                      <strong>Fonte:</strong> DATASUS / Ministério da Saúde<br />Nota: oncologia:
+                      não havia leitos na rede estadual em 2006.
+                    </p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">O QUE SE MOVE · E O QUE NÃO SE MOVE</p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Régua, kicker, headline e subtítulo entram; os pares crescem da esquerda para a
+                direita (as duas colunas juntas, rótulo com o crescimento e valores depois que a
+                barra assenta); rodapé por último. O fundo, o eixo e a escala não se mexem — a
+                leitura do dado é a mesma do PNG aprovado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">SEM EFEITO DE VITÓRIA</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Nada de bounce, glow, contagem dramática, zoom, parallax ou 3D. A barra vermelha
+                cresce junto com a cinza do par — sem pulso de destaque: a valência continua sendo o
+                dado recente, não um prêmio animado. Easing único
+                <span class="rule-code">cubic-bezier(0.22, 1, 0.36, 1)</span>.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">FIM = PNG APROVADO</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                O <span class="rule-code">fill-mode: backwards</span> segura o estado inicial
+                durante o delay e devolve o elemento aos estilos naturais no fim: o último frame é o
+                estático aprovado. Depois de 3,6s a peça fica parada (~2,4s) para a edição cortar.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-8 border-t border-stone-200 pt-6" aria-labelledby="motion-rules-title">
+          <p class="text-xs font-bold text-brand-dark">REGRAS DO MOTION (PROPOSTA DEGRADED)</p>
+          <h3 id="motion-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato proposto para o porte — pendente de sign-off
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Clock determinístico</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <strong>6s @ 30fps = 180 frames</strong>, grade fixa (0…5,967s). A captura dá seek
+                em cada animação CSS para o timestamp do frame e tela; nunca grava em tempo real. O
+                schedule é dado (<span class="rule-code">chartMotion.mjs</span>), não CSS: cada
+                elemento recebe <span class="rule-code">--md</span> (delay) e
+                <span class="rule-code">--mud</span> (duração).
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Estágios (segundos)</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                régua 0–0,45 (sweep) · kicker 0,2–0,65 · headline 0,35–0,9 · subtítulo 0,65–1,1 ·
+                legenda 0,8–1,2 · pares k=0..3: barra em 1,1+0,3k por 0,75, rótulo +0,15, valor +0,8
+                por 0,3 · rodapé 3,1–3,6 · hold estático 3,6–6,0.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Vocabulário</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Quatro gestos e só: <span class="rule-code">sweep</span> (scaleX da régua),
+                <span class="rule-code">rise</span> (opacidade + 14px),
+                <span class="rule-code">fade</span> e <span class="rule-code">grow</span> (scaleY da
+                barra, origem na base). Nenhum outro efeito entra — sem exceção por tipo.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Export local</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                H.264 (libx264, preset medium, CRF 18), yuv420p, faststart, 30fps exatos. ffmpeg do
+                repo (FFMPEG_PATH → PATH → empacotado) — nenhum serviço remoto. Frames em
+                <span class="rule-code"
+                  >data/graficos-instagram/&lt;slug&gt;-frames-&lt;size&gt;/</span
+                >
+                são temporários e apagados.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Tamanhos</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Feed 1080×1350, quadrado 1080×1080 e story 1080×1920 (faixas de 250px) com o mesmo
+                clock; é o protótipo certificado só no par emparelhado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-solla/60 bg-white p-4 md:col-span-1">
+              <p class="text-sm font-bold">Fail-closed</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">--motion</span> só na variante pareada (as outras recusam
+                com mensagem acionável); schedule que não assenta dentro dos 6s é recusado; sem
+                fonte, sem peça.
+              </p>
+            </div>
+            <div
+              class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4 md:col-span-2 xl:col-span-3"
+            >
+              <p class="text-sm font-bold">Mapa de classes do port</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                <span class="rule-code">motion</span> no canvas; classes
+                <span class="rule-code">motion-sweep</span> /
+                <span class="rule-code">motion-rise</span> /
+                <span class="rule-code">motion-fade</span> /
+                <span class="rule-code">motion-grow</span>; vars
+                <span class="rule-code">--md</span>/<span class="rule-code">--mud</span> inline por
+                elemento; keyframes <span class="rule-code">motion-sweep|rise|fade|grow</span> num
+                stylesheet próprio (só entra no modo motion). O corpo pareado reusa
+                <span class="rule-code">paired-*</span> intacto.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================================================================== -->
+      <!-- CENA 02H · C239 — extensão do motion: coluna de 2 períodos e       -->
+      <!-- número-âncora, mesmo clock e vocabulário da C238. DEGRADED ·       -->
+      <!-- inline no tier 4; exige sign-off humano.                           -->
+      <!-- ================================================================== -->
+      <section
+        class="scene-card mt-10 border-2 border-dashed border-solla/60 p-4 sm:p-6 lg:p-8"
+        aria-labelledby="motion-c237-title"
+      >
+        <div class="degraded-banner">
+          <span class="degraded-badge">DEGRADED · INLINE (TIER 4) · AGUARDANDO GATE HUMANO</span>
+          <span
+            >Extensão C239 do motion (mesmo clock e vocabulário da C238): a coluna de 2 períodos
+            cresce da esquerda para a direita — a recente vermelha por último — e o número-âncora
+            sobe seguido da frase, <strong>sem contagem dramática</strong>. Demos em loop; o export
+            roda uma vez e segura o estado final.</span
+          >
+        </div>
+
+        <div class="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p class="text-xs font-bold text-brand-dark">
+              CENA 02H · C239 · MOTION DA COLUNA E DA ÂNCORA · DEGRADED · PENDENTE DE GATE
+            </p>
+            <h2 id="motion-c237-title" class="mt-1 text-xl font-bold tracking-tight">
+              Feed 4:5 · mesmo clock de 6s @ 30fps, sem contagem e sem efeito de vitória
+            </h2>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="measure-tag"
+              ><span class="measure-dot"></span>1080 × 1350 · 180 frames</span
+            >
+            <span class="measure-tag">colunas 1,1s + 0,35s · âncora 1,05s</span>
+          </div>
+        </div>
+
+        <div class="mt-6 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas motion motion-demo motion-column-demo"
+                aria-label="Demonstração em loop do motion da coluna de dois períodos no feed"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule motion-sweep" style="--md: 0s; --mud: 0.45s"></div>
+                  <p class="chart-context motion-rise" style="--md: 0.2s; --mud: 0.45s">
+                    Poucos períodos
+                  </p>
+                  <h3 class="chart-headline motion-rise" style="--md: 0.35s; --mud: 0.55s">
+                    UTIs na rede estadual crescem quase 9 vezes desde 2005
+                  </h3>
+                  <p class="chart-subtitle motion-rise" style="--md: 0.65s; --mud: 0.45s">
+                    Leitos de UTI nos hospitais estaduais · Bahia
+                  </p>
+                  <div class="columns tabular">
+                    <div class="column-cell">
+                      <span class="column-value motion-rise" style="--md: 1.9s; --mud: 0.3s"
+                        >179</span
+                      >
+                      <div
+                        class="column motion-grow"
+                        style="height: 11.7%; --md: 1.1s; --mud: 0.75s"
+                      ></div>
+                      <span class="column-label motion-fade" style="--md: 1.25s; --mud: 0.3s"
+                        >2005</span
+                      >
+                    </div>
+                    <div class="column-cell">
+                      <span class="column-value motion-rise" style="--md: 2.25s; --mud: 0.3s"
+                        >1.536</span
+                      >
+                      <div
+                        class="column recent motion-grow"
+                        style="height: 100%; --md: 1.45s; --mud: 0.75s"
+                      ></div>
+                      <span class="column-label motion-fade" style="--md: 1.6s; --mud: 0.3s"
+                        >2026</span
+                      >
+                    </div>
+                  </div>
+                  <footer class="chart-footer motion-fade" style="--md: 3.1s; --mud: 0.5s">
+                    <p class="source-line"><strong>Fonte:</strong> DATASUS / Ministério da Saúde</p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">
+                A COLUNA CRESCE DA ESQUERDA PARA A DIREITA
+              </p>
+              <p class="mt-2 text-sm leading-6 text-stone-700">
+                Primeira coluna em 1,1s, recente em 1,45s (0,35s de stagger), 0,75s de crescimento
+                cada; rótulo entra com a coluna (+0,15s) e o valor depois da barra assentar (+0,8s).
+                O vermelho da recente cresce por último — mesmo gesto do par emparelhado, uma coluna
+                por vez.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">A ÂNCORA SOBE, NÃO CONTA</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                O número-âncora entra com <span class="rule-code">rise</span> (1,05–1,65s) e a frase
+                com <span class="rule-code">fade</span> (1,7–2,15s). Nada de count-up, bounce ou
+                glow: o valor chega inteiro, como no PNG aprovado.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-7 grid items-start gap-7 lg:grid-cols-[594px_1fr]">
+          <div class="overflow-x-auto pb-2">
+            <div class="feed-stage">
+              <article
+                class="feed-canvas motion motion-demo motion-anchor-demo"
+                aria-label="Demonstração em loop do motion do número-âncora no feed"
+              >
+                <div class="feed-inner">
+                  <div class="top-rule motion-sweep" style="--md: 0s; --mud: 0.45s"></div>
+                  <p class="chart-context motion-rise" style="--md: 0.2s; --mud: 0.45s">
+                    Número-âncora
+                  </p>
+                  <h3 class="chart-headline motion-rise" style="--md: 0.35s; --mud: 0.55s">
+                    Bahia contrata mais de mil leitos privados para o SUS
+                  </h3>
+                  <p class="chart-subtitle motion-rise" style="--md: 0.65s; --mud: 0.45s">
+                    Rede complementar do SUS · Bahia · 2026
+                  </p>
+                  <div class="anchor">
+                    <div class="anchor-number motion-rise" style="--md: 1.05s; --mud: 0.6s">
+                      1.130
+                    </div>
+                    <p class="anchor-copy motion-fade" style="--md: 1.7s; --mud: 0.45s">
+                      leitos privados contratados para atendimento pelo SUS
+                    </p>
+                  </div>
+                  <footer class="chart-footer motion-fade" style="--md: 3.1s; --mud: 0.5s">
+                    <p class="source-line"><strong>Fonte:</strong> DATASUS / Ministério da Saúde</p>
+                    <div class="brand-logo-frame">
+                      <img
+                        src="../../public/campaign-kit/jorge-solla-positivo.png"
+                        alt="Jorge Solla — Deputado Federal"
+                      />
+                    </div>
+                  </footer>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="grid gap-4">
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-xs font-bold text-brand-dark">QUE ÂNCORA ENTRA NO MOTION</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                A variante <span class="rule-code">anchor</span> com manchete-takeaway e o valor no
+                corpo (o mesmo dado do PNG). O kicker, a headline e o subtítulo seguem a casca da
+                C238; o rodapé entra em 3,1s.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-xs font-extrabold text-stone-700">MESMO EXPORT, MESMO HOLD</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                H.264 local, 6s @ 30fps, estado final = PNG aprovado, hold estático de ~2,4s para a
+                edição. A extensão não muda o export nem o ffmpeg do repo.
+              </p>
+            </div>
+          </aside>
+        </div>
+
+        <div class="mt-8 border-t border-stone-200 pt-6" aria-labelledby="motion-c237-rules-title">
+          <p class="text-xs font-bold text-brand-dark">REGRAS DA EXTENSÃO (PROPOSTA DEGRADED)</p>
+          <h3 id="motion-c237-rules-title" class="mt-1 text-lg font-bold tracking-tight">
+            Contrato proposto para o porte — pendente de sign-off
+          </h3>
+          <div class="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Nada novo no vocabulário</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Mesmos 4 gestos (<span class="rule-code">sweep</span>,
+                <span class="rule-code">rise</span>, <span class="rule-code">fade</span>,
+                <span class="rule-code">grow</span>), mesmo easing, mesmo
+                <span class="rule-code">fill-mode: backwards</span> e mesmos estágios de casca. A
+                extensão só acrescenta o alvo dos gestos.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Schedule da extensão</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Coluna k: barra em 1,1+0,35k (0,75s), rótulo +0,15, valor +0,8 (0,3s) · âncora:
+                número 1,05–1,65 (rise de 0,6s), frase 1,7–2,15 (fade 0,45s) · rodapé 3,1–3,6 · hold
+                até 6,0.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-stone-400 bg-stone-50 p-4">
+              <p class="text-sm font-bold">Sem contagem, sem ênfase</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                A âncora não conta de 0 a N, não pulsa e não ganha glow; a coluna recente não tem
+                pulso de destaque — o vermelho é o dado, não um prêmio animado.
+              </p>
+            </div>
+            <div class="rounded-xl border border-dashed border-solla/60 bg-white p-4 md:col-span-1">
+              <p class="text-sm font-bold">Fail-closed</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Motion só na pareada, na coluna de <strong>2 períodos</strong> e na âncora; as
+                demais variantes recusam com mensagem acionável, a coluna com ≠2 períodos recusa e o
+                clock que não assenta em 6s recusa.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Tamanhos</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Feed, quadrado e story com o mesmo schedule; a demo do gate usa o feed.
+              </p>
+            </div>
+            <div class="rounded-xl border border-stone-200 bg-white p-4">
+              <p class="text-sm font-bold">Mapa de classes do port</p>
+              <p class="mt-2 text-sm leading-5 text-stone-600">
+                Coluna: <span class="rule-code">column-value</span>,
+                <span class="rule-code">column</span> (recente com
+                <span class="rule-code">highlight</span>) e
+                <span class="rule-code">column-label</span> ganham
+                <span class="rule-code">motion-rise</span> /
+                <span class="rule-code">motion-grow</span> /
+                <span class="rule-code">motion-fade</span> + vars. Âncora:
+                <span class="rule-code">anchor-number</span> (rise) e
+                <span class="rule-code">anchor-copy</span> (fade). Os escopos
+                <span class="rule-code">motion-column-demo</span>/<span class="rule-code"
+                  >motion-anchor-demo</span
+                >
+                existem só no gate.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="scene-card mt-10 p-4 sm:p-6 lg:p-8" aria-labelledby="story-title">
         <div class="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -3984,7 +5145,10 @@
         <span
           >base C203 <strong>aprovada</strong> · extensão C191
           <strong>certificada pelo designer e aprovada pelo humano</strong> · C205 (supera a C204) +
-          C206 + C207 <strong>aprovadas no gate de 2026-09-19</strong></span
+          C206 + C207 <strong>aprovadas no gate de 2026-09-19</strong> · C237 (colunas emparelhadas)
+          <strong>DEGRADED · sign-off humano 2026-09-29</strong> · C238 (motion do par)
+          <strong>DEGRADED · sign-off humano 2026-09-30</strong> · C239 (motion estendido)
+          <strong>DEGRADED aguardando gate</strong></span
         >
         <span
           >Kit 1313 oficial · valência redundante · projeção explícita · marca ampliada · NEEDS
@@ -3992,5 +5156,22 @@
         >
       </footer>
     </main>
+    <script>
+      // Demo do gate (C238/C239): reinicia o motion das CENAS 02G/02H a cada
+      // 6s trocando a classe `motion` (o Chromium remove animações terminadas,
+      // então reiniciar pela classe é o caminho robusto). O export não usa
+      // este script — lá a captura dá seek frame a frame.
+      ;(() => {
+        const demos = [...document.querySelectorAll('.motion-demo')]
+        if (demos.length === 0) return
+        setInterval(() => {
+          for (const demo of demos) {
+            demo.classList.remove('motion')
+            void demo.offsetWidth
+            demo.classList.add('motion')
+          }
+        }, 6000)
+      })()
+    </script>
   </body>
 </html>

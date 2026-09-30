@@ -11,8 +11,8 @@
  *   node scripts/build-chart-from-data.mjs --in=data/graficos-instagram/dados.csv \
  *     --headline="Um território concentra o maior resultado" --source="TSE 2022" \
  *     [--subtitle=...] [--note=...] [--type=bar|column|line|anchor|delta] [--size=feed|square|story] \
- *     [--unit="%"] [--highlight="Território A"|--no-highlight|--dual-positive] \
- *     [--out=docs/research/graficos-instagram/x.png]
+ *     [--unit="%"] [--highlight="Território A"|--no-highlight|--dual-positive|--paired] \
+ *     [--motion] [--out=docs/research/graficos-instagram/x.png]
  *   node scripts/build-chart-from-data.mjs --in=dados.csv --inspect
  */
 
@@ -33,6 +33,8 @@ import {
   parseInput,
   validateSpec,
 } from './lib/chartData.mjs'
+import { MOTION_DURATION_S, MOTION_FPS, validateMotion } from './lib/chartMotion.mjs'
+import { renderChartMotion } from './lib/chartMotionRender.mjs'
 import { dieWithLabel, parseEqualsFlags } from './lib/cli.mjs'
 import { renderChartHtml } from './lib/graficosInstagramRender.mjs'
 
@@ -128,6 +130,7 @@ const readInput = async (flags) => {
  *   argv?: string[],
  *   launchBrowser?: () => Promise<{ close: () => Promise<void> }>,
  *   screenshot?: typeof screenshotHtmlPng,
+ *   renderMotion?: typeof renderChartMotion,
  *   die?: (message: string) => never,
  *   repoRoot?: string,
  * }} [options]
@@ -136,6 +139,7 @@ export const main = async ({
   argv = process.argv.slice(2),
   launchBrowser = launchPdfBrowser,
   screenshot = screenshotHtmlPng,
+  renderMotion = renderChartMotion,
   die = dieWithLabel(LABEL),
   repoRoot = process.cwd(),
 } = {}) => {
@@ -150,7 +154,7 @@ export const main = async ({
     }
   } else {
     if (!flags.in) die('informe --in=<arquivo|-> com os dados (ou --spec=<json> para replay).')
-    const forcedType = flags.type ? String(flags.type) : null
+    const forcedType = flags.type ? String(flags.type) : flags.paired ? 'delta' : null
     let input
     try {
       input = await readInput(flags)
@@ -212,6 +216,7 @@ export const main = async ({
             ...(flags.highlight ? { highlight: String(flags.highlight) } : {}),
             ...(flags['no-highlight'] ? { noHighlight: true } : {}),
             ...(flags['dual-positive'] ? { dualPositive: true } : {}),
+            ...(flags.paired ? { pairedColumns: true } : {}),
             rows: dataset.rows,
             ...(chartType === 'delta'
               ? { startLabel: dataset.startLabel, endLabel: dataset.endLabel }
@@ -220,8 +225,11 @@ export const main = async ({
     }
   }
 
+  if (flags.motion) spec = { ...spec, motion: true }
+
   if (!spec.source) die('informe --source (a fonte viaja dentro da imagem).')
   validateSpec(spec)
+  if (spec.motion) validateMotion(spec)
 
   const slug = slugify(spec.headline)
   const specPath = join(repoRoot, 'data/graficos-instagram', `${slug || 'grafico'}.chart-spec.json`)
@@ -230,7 +238,7 @@ export const main = async ({
     : join(
         repoRoot,
         'docs/research/graficos-instagram',
-        `${slug || 'grafico'}-${today()}-${spec.size ?? 'feed'}.png`,
+        `${slug || 'grafico'}-${today()}-${spec.size ?? 'feed'}.${spec.motion ? 'mp4' : 'png'}`,
       )
 
   let brandLogo = ''
@@ -258,6 +266,24 @@ export const main = async ({
     await mkdir(dirname(outPath), { recursive: true })
     await mkdir(dirname(specPath), { recursive: true })
     await writeFile(specPath, `${JSON.stringify(spec, null, 2)}\n`)
+    if (spec.motion) {
+      const { size, source } = await renderMotion({
+        browser,
+        html,
+        width: canvas.width,
+        height: canvas.height,
+        outPath,
+        workDir: join(
+          repoRoot,
+          'data/graficos-instagram',
+          `${slug || 'grafico'}-frames-${spec.size ?? 'feed'}`,
+        ),
+      })
+      console.log(
+        `[${LABEL}] MP4 ${outPath} (${canvas.width}×${canvas.height}, ${Math.round(size / 1024)} KB) · motion ${MOTION_DURATION_S}s @ ${MOTION_FPS}fps · ${pointCount} · ffmpeg ${source}`,
+      )
+      return
+    }
     const { size } = await screenshot(browser, {
       html,
       width: canvas.width,

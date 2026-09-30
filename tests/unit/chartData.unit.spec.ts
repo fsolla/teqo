@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CHART_TYPES,
+  MAX_PAIRED,
   MAX_POINTS,
   MAX_POINTS_LINE,
   MAX_POINTS_STORY,
@@ -628,6 +629,67 @@ describe('validateSpec — the variation bar (delta)', () => {
     const rows = [{ label: 'ESF', initial: 1, final: 2 }]
     expect(classifyRelation(rows)).toBe('delta')
     expect(classifyRelation(rows, 'bar')).toBe('bar')
+  })
+})
+
+// C237 degraded variant: the same delta dataset drawn as two columns per
+// category (initial gray, recent red). The category label under a pair caps it
+// at four categories; the two-tone pair is fixed, so no highlight.
+describe('validateSpec — paired columns (C237)', () => {
+  const pairedSpec = (overrides = {}) => ({
+    chartType: 'delta',
+    headline: 'Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero',
+    startLabel: '2006',
+    endLabel: '2026',
+    pairedColumns: true,
+    rows: [
+      { label: 'Cirurgia geral', initial: 592, final: 1433 },
+      { label: 'Ortopedia', initial: 182, final: 755 },
+      { label: 'Oncologia', initial: 0, final: 134 },
+    ],
+    ...overrides,
+  })
+
+  it('accepts the two-measure table drawn as paired columns', () => {
+    expect(validateSpec(pairedSpec())).toBeTruthy()
+  })
+
+  it('requires the delta shape and type', () => {
+    expect(() =>
+      validateSpec(pairedSpec({ chartType: 'bar', rows: [{ label: 'Ortopedia', value: 755 }] })),
+    ).toThrow(/exigem o tipo delta/)
+  })
+
+  it('refuses highlight (the two-tone pair is fixed)', () => {
+    expect(() => validateSpec(pairedSpec({ highlight: 'Ortopedia' }))).toThrow(/destaque/)
+  })
+
+  it('refuses --no-highlight and --dual-positive', () => {
+    expect(() => validateSpec(pairedSpec({ noHighlight: true }))).toThrow(/não combinam/)
+    expect(() => validateSpec(pairedSpec({ dualPositive: true }))).toThrow(/exige o tipo coluna/)
+  })
+
+  it(`caps the pairs at ${MAX_PAIRED} (the category label collides above that)`, () => {
+    const rows = Array.from({ length: MAX_PAIRED + 1 }, (_value, index) => ({
+      label: `Tipo ${index}`,
+      initial: 1,
+      final: 2,
+    }))
+    expect(validateSpec(pairedSpec({ rows: rows.slice(0, MAX_PAIRED) }))).toBeTruthy()
+    expect(() => validateSpec(pairedSpec({ rows }))).toThrow(/colidem/)
+  })
+
+  it('keeps the delta guardrails (zero base, no retraction)', () => {
+    expect(() =>
+      validateSpec(pairedSpec({ rows: [{ label: 'Ortopedia', initial: 755, final: 182 }] })),
+    ).toThrow(/linha de duas séries/)
+    expect(() =>
+      validateSpec(pairedSpec({ rows: [{ label: 'Ortopedia', initial: -1, final: 2 }] })),
+    ).toThrow(/negativo/)
+  })
+
+  it('rejects a non-boolean pairedColumns', () => {
+    expect(() => validateSpec(pairedSpec({ pairedColumns: 'sim' }))).toThrow(/booleano/)
   })
 })
 

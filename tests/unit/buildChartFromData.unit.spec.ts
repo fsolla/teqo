@@ -252,6 +252,138 @@ describe('main — spec assembly, replay and the per-size log', () => {
     expect(stdout.join('')).toContain('tipo=delta')
   })
 
+  it('assembles the paired columns from the delta table with --paired', async () => {
+    const input = await writeInput(
+      dir,
+      'Tipo\t2006\t2026\nCirurgia geral\t592\t1433\nOncologia\t0\t134\n',
+    )
+    const { launchBrowser, close } = launchTracker()
+    const screenshot = screenshotStub()
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--paired',
+        '--headline=Ortopedia cresce 4,1 vezes',
+        '--source=DATASUS / Ministério da Saúde',
+        `--out=${join(dir, 'par.png')}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+    })
+
+    expect(close).toHaveBeenCalledOnce()
+    const spec = JSON.parse(
+      await readFile(
+        join(dir, 'data/graficos-instagram/ortopedia-cresce-4-1-vezes.chart-spec.json'),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({
+      chartType: 'delta',
+      pairedColumns: true,
+      startLabel: '2006',
+      endLabel: '2026',
+    })
+    expect(stdout.join('')).toContain('tipo=delta')
+  })
+
+  it('renders the paired columns as an MP4 with --motion and skips the still screenshot', async () => {
+    const input = await writeInput(
+      dir,
+      'Tipo\t2006\t2026\nCirurgia geral\t592\t1433\nOncologia\t0\t134\n',
+    )
+    const { launchBrowser, close } = launchTracker()
+    const screenshot = screenshotStub()
+    const renderMotion = vi.fn(async (_options: { outPath: string }) => ({
+      size: 4096,
+      source: 'empacotado',
+    }))
+    const outPath = join(dir, 'motion.mp4')
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--paired',
+        '--motion',
+        '--headline=Ortopedia cresce 4,1 vezes',
+        '--source=DATASUS / Ministério da Saúde',
+        `--out=${outPath}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+      renderMotion,
+    })
+
+    expect(screenshot).not.toHaveBeenCalled()
+    expect(close).toHaveBeenCalledOnce()
+    expect(renderMotion).toHaveBeenCalledWith(
+      expect.objectContaining({ outPath, width: 1080, height: 1350 }),
+    )
+    const spec = JSON.parse(
+      await readFile(
+        join(dir, 'data/graficos-instagram/ortopedia-cresce-4-1-vezes.chart-spec.json'),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({ motion: true, pairedColumns: true, chartType: 'delta' })
+    expect(stdout.join('')).toContain('MP4')
+    expect(stdout.join('')).toContain('motion 6s @ 30fps')
+  })
+
+  it('refuses --motion outside the paired variant without launching the browser', async () => {
+    const input = await writeInput(dir, 'Ilhéus 84\nItabuna 68\n')
+    const { launchBrowser } = launchTracker()
+
+    await expect(
+      main({
+        argv: [`--in=${input}`, '--motion', '--headline=X', '--source=TSE'],
+        repoRoot: dir,
+        launchBrowser,
+        die: throwingDie,
+      }),
+    ).rejects.toThrow(/colunas emparelhadas/)
+    expect(launchBrowser).not.toHaveBeenCalled()
+  })
+
+  it('renders the two-period column as an MP4 with --motion (C239)', async () => {
+    const input = await writeInput(dir, 'Ano\tLeitos de UTI\n2005\t179\n2026\t1536\n')
+    const { launchBrowser, close } = launchTracker()
+    const screenshot = screenshotStub()
+    const renderMotion = vi.fn(async (_options: { outPath: string }) => ({
+      size: 4096,
+      source: 'empacotado',
+    }))
+    const outPath = join(dir, 'uti.mp4')
+
+    await main({
+      argv: [
+        `--in=${input}`,
+        '--motion',
+        '--headline=UTIs crescem quase 9 vezes',
+        '--source=DATASUS / Ministério da Saúde',
+        `--out=${outPath}`,
+      ],
+      repoRoot: dir,
+      launchBrowser,
+      screenshot,
+      renderMotion,
+    })
+
+    expect(screenshot).not.toHaveBeenCalled()
+    expect(close).toHaveBeenCalledOnce()
+    const spec = JSON.parse(
+      await readFile(
+        join(dir, 'data/graficos-instagram/utis-crescem-quase-9-vezes.chart-spec.json'),
+        'utf8',
+      ),
+    )
+    expect(spec).toMatchObject({ motion: true, chartType: 'column' })
+    expect(stdout.join('')).toContain('MP4')
+  })
+
   it('assembles a vertical category comparison with the relation kicker and the unit', async () => {
     const input = await writeInput(
       dir,

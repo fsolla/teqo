@@ -11,6 +11,8 @@
 import { parse as parseCsv } from 'csv-parse/sync'
 import XLSX from 'xlsx'
 
+import { motionKindFor } from './chartMotion.mjs'
+
 export const CHART_TYPES = ['bar', 'column', 'line', 'anchor', 'delta']
 
 /** Max data points per chart (honest density; above this the person must summarize). */
@@ -22,6 +24,16 @@ export const MAX_POINTS = 7
  * instead of crowded.
  */
 export const MAX_POINTS_STORY = 5
+
+/**
+ * Paired columns (C237, degraded design): the two-measure-per-category dataset
+ * of the delta drawn as two zero-based columns per category — the initial in
+ * the neutral tone, the recent one in the official red (the positive datum is
+ * shared by every pair, never a winner). The 30px category label under a pair
+ * caps the variant at four categories on the 1080 canvas; above that the labels
+ * collide and the builder asks instead of drawing.
+ */
+export const MAX_PAIRED = 4
 
 /**
  * Two-series and three-series time comparison (approved variants): an annual
@@ -642,6 +654,42 @@ export const validateSpec = (spec) => {
       )
     }
     throw new Error(`tipo de gráfico inválido: ${JSON.stringify(chartType)}`)
+  }
+  if (spec.pairedColumns !== undefined && typeof spec.pairedColumns !== 'boolean') {
+    throw new Error('pairedColumns inválido — use booleano.')
+  }
+  if (spec.pairedColumns) {
+    if (chartType !== 'delta') {
+      throw new Error(
+        'as colunas emparelhadas exigem o tipo delta (--type=delta): o dado é rótulo + inicial + final.',
+      )
+    }
+    if (spec.highlight) {
+      throw new Error(
+        'as colunas emparelhadas não usam destaque — o par de tons é fixo (inicial cinza, recente vermelho).',
+      )
+    }
+    if (spec.noHighlight || spec.dualPositive) {
+      throw new Error(
+        'as colunas emparelhadas não combinam com --no-highlight/--dual-positive — o par de tons é fixo.',
+      )
+    }
+    if (!Array.isArray(spec.rows) || spec.rows.length === 0) {
+      throw new Error('sem pontos de dado para desenhar.')
+    }
+    if (spec.rows.length > MAX_PAIRED) {
+      throw new Error(
+        `${spec.rows.length} categorias (> ${MAX_PAIRED}): os rótulos colidem sob os pares — agrupe/remova categorias antes de gerar o gráfico.`,
+      )
+    }
+  }
+  if (spec.motion !== undefined && typeof spec.motion !== 'boolean') {
+    throw new Error('motion inválido — use booleano.')
+  }
+  if (spec.motion && !motionKindFor(spec)) {
+    throw new Error(
+      'o motion cobre as colunas emparelhadas (--paired), a coluna de 2 períodos e o número-âncora.',
+    )
   }
   if (chartType === 'delta') {
     validateDelta(spec)
