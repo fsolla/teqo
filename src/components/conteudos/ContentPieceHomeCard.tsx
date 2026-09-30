@@ -85,7 +85,7 @@ export const ContentPieceHomeCard = ({
         variant="home-thumb"
         className="aspect-video self-start"
       />
-      <div className="p-4">
+      <div className="min-w-0 p-4">
         <div className="flex flex-wrap gap-1.5">
           {typeHref ? (
             <Link href={typeHref} className={CONTENT_PIECE_TAG_LINK}>
