@@ -34,8 +34,10 @@ vi.mock('@/utilities/campaignAuth', () => ({
 import { GET } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/[id]/arquivo/route'
 import { POST as postProfileImportCreate } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/importar/criar/route'
 import { POST as postProfileImport } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/importar/route'
+import { POST as postBatch } from '@/app/(campaign)/campanha/(app)/comunicacao/conteudos/lote/route'
 import {
   addContentPieceByLinkForActor,
+  applyContentPieceBatchActionForActor,
   createContentPieceFromProfilePostForActor,
   deleteContentPieceForActor,
   getContentPieceStatusesForActor,
@@ -847,6 +849,208 @@ describe('content pieces (C211)', () => {
 
       expect(publishedRow?.publicPath).toBe(`/conteudos/${publishedPiece.piece.slug}`)
       expect(draftRow?.publicPath).toBeNull()
+    })
+  })
+
+  describe('batch actions (C236)', () => {
+    const mediaGone = async (mediaId: number): Promise<boolean> => {
+      for (let attempt = 0; attempt < 20; attempt += 1) {
+        const gone = await payload
+          .findByID({ collection: 'contentMedia', id: mediaId, overrideAccess: true })
+          .then(() => false)
+          .catch(() => true)
+        if (gone) return true
+        await new Promise((resolve) => setTimeout(resolve, 50))
+      }
+      return false
+    }
+
+    it('publishes and unpublishes a selection with the unit semantics preserved', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+      const tag = getCollectionListingTag('contentPiece')
+      const first = await createPiece({ title: `Lote publica ${Date.now()}a` })
+      const second = await createPiece({ title: `Lote publica ${Date.now()}b` })
+
+      vi.mocked(revalidateTag).mockClear()
+      await expect(
+        applyContentPieceBatchActionForActor({
+          action: 'publicar',
+          contentPieceIds: [first.piece.id, second.piece.id],
+        }),
+      ).resolves.toEqual({ action: 'publicar', affected: 2, failures: [] })
+      expect(revalidateTag).toHaveBeenCalledWith(tag)
+
+      const publishedFirst = await payload.findByID({
+        collection: 'contentPiece',
+        id: first.piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      expect(publishedFirst.status).toBe('publicado')
+      expect(publishedFirst.slug).toBeTruthy()
+
+      await expect(
+        applyContentPieceBatchActionForActor({
+          action: 'despublicar',
+          contentPieceIds: [first.piece.id, second.piece.id],
+        }),
+      ).resolves.toEqual({ action: 'despublicar', affected: 2, failures: [] })
+
+      const unpublished = await payload.findByID({
+        collection: 'contentPiece',
+        id: first.piece.id,
+        depth: 0,
+        overrideAccess: true,
+      })
+      // The kill switch preserves slug, publication date and the file.
+      expect(unpublished.status).toBe('rascunho')
+      expect(unpublished.slug).toBe(publishedFirst.slug)
+      expect(unpublished.publishedAt).toBe(publishedFirst.publishedAt)
+      expect(unpublished.media).toBe(first.media!.id)
+    })
+
+    it('deletes a selection with its media, leaves the events and dedupes repeated ids', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+      const first = await createPiece({ title: `Lote apaga ${Date.now()}a`, status: 'publicado' })
+      const second = await createPiece({ title: `Lote apaga ${Date.now()}b` })
+      const event = await payload.create({
+        collection: 'contentEvent',
+        data: { type: 'abertura', subjectType: 'peca', subjectId: String(first.piece.id) },
+        overrideAccess: true,
+      })
+
+      await expect(
+        applyContentPieceBatchActionForActor({
+          action: 'apagar',
+          contentPieceIds: [first.piece.id, first.piece.id, second.piece.id],
+        }),
+      ).resolves.toEqual({ action: 'apagar', affected: 2, failures: [] })
+      createdPieceIds.delete(first.piece.id)
+      createdPieceIds.delete(second.piece.id)
+
+      await expect(
+        payload.findByID({ collection: 'contentPiece', id: second.piece.id, overrideAccess: true }),
+      ).rejects.toThrow()
+      for (const media of [first.media, second.media]) {
+        if (!media) continue
+        expect(await mediaGone(media.id)).toBe(true)
+        createdMediaIds.delete(media.id)
+      }
+
+      const survivor = await payload.findByID({
+        collection: 'contentEvent',
+        id: event.id,
+        overrideAccess: true,
+      })
+      expect(survivor.subjectId).toBe(String(first.piece.id))
+      await payload.delete({ collection: 'contentEvent', id: event.id, overrideAccess: true })
+    })
+
+    it('names the failing piece and never reverts the ones that succeeded', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+      const existing = await createPiece({ title: `Lote parcial ${Date.now()}` })
+      const missingId = existing.piece.id + 100_000
+
+      await expect(
+        applyContentPieceBatchActionForActor({
+          action: 'apagar',
+          contentPieceIds: [existing.piece.id, missingId],
+        }),
+      ).resolves.toEqual({
+        action: 'apagar',
+        affected: 1,
+        failures: [{ contentPieceId: missingId, message: CONTENT_PIECE_NOT_FOUND_MESSAGE }],
+      })
+      createdPieceIds.delete(existing.piece.id)
+
+      await expect(
+        payload.findByID({
+          collection: 'contentPiece',
+          id: existing.piece.id,
+          overrideAccess: true,
+        }),
+      ).rejects.toThrow()
+    })
+
+    it('gates the batch by role: denied roles fail whole, the vertical acts', async () => {
+      const first = await createPiece({ title: `Lote negado ${Date.now()}a` })
+      const second = await createPiece({ title: `Lote negado ${Date.now()}b` })
+
+      for (const denied of [advisor, leader]) {
+        getCampaignUserMock.mockResolvedValue(denied)
+        await expect(
+          applyContentPieceBatchActionForActor({
+            action: 'apagar',
+            contentPieceIds: [first.piece.id, second.piece.id],
+          }),
+        ).rejects.toThrow(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+      }
+
+      for (const piece of [first.piece, second.piece]) {
+        await expect(
+          payload.findByID({ collection: 'contentPiece', id: piece.id, overrideAccess: true }),
+        ).resolves.toMatchObject({ id: piece.id })
+      }
+
+      // The vertical that owns the gesture acts through the same gate.
+      for (const allowed of [coordinator, candidate]) {
+        const { piece } = await createPiece({ title: `Lote permitido ${Date.now()}` })
+        getCampaignUserMock.mockResolvedValue(allowed)
+        await expect(
+          applyContentPieceBatchActionForActor({
+            action: 'publicar',
+            contentPieceIds: [piece.id],
+          }),
+        ).resolves.toEqual({ action: 'publicar', affected: 1, failures: [] })
+      }
+    })
+
+    it('bounds the batch with the request schema', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+
+      await expect(
+        applyContentPieceBatchActionForActor({ action: 'publicar', contentPieceIds: [] }),
+      ).rejects.toThrow()
+      await expect(
+        applyContentPieceBatchActionForActor({
+          action: 'publicar',
+          contentPieceIds: Array.from({ length: 51 }, (_, index) => index + 1),
+        }),
+      ).rejects.toThrow()
+    })
+
+    it('answers the JSON envelope of the batch route', async () => {
+      getCampaignUserMock.mockResolvedValue(communicator)
+      const { piece } = await createPiece({ title: `Lote rota ${Date.now()}` })
+      const call = (body: unknown, origin = 'http://localhost') =>
+        postBatch(
+          new Request('http://localhost/campanha/comunicacao/conteudos/lote', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', origin },
+            body: JSON.stringify(body),
+          }),
+        )
+
+      const published = await call({ action: 'publicar', contentPieceIds: [piece.id] })
+      expect(published.status).toBe(200)
+      await expect(published.json()).resolves.toEqual({
+        status: 'success',
+        outcome: { action: 'publicar', affected: 1, failures: [] },
+      })
+
+      const crossOrigin = await call(
+        { action: 'publicar', contentPieceIds: [piece.id] },
+        'https://evil.example',
+      )
+      expect(crossOrigin.status).toBe(403)
+
+      getCampaignUserMock.mockResolvedValue(advisor)
+      const denied = await call({ action: 'apagar', contentPieceIds: [piece.id] })
+      expect(denied.status).toBe(400)
+      await expect(denied.json()).resolves.toEqual({
+        status: 'error',
+        message: CONTENT_PIECE_FORBIDDEN_MESSAGE,
+      })
     })
   })
 

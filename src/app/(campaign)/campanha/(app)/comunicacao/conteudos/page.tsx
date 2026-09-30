@@ -4,8 +4,12 @@ import { redirect } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { AddContentPieceLinkDialog } from '@/components/campaign/content/AddContentPieceLinkDialog'
+import { ContentPieceBatchReceipt } from '@/components/campaign/content/ContentPieceBatchReceipt'
 import { ContentPieceCardList } from '@/components/campaign/content/ContentPieceCardList'
 import { ContentPieceFilters } from '@/components/campaign/content/ContentPieceFilters'
+import { ContentPieceSelectionBar } from '@/components/campaign/content/ContentPieceSelectionBar'
+import { ContentPieceSelectionModeControl } from '@/components/campaign/content/ContentPieceSelectionControls'
+import { ContentPieceSelectionProvider } from '@/components/campaign/content/ContentPieceSelectionProvider'
 import { ContentPieceStatusRefresher } from '@/components/campaign/content/ContentPieceStatusRefresher'
 import { ContentPieceTable } from '@/components/campaign/content/ContentPieceTable'
 import { ContentPieceUploadDialog } from '@/components/campaign/content/ContentPieceUploadDialog'
@@ -20,6 +24,7 @@ import {
 import { CampaignPageShell } from '@/components/campaign/shell/CampaignPageShell'
 import { toCampaignColumnPickerColumns } from '@/lib/campaignColumnVisibility'
 import { campaignPageMetadataFromCatalog } from '@/lib/campaignPageChrome'
+import type { ContentPieceSelectionRow } from '@/lib/contentPieceBatch'
 import { CONTENT_PIECE_PROFILE_IMPORT_UNAVAILABLE_MESSAGE } from '@/lib/schemas/contentPiece'
 import { readCampaignColumnVisibility } from '@/utilities/campaignColumnVisibilityCookie'
 import { requireCampaignPageActor } from '@/utilities/campaignPageActor'
@@ -56,6 +61,19 @@ export default async function ContentPiecesPage({ searchParams }: ContentPiecesP
     id: row.id,
     processingStatus: row.processingStatus,
   }))
+
+  // C236 — the serializable projection the client selection provider needs:
+  // the delete warning (status + public path) and the ids of "selecionar
+  // todas" (the visible page). The checkbox labels come from the row islands,
+  // which already render the piece title.
+  const selectionRows: ContentPieceSelectionRow[] = data.rows.map((row) => ({
+    id: row.id,
+    status: row.status,
+    publicPath: row.publicPath,
+  }))
+  // The selection is page-scoped: the canonical list URL is the provider's key,
+  // so navigating to another page/filter remounts it and forgets the selection.
+  const selectionResetKey = buildContentPieceListHref(data.state, data.state.page)
 
   const columns = toCampaignColumnPickerColumns([
     { id: 'piece', label: 'Peça', mandatory: true },
@@ -142,24 +160,31 @@ export default async function ContentPiecesPage({ searchParams }: ContentPiecesP
           </div>
         ) : null}
 
-        <CampaignListResults>
-          <ContentPieceCardList rows={data.rows} empty={emptyState} />
-          <ContentPieceTable
-            rows={data.rows}
-            columnVisibility={columnVisibility}
-            empty={emptyState}
-          />
-          {data.rows.length > 0 ? (
-            <CampaignListFooter
-              totalDocs={data.totalDocs}
-              singular="peça"
-              plural="peças"
-              page={data.state.page}
-              totalPages={data.totalPages}
-              hrefForPage={(page) => buildContentPieceListHref(data.state, page)}
+        <ContentPieceSelectionProvider key={selectionResetKey} rows={selectionRows}>
+          {data.rows.length > 0 ? <ContentPieceSelectionModeControl /> : null}
+          <ContentPieceBatchReceipt />
+
+          <CampaignListResults className="group-data-[selection-mode=true]:pb-64 md:group-data-[selection-mode=true]:pb-28">
+            <ContentPieceCardList rows={data.rows} empty={emptyState} />
+            <ContentPieceTable
+              rows={data.rows}
+              columnVisibility={columnVisibility}
+              empty={emptyState}
             />
-          ) : null}
-        </CampaignListResults>
+            {data.rows.length > 0 ? (
+              <CampaignListFooter
+                totalDocs={data.totalDocs}
+                singular="peça"
+                plural="peças"
+                page={data.state.page}
+                totalPages={data.totalPages}
+                hrefForPage={(page) => buildContentPieceListHref(data.state, page)}
+              />
+            ) : null}
+          </CampaignListResults>
+
+          <ContentPieceSelectionBar />
+        </ContentPieceSelectionProvider>
       </CampaignListPendingBoundary>
     </CampaignPageShell>
   )

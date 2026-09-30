@@ -5,6 +5,10 @@ import { ContentPieceCirculationCounters } from '@/components/campaign/content/C
 import { ContentPieceDeleteDialog } from '@/components/campaign/content/ContentPieceDeleteDialog'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
 import {
+  ContentPieceRowCheckbox,
+  ContentPieceSelectAllCheckbox,
+} from '@/components/campaign/content/ContentPieceSelectionControls'
+import {
   ContentPieceProcessingBadge,
   ContentPiecePublicationBadge,
 } from '@/components/campaign/content/ContentPieceStatusBadge'
@@ -60,7 +64,24 @@ export const ContentPieceTable = ({
     rows={rows}
     rowKey={(row) => row.id}
     empty={empty}
+    rowClassName="has-[[data-selection-state=selected]]:bg-primary/5"
     columns={[
+      {
+        // C236 — the selection column is chrome of the selection mode, not a
+        // data column: it is mandatory (a stale cookie can never hide it) and
+        // the CSS shows it only while the provider is in selection mode. It is
+        // deliberately absent from the column picker of the page.
+        id: 'selection',
+        label: 'Seleção',
+        mandatory: true,
+        head: (
+          <CampaignTableHead className="hidden w-12 group-data-[selection-mode=true]:table-cell">
+            <ContentPieceSelectAllCheckbox />
+          </CampaignTableHead>
+        ),
+        cellClassName: 'hidden group-data-[selection-mode=true]:table-cell',
+        cell: (piece) => <ContentPieceRowCheckbox contentPieceId={piece.id} title={piece.title} />,
+      },
       {
         id: 'piece',
         label: 'Peça',
@@ -75,7 +96,10 @@ export const ContentPieceTable = ({
                 <Icon className="size-5" aria-hidden="true" />
               </span>
               <div className="min-w-0">
-                <Link href={piece.detailHref} className="font-semibold hover:underline">
+                <Link
+                  href={piece.detailHref}
+                  className="block min-w-0 font-semibold break-words line-clamp-2 hover:underline"
+                >
                   {piece.title}
                 </Link>
                 <p className="mt-1 truncate text-xs text-muted-foreground">{metaLine(piece)}</p>

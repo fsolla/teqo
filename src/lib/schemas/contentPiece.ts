@@ -11,6 +11,7 @@ import {
   CONTENT_PIECE_TITLE_MAX_LENGTH,
   CONTENT_PIECE_TYPES,
 } from '@/lib/contentPiece'
+import { CONTENT_PIECE_BATCH_ACTIONS } from '@/lib/contentPieceBatch'
 import { contentPieceProfilePeriodError } from '@/lib/contentPieceProfileWindow'
 import { trimmedNullableText } from '@/lib/schemas/primitives'
 import { TRANSCRIPT_TEXT_MAX_LENGTH } from '@/lib/speechSearch'
@@ -168,6 +169,18 @@ export const contentPiecePublicationRequestSchema = z.object({
   contentPieceId: z.number().int().positive(),
   published: z.boolean(),
 })
+
+/**
+ * C236 — apply the same verdict to a bounded set of pieces: the selection is
+ * one page of the list, so the ceiling mirrors the status poll (50 ids) and the
+ * action dedupes whatever arrives.
+ */
+export const contentPieceBatchRequestSchema = z.object({
+  action: z.enum(CONTENT_PIECE_BATCH_ACTIONS),
+  contentPieceIds: z.array(z.number().int().positive()).min(1).max(50),
+})
+
+export type ContentPieceBatchRequest = z.infer<typeof contentPieceBatchRequestSchema>
 
 /** Attach the original file to a link piece. */
 export const contentPieceAttachRequestSchema = z.object({

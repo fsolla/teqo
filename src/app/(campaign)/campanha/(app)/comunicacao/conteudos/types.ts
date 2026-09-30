@@ -1,4 +1,5 @@
 import type { ContentPieceProfileCandidate, ContentPieceViewModel } from '@/lib/contentPiece'
+import type { ContentPieceBatchOutcome } from '@/lib/contentPieceBatch'
 
 /** Wire contract of `POST .../conteudos/enviar` (C211) — raw-body upload. */
 export type ContentPieceUploadResponse =
@@ -50,4 +51,9 @@ export type ContentPieceAttachResponse =
 /** Wire contract of `DELETE .../conteudos/[id]/apagar` (C222) — hard delete. */
 export type ContentPieceDeleteResponse =
   | { status: 'success'; deleted: true }
+  | { status: 'error'; message: string }
+
+/** Wire contract of `POST .../conteudos/lote` (C236) — the batch verdict. */
+export type ContentPieceBatchResponse =
+  | { status: 'success'; outcome: ContentPieceBatchOutcome }
   | { status: 'error'; message: string }
