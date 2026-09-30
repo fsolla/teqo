@@ -1517,11 +1517,16 @@ O comando `pnpm content:instagram:import` traz as mídias recentes do perfil
 oficial `@depjorgesolla` para a Central pelo caminho oficial (Graph API da
 própria conta; a credencial é a do global `Social Feed`): cada novidade vira
 uma peça no pipeline C220 (download do arquivo do próprio perfil, transcrição e
-catalogação) e, com `--publish`, é publicada ao fim do lote o que terminou
-`pronto` — falha fica rascunho e é nomeada no recibo. Reexecutar converge
+catalogação); com `--publish`, é publicada ao fim do lote o que esta rodada
+terminou `pronto`, e com `--publish-existing` também entram os **rascunhos
+prontos já na janela** (lote importado sem publicar), do post mais antigo para
+o mais novo — o listing público ordena por `-publishedAt`, então o mais recente
+lidera. Falha fica rascunho e é nomeada no recibo. Reexecutar converge
 ("novas / já estavam / falharam com motivo") e nunca duplica: a identidade é o
 post, não a grafia da URL. Nada de scraping, terceiro ou stories; a mídia de
-terceiro nunca é baixada (o match é dentro do feed da própria conta).
+terceiro nunca é baixada (o match é dentro do feed da própria conta). A
+varredura lê até o teto da própria edge (10K mídias) com early-stop por data —
+a janela nunca é cortada por um teto arbitrário de páginas.
 
 O dry-run é o padrão e não escreve (lê o feed e o banco):
 
@@ -1531,20 +1536,46 @@ ssh homeserver
 cd ~/stack
 # 1) plano (dry-run; mostra janela, candidatos e peça-link previstos):
 docker compose --profile maintenance run --rm \
-  -v /srv/content-instagram:/app/data/content-instagram \
+  -v ~/content-instagram:/app/data/content-instagram \
   teqo-1313-migrate pnpm content:instagram:import --days 60
 # 2) canário no alvo (exige TEQO_ENV + confirmação; as 4 S3_* são obrigatórias):
 docker compose --profile maintenance run --rm \
   -e TEQO_ENV=production -e CONTENT_INSTAGRAM_IMPORT_CONFIRM=1 \
-  -v /srv/content-instagram:/app/data/content-instagram \
+  -v ~/content-instagram:/app/data/content-instagram \
   teqo-1313-migrate pnpm content:instagram:import --apply --publish --limit 2
 # 3) lote completo — rode em tmux: o processamento baixa, transcreve e cataloga
 #    cada peça em sequência (docker compose run sem -d segura a sessão SSH):
+#    --publish-existing fecha a lacuna de um lote que já entrou como rascunho.
 docker compose --profile maintenance run --rm \
   -e TEQO_ENV=production -e CONTENT_INSTAGRAM_IMPORT_CONFIRM=1 \
-  -v /srv/content-instagram:/app/data/content-instagram \
-  teqo-1313-migrate pnpm content:instagram:import --apply --publish --days 60
+  -v ~/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:import --apply --publish --publish-existing --days 60
 ```
+
+**Retirar peças anteriores a um corte** (ex.: antes do início da campanha
+eleitoral). O comando despublica (kill switch: preserva slug, arquivo e
+`publishedAt`; reversível pela ficha) as peças cujo **post original** é
+anterior à data de corte — uma data civil na Bahia, a mesma do calendário
+eleitoral. Nas Eleições 2026 a propaganda é permitida a partir de **16/08**
+(Lei 9.504/97, art. 36; Resolução TSE nº 23.760/2026), então o corte é
+`--before 2026-08-16`. Peça publicada que o feed não consegue datar nunca é
+tocada: aparece no recibo como "sem data no feed".
+
+```bash
+# 1) plano (dry-run; lista o que sairia, o período e o que não tem data):
+docker compose --profile maintenance run --rm \
+  -v ~/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:withdraw --before 2026-08-16
+# 2) retirada (exige TEQO_ENV + confirmação):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e CONTENT_INSTAGRAM_WITHDRAW_CONFIRM=1 \
+  -v ~/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:withdraw --before 2026-08-16 --apply
+```
+
+`--scan-days <n>` (default 90) é só a profundidade da varredura do feed usada
+para datar as peças publicadas; reexecutar converge (o que já é rascunho sai do
+conjunto). O recibo nomeia cada peça retirada, o período e as falhas.
 
 Os recibos JSON ficam em `data/content-instagram/` do container — monte o
 volume acima para preservá-los. Com `--publish`, o CLI revalida a Central

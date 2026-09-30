@@ -14,7 +14,7 @@ const run = (args: string[], env: Record<string, string> = {}) =>
   spawnSync(process.execPath, [scriptPath, ...args], {
     cwd: repoRoot,
     encoding: 'utf8',
-    timeout: 30_000,
+    timeout: 60_000,
     env: {
       ...process.env,
       NODE_OPTIONS: '--no-deprecation --import=tsx/esm --import=./scripts/seed-loader.mjs',

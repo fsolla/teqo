@@ -18,7 +18,14 @@
  *                                                 on a non-local target and the
  *                                                 complete S3_* set
  *   pnpm content:instagram:import --apply --publish
- *                                                 also publishes what is `pronto`
+ *                                                 also publishes what this run
+ *                                                 processed to `pronto`
+ *   pnpm content:instagram:import --apply --publish-existing
+ *                                                 also publishes the READY
+ *                                                 DRAFTS already in the window
+ *                                                 (e.g. a batch imported without
+ *                                                 `--publish`), oldest post
+ *                                                 first so the newest leads
  *
  * Options: --days <n> (default 60), --limit <n> (canary), --out <dir> (receipts,
  * default `data/content-instagram`), --help.
@@ -48,10 +55,16 @@ import {
   mirroredMediaRequired,
 } from './lib/cli.mjs'
 import {
+  findContentPieceSourceRows,
+  loadInstagramContentWindowFeed,
+  revalidateInstagramContentCentral,
+} from './lib/instagramContentCli.mjs'
+import {
   formatInstagramContentReport,
   instagramContentFeedIdentityUrls,
   instagramContentReportStamp,
   parseInstagramContentCliArgs,
+  planInstagramContentDraftsToPublish,
   planInstagramContentWindow,
   shouldPublishImportedPiece,
   summarizeInstagramContentResults,
@@ -62,14 +75,6 @@ loadCliEnv()
 const die = dieWithLabel('content:instagram:import')
 
 const WRITE_CONFIRM_FLAG = 'CONTENT_INSTAGRAM_IMPORT_CONFIRM'
-/** A hung Graph API must not hold the run forever. */
-const FEED_TIMEOUT_MS = 60_000
-/**
- * Feed window of one run: one page serves 50, and the date early-stop ends the
- * walk at the page that carries the first post older than `--days`, so the cap
- * is only a defensive ceiling (6 pages), never the real window.
- */
-const FEED_MAX_RESULTS = 300
 
 const HELP = `Uso: pnpm content:instagram:import [opções]
 
@@ -81,8 +86,12 @@ catalogação). Sem --apply, é um plano read-only (não baixa, não escreve).
 Opções:
   --apply          processa o lote (exige ${WRITE_CONFIRM_FLAG}=1 em alvo
                    não-local e as 4 S3_*; o job grava a mídia no bucket privado)
-  --publish        publica o que terminar "pronto" (exige --apply); falhas ficam
-                   como rascunho e são nomeadas no recibo
+  --publish        publica o que ESTA rodada terminar "pronto" (exige --apply);
+                   falhas ficam como rascunho e são nomeadas no recibo
+  --publish-existing
+                   publica os rascunhos PRONTOS já na janela (inclui o que esta
+                   rodada criou se --publish não foi usado), do post mais antigo
+                   para o mais novo (exige --apply)
   --days <n>       janela em dias (default 60; 1..365)
   --limit <n>      canário: processa no máximo n candidatos (o resto fica no lote)
   --out <dir>      recibos JSON (default data/content-instagram)
@@ -91,40 +100,6 @@ Opções:
 Flags: TEQO_ENV=staging|production (obrigatória no --apply fora de teste; o nome
 do banco tem de casar) e ${WRITE_CONFIRM_FLAG}=1 para a escrita.
 `
-
-/**
- * The CLI writes straight to the DB, so the collection hook's `revalidateTag`
- * is a no-op in this process (the seed loader stubs `next/cache`): the public
- * Central is busted over HTTP, best-effort — a failure never fails the run and
- * is named in the receipt. Uses the same tag the hook busts.
- */
-const revalidatePublicCentral = async () => {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, '')
-  const secret = process.env.REVALIDATE_SECRET?.trim()
-  if (!baseUrl || !secret) {
-    return { attempted: true, ok: false, reason: 'NEXT_PUBLIC_SITE_URL/REVALIDATE_SECRET ausentes' }
-  }
-  try {
-    const { REVALIDATE_CONTENT_PIECES_TAG } = await import('../src/utilities/revalidateRequest.ts')
-    const response = await fetch(
-      `${baseUrl}/api/revalidate?tag=${encodeURIComponent(REVALIDATE_CONTENT_PIECES_TAG)}`,
-      {
-        method: 'POST',
-        headers: { 'x-revalidate-secret': secret },
-        signal: AbortSignal.timeout(15_000),
-      },
-    )
-    return response.ok
-      ? { attempted: true, ok: true, reason: null }
-      : { attempted: true, ok: false, reason: `HTTP ${response.status}` }
-  } catch (error) {
-    return {
-      attempted: true,
-      ok: false,
-      reason: error instanceof Error && error.message !== '' ? error.message : 'falha de rede',
-    }
-  }
-}
 
 const writeReport = async (options, report, suffix = '') => {
   const stamp = instagramContentReportStamp(report.runAt)
@@ -173,65 +148,30 @@ async function main() {
   const { createContentPieceFromProfilePost } =
     await import('../src/utilities/content/contentPieceProfileImport.ts')
   const { runContentPieceJob } = await import('../src/utilities/content/contentPieceJob.ts')
-  const { isInstagramFeedConfigured, loadInstagramFeed, persistInstagramAccessToken } =
-    await import('../src/utilities/socialFeed/instagramFeed.ts')
   const { DEEPINFRA_TRANSCRIBE_COST_PER_MINUTE_USD } =
     await import('../src/utilities/ai/deepInfraTranscribe.ts')
   const payload = await getPayload({ config })
 
-  // Intentional admin bypass: the global is admin-only and its credential is
-  // read solely to call the official API; the token never leaves this process.
-  const settings = await payload.findGlobal({ slug: 'social-feed-settings', depth: 0 })
-  if (!isInstagramFeedConfigured(settings)) {
+  const window = await loadInstagramContentWindowFeed({ payload, days: options.days })
+  if ('error' in window) {
     die(
-      'Instagram ainda não configurado (token/ID ausentes ou feed desligado no global Social Feed) — a importação só roda pelo caminho oficial.',
+      window.error === 'unavailable'
+        ? 'Instagram ainda não configurado (token/ID ausentes ou feed desligado no global Social Feed) — a importação só roda pelo caminho oficial.'
+        : 'não foi possível ler o feed oficial do Instagram agora (API ou credencial) — tente novamente.',
     )
   }
+  const { feed, from, to } = window
 
-  const to = new Date()
-  const from = new Date(to.getTime() - options.days * 86_400_000)
-  let feed
-  try {
-    feed = await loadInstagramFeed({
-      accessToken: settings.instagramAccessToken,
-      userId: settings.instagramUserId,
-      maxResults: FEED_MAX_RESULTS,
-      // The feed is newest-first: the first page carrying a post older than the
-      // window ends the walk, so the typical run costs one page per 50 medias.
-      shouldStopAt: (post) => {
-        const timestamp = Date.parse(post.timestamp)
-        return Number.isFinite(timestamp) && timestamp < from.getTime()
-      },
-      signal: AbortSignal.timeout(FEED_TIMEOUT_MS),
-    })
-  } catch {
-    die(
-      'não foi possível ler o feed oficial do Instagram agora (API ou credencial) — tente novamente.',
-    )
-  }
-  if (feed.refreshedAccessToken) {
-    await persistInstagramAccessToken(payload, feed.refreshedAccessToken).catch(() => undefined)
-  }
-
-  // One `sourceUrl in` lookup covers every spelling of every feed post.
+  // One chunked `sourceUrl in` lookup covers every spelling of every feed post.
   const identityUrls = instagramContentFeedIdentityUrls(feed.posts)
-  let existingSourceUrls = []
-  if (identityUrls.length > 0) {
-    const existing = await payload.find({
-      collection: 'contentPiece',
-      where: { sourceUrl: { in: identityUrls } },
-      depth: 0,
-      limit: 0,
-      pagination: false,
-      select: { sourceUrl: true },
-      // Intentional admin bypass: the ops import must see every catalogue row,
-      // including drafts no actor could read.
-      overrideAccess: true,
-    })
-    existingSourceUrls = existing.docs
-      .map((doc) => doc.sourceUrl)
-      .filter((sourceUrl) => typeof sourceUrl === 'string' && sourceUrl !== '')
-  }
+  const catalogued = await findContentPieceSourceRows({
+    payload,
+    sourceUrls: identityUrls,
+    select: { sourceUrl: true },
+  })
+  const existingSourceUrls = catalogued
+    .map((doc) => doc.sourceUrl)
+    .filter((sourceUrl) => typeof sourceUrl === 'string' && sourceUrl !== '')
 
   const plan = planInstagramContentWindow({
     posts: feed.posts,
@@ -260,7 +200,7 @@ async function main() {
       console.log(line)
     }
     console.log(
-      `\n[content:instagram:import] plano sem escrita — para importar: --apply [--publish]`,
+      `\n[content:instagram:import] plano sem escrita — para importar: --apply [--publish] [--publish-existing]`,
     )
     console.log(`[content:instagram:import] recibo JSON: ${reportPath}`)
     process.exit(0)
@@ -344,11 +284,64 @@ async function main() {
     }
   }
 
+  const publishedInWindow = new Set()
+  let publishedExisting = 0
   let publishFailures = 0
+  const extraFailures = []
+
+  if (options.publishExisting && identityUrls.length > 0) {
+    const drafts = await findContentPieceSourceRows({
+      payload,
+      sourceUrls: identityUrls,
+      where: [{ status: { equals: 'rascunho' } }, { processingStatus: { equals: 'pronto' } }],
+      select: { title: true, sourceUrl: true, linkFailureReason: true },
+    })
+    const planned = planInstagramContentDraftsToPublish({ pieces: drafts, posts: feed.posts })
+
+    // Oldest post first so the newest carries the latest `publishedAt` (the
+    // public listing sorts by `-publishedAt`). This phase runs BEFORE the
+    // run's own `--publish` so a combined run keeps that order.
+    for (const piece of planned.ordered) {
+      try {
+        await payload.update({
+          collection: 'contentPiece',
+          id: piece.id,
+          data: { status: 'publicado' },
+          depth: 0,
+          // Intentional admin bypass: the ops run publishes what it listed.
+          overrideAccess: true,
+        })
+        publishedExisting += 1
+        publishedInWindow.add(piece.id)
+        if (publishedExisting % 50 === 0) {
+          console.log(
+            `[content:instagram:import] publicando rascunhos da janela: ${publishedExisting}…`,
+          )
+        }
+      } catch (error) {
+        publishFailures += 1
+        const message =
+          error instanceof Error && error.message !== '' ? error.message : 'falha inesperada'
+        extraFailures.push({ shortcode: `#${piece.id}`, error: `publicação: ${message}` })
+      }
+    }
+    for (const piece of planned.undateable) {
+      console.log(
+        `[content:instagram:import] sem data no feed — não publicada: #${piece.id} ${piece.title ?? ''}`.trim(),
+      )
+    }
+    console.log(
+      `[content:instagram:import] rascunhos prontos da janela: ${planned.ordered.length} · publicadas: ${publishedExisting}${
+        planned.linkOnly > 0 ? ` (peça-link: ${planned.linkOnly})` : ''
+      }`,
+    )
+  }
+
   if (options.publish) {
     // Oldest first so the newest post carries the latest `publishedAt` — the
     // public listing sorts by `-publishedAt`, so the newest leads the Central.
     for (const entry of [...created].reverse()) {
+      if (publishedInWindow.has(entry.contentPieceId)) continue
       if (!shouldPublishImportedPiece({ ...entry, publish: true })) continue
       try {
         await payload.update({
@@ -377,8 +370,8 @@ async function main() {
   }
 
   let revalidation = { attempted: false, ok: false, reason: null }
-  if (results.some((result) => result.published === true)) {
-    revalidation = await revalidatePublicCentral()
+  if (publishedExisting > 0 || results.some((result) => result.published === true)) {
+    revalidation = await revalidateInstagramContentCentral()
     console.log(
       `[content:instagram:import] Central pública: ${
         revalidation.ok ? 'revalidada' : `revalidação falhou (${revalidation.reason})`
@@ -389,9 +382,12 @@ async function main() {
   const summary = summarizeInstagramContentResults(results, {
     costPerMinuteUsd: DEEPINFRA_TRANSCRIBE_COST_PER_MINUTE_USD,
   })
-  const failures = results
-    .filter((result) => result.error !== null)
-    .map((result) => ({ shortcode: result.shortcode, error: result.error }))
+  const failures = [
+    ...results
+      .filter((result) => result.error !== null)
+      .map((result) => ({ shortcode: result.shortcode, error: result.error })),
+    ...extraFailures,
+  ]
   const candidatesRemaining = plan.candidates.length - selected.length
   const runAt = new Date().toISOString()
   const report = {
@@ -407,6 +403,7 @@ async function main() {
     failures,
     candidatesRemaining,
     publishFailures,
+    publishedExisting,
     revalidation,
   }
   const reportPath = await writeReport(options, report, '-apply')
@@ -417,6 +414,7 @@ async function main() {
     feedCount: report.feed.count,
     plan,
     summary,
+    publishedExisting,
     failures,
     candidatesRemaining,
     reportPath,
