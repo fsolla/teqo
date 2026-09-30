@@ -64,6 +64,25 @@ describe('skill /graficos-dados documents the flow', () => {
     expect(skill).toContain('192×110')
     expect(skill).toContain('279×160')
   })
+
+  it('pins the paired columns of the C237 degraded revision', () => {
+    expect(skill).toContain('--paired')
+    expect(skill).toMatch(/colunas emparelhadas/i)
+    expect(skill).toMatch(/DEGRADED/)
+    expect(skill).toContain('4 categorias')
+  })
+
+  it('pins the C238/C239 motion of the paired columns, the column and the anchor', () => {
+    expect(skill).toContain('--motion')
+    expect(skill).toMatch(/MP4/)
+    expect(skill).toMatch(/6s @ 30fps/)
+    expect(skill).toMatch(/frames determin/)
+    expect(skill).toContain('C237')
+    expect(skill).toContain('C238')
+    expect(skill).toContain('C239')
+    expect(skill).toMatch(/2 períodos/)
+    expect(skill).toMatch(/número-âncora/)
+  })
 })
 
 describe('command /graficos-dados couples to the skill', () => {

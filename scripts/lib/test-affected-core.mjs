@@ -54,6 +54,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/campaignKitAssets.mjs',
   'scripts/lib/changelog.mjs',
   'scripts/lib/chartData.mjs',
+  'scripts/lib/chartMotion.mjs',
+  'scripts/lib/chartMotionRender.mjs',
   'scripts/lib/chartPrimitives.mjs',
   'scripts/lib/cityReportBlocks.mjs',
   'scripts/lib/cityReportDatabase.mjs',

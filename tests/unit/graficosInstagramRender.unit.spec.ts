@@ -339,6 +339,143 @@ describe('renderChartHtml — the variation bar (delta)', () => {
   })
 })
 
+// C237 degraded variant: the same delta dataset drawn as paired columns — the
+// initial in the neutral tone, the recent one in the official red (the positive
+// datum is shared by every pair), with the period legend and the value over
+// each bar. An initial of zero has no gray column at all.
+const pairedRows = [
+  { label: 'Cirurgia geral', initial: 592, final: 1433 },
+  { label: 'Ortopedia', initial: 182, final: 755 },
+  { label: 'Oncologia', initial: 0, final: 134 },
+]
+const pairedSpec = (overrides = {}) => ({
+  chartType: 'delta',
+  size: 'feed',
+  pairedColumns: true,
+  headline: 'Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero',
+  subtitle: 'Leitos por tipo na rede estadual · cirurgia: 966 → 2.750',
+  source: 'DATASUS / Ministério da Saúde',
+  startLabel: '2006',
+  endLabel: '2026',
+  rows: pairedRows,
+  ...overrides,
+})
+
+describe('renderChartHtml — paired columns (C237)', () => {
+  it('renders the period legend, the pair labels and the recent red column', () => {
+    const html = render(pairedSpec())
+    expect(html).toContain('Variação no período')
+    expect(html).toContain('paired-swatch initial')
+    expect(html).toContain('paired-swatch final')
+    expect(html).toContain('>2006</span>')
+    expect(html).toContain('>2026</span>')
+    expect(html).toContain('paired-bar recent')
+    expect(html).toContain('class="paired-label">Cirurgia geral')
+  })
+
+  it('proportions both bars of a pair against the biggest final value', () => {
+    const html = render(pairedSpec())
+    expect(html).toContain('height:41.3%') // 592 / 1433
+    expect(html).toContain('height:52.7%') // 755 / 1433
+    expect(html).toContain('height:100%') // 1433
+    expect(html).toContain('height:9.4%') // 134 / 1433
+  })
+
+  it('leaves the zero initial without the gray column and keeps the value', () => {
+    const html = render(pairedSpec())
+    const labelAt = html.indexOf('paired-label">Oncologia')
+    const start = html.lastIndexOf('class="paired-pair"', labelAt)
+    const pair = html.slice(start, labelAt)
+    expect(pair).toContain('paired-value">0')
+    expect(pair).not.toContain('<span class="paired-bar" style')
+    expect(pair).toContain('paired-bar recent')
+  })
+
+  it('sorts the pairs by the final value', () => {
+    const html = render(pairedSpec())
+    const body = html.slice(html.indexOf('<div class="paired-grade'))
+    expect(body.indexOf('Cirurgia geral')).toBeLessThan(body.indexOf('Ortopedia'))
+    expect(body.indexOf('Ortopedia')).toBeLessThan(body.indexOf('Oncologia'))
+  })
+
+  it('adapts the rhythm and keeps every pair on the Stories canvas', () => {
+    const story = render(pairedSpec({ size: 'story' }))
+    expect(story).toContain('padding: 306px 84px 310px')
+    expect(story).toMatch(/\.headline \{ font-size: 60px/)
+    expect((story.match(/class="paired-pair"/g) ?? []).length).toBe(pairedRows.length)
+  })
+})
+
+// C238 prototype: under `spec.motion` the same paired piece carries the motion
+// stylesheet and the schedule as inline `--md`/`--mud` vars; without it the
+// markup stays byte-identical to the approved still.
+describe('renderChartHtml — motion (C238)', () => {
+  it('injects the motion stylesheet and the animated classes only under spec.motion', () => {
+    const still = render(pairedSpec())
+    expect(still).not.toContain('motion-')
+    expect(still).not.toContain('--md:')
+
+    const html = render(pairedSpec({ motion: true }))
+    expect(html).toContain('class="canvas motion"')
+    expect(html).toContain('@keyframes motion-grow')
+    expect(html).toContain('.motion .motion-sweep')
+    expect(html).toContain('animation-fill-mode: backwards')
+  })
+
+  it('serializes the pair schedule into inline --md/--mud vars', () => {
+    const html = render(pairedSpec({ motion: true }))
+    expect(html).toContain('--md:1.1s;--mud:0.75s') // first pair bars
+    expect(html).toContain('--md:1.4s') // second pair
+    expect(html).toContain('--md:1.7s') // third pair
+    expect(html).toContain('--md:1.9s;--mud:0.3s') // first pair values, after the bar
+    expect(html).toContain('--md:1.25s;--mud:0.3s') // first pair label, with the growth
+  })
+
+  it('keeps the animated markup in the paired body of every size', () => {
+    const story = render(pairedSpec({ size: 'story', motion: true }))
+    expect((story.match(/class="paired-bar(?!-)/g) ?? []).length).toBe(5) // 3 pairs × 2 bars − the zero gray
+    expect((story.match(/ motion-grow"/g) ?? []).length).toBe(5)
+    expect(story).toContain('@keyframes motion-rise')
+  })
+
+  it('grows the two-period columns left to right and lands their values (C239)', () => {
+    const columnSpec = {
+      chartType: 'column',
+      size: 'feed',
+      motion: true,
+      headline: 'UTIs na rede estadual crescem quase 9 vezes desde 2005',
+      subtitle: 'Leitos de UTI nos hospitais estaduais · Bahia',
+      source: 'DATASUS / Ministério da Saúde',
+      rows: [
+        { label: '2005', value: 179 },
+        { label: '2026', value: 1536 },
+      ],
+    }
+    const html = render(columnSpec)
+    expect(html).toContain('--md:1.1s;--mud:0.75s') // first column
+    expect(html).toContain('--md:1.45s;--mud:0.75s') // recent column, red
+    expect(html).toContain('--md:2.25s;--mud:0.3s') // recent value, after the bar
+    expect(html).toContain('column highlight motion-grow')
+  })
+
+  it('rises the anchor number and fades the copy, never counting (C239)', () => {
+    const anchorSpec = {
+      chartType: 'anchor',
+      size: 'feed',
+      motion: true,
+      headline: 'Bahia contrata mais de mil leitos privados para o SUS',
+      subtitle: 'Rede complementar do SUS · Bahia · 2026',
+      source: 'DATASUS / Ministério da Saúde',
+      rows: [{ label: 'leitos privados contratados para atendimento pelo SUS', value: 1130 }],
+    }
+    const html = render(anchorSpec)
+    expect(html).toContain('anchor-number motion-rise')
+    expect(html).toContain('--md:1.05s;--mud:0.6s')
+    expect(html).toContain('anchor-copy motion-fade')
+    expect(html).toContain('--md:1.7s;--mud:0.45s')
+  })
+})
+
 // C205 approved extension: the three-series observed line runs on the feed
 // canvas only, with the triad good/neutral/neutral-dark (red circle "↑ amplia",
 // gray diamond "↗ cresce", ink triangle "↘ diminui") and no projection.

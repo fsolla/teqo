@@ -15,10 +15,12 @@ contexto). É a **base visual confiável**, não a peça acabada.
 
 O template visual é o artefato aprovado
 `docs/plans/graficos-dados-instagram-ui-design.html` (base C203 aprovada — marca
-e paleta oficiais do kit 1313 —, com as revisões C205 da linha de três séries e
-C206 do rodapé/marca aguardando gate humano); o renderer
-(`scripts/lib/graficosInstagramRender.mjs`) porta esse design classe-a-classe.
-**Nunca invente estrutura visual** — o dono é o `designer`. O rodapé usa o
+e paleta oficiais do kit 1313 —, com as revisões C205 da linha de três séries,
+C206 do rodapé/marca e C207 da projeção **aprovadas no gate de 2026-09-19**, e a
+revisão C237 das colunas emparelhadas **DEGRADED — aprovada por sign-off humano
+em 2026-09-29, certificação do frontier pendente**); o renderer
+(`scripts/lib/graficosInstagramRender.mjs`) porta esse design classe-a-classe. **Nunca invente estrutura visual** — o dono é o `designer`. O
+rodapé usa o
 ativo oficial `public/campaign-kit/jorge-solla-positivo.png` (nunca recriar
 lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
 `#184e92` (sinal de marca, nunca dado), com amarelo/verde só dentro dos ativos.
@@ -62,6 +64,14 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
    - **duas medidas por categoria → `delta`**: barra de variação com a base
      (0 → inicial) num tom e a extensão (inicial → final) noutro, os dois valores
      numa gutter de duas colunas e o vermelho fora do plot (sem valência);
+   - **duas medidas por categoria em pares → `delta --paired`** (revisão C237,
+     design DEGRADED): duas colunas verticais por categoria — a inicial em cinza
+     `#d6d3d1`, a mais recente no vermelho oficial `#e4102f` (o dado positivo é o
+     recente, compartilhado por todos os pares, sem vencedor) —, com legenda de
+     períodos, valor sobre cada barra e rótulo sob o par; até **4 categorias**
+     (acima disso os rótulos colidem — pergunte), `initial = 0` sem barra cinza,
+     `--highlight`/`--no-highlight`/`--dual-positive` recusados; com `--motion`
+     gera a versão animada (MP4, protótipo C238);
    - **uma única medida → `anchor`** (número grande + frase que explica);
    - **duas categorias, ambas boas notícias → `column` com `--dual-positive`**:
      duas colunas verticais no vermelho oficial `#e4102f` — a valência boa é
@@ -116,6 +126,14 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
      --source="Ministério da Saúde — CNES" \
      --note="Sem variação: EMAD, EMAP, ENASF-AB e ECR."
    ```
+   Duas colunas por categoria (inicial cinza, recente vermelho; C237 DEGRADED):
+   ```bash
+   node scripts/build-chart-from-data.mjs --in=<arquivo> --paired --size=feed \
+     --headline="Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero" \
+     --subtitle="Leitos por tipo na rede estadual · cirurgia: 966 → 2.750" \
+     --source="DATASUS / Ministério da Saúde" \
+     --note="Oncologia: não havia leitos na rede estadual em 2006."
+   ```
    Duas categorias, ambos os resultados bons (dois tons de vermelho, sem hierarquia):
    ```bash
    node scripts/build-chart-from-data.mjs --in=<arquivo> --type=column --size=feed \
@@ -127,6 +145,23 @@ lockup tipográfico); a paleta oficial é `#e4102f` (destaque/valência melhor),
    (gitignored) + o `chart-spec.json` em `data/graficos-instagram/`. `--size`:
    `feed` (1080×1350, default), `square` (1080×1080), `story` (1080×1920, com
    faixas seguras de 250px no topo e na base). `--out=` sobrescreve o caminho.
+   Colunas emparelhadas animadas (protótipo C238 — MP4 local, **6s @ 30fps**,
+   frames determinísticos + ffmpeg do repo; a peça assenta no estado estático
+   aprovado e segura ~2,4s até o fim):
+   ```bash
+   node scripts/build-chart-from-data.mjs --in=<arquivo> --paired --motion --size=story \
+     --headline="Ortopedia cresce 4,1 vezes, neurocirurgia quadruplica e oncologia sai do zero" \
+     --subtitle="Leitos por tipo na rede estadual · cirurgia: 966 → 2.750" \
+     --source="DATASUS / Ministério da Saúde" \
+     --note="Oncologia: não havia leitos na rede estadual em 2006."
+   ```
+   O motion cobre as **colunas emparelhadas** (C238), a **coluna de 2 períodos**
+   e o **número-âncora** (extensão C239): a coluna cresce da esquerda para a
+   direita (a recente vermelha por último, valor depois da barra) e a âncora
+   sobe o número e revela a frase — sem contagem dramática. O builder recusa
+   `--motion` nas demais variantes. Saída `.mp4` no mesmo diretório do PNG;
+   os frames em `data/graficos-instagram/<slug>-frames-<size>/` são temporários
+   e apagados no fim.
 5. **Confira e ajuste.** A pessoa confere o PNG; ajuste tipo/rótulo/manchete/
    tamanho/`--highlight` (ou `--good`/`--bad`/`--projected`/`--crossing`) e
    regenere. **Replay** sem reparse: `--spec=<chart-spec.json>`.
@@ -218,6 +253,11 @@ períodos da gutter (o vermelho não entra no plot e a variante não aceita
 }
 ```
 
+Nas **colunas emparelhadas** (C237, DEGRADED) o mesmo spec do delta carrega
+`pairedColumns: true` e o renderer desenha duas colunas por categoria — inicial
+cinza, recente vermelha — com a legenda de períodos; até 4 categorias, sem
+`highlight` e sem `noHighlight`/`dualPositive`.
+
 ## Guardrails (fail-closed)
 
 O builder **recusa** em vez de desenhar algo enganoso:
@@ -235,6 +275,21 @@ O builder **recusa** em vez de desenhar algo enganoso:
   retração (final < inicial) é recusada com a linha multi-série no lugar;
   `--highlight`/valência não entram (o par de tons é fixo e o vermelho fica fora
   do plot).
+- **Colunas emparelhadas (`delta --paired`, C237)**: par fixo por categoria —
+  inicial `#d6d3d1`, recente `#e4102f` (dado positivo compartilhado, nunca
+  vencedor) —, base zero e até **4 categorias** (o rótulo de 30px sob o par
+  colide acima disso: pergunte); `initial = 0` sem barra cinza; legenda de
+  períodos + valor sobre cada barra + rótulo sob o par (**cor nunca sozinha**);
+  `--highlight`/`--no-highlight`/`--dual-positive` recusados. O design da
+  variante está **DEGRADED** (tier degradado por quota do frontier): aprovada
+  por sign-off humano em 2026-09-29, com a certificação do frontier pendente.
+- **Motion (`--motion`, C238/C239)**: cobre as colunas emparelhadas, a coluna
+  de 2 períodos e o número-âncora (as demais variantes são recusadas); MP4
+  H.264 local (ffmpeg do repo), **6s @ 30fps**, frames determinísticos por seek
+  (nunca gravação em tempo real) e o estado final é exatamente o PNG aprovado;
+  sem contagem dramática na âncora. O motion do par (C238) está **DEGRADED**
+  com sign-off humano de 2026-09-30; a extensão (C239) segue **DEGRADED
+  aguardando gate humano**.
 - **Comparação positiva dupla (`--dual-positive`)** exige `column`, exatamente 2
   categorias e `feed`; recusa `--highlight` e `--no-highlight`; os tons seguem a
   ordem de entrada (nunca o maior) e ambos leem como resultado bom — cor nunca
@@ -278,9 +333,9 @@ O builder **recusa** em vez de desenhar algo enganoso:
   valor e posição).
 - **Dado de campanha nunca sai da máquina:** render 100% local, sem MCP/serviço
   remoto por default.
-- **Nada é commitado:** entrada, `chart-spec` e PNG vivem em
-  `data/graficos-instagram/` e `docs/research/graficos-instagram/`, ambos
-  gitignored (repo público).
+- **Nada é commitado:** entrada, `chart-spec`, PNG/MP4 e os frames temporários
+  do motion vivem em `data/graficos-instagram/` e
+  `docs/research/graficos-instagram/`, ambos gitignored (repo público).
 
 ## Troubleshooting
 
@@ -288,6 +343,13 @@ O builder **recusa** em vez de desenhar algo enganoso:
   rótulo, valor não numérico, rótulo repetido. Pergunte à pessoa; não invente.
 - **"N pontos (> 7)"** → agrupe/remova categorias com a pessoa. Na linha
   multi-série o teto é 12 por série.
+- **Colunas emparelhadas com mais de 4 categorias, `--highlight`,
+  `--no-highlight` ou `--dual-positive`** → o par de tons é fixo e o rótulo sob o
+  par colide acima de 4 pares: agrupe/remova categorias e tire o destaque; nunca
+  corte em top-N.
+- **`--motion` recusado** → existe nas colunas emparelhadas, na coluna de 2
+  períodos e no número-âncora; barra/linha/etc. aguardam design de motion
+  próprio.
 - **Séries desalinhadas / tom ímpar (par ou trio incompletos) / cruzamento na
   linha de três séries / três séries fora do feed / cruzamento não confirmado /
   projeção fora do último período** → o builder pede a correção com mensagem
@@ -301,11 +363,11 @@ O builder **recusa** em vez de desenhar algo enganoso:
 
 ## Referências
 
-- Design aprovado: `docs/plans/graficos-dados-instagram-ui-design.html` (inclui
-  a variação certificada de linha de duas séries, com valência bom/ruim; a
-  extensão C205 de três séries observadas; a revisão C207 da projeção no trio,
-  nova e aguardando gate humano; e a revisão C206 do rodapé/marca; base C203 —
-  marca e paleta oficiais do kit 1313).
+- Design aprovado: `docs/plans/graficos-dados-instagram-ui-design.html` (base
+  C203 e revisões C205/C206/C207 aprovadas no gate de 2026-09-19; C237 das
+  colunas emparelhadas DEGRADED com sign-off humano de 2026-09-29; C238 do
+  motion do par DEGRADED com sign-off humano de 2026-09-30; C239 da extensão —
+  coluna de 2 períodos e âncora, CENA 02H — DEGRADED aguardando gate humano).
 - Plano de intenção: `docs/plans/graficos-dados-instagram.md`; impl:
   `docs/plans/graficos-dados-instagram-impl.md`.
 - Marca oficial: `docs/plans/graficos-dados-marca-kit-1313.md` (impl:

@@ -10,6 +10,7 @@
  */
 
 import { RELATION_LABEL, SERIES_RELATION_LABEL, SIZES } from './chartData.mjs'
+import { MOTION_CSS, MOTION_STAGES, columnMotion, pairMotion } from './chartMotion.mjs'
 import {
   dualLineChart,
   lineChart,
@@ -65,6 +66,7 @@ const rankingBody = (spec) => {
 }
 
 const columnBody = (spec) => {
+  const motion = spec.motion === true
   const rows = spec.rows
   const max = Math.max(...rows.map((row) => row.value))
   const winner = highlightLabel(spec)
@@ -78,10 +80,13 @@ const columnBody = (spec) => {
       .map((row, index) => {
         const isHighlight = !spec.dualPositive && row.label === winner
         const tone = spec.dualPositive ? ` positive-${index === 0 ? 'a' : 'b'}` : ''
+        // C239: the two-period motion grows each column left to right (the
+        // recent red one last), with the value landing after the bar settles.
+        const timing = columnMotion(index)
         return `<div class="column-cell">
-        <span class="column-value">${formatValue(row.value, spec.unit)}</span>
-        <div class="column${isHighlight ? ' highlight' : ''}${tone}" style="height:${proportionalPercent(row.value, max)}%"></div>
-        <span class="column-label">${htmlEscape(row.label)}</span>
+        <span class="column-value${motionClass(motion, timing.value)}"${styleAttr(motionVars(motion, timing.value))}>${formatValue(row.value, spec.unit)}</span>
+        <div class="column${isHighlight ? ' highlight' : ''}${tone}${motionClass(motion, timing.bar)}"${styleAttr(styleJoin(`height:${proportionalPercent(row.value, max)}%`, motionVars(motion, timing.bar)))}></div>
+        <span class="column-label${motionClass(motion, timing.label)}"${styleAttr(motionVars(motion, timing.label))}>${htmlEscape(row.label)}</span>
       </div>`
       })
       .join('')}
@@ -92,6 +97,13 @@ const formatPercent = (value) => {
   const rounded = Math.round(value * 10) / 10
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
 }
+
+/** Motion plumbing: the schedule travels as `--md`/`--mud` inline vars (C238). */
+const styleAttr = (value) => (value ? ` style="${value}"` : '')
+const styleJoin = (...parts) => parts.filter(Boolean).join(';')
+const motionClass = (motion, timing) => (motion && timing ? ` motion-${timing.kind}` : '')
+const motionVars = (motion, timing) =>
+  motion && timing ? `--md:${timing.delay}s;--mud:${timing.duration}s` : ''
 
 const deltaOrder = (rows) =>
   [...rows].sort(
@@ -145,12 +157,69 @@ const deltaBody = (spec) => {
   </div>`
 }
 
+/**
+ * Paired columns (C237 degraded design): the same two-measure dataset of the
+ * delta, drawn as two zero-based columns per category — the initial in the
+ * neutral tone and the recent one in the official red (the positive datum is
+ * shared by every pair, never a winner). The period legend carries the color
+ * cue, the value travels over each bar and the category label under the pair,
+ * so color never carries the reading alone. An initial of zero simply has no
+ * gray column.
+ *
+ * C238 motion: under `spec.motion` the pairs grow left to right (both columns
+ * together, labels with the growth, values after the bar lands) and the legend
+ * fades in with the shell staging — the timing comes from `chartMotion.mjs`.
+ */
+const pairedBody = (spec) => {
+  const motion = spec.motion === true
+  const rows = deltaOrder(spec.rows)
+  const max = Math.max(1, ...rows.map((row) => row.final))
+  const aria = `Colunas emparelhadas por categoria, ${spec.startLabel} e ${spec.endLabel}: ${rows
+    .map(
+      (row) =>
+        `${row.label} ${formatValue(row.initial, spec.unit)} e ${formatValue(row.final, spec.unit)}`,
+    )
+    .join('; ')}. A coluna cinza é o início do período; a vermelha é o dado mais recente.`
+  return `<div class="paired-grade" role="img" aria-label="${htmlEscape(aria)}">
+    <div class="paired-legend${motionClass(motion, MOTION_STAGES.legend)}"${styleAttr(motionVars(motion, MOTION_STAGES.legend))}>
+      <span><i class="paired-swatch initial"></i>${htmlEscape(spec.startLabel)}</span>
+      <span><i class="paired-swatch final"></i>${htmlEscape(spec.endLabel)}</span>
+    </div>
+    <div class="paired-columns" style="grid-template-columns:repeat(${rows.length}, minmax(0, 1fr))">
+      ${rows
+        .map((row, index) => {
+          const timing = pairMotion(index)
+          const initialHeight = formatPercent((row.initial / max) * 100)
+          const finalHeight = formatPercent((row.final / max) * 100)
+          return `<div class="paired-pair">
+        <div class="paired-bar-cell">
+          <span class="paired-value${motionClass(motion, timing.value)}"${styleAttr(motionVars(motion, timing.value))}>${formatValue(row.initial, spec.unit)}</span>${
+            row.initial > 0
+              ? `<span class="paired-bar${motionClass(motion, timing.bar)}"${styleAttr(styleJoin(`height:${initialHeight}%`, motionVars(motion, timing.bar)))}></span>`
+              : ''
+          }
+        </div>
+        <div class="paired-bar-cell">
+          <span class="paired-value${motionClass(motion, timing.value)}"${styleAttr(motionVars(motion, timing.value))}>${formatValue(row.final, spec.unit)}</span>
+          <span class="paired-bar recent${motionClass(motion, timing.bar)}"${styleAttr(styleJoin(`height:${finalHeight}%`, motionVars(motion, timing.bar)))}></span>
+        </div>
+        <span class="paired-label${motionClass(motion, timing.label)}"${styleAttr(motionVars(motion, timing.label))}>${deltaLabelHtml(row.label)}</span>
+      </div>`
+        })
+        .join('')}
+    </div>
+  </div>`
+}
+
 const anchorBody = (spec) => {
+  // C239: the anchor motion rises the hero number and fades the copy after it —
+  // same vocabulary, never a dramatic count-up.
+  const motion = spec.motion === true
   const row = spec.rows[0]
   const copy = row.label || spec.subtitle || ''
   return `<div class="anchor">
-    <div class="anchor-number">${formatValue(row.value, spec.unit)}</div>
-    ${copy ? `<p class="anchor-copy">${htmlEscape(copy)}</p>` : ''}
+    <div class="anchor-number${motionClass(motion, MOTION_STAGES.number)}"${styleAttr(motionVars(motion, MOTION_STAGES.number))}>${formatValue(row.value, spec.unit)}</div>
+    ${copy ? `<p class="anchor-copy${motionClass(motion, MOTION_STAGES.copy)}"${styleAttr(motionVars(motion, MOTION_STAGES.copy))}>${htmlEscape(copy)}</p>` : ''}
   </div>`
 }
 
@@ -215,7 +284,7 @@ const tripleBody = (spec) =>
   })}</div>`
 
 const plotBody = (spec) => {
-  if (spec.chartType === 'delta') return deltaBody(spec)
+  if (spec.chartType === 'delta') return spec.pairedColumns ? pairedBody(spec) : deltaBody(spec)
   const seriesCount = Array.isArray(spec.series) ? spec.series.length : 0
   if (seriesCount === 3) return tripleBody(spec)
   if (seriesCount > 0) return dualBody(spec)
@@ -241,7 +310,8 @@ const brandMark = (brandMarkDataUri) => `<div class="brand-logo-frame">
     <img src="${brandMarkDataUri}" alt="Jorge Solla — Deputado Federal" />
   </div>`
 
-const footer = (spec, brandMarkDataUri) => `<footer class="footer">
+const footer = (spec, brandMarkDataUri, motion = false) =>
+  `<footer class="footer${motionClass(motion, MOTION_STAGES.footer)}"${styleAttr(motionVars(motion, MOTION_STAGES.footer))}>
     <p class="source"><strong>Fonte:</strong> ${htmlEscape(spec.source)}${spec.note ? `<br />Nota: ${htmlEscape(spec.note)}` : ''}</p>
     ${brandMark(brandMarkDataUri)}
   </footer>`
@@ -324,6 +394,39 @@ html, body { margin: 0; background: ${SOLLA_PALETTE.paper}; }
   font-weight: 750;
   text-align: right;
   white-space: nowrap;
+}
+.paired-grade { display: flex; flex-direction: column; height: 100%; }
+.paired-legend {
+  flex: none; display: flex; justify-content: flex-end; align-items: center;
+  gap: 26px; margin-bottom: 16px; color: ${SOLLA_PALETTE.label};
+  font-size: 28px; line-height: 1; font-weight: 700;
+}
+.paired-legend span { display: inline-flex; align-items: center; gap: 10px; }
+.paired-swatch { width: 18px; height: 18px; flex: 0 0 18px; }
+.paired-swatch.initial { background: ${SOLLA_PALETTE.bar}; }
+.paired-swatch.final { background: ${SOLLA_PALETTE.highlight}; }
+.paired-columns {
+  flex: 1; min-height: 0; display: grid; align-items: end; gap: 30px;
+  padding: 0 5px 46px; border-bottom: 3px solid ${SOLLA_PALETTE.barStrong};
+}
+.paired-pair {
+  position: relative; display: flex; align-items: flex-end; justify-content: center;
+  gap: 12px; height: 100%;
+}
+.paired-bar-cell {
+  position: relative; display: flex; flex-direction: column; justify-content: flex-end;
+  width: 50%; max-width: 86px; height: 100%;
+}
+.paired-value {
+  margin-bottom: 10px; color: ${SOLLA_PALETTE.ink}; text-align: center;
+  font-size: 31px; line-height: 1; font-weight: 800; font-variant-numeric: tabular-nums;
+}
+.paired-bar { background: ${SOLLA_PALETTE.bar}; }
+.paired-bar.recent { background: ${SOLLA_PALETTE.highlight}; }
+.paired-label {
+  position: absolute; bottom: -40px; left: 50%; transform: translateX(-50%);
+  color: ${SOLLA_PALETTE.label}; text-align: center; white-space: nowrap;
+  font-size: 30px; line-height: 1; font-weight: 650;
 }
 .columns { display: grid; justify-content: center; align-items: end; gap: 26px; height: 100%; padding-bottom: 46px; border-bottom: 3px solid ${SOLLA_PALETTE.barStrong}; }
 .plot.dual-positive-plot { flex: none; height: 500px; margin-top: 34px; }
@@ -457,7 +560,11 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
       : sizeKey === 'story'
         ? '.footer { min-height: 190px; padding-top: 28px; gap: 28px; } .brand-logo-frame { width: 279px; height: 160px; flex-basis: 279px; }'
         : ''
-  const delta = spec.chartType === 'delta'
+  const paired = spec.chartType === 'delta' && Boolean(spec.pairedColumns)
+  const delta = spec.chartType === 'delta' && !paired
+  // C238: motion is the paired-columns prototype; the schedule lives in
+  // chartMotion.mjs and reaches each element as inline --md/--mud vars.
+  const motion = spec.motion === true
   const deltaStyles = !delta
     ? ''
     : sizeKey === 'feed'
@@ -465,6 +572,13 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
       : sizeKey === 'square'
         ? '.inner { padding: 56px 84px 48px; } .plot { margin-top: 0; } .headline { font-size: 54px; } .subtitle { font-size: 28px; } .delta-grade { margin-top: 24px; --delta-bar-h: 42px; --delta-gap: 12px; --delta-v1-w: 84px; --delta-v2-w: 104px; } .delta-value { font-size: 30px; }'
         : '.plot { margin-top: 0; } .headline { font-size: 64px; } .delta-grade { margin-top: 40px; --delta-gap: 22px; --delta-bar-h: 52px; }'
+  const pairedStyles = !paired
+    ? ''
+    : sizeKey === 'feed'
+      ? '.plot { margin-top: 26px; } .headline { font-size: 60px; max-width: 900px; } .subtitle { margin-top: 18px; font-size: 28px; }'
+      : sizeKey === 'square'
+        ? '.inner { padding: 56px 84px 48px; } .plot { margin-top: 20px; } .headline { font-size: 54px; } .subtitle { font-size: 28px; } .paired-legend { font-size: 26px; } .paired-value { font-size: 30px; } .paired-label { bottom: -36px; }'
+        : '.plot { margin-top: 40px; } .headline { font-size: 60px; } .subtitle { font-size: 30px; }'
   const kicker =
     spec.kicker ??
     (dual || triple ? SERIES_RELATION_LABEL : (RELATION_LABEL[spec.chartType] ?? 'Gráfico'))
@@ -475,6 +589,7 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
   <head>
     <meta charset="utf-8" />
     <style>${CSS}</style>
+    ${motion ? `<style>${MOTION_CSS}</style>` : ''}
     <style>
       .canvas { width: ${canvas.width}px; height: ${canvas.height}px; }
       .inner { padding: ${layout.padding}; }
@@ -486,18 +601,19 @@ export const renderChartHtml = (spec, { brandLogo: brandLogoDataUri } = {}) => {
       ${footerStyles}
       ${dualStyles}
       ${deltaStyles}
+      ${pairedStyles}
       ${dualPositiveStyles}
     </style>
   </head>
   <body>
-    <article class="canvas${dual ? ' dual-series' : ''}${triple ? ' triple-series' : ''}${tripleProjected ? ' triple-projected' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
+    <article class="canvas${dual ? ' dual-series' : ''}${triple ? ' triple-series' : ''}${tripleProjected ? ' triple-projected' : ''}${motion ? ' motion' : ''}" role="img" aria-label="${htmlEscape(spec.headline)}">
       <div class="inner">
-        <div class="top-rule"></div>
-        <p class="context">${htmlEscape(kicker)}</p>
-        <h1 class="headline">${htmlEscape(spec.headline)}</h1>
-        ${showSubtitle ? `<p class="subtitle">${htmlEscape(spec.subtitle)}</p>` : ''}
+        <div class="top-rule${motionClass(motion, MOTION_STAGES.topRule)}"${styleAttr(motionVars(motion, MOTION_STAGES.topRule))}></div>
+        <p class="context${motionClass(motion, MOTION_STAGES.kicker)}"${styleAttr(motionVars(motion, MOTION_STAGES.kicker))}>${htmlEscape(kicker)}</p>
+        <h1 class="headline${motionClass(motion, MOTION_STAGES.headline)}"${styleAttr(motionVars(motion, MOTION_STAGES.headline))}>${htmlEscape(spec.headline)}</h1>
+        ${showSubtitle ? `<p class="subtitle${motionClass(motion, MOTION_STAGES.subtitle)}"${styleAttr(motionVars(motion, MOTION_STAGES.subtitle))}>${htmlEscape(spec.subtitle)}</p>` : ''}
         <div class="plot${dualPositive ? ' dual-positive-plot' : ''}">${plotBody(spec)}</div>
-        ${footer(spec, brandLogoDataUri)}
+        ${footer(spec, brandLogoDataUri, motion)}
       </div>
     </article>
   </body>
