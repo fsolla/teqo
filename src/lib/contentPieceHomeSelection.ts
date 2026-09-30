@@ -32,6 +32,7 @@ export type ContentPieceHomeItem = Pick<
   | 'origin'
   | 'originLabel'
   | 'isLink'
+  | 'sourceUrl'
   | 'cityLabel'
   | 'regionLabel'
   | 'excerpt'
@@ -52,6 +53,7 @@ export const toContentPieceHomeItem = (item: ContentPiecePublicItem): ContentPie
   origin: item.origin,
   originLabel: item.originLabel,
   isLink: item.isLink,
+  sourceUrl: item.sourceUrl,
   cityLabel: item.cityLabel,
   regionLabel: item.regionLabel,
   excerpt: item.excerpt,

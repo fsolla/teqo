@@ -21,6 +21,17 @@ import {
 } from './contentPieceClasses'
 
 /**
+ * S42 — what the sheet actually reads: the catalogue passes the full public
+ * item and the home section passes its lean projection (the same structural
+ * precedent as `ContentPieceMedia`), so the one share mechanism serves both
+ * surfaces without the home carrying the search haystack.
+ */
+type ContentPieceShareSheetItem = Pick<
+  ContentPiecePublicItem,
+  'slug' | 'title' | 'type' | 'file' | 'isLink' | 'sourceUrl'
+>
+
+/**
  * S27 — the share sheet (artefato: cenas 03/08): the vote message prefilled and
  * EDITABLE, then `wa.me` of the sender's own WhatsApp — no recipient, nothing
  * sent by the system. "A mídia" opens the native share sheet with the file
@@ -32,7 +43,7 @@ export const ContentPieceShareSheet = ({
   item,
   onClose,
 }: {
-  item: ContentPiecePublicItem
+  item: ContentPieceShareSheetItem
   onClose: () => void
 }) => {
   const [mounted, setMounted] = useState(false)

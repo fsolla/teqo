@@ -8,12 +8,14 @@ import {
   loadMunicipalityZoneGeometryModule,
   loadTerritoryGeometryModule,
 } from '@/lib/bahiaGeometries'
+import { buildContentPieceCatalogHref } from '@/lib/contentPieceCatalog'
 import {
   resolveContentPieceHomeVisitor,
   selectContentPieceHomeItems,
   type ContentPieceHomeItem,
   type ContentPieceHomeVisitor,
 } from '@/lib/contentPieceHomeSelection'
+import { slugify } from '@/lib/slug'
 import { cn } from '@/lib/utils'
 import {
   COARSE_ACCURACY_M,
@@ -22,12 +24,15 @@ import {
   type GeolocationPermissionState,
 } from '@/utilities/campaignGeolocation'
 
+import { ContentPieceTagChevron } from './ContentPieceCardParts'
 import { ContentPieceHomeCard } from './ContentPieceHomeCard'
+import { ContentPieceHomeFilterRow, type ContentPieceHomeFacets } from './ContentPieceHomeFilterRow'
+import { ContentPieceShareSheet } from './ContentPieceShareSheet'
 import {
   CONTENT_PIECE_FOCUS,
-  CONTENT_PIECE_LOCAL_TAG,
+  CONTENT_PIECE_HOME_TAG,
+  CONTENT_PIECE_LOCAL_TAG_LINK,
   CONTENT_PIECE_PRIMARY_BUTTON,
-  CONTENT_PIECE_TAG,
 } from './contentPieceClasses'
 
 /**
@@ -40,6 +45,10 @@ import {
  *
  * No auto-prompt (unlike the staff B14 card): a surprise dialog on the home
  * burns trust, and the recent selection is already useful without it.
+ *
+ * S42 — the board also owns the one share sheet of the section (same S27
+ * mechanism as the catalogue) and the explore row that opens `/conteudos`
+ * already filtered; the row never filters the sample.
  */
 
 const COPY = {
@@ -62,12 +71,19 @@ const LOCATE_BUTTON = cn(
   CONTENT_PIECE_FOCUS,
 )
 
-export const ContentPieceHomeBoard = ({ items }: { items: readonly ContentPieceHomeItem[] }) => {
+export const ContentPieceHomeBoard = ({
+  items,
+  facets,
+}: {
+  items: readonly ContentPieceHomeItem[]
+  facets: ContentPieceHomeFacets
+}) => {
   const [permission, setPermission] = useState<GeolocationPermissionState | null>(null)
   const [visitor, setVisitor] = useState<ContentPieceHomeVisitor | null>(null)
   const [locating, setLocating] = useState(false)
   const [attempted, setAttempted] = useState(false)
   const [playingId, setPlayingId] = useState<number | null>(null)
+  const [sharingItem, setSharingItem] = useState<ContentPieceHomeItem | null>(null)
   const autoStartedRef = useRef(false)
 
   const locate = useCallback(async () => {
@@ -139,6 +155,9 @@ export const ContentPieceHomeBoard = ({ items }: { items: readonly ContentPieceH
     // tap does not drop the keyboard focus; after the attempt it is gone.
     (!attempted || locating)
   const copy = isSingle ? COPY.single : hasMunicipalityMatch ? COPY.local : COPY.recent
+  const municipalityHref = visitor?.municipalityName
+    ? buildContentPieceCatalogHref({ cidade: slugify(visitor.municipalityName) })
+    : null
 
   return (
     <>
@@ -180,24 +199,35 @@ export const ContentPieceHomeBoard = ({ items }: { items: readonly ContentPieceH
               isSingle ? 'justify-center lg:justify-start' : 'justify-center',
             )}
           >
-            <span
-              data-sample-tag={hasMunicipalityMatch ? 'municipality' : 'recent'}
-              className={hasMunicipalityMatch ? CONTENT_PIECE_LOCAL_TAG : CONTENT_PIECE_TAG}
-            >
-              {hasMunicipalityMatch ? (
-                <>
-                  <span aria-hidden="true">⌖</span> Para seu município
-                </>
-              ) : (
-                'Seleção recente'
-              )}
-            </span>
+            {hasMunicipalityMatch && municipalityHref ? (
+              // S42 — the sampled territory tag is itself a shortcut to the
+              // catalogue filtered by the visitor's município (artefato cena 01).
+              <Link
+                href={municipalityHref}
+                data-sample-tag="municipality"
+                className={CONTENT_PIECE_LOCAL_TAG_LINK}
+              >
+                <span aria-hidden="true">⌖</span> Para seu município
+                <ContentPieceTagChevron />
+              </Link>
+            ) : (
+              <span data-sample-tag="recent" className={CONTENT_PIECE_HOME_TAG}>
+                Seleção recente
+              </span>
+            )}
             {hasMunicipalityMatch ? (
               <span className="hidden text-[11px] text-(--campaign-muted) sm:inline">
                 Localização usada só nesta visita
               </span>
             ) : null}
           </div>
+          <ContentPieceHomeFilterRow
+            facets={facets}
+            className={cn(
+              'mt-5 w-full',
+              isSingle ? 'mx-auto max-w-md lg:mx-0' : 'mx-auto max-w-xl sm:mt-6',
+            )}
+          />
           {isSingle ? (
             <Link
               href="/conteudos"
@@ -222,6 +252,7 @@ export const ContentPieceHomeBoard = ({ items }: { items: readonly ContentPieceH
               playing={playingId === item.id}
               onToggle={() => setPlayingId((current) => (current === item.id ? null : item.id))}
               onEnded={() => setPlayingId((current) => (current === item.id ? null : current))}
+              onShare={setSharingItem}
             />
           ))}
         </div>
@@ -274,6 +305,10 @@ export const ContentPieceHomeBoard = ({ items }: { items: readonly ContentPieceH
           )}
         </div>
       )}
+
+      {sharingItem ? (
+        <ContentPieceShareSheet item={sharingItem} onClose={() => setSharingItem(null)} />
+      ) : null}
     </>
   )
 }

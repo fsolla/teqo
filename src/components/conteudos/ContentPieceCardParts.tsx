@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 
 import type { ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
@@ -11,6 +12,11 @@ import { CONTENT_PIECE_FOCUS } from './contentPieceClasses'
  * leaner home projection renders through the same markup (one owner for the
  * link, the focus ring and the meta contract).
  */
+
+/** S42 — the chevron of a filtrable tag (home card and section tag). */
+export const ContentPieceTagChevron = () => (
+  <ChevronRight aria-hidden="true" strokeWidth={2.5} className="size-3 shrink-0" />
+)
 
 type ContentPieceCardTitleItem = Pick<ContentPiecePublicItem, 'title' | 'publicPath'>
 

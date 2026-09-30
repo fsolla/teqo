@@ -735,8 +735,10 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
   }) => {
     const headers = await adminHeaders(request, BASE_URL)
     await unpublishEveryPiece(request, headers)
-    await createPiece(request, headers, { title: `Peça da home ${uniqueMarker()}`, type: 'foto' })
-    await createPiece(request, headers, { title: `Vídeo da home ${uniqueMarker()}`, type: 'video' })
+    const photoTitle = `Peça da home ${uniqueMarker()}`
+    const videoTitle = `Vídeo da home ${uniqueMarker()}`
+    await createPiece(request, headers, { title: photoTitle, type: 'foto' })
+    await createPiece(request, headers, { title: videoTitle, type: 'video' })
 
     await waitForHomeSection(request, 'present')
 
@@ -759,7 +761,43 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(section.locator('article[data-content-piece]')).toHaveCount(2)
     // Nothing plays on its own: the video mounts no media element before the tap.
     await expect(section.locator('video, audio')).toHaveCount(0)
-    // Cena 02 — the sample never overflows the phone.
+
+    // S42 — the honest tags open the catalogue already filtered and the others
+    // stay static; nothing filters the sample locally.
+    const photoCard = section.locator(`article[data-content-piece]`, { hasText: photoTitle })
+    const videoCard = section.locator(`article[data-content-piece]`, { hasText: videoTitle })
+    await expect(photoCard.getByRole('link', { name: 'Foto', exact: true })).toHaveAttribute(
+      'href',
+      '/conteudos?tipo=foto',
+    )
+    await expect(videoCard.getByRole('link', { name: 'Vídeo', exact: true })).toHaveAttribute(
+      'href',
+      '/conteudos?tipo=video',
+    )
+    await expect(section.getByText('Mais recente', { exact: true })).toHaveCount(2)
+    await expect(section.getByRole('link', { name: 'Mais recente' })).toHaveCount(0)
+
+    // S42 — the card shares through the same S27 sheet, without leaving the home.
+    await section.getByRole('button', { name: `Compartilhar ${photoTitle}` }).click()
+    const homeSheet = page.getByRole('dialog', { name: 'Compartilhar peça' })
+    await expect(homeSheet).toBeVisible()
+    await expect(homeSheet.getByLabel('Mensagem para compartilhar')).toHaveValue(
+      new RegExp(photoTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+    )
+    await page.keyboard.press('Escape')
+    await expect(homeSheet).toHaveCount(0)
+    await expect(section.getByRole('heading', { name: 'Peça voto pra Solla 1313' })).toBeVisible()
+
+    // S42 — the explore row only carries the facets the sample has (no
+    // município in these pieces) and its options point at the filtered URL.
+    const tipoSummary = section.locator('summary').filter({ hasText: 'Tipo' })
+    await expect(section.locator('summary')).toHaveCount(1)
+    await tipoSummary.click()
+    await expect(
+      section.locator('details[open]').getByRole('link', { name: 'Vídeo' }),
+    ).toHaveAttribute('href', '/conteudos?tipo=video')
+
+    // Cena 02 — the sample (with the open menu) never overflows the phone.
     const overflow = await page.evaluate(() => {
       const container = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
       return container ? container.scrollWidth - container.clientWidth : 0
@@ -811,6 +849,24 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     // Exact: the sr-only live region announces "Peças do seu município".
     await expect(section.getByText('Do seu município', { exact: true })).toBeVisible()
     await expect(section.getByRole('link', { name: title })).toBeVisible()
+
+    // S42 — the territory tags are shortcuts to the catalogue on the same facet.
+    const card = section.locator('article[data-content-piece]', { hasText: title })
+    await expect(card.getByRole('link', { name: 'Do seu município', exact: true })).toHaveAttribute(
+      'href',
+      '/conteudos?cidade=feira-de-santana',
+    )
+    await expect(card.getByRole('link', { name: 'Foto', exact: true })).toHaveAttribute(
+      'href',
+      '/conteudos?tipo=foto',
+    )
+    await section.getByRole('link', { name: /Para seu município/ }).click()
+    await page.waitForURL(/\/conteudos\?cidade=feira-de-santana$/)
+    await waitForSettledPage(page)
+    // The catalogue opens already filtered by the same canonical URL.
+    await expect(page.getByRole('link', { name: /Remover filtro Cidade/ })).toBeVisible()
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(1)
+    await expect(page.getByRole('link', { name: title, exact: true })).toBeVisible()
   })
   test('filters by who appears in the piece and removes a name when unpublished (S37)', async ({
     page,

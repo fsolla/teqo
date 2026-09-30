@@ -1,7 +1,8 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { ContentPieceHomeBoard } from '@/components/conteudos/ContentPieceHomeBoard'
+import type { ContentPieceHomeFacets } from '@/components/conteudos/ContentPieceHomeFilterRow'
 import {
   loadMunicipalityGeometryModule,
   loadMunicipalityZoneGeometryModule,
@@ -56,6 +57,7 @@ const item = (id: number, patch: Partial<ContentPieceHomeItem> = {}): ContentPie
   origin: 'arquivo',
   originLabel: 'Arquivo',
   isLink: false,
+  sourceUrl: null,
   cityLabel: null,
   regionLabel: null,
   excerpt: null,
@@ -138,6 +140,19 @@ const localPiece = item(1, { cityLabel: 'Feira de Santana', regionLabel: 'Portal
 const otherPiece = item(2, { cityLabel: 'Ilhéus', regionLabel: 'Litoral Sul' })
 const items = [localPiece, otherPiece]
 
+/** S42 — the server hands the explore row the catalogue vocabulary of the sample. */
+const facets: ContentPieceHomeFacets = {
+  tipo: [
+    { value: 'video', label: 'Vídeo' },
+    { value: 'foto', label: 'Foto' },
+  ],
+  cidade: [{ value: 'feira-de-santana', label: 'Feira de Santana' }],
+  regiao: [{ value: 'portal-do-sertao', label: 'Portal do Sertão' }],
+}
+
+const renderBoard = (boardItems: ContentPieceHomeItem[] = items, boardFacets = facets) =>
+  render(<ContentPieceHomeBoard items={boardItems} facets={boardFacets} />)
+
 const locateButton = () => screen.queryByRole('button', { name: /Usar minha localização/ })
 
 /** The section tag is split by the decorative glyph, so the hook is the attribute. */
@@ -158,7 +173,7 @@ describe('ContentPieceHomeBoard', () => {
   it('renders the recent selection and the affordance while permission is undecided', async () => {
     readPermission.mockResolvedValue('prompt')
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     await waitFor(() => expect(locateButton()).not.toBeNull())
     expect(screen.getByText('Seleção recente')).toBeDefined()
@@ -175,7 +190,7 @@ describe('ContentPieceHomeBoard', () => {
   it('hides the affordance when the browser already refused the permission', async () => {
     readPermission.mockResolvedValue('denied')
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     await waitFor(() => expect(readPermission).toHaveBeenCalled())
     expect(locateButton()).toBeNull()
@@ -185,7 +200,7 @@ describe('ContentPieceHomeBoard', () => {
   it('upgrades to the visitor territory without a dialog when permission is granted', async () => {
     readPermission.mockResolvedValue('granted')
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     await waitFor(() => expect(sampleTag()).toBe('municipality'))
     expect(screen.getByText('Do seu município')).toBeDefined()
@@ -196,7 +211,7 @@ describe('ContentPieceHomeBoard', () => {
   it('upgrades to the visitor territory when the affordance is tapped', async () => {
     readPermission.mockResolvedValue('prompt')
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     await waitFor(() => expect(locateButton()).not.toBeNull())
     fireEvent.click(locateButton()!)
@@ -208,7 +223,7 @@ describe('ContentPieceHomeBoard', () => {
   it('offers the affordance when the browser cannot tell the permission (Safari)', async () => {
     readPermission.mockResolvedValue('unknown')
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     await waitFor(() => expect(locateButton()).not.toBeNull())
     expect(readPosition).not.toHaveBeenCalled()
@@ -228,7 +243,7 @@ describe('ContentPieceHomeBoard', () => {
       },
     })
 
-    render(<ContentPieceHomeBoard items={[video]} />)
+    renderBoard([video])
 
     await waitFor(() => expect(readPermission).toHaveBeenCalled())
     expect(document.querySelector('video')).toBeNull()
@@ -245,7 +260,7 @@ describe('ContentPieceHomeBoard', () => {
     readPermission.mockResolvedValue('granted')
     readPosition.mockResolvedValue({ ok: false, reason: 'timeout' })
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     await waitFor(() => expect(readPosition).toHaveBeenCalledTimes(1))
     expect(screen.getByText('Seleção recente')).toBeDefined()
@@ -257,7 +272,7 @@ describe('ContentPieceHomeBoard', () => {
     readPermission.mockResolvedValue('granted')
     readPosition.mockResolvedValue({ ok: true, fix: { ...feiraPoint, accuracyM: 50_000 } })
 
-    render(<ContentPieceHomeBoard items={items} />)
+    renderBoard()
 
     // The coarse fix keeps the region sample, never the município claim.
     await waitFor(() => expect(screen.getByText('Da sua região')).toBeDefined())
@@ -269,7 +284,7 @@ describe('ContentPieceHomeBoard', () => {
   it('does not offer the affordance for a single published piece', async () => {
     readPermission.mockResolvedValue('prompt')
 
-    render(<ContentPieceHomeBoard items={[localPiece]} />)
+    renderBoard([localPiece])
 
     await waitFor(() => expect(readPermission).toHaveBeenCalled())
     expect(locateButton()).toBeNull()
@@ -279,5 +294,67 @@ describe('ContentPieceHomeBoard', () => {
     // Cena 05 — the single-piece section ends on the CTA, with no footnote.
     expect(screen.queryByText(/Nenhum card personalizável/)).toBeNull()
     expect(screen.queryByText(/A localização não é guardada/)).toBeNull()
+  })
+
+  it('opens the S27 share sheet from the card without leaving the home (S42)', async () => {
+    readPermission.mockResolvedValue('denied')
+
+    renderBoard()
+    await waitFor(() => expect(readPermission).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compartilhar Peça 1' }))
+
+    const sheet = screen.getByRole('dialog', { name: 'Compartilhar peça' })
+    expect(sheet).toBeDefined()
+    const message = within(sheet).getByLabelText(
+      'Mensagem para compartilhar',
+    ) as HTMLTextAreaElement
+    expect(message.value).toContain('Peça 1')
+    // The section stays mounted behind the sheet — the visitor never leaves the home.
+    expect(screen.getByText('Seleção recente')).toBeDefined()
+  })
+
+  it('links the honest tags to the catalogue and keeps "Mais recente" static (S42)', async () => {
+    readPermission.mockResolvedValue('granted')
+
+    renderBoard()
+    await waitFor(() => expect(sampleTag()).toBe('municipality'))
+
+    const localCard = document.querySelector('article[data-content-piece="peca-1"]') as HTMLElement
+    const otherCard = document.querySelector('article[data-content-piece="peca-2"]') as HTMLElement
+
+    expect(within(localCard).getByRole('link', { name: 'Foto' }).getAttribute('href')).toBe(
+      '/conteudos?tipo=foto',
+    )
+    expect(
+      within(localCard).getByRole('link', { name: 'Do seu município' }).getAttribute('href'),
+    ).toBe('/conteudos?cidade=feira-de-santana')
+    expect(within(otherCard).queryByRole('link', { name: 'Mais recente' })).toBeNull()
+    // The section tag is the shortcut of the visitor's município.
+    expect(screen.getByRole('link', { name: /Para seu município/ }).getAttribute('href')).toBe(
+      '/conteudos?cidade=feira-de-santana',
+    )
+  })
+
+  it('renders the explore row with canonical facet links and never filters the sample (S42)', async () => {
+    readPermission.mockResolvedValue('denied')
+
+    renderBoard()
+    await waitFor(() => expect(readPermission).toHaveBeenCalled())
+
+    // Both breakpoint captions render (one hidden by CSS); the row itself has
+    // one chip per non-empty facet.
+    expect(screen.getAllByText(/Explore na Central/)).toHaveLength(2)
+
+    // The board hands the server facets to the row; every option href is the
+    // row's own contract (pinned in `contentPieceHomeFilterRow.unit.spec.tsx`).
+    const tipoDetails = screen.getByText('Tipo').closest('details') as HTMLElement
+    fireEvent.click(within(tipoDetails).getByText('Tipo'))
+    expect(within(tipoDetails).getByRole('link', { name: 'Vídeo' }).getAttribute('href')).toBe(
+      '/conteudos?tipo=video',
+    )
+
+    // The row is pure navigation: the sample stays intact.
+    expect(document.querySelectorAll('article[data-content-piece]')).toHaveLength(2)
   })
 })
