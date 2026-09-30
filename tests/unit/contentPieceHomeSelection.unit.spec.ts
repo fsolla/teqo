@@ -98,6 +98,7 @@ describe('content piece home selection', () => {
         'publicPath',
         'regionLabel',
         'slug',
+        'sourceUrl',
         'title',
         'type',
         'typeLabel',
@@ -139,6 +140,9 @@ describe('content piece home selection', () => {
 
       expect(item.isLink).toBe(true)
       expect(item.file).toBeNull()
+      // S42 — the share sheet reads it from the lean item, so the projection
+      // must carry the platform URL of a link piece.
+      expect(item.sourceUrl).toBe('https://www.instagram.com/p/abc/')
     })
   })
 

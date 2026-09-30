@@ -27,13 +27,13 @@ export const ContentPieceDownloadLink = ({
     </a>
   ) : null
 
-export const ContentPieceShareButton = ({
+export const ContentPieceShareButton = <Item extends { title: string }>({
   item,
   onShare,
   className,
 }: {
-  item: ContentPiecePublicItem
-  onShare: (item: ContentPiecePublicItem) => void
+  item: Item
+  onShare: (item: Item) => void
   className?: string
 }) => (
   <button
