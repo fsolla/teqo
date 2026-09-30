@@ -11,6 +11,16 @@
 /** The provisional cut-off of the theme mode — calibrated by `acervo:index --probe`. */
 export const SPEECH_SEMANTIC_MIN_COSINE = 0.4
 
+/**
+ * C237 — weight of the official metadata (summary/title + keywords) against the
+ * mean of the spoken units when composing the speech-level vector. Calibrated
+ * on the production corpus (2026-09-30): with weight 1 the Dilma impeachment
+ * vote speech (222) sat at #25 for the theme "impeachment"; with 2 it reaches
+ * the first page (#8) and the topic cluster (2016 process + Bolsonaro requests)
+ * leads, without dropping the other acceptance themes out of their cluster.
+ */
+export const SPEECH_METADATA_VECTOR_WEIGHT = 2
+
 /** Text windows of speeches without ASR segments: ~1200 chars, ~200 of overlap. */
 const SPEECH_WINDOW_SIZE_CHARS = 1200
 const SPEECH_WINDOW_OVERLAP_CHARS = 200
@@ -239,8 +249,48 @@ type SpeechIndexUnit = {
 
 export type SpeechIndexPlan = {
   units: SpeechIndexUnit[]
-  /** Hash of every unit text + model: the CLI's skip key. */
+  /**
+   * C237 — official metadata text folded into the speech-level vector (never
+   * stored as a unit, never evidence). `null` when the speech carries none.
+   */
+  metadataText: string | null
+  /** Hash of every unit text + metadata + model: the CLI's skip key. */
   speechHash: string
+}
+
+/**
+ * C237 — the official metadata of one speech: the Câmara summary (the web title
+ * when there is no summary) plus the raw official keywords. This is the text
+ * that states the *topic* even when the spoken passage never names it (the
+ * impeachment vote speech never says "impeachment").
+ */
+export const speechMetadataText = (speech: {
+  summary?: string | null
+  title?: string | null
+  keywords?: readonly string[] | null
+}): string | null => {
+  const head = [speech.summary, speech.title].find(
+    (candidate) => typeof candidate === 'string' && candidate.trim() !== '',
+  )
+  const keywords = (speech.keywords ?? []).map((keyword) => keyword.trim()).filter(Boolean)
+  const text = [head?.trim() ?? '', keywords.join(', ')].filter(Boolean).join('\n')
+  return text === '' ? null : text
+}
+
+/**
+ * C237 — the speech-level vector of the index: the normalized mean of the unit
+ * vectors plus the weighted official metadata. A speech without metadata keeps
+ * the pre-C237 mean exactly.
+ */
+export const composeSpeechVector = (
+  unitVectors: readonly SpeechSemanticVector[],
+  metadataVector: SpeechSemanticVector | null,
+): number[] => {
+  const mean = meanPoolVectors(unitVectors)
+  if (!metadataVector || metadataVector.length !== mean.length || mean.length === 0) return mean
+  return normalizeVector(
+    mean.map((value, index) => value + SPEECH_METADATA_VECTOR_WEIGHT * metadataVector[index]),
+  )
 }
 
 export type SpeechIndexSegment = {
@@ -259,6 +309,8 @@ export const planSpeechIndex = (
   speech: {
     officialTranscript?: string | null
     summary?: string | null
+    title?: string | null
+    keywords?: readonly string[] | null
     searchText?: string | null
     segments?: readonly SpeechIndexSegment[]
   },
@@ -289,9 +341,13 @@ export const planSpeechIndex = (
 
   if (units.length === 0) return null
 
+  const metadataText = speechMetadataText(speech)
   const speechHash = speechEmbeddingHash(
-    units.map((unit) => `${unit.kind}:${unit.order}:${unit.text}`).join('\n'),
+    [
+      ...units.map((unit) => `${unit.kind}:${unit.order}:${unit.text}`),
+      ...(metadataText ? [`metadata:${metadataText}`] : []),
+    ].join('\n'),
     model,
   )
-  return { units, speechHash }
+  return { units, metadataText, speechHash }
 }

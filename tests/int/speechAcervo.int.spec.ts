@@ -613,6 +613,70 @@ describe('speech acervo (C154)', () => {
     ).toContain(`Primeiro trecho ${runId}`)
   })
 
+  it('folds the official metadata into the speech vector (C237)', async () => {
+    const runId = randomUUID().slice(0, 8)
+    const offTopic = [0.5, Math.sqrt(3) / 2]
+    const summary = `Processo de impeachment da Presidenta Dilma Rousseff ${runId}`
+    const idWithMetadata = await createSpeech({
+      speechAt: '1988-01-01T10:00',
+      year: 1988,
+      summary,
+      keywords: ['IMPEACHMENT'],
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Trecho sem o tema ${runId}` }],
+    })
+    const idWithout = await createSpeech({
+      speechAt: '1988-01-02T10:00',
+      year: 1988,
+      segments: [{ startSeconds: 0, endSeconds: 3, text: `Trecho sem o tema ${runId}` }],
+    })
+    const embedCalls: string[][] = []
+    const embedTexts = async (texts: readonly string[]) => {
+      embedCalls.push([...texts])
+      return {
+        vectors: texts.map((text) =>
+          text.includes(runId) && text.startsWith('Processo') ? [1, 0] : offTopic,
+        ),
+        promptTokens: 5,
+      }
+    }
+
+    const result = await indexSpeechSources(
+      payload,
+      [
+        {
+          id: idWithMetadata,
+          summary,
+          keywords: ['IMPEACHMENT'],
+          segments: [{ order: 1, startSeconds: 0, text: `Trecho sem o tema ${runId}` }],
+        },
+        {
+          id: idWithout,
+          segments: [{ order: 1, startSeconds: 0, text: `Trecho sem o tema ${runId}` }],
+        },
+      ],
+      { embedTexts },
+    )
+
+    expect(result).toMatchObject({ indexed: 2, failed: 0, units: 2, metadataTexts: 1 })
+    expect(embedCalls[0]).toEqual([
+      `Trecho sem o tema ${runId}`,
+      `${summary}\nIMPEACHMENT`,
+      `Trecho sem o tema ${runId}`,
+    ])
+
+    const { coordinator } = await createUsers()
+    const data = await loadSpeechAcervoPageData(
+      payload,
+      coordinator,
+      { q: `tema ${runId}`, mode: 'tema', year: '1988' },
+      async () => [1, 0],
+    )
+    // Both passages never state the theme; the official metadata is what ranks
+    // the speech that carries it above the identical spoken-only neighbour.
+    expect(data.rows.map((row) => row.id)).toEqual([idWithMetadata, idWithout])
+    expect(data.rows[0]?.semanticMatch).toBe(true)
+  })
+
   it('cascades the index rows when the speech is deleted (C229)', async () => {
     const id = await createSpeech()
     await seedSpeechEmbedding(id, 'speech', null, [1, 0])

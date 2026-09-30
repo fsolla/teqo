@@ -71,11 +71,16 @@ export const speechIndexCostUsd = (promptTokens, pricePerMillionTokensUsd) =>
 /** Rough JSON cost of the vectors: units × dims × ~8 bytes per number. */
 export const speechIndexEstimatedBytes = (units, dimensions) => units * dimensions * 8
 
+/** C237 — the official metadata rides the same provider call but is not a stored unit. */
+const metadataSuffix = (metadataTexts) =>
+  typeof metadataTexts === 'number' && metadataTexts > 0 ? ` (+${metadataTexts} metadados)` : ''
+
 /**
  * @param {{
  *   target: string, mode: 'index' | 'dry-run', source: string,
  *   speeches: number, upToDate: number, skippedNoText: number, toIndex: number,
- *   units: number, estimatedBytes?: number, indexed?: number, failed?: number,
+ *   units: number, metadataTexts?: number, estimatedBytes?: number,
+ *   indexed?: number, failed?: number,
  *   promptTokens?: number, costUsd?: number, durationMs: number,
  * }} report
  * @returns {string[]}
@@ -85,6 +90,7 @@ export const formatSpeechIndexReport = (report) => {
     typeof report.estimatedBytes === 'number'
       ? ` | bytes estimados: ${(report.estimatedBytes / 1_000_000).toFixed(1)} MB`
       : ''
+  const metadata = metadataSuffix(report.metadataTexts)
   const lines = [
     `[acervo:index] alvo: ${report.target} | modo: ${report.mode} | fonte: ${report.source}`,
     `falas: ${report.speeches} | atualizadas: ${report.upToDate} | sem texto: ${report.skippedNoText} | a indexar: ${report.toIndex}`,
@@ -92,10 +98,10 @@ export const formatSpeechIndexReport = (report) => {
 
   if (report.mode === 'index') {
     lines.push(
-      `indexadas: ${report.indexed ?? 0} | falhas: ${report.failed ?? 0} | trechos vetorizados: ${report.units}${bytes} | tokens: ${report.promptTokens ?? 0} | custo estimado: US$ ${(report.costUsd ?? 0).toFixed(4)}`,
+      `indexadas: ${report.indexed ?? 0} | falhas: ${report.failed ?? 0} | trechos vetorizados: ${report.units}${metadata}${bytes} | tokens: ${report.promptTokens ?? 0} | custo estimado: US$ ${(report.costUsd ?? 0).toFixed(4)}`,
     )
   } else {
-    lines.push(`trechos a vetorizar: ${report.units}${bytes}`)
+    lines.push(`trechos a vetorizar: ${report.units}${metadata}${bytes}`)
   }
 
   lines.push(`duração: ${(report.durationMs / 1000).toFixed(1)}s`)

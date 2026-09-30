@@ -112,6 +112,27 @@ describe('formatSpeechIndexReport', () => {
     expect(lines[2]).toContain('tokens: 123456')
     expect(lines[2]).toContain('custo estimado: US$ 0.0012')
   })
+
+  it('reports the metadata inputs on top of the stored units (C237)', () => {
+    const dryRun = formatSpeechIndexReport({ ...base, mode: 'dry-run', metadataTexts: 42 })
+    expect(dryRun[2]).toContain('trechos a vetorizar: 300 (+42 metadados)')
+
+    const write = formatSpeechIndexReport({
+      ...base,
+      mode: 'index',
+      metadataTexts: 42,
+      indexed: 15,
+      failed: 0,
+      promptTokens: 10,
+      costUsd: 0,
+    })
+    expect(write[2]).toContain('trechos vetorizados: 300 (+42 metadados)')
+
+    // No metadata (speech without summary/title/keywords) keeps the old shape.
+    expect(formatSpeechIndexReport({ ...base, mode: 'dry-run' })[2]).toBe(
+      'trechos a vetorizar: 300',
+    )
+  })
 })
 
 describe('formatSpeechIndexProbe', () => {
