@@ -80,7 +80,14 @@ const loadSources = async (payload, { source, limit }) => {
     depth: 0,
     ...(limit ? { limit, page: 1 } : { limit: 0, pagination: false }),
     sort: 'speechAt',
-    select: { sourceKey: true, officialTranscript: true, summary: true, searchText: true },
+    select: {
+      sourceKey: true,
+      officialTranscript: true,
+      summary: true,
+      title: true,
+      keywords: true,
+      searchText: true,
+    },
     // Intentional bypass: the index CLI is a trusted actor with no session.
     overrideAccess: true,
   })
@@ -116,6 +123,8 @@ const loadSources = async (payload, { source, limit }) => {
     sourceKey: speech.sourceKey,
     officialTranscript: speech.officialTranscript,
     summary: speech.summary,
+    title: speech.title,
+    keywords: speech.keywords,
     searchText: speech.searchText,
     segments: segmentsBySpeech.get(speech.id) ?? [],
   }))
@@ -204,6 +213,7 @@ async function main() {
     indexed: result.indexed,
     failed: result.failed,
     units: result.units,
+    metadataTexts: result.metadataTexts,
     estimatedBytes: speechIndexEstimatedBytes(result.units, DEEPINFRA_EMBED_DIMENSIONS),
     promptTokens: result.promptTokens,
     costUsd: speechIndexCostUsd(result.promptTokens, DEEPINFRA_EMBED_COST_PER_MILLION_TOKENS_USD),

@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  composeSpeechVector,
   cosineSimilarity,
   dotProduct,
   meanPoolVectors,
@@ -11,8 +12,10 @@ import {
   planSpeechIndex,
   rankSemanticHits,
   sortSemanticHits,
+  SPEECH_METADATA_VECTOR_WEIGHT,
   SPEECH_SEMANTIC_MIN_COSINE,
   speechEmbeddingHash,
+  speechMetadataText,
   speechSemanticSourceText,
   speechTextWindows,
   type SpeechSemanticCandidate,
@@ -245,5 +248,66 @@ describe('planSpeechIndex', () => {
     expect(planSpeechIndex(speech, { model: 'a' })?.speechHash).not.toBe(
       planSpeechIndex(speech, { model: 'b' })?.speechHash,
     )
+  })
+
+  it('plans the official metadata and pins it in the hash (C237)', () => {
+    const speech = {
+      summary: 'Processo de impeachment da Presidenta Dilma Rousseff.',
+      keywords: ['IMPEACHMENT', 'DILMA ROUSSEFF'],
+      segments: [{ order: 1, startSeconds: 0, text: 'Sr. Presidente...' }],
+    }
+    const plan = planSpeechIndex(speech, { model })
+
+    expect(plan?.metadataText).toBe(
+      'Processo de impeachment da Presidenta Dilma Rousseff.\nIMPEACHMENT, DILMA ROUSSEFF',
+    )
+    expect(plan?.speechHash).toBe(
+      speechEmbeddingHash(
+        'segment:1:Sr. Presidente...\nmetadata:Processo de impeachment da Presidenta Dilma Rousseff.\nIMPEACHMENT, DILMA ROUSSEFF',
+        model,
+      ),
+    )
+    // Editing the summary or the keywords must reindex the speech.
+    expect(
+      planSpeechIndex({ ...speech, summary: 'Outro sumário' }, { model })?.speechHash,
+    ).not.toBe(plan?.speechHash)
+    expect(planSpeechIndex({ ...speech, keywords: ['OUTRA'] }, { model })?.speechHash).not.toBe(
+      plan?.speechHash,
+    )
+    // A speech without metadata keeps the pre-C237 hash bytes.
+    expect(planSpeechIndex({ segments: speech.segments }, { model })?.metadataText).toBeNull()
+    expect(planSpeechIndex({ segments: speech.segments }, { model })?.speechHash).toBe(
+      speechEmbeddingHash('segment:1:Sr. Presidente...', model),
+    )
+  })
+})
+
+describe('speechMetadataText (C237)', () => {
+  it('prefers the summary over the title and joins the raw keywords', () => {
+    expect(
+      speechMetadataText({ summary: 'Resumo', title: 'Título', keywords: ['SUS', ' Saúde '] }),
+    ).toBe('Resumo\nSUS, Saúde')
+    expect(speechMetadataText({ title: 'Título', keywords: [] })).toBe('Título')
+    expect(speechMetadataText({ summary: '  ', keywords: ['   '] })).toBeNull()
+    expect(speechMetadataText({})).toBeNull()
+  })
+})
+
+describe('composeSpeechVector (C237)', () => {
+  const unit = [0.6, 0.8]
+
+  it('keeps the pure mean without metadata', () => {
+    expect(composeSpeechVector([unit], null)).toEqual(meanPoolVectors([unit]))
+    // A metadata vector of another dimension never poisons the mean.
+    expect(composeSpeechVector([unit], [1, 0, 0])).toEqual(meanPoolVectors([unit]))
+  })
+
+  it('pulls the speech vector toward the weighted metadata', () => {
+    const composed = composeSpeechVector([unit], [1, 0])
+
+    expect(composed).toEqual(
+      normalizeVector([unit[0] + SPEECH_METADATA_VECTOR_WEIGHT * 1, unit[1]]),
+    )
+    expect(cosineSimilarity(composed, [1, 0])).toBeGreaterThan(cosineSimilarity(unit, [1, 0]))
   })
 })

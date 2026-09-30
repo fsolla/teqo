@@ -3,8 +3,8 @@ import 'server-only'
 import type { Payload } from 'payload'
 
 import {
+  composeSpeechVector,
   cosineSimilarity,
-  meanPoolVectors,
   planSpeechIndex,
   type SpeechIndexPlan,
   type SpeechIndexSegment,
@@ -24,6 +24,10 @@ export type SpeechIndexSource = {
   id: number
   officialTranscript?: string | null
   summary?: string | null
+  /** C237 — web title, the metadata head when there is no summary. */
+  title?: string | null
+  /** C237 — raw official keywords, folded into the metadata text. */
+  keywords?: readonly string[] | null
   searchText?: string | null
   segments: readonly SpeechIndexSegment[]
 }
@@ -41,6 +45,8 @@ export type SpeechIndexPlanBatch = {
   /** No usable text at all. */
   skippedNoText: number
   units: number
+  /** C237 — one extra provider input per stale speech that has metadata. */
+  metadataTexts: number
 }
 
 export type SpeechIndexBatchResult = {
@@ -48,7 +54,10 @@ export type SpeechIndexBatchResult = {
   upToDate: number
   skippedNoText: number
   failed: number
+  /** Stored retrieval units (segments/windows). */
   units: number
+  /** C237 — metadata texts embedded on top of the units (not stored). */
+  metadataTexts: number
   promptTokens: number
 }
 
@@ -120,6 +129,7 @@ export const planSpeechIndexBatch = async (
     upToDate: planned.length - stale.length,
     skippedNoText,
     units: stale.reduce((total, { plan }) => total + plan.units.length, 0),
+    metadataTexts: stale.reduce((total, { plan }) => total + (plan.metadataText ? 1 : 0), 0),
   }
 }
 
@@ -141,29 +151,41 @@ export const indexSpeechSources = async (
     upToDate: batch.upToDate,
     skippedNoText: batch.skippedNoText,
     units: 0,
+    metadataTexts: 0,
     promptTokens: 0,
   }
   if (batch.stale.length === 0) return { ...base, indexed: 0, failed: 0 }
 
-  const texts = batch.stale.flatMap(({ plan }) => plan.units.map((unit) => unit.text))
+  // C237 — the official metadata rides the same ordered provider call, right
+  // after the units of each speech; it feeds the speech vector only.
+  const texts = batch.stale.flatMap(({ plan }) => [
+    ...plan.units.map((unit) => unit.text),
+    ...(plan.metadataText ? [plan.metadataText] : []),
+  ])
   const embedded = await embedTexts(texts)
   if (!embedded) {
     return { ...base, indexed: 0, failed: batch.stale.length }
   }
   // The whole batch was embedded already: the tokens were spent even if a
   // later write fails.
-  const spent = { units: texts.length, promptTokens: embedded.promptTokens }
+  const spent = {
+    units: batch.units,
+    metadataTexts: batch.metadataTexts,
+    promptTokens: embedded.promptTokens,
+  }
 
   let cursor = 0
   let indexed = 0
   for (const { source, plan } of batch.stale) {
     const vectors = embedded.vectors.slice(cursor, cursor + plan.units.length)
     cursor += plan.units.length
+    const metadataVector = plan.metadataText ? (embedded.vectors[cursor] ?? null) : null
+    if (plan.metadataText) cursor += 1
     if (vectors.length !== plan.units.length) {
       return { ...base, ...spent, indexed, failed: batch.stale.length - indexed }
     }
 
-    const speechVector = meanPoolVectors(vectors)
+    const speechVector = composeSpeechVector(vectors, metadataVector)
     await withPayloadTransaction(payload, async ({ req }) => {
       await payload.delete({
         collection: 'speechEmbedding',
@@ -299,6 +321,7 @@ export type SpeechIndexPreview = {
   skippedNoText: number
   toIndex: number
   units: number
+  metadataTexts: number
 }
 
 export const previewSpeechIndex = (
@@ -310,4 +333,5 @@ export const previewSpeechIndex = (
   skippedNoText: batch.skippedNoText,
   toIndex: batch.stale.length,
   units: batch.units,
+  metadataTexts: batch.metadataTexts,
 })
