@@ -171,6 +171,13 @@ describe('campaign formActions convention', () => {
       'src/app/(campaign)/campanha/actions/password.ts',
       'anti-enumeration + bespoke password field errors outside the shared ladder',
     ],
+    // C236 — the batch loop masks one failure per piece into the outcome's
+    // `failures[]` (no form state, no redirect): it is not a form-action
+    // ladder, and the mapping must stay the shared one, not a local copy.
+    [
+      'src/app/(campaign)/campanha/actions/contentPieces.ts',
+      'batch loop maps per-piece failures into the outcome, not a form-action state',
+    ],
   ])
 
   it('routes every hand-rolled mapCampaignFormActionError ladder through a shared wrapper', () => {

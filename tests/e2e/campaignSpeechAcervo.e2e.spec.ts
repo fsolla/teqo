@@ -1892,5 +1892,68 @@ test.describe('communication vertical (C154/C162)', () => {
         )
         .toBe(true)
     })
+
+    test('publishes and deletes a selection over HTTP, naming the partial failure (C236)', async ({
+      campaign,
+      campaignRequest,
+    }) => {
+      const marker = campaign.fixtures.value('pecalote')
+      const published = await createPiece(campaign, { marker: `${marker}a`, status: 'publicado' })
+      const draft = await createPiece(campaign, { marker: `${marker}b` })
+      const loteUrl = '/campanha/comunicacao/conteudos/lote'
+
+      const communicator = await campaign.fixtures.createCampaignUser('communicator')
+      const request = await campaignRequest(communicator, communicator.password)
+
+      // Fail-closed: an advisor is denied before any piece changes.
+      const advisor = await campaign.fixtures.createCampaignUser('advisor')
+      const deniedRequest = await campaignRequest(advisor, advisor.password)
+      const denied = await deniedRequest.post(loteUrl, {
+        data: { action: 'apagar', contentPieceIds: [published.piece.id] },
+      })
+      expect(denied.status()).toBe(400)
+      expect(((await denied.json()) as { message: string }).message).toContain(
+        'não tem acesso à Central de Conteúdos',
+      )
+
+      // Publish the draft through the batch gateway.
+      const publishBatch = await request.post(loteUrl, {
+        data: { action: 'publicar', contentPieceIds: [draft.piece.id] },
+      })
+      expect(publishBatch.status()).toBe(200)
+      expect(await publishBatch.json()).toEqual({
+        status: 'success',
+        outcome: { action: 'publicar', affected: 1, failures: [] },
+      })
+
+      const slug = published.piece.slug!
+      const missingId = published.piece.id + 1_000_000
+      const deleteBatch = await request.post(loteUrl, {
+        data: { action: 'apagar', contentPieceIds: [published.piece.id, missingId] },
+      })
+      expect(deleteBatch.status()).toBe(200)
+      expect(await deleteBatch.json()).toEqual({
+        status: 'success',
+        outcome: {
+          action: 'apagar',
+          affected: 1,
+          failures: [{ contentPieceId: missingId, message: 'Peça não encontrada.' }],
+        },
+      })
+
+      // The deleted row leaves the list; the draft published above stays.
+      const afterList = rendered(
+        await (await request.get(`/campanha/comunicacao/conteudos?q=${marker}`)).text(),
+      )
+      expect(afterList).not.toContain(`Peça ${marker}a`)
+      expect(afterList).toContain(`Peça ${marker}b`)
+
+      const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
+      try {
+        expect((await anonymous.get(`/conteudos/${slug}`)).status()).toBe(404)
+      } finally {
+        await anonymous.dispose()
+      }
+    })
   })
 })

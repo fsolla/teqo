@@ -6,7 +6,7 @@ export const Spinner = ({ className, ...props }: React.ComponentProps<'svg'>) =>
     data-slot="spinner"
     role="status"
     aria-label="Carregando"
-    className={cn('size-4 animate-spin', className)}
+    className={cn('size-4 animate-spin motion-reduce:animate-none', className)}
     {...props}
   />
 )

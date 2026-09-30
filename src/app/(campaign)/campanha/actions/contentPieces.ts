@@ -12,13 +12,17 @@ import {
   type ContentPieceCuratedField,
   type ContentPieceViewModel,
 } from '@/lib/contentPiece'
+import type { ContentPieceBatchOutcome } from '@/lib/contentPieceBatch'
 import { normalizeContentPiecePublicFigures } from '@/lib/publicFigureCatalog'
 import {
   CONTENT_PIECE_FORBIDDEN_MESSAGE,
+  CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
   CONTENT_PIECE_LINK_DUPLICATE_MESSAGE,
   CONTENT_PIECE_LINK_INVALID_MESSAGE,
   CONTENT_PIECE_NOT_FOUND_MESSAGE,
   CONTENT_PIECE_RETRY_NOT_FAILED_MESSAGE,
+  CONTENT_PIECE_SAFE_MESSAGES,
+  contentPieceBatchRequestSchema,
   contentPieceDeleteRequestSchema,
   contentPieceLinkRequestSchema,
   contentPieceProfileImportRequestSchema,
@@ -26,12 +30,14 @@ import {
   contentPieceRetryRequestSchema,
   contentPieceStatusRequestSchema,
   contentPieceUpdateRequestSchema,
+  type ContentPieceBatchRequest,
   type ContentPieceStatusRequest,
   type ContentPieceUpdateRequest,
 } from '@/lib/schemas/contentPiece'
 import type { SpeechTopic } from '@/lib/speechFacets'
 import type { CampaignUser } from '@/payload-types'
 import { getCampaignActionContext } from '@/utilities/campaignActionContext'
+import { mapCampaignFormActionError } from '@/utilities/campaignFormActionError'
 import { reapStaleContentPiece } from '@/utilities/content/contentPieceJob'
 import {
   searchContentPieceLeaderOptions,
@@ -276,6 +282,58 @@ export const deleteContentPieceForActor = async (input: {
   })
 
   return { deleted: true }
+}
+
+/**
+ * C236 — applies the same verdict to a bounded set of pieces. The batch is the
+ * unit gesture repeated, so every id goes through the unit action: its own
+ * transaction, its own fresh gate, its own post-commit media cleanup, its own
+ * collection access as the final barrier. A failure is named in the outcome and
+ * never reverts the pieces that succeeded (the product's honest partial
+ * failure); the communication gate is checked once before the loop, so a denied
+ * actor fails the whole request instead of turning into per-item noise. The
+ * loop is sequential on purpose: the page ceiling is 25 ids and determinism
+ * beats latency for a desk gesture.
+ */
+export const applyContentPieceBatchActionForActor = async (
+  input: ContentPieceBatchRequest,
+): Promise<ContentPieceBatchOutcome> => {
+  const parsed = contentPieceBatchRequestSchema.parse(input)
+  const { actor } = await getCampaignActionContext()
+
+  if (!canReadCommunicationCatalog(actor.role)) throw new Error(CONTENT_PIECE_FORBIDDEN_MESSAGE)
+
+  // A repeated id would act twice on the same row (the second one failing as
+  // not found), so the batch normalizes the selection before looping.
+  const contentPieceIds = [...new Set(parsed.contentPieceIds)]
+  const failures: ContentPieceBatchOutcome['failures'] = []
+  let affected = 0
+
+  for (const contentPieceId of contentPieceIds) {
+    try {
+      if (parsed.action === 'apagar') {
+        await deleteContentPieceForActor({ contentPieceId })
+      } else {
+        await setContentPiecePublishedForActor({
+          contentPieceId,
+          published: parsed.action === 'publicar',
+        })
+      }
+      affected += 1
+    } catch (error) {
+      failures.push({
+        contentPieceId,
+        message:
+          mapCampaignFormActionError({
+            error,
+            safeMessages: CONTENT_PIECE_SAFE_MESSAGES,
+            genericMessage: CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
+          }).message ?? CONTENT_PIECE_GENERIC_ERROR_MESSAGE,
+      })
+    }
+  }
+
+  return { action: parsed.action, affected, failures }
 }
 
 /**

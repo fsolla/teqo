@@ -103,6 +103,9 @@ export const campaignContentPiecePublicationHref = (id: number): string =>
 export const campaignContentPieceDeleteHref = (id: number): string =>
   `${campaignContentPieceDetailHref(id)}/apagar`
 
+/** C236 — batch gateway of the Central list (publish/unpublish/delete a selection). */
+export const CAMPAIGN_CONTENT_PIECE_BATCH_HREF = `${CAMPAIGN_COMMUNICATION_CONTEUDOS}/lote` as const
+
 const campaignRecordingDetailHref = (id: number): string =>
   `${CAMPAIGN_COMMUNICATION_ACERVO_GRAVACOES}/${id}`
 

@@ -25,9 +25,7 @@ import { deleteCampaignJson } from '@/lib/campaignJsonRequest'
  */
 type CampaignDeleteDialogResponse = { status: 'success' } | { status: 'error'; message: string }
 
-type CampaignDeleteDialogProps = {
-  /** The DELETE endpoint of the row (the id lives in the path). */
-  endpoint: string
+type CampaignDeleteDialogBaseProps = {
   /** Fallback copy for a transport/unknown failure; domain errors travel from the route. */
   errorMessage: string
   /** The styled trigger button of the caller (the machine owns the confirm flow). */
@@ -41,7 +39,27 @@ type CampaignDeleteDialogProps = {
   titleClassName?: string
   /** Callers whose footer chrome differs from the default pass their own. */
   footerClassName?: string
+  /** Callers whose panel width differs from the default pass their own (C236 batch). */
+  contentClassName?: string
 }
+
+type CampaignDeleteDialogProps = CampaignDeleteDialogBaseProps &
+  (
+    | {
+        /** The DELETE endpoint of the row (the id lives in the path). */
+        endpoint: string
+      }
+    | {
+        /**
+         * C236 — a caller that owns the whole request (the batch loop) passes
+         * the mutation instead of a DELETE endpoint: the machine calls it on
+         * confirm and keeps owning submitting/error/success.
+         */
+        onConfirm: () => Promise<{ ok: true } | { ok: false; message: string }>
+        /** Runs after a successful confirm, before the refresh/redirect. */
+        onSuccess?: () => void
+      }
+  )
 
 /**
  * The one delete-confirmation machine of the campaign vertical (C183 built it
@@ -49,19 +67,22 @@ type CampaignDeleteDialogProps = {
  * extracted here instead of copied again). Owns the submitting/error state, the
  * DELETE call, the redirect/refresh decision and the dialog chrome; each caller
  * passes policy only (endpoint, copy, trigger, classes). The error always stays
- * in the dialog context, never a toast.
+ * in the dialog context, never a toast. C236 adds the `onConfirm` path: a
+ * caller that owns the whole request (the batch loop) passes the mutation
+ * itself and the machine keeps the same chrome and flow.
  */
-export const CampaignDeleteDialog = ({
-  endpoint,
-  errorMessage,
-  trigger,
-  title,
-  description,
-  confirmLabel,
-  redirectTo,
-  titleClassName,
-  footerClassName,
-}: CampaignDeleteDialogProps) => {
+export const CampaignDeleteDialog = (props: CampaignDeleteDialogProps) => {
+  const {
+    errorMessage,
+    trigger,
+    title,
+    description,
+    confirmLabel,
+    redirectTo,
+    titleClassName,
+    footerClassName,
+    contentClassName,
+  } = props
   const router = useRouter()
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -71,7 +92,19 @@ export const CampaignDeleteDialog = ({
     setError(null)
 
     try {
-      const { ok, payload } = await deleteCampaignJson<CampaignDeleteDialogResponse>(endpoint)
+      if ('onConfirm' in props) {
+        const result = await props.onConfirm()
+        if (!result.ok) {
+          setError(result.message)
+          return
+        }
+        props.onSuccess?.()
+        if (redirectTo) router.push(redirectTo)
+        else router.refresh()
+        return
+      }
+
+      const { ok, payload } = await deleteCampaignJson<CampaignDeleteDialogResponse>(props.endpoint)
       if (!ok || payload.status !== 'success') {
         setError(payload.status === 'error' ? payload.message : errorMessage)
         return
@@ -88,7 +121,7 @@ export const CampaignDeleteDialog = ({
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className={contentClassName}>
         <AlertDialogHeader>
           <div className="flex items-start gap-3">
             <div className="grid size-9 shrink-0 place-items-center rounded-full bg-red-50 text-destructive">

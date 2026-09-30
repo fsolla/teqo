@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { ContentPieceCirculationCounters } from '@/components/campaign/content/ContentPieceCirculationCounters'
 import { ContentPieceDeleteDialog } from '@/components/campaign/content/ContentPieceDeleteDialog'
 import { ContentPieceRetryButton } from '@/components/campaign/content/ContentPieceRetryButton'
+import { ContentPieceCardSelectionFrame } from '@/components/campaign/content/ContentPieceSelectionControls'
 import {
   ContentPieceProcessingBadge,
   ContentPiecePublicationBadge,
@@ -18,7 +19,9 @@ import type { ContentPieceRowViewModel } from '@/lib/contentPieceCirculation'
  * carries the neutral "Peça-link" label — the honest reason lives on the ficha,
  * never on the list (C220 D7). C213 adds the piece's circulation counters (2×2
  * grid) right above the action. C222 adds "Apagar" beside the routine action
- * (below it when the piece can be reprocessed), per the approved scene B.
+ * (below it when the piece can be reprocessed), per the approved scene B. C236
+ * hands the article box to the selection frame, which adds the 44px checkbox
+ * and the primary ring in selection mode without touching the body.
  */
 export const ContentPieceCardList = ({
   rows,
@@ -40,21 +43,31 @@ export const ContentPieceCardList = ({
         ...(isLinkOnly ? [] : [piece.typeLabel, piece.durationLabel]),
       ]
       return (
-        <article key={piece.id} className="rounded-xl border bg-card p-4">
-          <div className="flex items-start justify-between gap-3">
-            <Link href={piece.detailHref} className="min-w-0 text-sm font-semibold hover:underline">
-              {piece.title}
-            </Link>
-            <ContentPieceProcessingBadge status={piece.processingStatus} className="shrink-0" />
-          </div>
-          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-            <ContentPiecePublicationBadge status={piece.status} />
-            <span>
-              {meta.filter(Boolean).join(' · ')}
-              {piece.cityLabel ? ` · ${piece.cityLabel}` : ''}
-            </span>
-          </div>
-
+        <ContentPieceCardSelectionFrame
+          key={piece.id}
+          contentPieceId={piece.id}
+          title={piece.title}
+          header={
+            <>
+              <div className="flex items-start justify-between gap-3">
+                <Link
+                  href={piece.detailHref}
+                  className="block min-w-0 text-sm font-semibold break-words line-clamp-2 hover:underline"
+                >
+                  {piece.title}
+                </Link>
+                <ContentPieceProcessingBadge status={piece.processingStatus} className="shrink-0" />
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <ContentPiecePublicationBadge status={piece.status} />
+                <span>
+                  {meta.filter(Boolean).join(' · ')}
+                  {piece.cityLabel ? ` · ${piece.cityLabel}` : ''}
+                </span>
+              </div>
+            </>
+          }
+        >
           {piece.processingStatus === 'processando' ? (
             <>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
@@ -96,7 +109,7 @@ export const ContentPieceCardList = ({
               />
             </div>
           )}
-        </article>
+        </ContentPieceCardSelectionFrame>
       )
     })}
   </div>
