@@ -477,6 +477,14 @@ export const contentPieceLinkTitle = (link: ContentPieceLink): string =>
   link.origin === 'instagram' ? `Instagram · ${link.shortcode}` : `YouTube · ${link.videoId}`
 
 /**
+ * Whether a title is still the generated link placeholder (`contentPieceLinkTitle`).
+ * The cataloguing refuses to preserve it: a placeholder is never a title, so the
+ * deterministic fallback (or the assessoria) must replace it.
+ */
+export const isContentPieceLinkTitle = (title: string | null | undefined): boolean =>
+  /^(Instagram|YouTube) · \S+$/.test(title?.trim() ?? '')
+
+/**
  * C230 — every canonical spelling of one post's `sourceUrl`. The Instagram
  * kind in the path (`p`, `reel`, `tv`) is presentation: the same post can be
  * pasted or served under another kind, so the identity is the shortcode and a

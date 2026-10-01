@@ -11,6 +11,7 @@ import {
   CONTENT_PIECE_TITLE_MAX_LENGTH,
   contentPieceTopicLabel,
   contentPieceTypeLabels,
+  isContentPieceLinkTitle,
   type ContentPieceType,
 } from '@/lib/contentPiece'
 import { institutionCatalog, institutionSpellings } from '@/lib/institutionCatalog'
@@ -89,17 +90,25 @@ export const buildContentPieceFallbackMetadata = ({
   cityLabel: string | null
   topics: readonly SpeechTopic[]
 }): { title: string; description: string; source: 'fallback' } => {
-  const typeLabel = contentPieceTypeLabels[type].toLowerCase()
+  const typeLabel = contentPieceTypeLabels[type]
   const topicLabels = topics.slice(0, 3).map(contentPieceTopicLabel)
-  const parts = [
-    `${contentPieceTypeLabels[type]} da campanha de Jorge Solla 1313`,
+  const context = [
     cityLabel ? `em ${cityLabel}` : null,
     topicLabels.length > 0 ? `sobre ${topicLabels.join(', ')}` : null,
   ].filter((part): part is string => part !== null)
+  // The provisional link placeholder (`Instagram · <shortcode>`) is never a
+  // title: when the AI suggestion is unavailable the deterministic semantic
+  // title (type + city + topics) replaces it instead of being preserved.
+  const preservedTitle = isContentPieceLinkTitle(currentTitle) ? '' : currentTitle
 
   return {
-    title: clip(currentTitle, CONTENT_PIECE_TITLE_MAX_LENGTH) || `Peça de ${typeLabel}`,
-    description: clip(`${parts.join(' ')}.`, CONTENT_PIECE_DESCRIPTION_MAX_LENGTH),
+    title:
+      clip(preservedTitle, CONTENT_PIECE_TITLE_MAX_LENGTH) ||
+      clip([`${typeLabel} da campanha`, ...context].join(' '), CONTENT_PIECE_TITLE_MAX_LENGTH),
+    description: clip(
+      `${[`${typeLabel} da campanha de Jorge Solla 1313`, ...context].join(' ')}.`,
+      CONTENT_PIECE_DESCRIPTION_MAX_LENGTH,
+    ),
     source: 'fallback',
   }
 }
@@ -142,7 +151,8 @@ const suggestContentPieceMetadata: ContentPieceSuggester = async ({
 
     const title = clip(object.title, CONTENT_PIECE_TITLE_MAX_LENGTH)
     const description = clip(object.description, CONTENT_PIECE_DESCRIPTION_MAX_LENGTH)
-    if (!title || !description) return fallback
+    // A model echoing the provisional placeholder is not a suggestion.
+    if (!title || !description || isContentPieceLinkTitle(title)) return fallback
     return { title, description, source: 'ai' }
   } catch {
     return fallback
@@ -187,6 +197,8 @@ export const resolveContentPieceInstitution = (transcript: string): string | und
  * classifier + the suggestion, and returns only what it is confident about.
  * An empty transcript (a photo, a card, a silent video) skips every external
  * call and returns `source: 'none'` — the type/title the upload derived stay.
+ * The one exception is a provisional link placeholder: with no title to keep,
+ * the deterministic semantic fallback replaces it (no external call).
  */
 export const catalogContentPiece = async ({
   payload,
@@ -204,7 +216,18 @@ export const catalogContentPiece = async ({
   suggest?: ContentPieceSuggester
 }): Promise<ContentPieceCatalogResult> => {
   const text = transcript?.trim() ?? ''
-  if (!text) return { source: 'none' }
+  if (!text) {
+    if (isContentPieceLinkTitle(title)) {
+      const fallback = buildContentPieceFallbackMetadata({
+        type,
+        currentTitle: title,
+        cityLabel: null,
+        topics: [],
+      })
+      return { title: fallback.title, description: fallback.description, source: 'fallback' }
+    }
+    return { source: 'none' }
+  }
 
   let topics: SpeechTopic[] = []
   try {

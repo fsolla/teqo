@@ -18,6 +18,7 @@ import {
   contentPieceTypeFromMime,
   isContentPieceCuratedField,
   isContentPieceLinkFailureReason,
+  isContentPieceLinkTitle,
   isContentPieceOrigin,
   isContentPieceProcessingStatus,
   isContentPieceStatus,
@@ -235,8 +236,19 @@ describe('content piece links', () => {
   it('gives a link a provisional title', () => {
     const instagram = parseContentPieceLink('https://www.instagram.com/reel/ABC/')!
     expect(contentPieceLinkTitle(instagram)).toBe('Instagram · ABC')
-    const youtube = parseContentPieceLink('https://youtu.be/VID')!
+    const youtube = parseContentPieceLink('https://youtu.be/VID/')!
     expect(contentPieceLinkTitle(youtube)).toBe('YouTube · VID')
+  })
+
+  it('recognizes the generated placeholder and nothing else', () => {
+    expect(isContentPieceLinkTitle('Instagram · ABC')).toBe(true)
+    expect(isContentPieceLinkTitle('YouTube · VID')).toBe(true)
+    expect(isContentPieceLinkTitle('  Instagram · ABC  ')).toBe(true)
+    expect(isContentPieceLinkTitle('Instagram · ')).toBe(false)
+    expect(isContentPieceLinkTitle('Instagram para gestores')).toBe(false)
+    expect(isContentPieceLinkTitle('Mensagem do grupo')).toBe(false)
+    expect(isContentPieceLinkTitle('')).toBe(false)
+    expect(isContentPieceLinkTitle(null)).toBe(false)
   })
 })
 
