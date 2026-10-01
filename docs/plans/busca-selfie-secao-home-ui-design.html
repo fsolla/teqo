@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#fff8f2" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C243 · Busca por selfie na homepage</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, Arimo, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      [data-theme='campaign-site'] {
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --campaign-content-inset: clamp(20px, calc(25.36vw - 79.64px), 180px);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Inter, Arimo, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      .display {
+        font-family: 'Exo 2', Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+
+      .campaign-section-eyebrow {
+        font-size: clamp(10px, calc(0.32vw + 8.75px), 12px);
+        line-height: 1.25;
+      }
+
+      .campaign-section-title {
+        font-size: clamp(28px, calc(1.15vw + 23px), 38px);
+        line-height: 1.02;
+      }
+
+      .campaign-section-copy {
+        font-size: clamp(15px, calc(0.32vw + 13.75px), 17px);
+        line-height: 1.55;
+      }
+
+      .stage {
+        box-shadow: 0 24px 80px rgb(32 27 26 / 15%);
+      }
+
+      .archive-focus:focus-visible {
+        outline: 3px solid var(--pt-yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 6px rgb(24 78 146 / 72%);
+      }
+
+      .primary-action {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 10px;
+        background: var(--pt-red);
+        padding: 10px 16px;
+        color: white;
+        font-family: 'Exo 2', Inter, ui-sans-serif, system-ui, sans-serif;
+        font-size: 14px;
+        font-weight: 800;
+        text-decoration: none;
+        box-shadow: 0 4px 0 #7f1616;
+        transition:
+          transform 150ms ease-out,
+          box-shadow 150ms ease-out;
+      }
+
+      .primary-action:hover {
+        transform: translateY(-2px);
+      }
+
+      .primary-action:active {
+        transform: translateY(2px);
+        box-shadow: 0 2px 0 #7f1616;
+      }
+
+      .secondary-link {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        gap: 6px;
+        border-radius: 4px;
+        color: var(--pt-red);
+        font-size: 14px;
+        font-weight: 800;
+        text-decoration-line: underline;
+        text-decoration-thickness: 1px;
+        text-underline-offset: 4px;
+      }
+
+      .secondary-link:hover {
+        color: #741414;
+        text-decoration-thickness: 2px;
+      }
+
+      a {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgb(162 28 28 / 18%);
+      }
+
+      .assurance-mark {
+        background:
+          radial-gradient(circle at 76% 18%, rgb(255 230 7 / 66%) 0 8%, transparent 8.5%),
+          linear-gradient(145deg, #f9faff 0%, #eef4fb 100%);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .primary-action {
+          transition: none;
+        }
+
+        .primary-action:hover,
+        .primary-action:active {
+          transform: none;
+        }
+      }
+
+      @media (min-width: 64rem) {
+        [data-theme='campaign-site'] {
+          --campaign-content-inset: max(180px, calc((100vw - 1152px) / 2 + 32px));
+        }
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-[#efeeec] text-[#201b1a] antialiased">
+    <svg class="absolute size-0 overflow-hidden" aria-hidden="true">
+      <symbol id="spark" viewBox="0 0 24 24">
+        <path d="m12 3-1.7 4.6L6 9.3l4.3 1.7 1.7 4.7 1.7-4.7L18 9.3l-4.3-1.7L12 3Z" />
+        <path d="m19 14-.9 2.1L16 17l2.1.9L19 20l.9-2.1L22 17l-2.1-.9L19 14Z" />
+      </symbol>
+      <symbol id="device" viewBox="0 0 24 24">
+        <rect x="5" y="2" width="14" height="20" rx="2" />
+        <path d="M9 18h6" />
+      </symbol>
+      <symbol id="images" viewBox="0 0 24 24">
+        <path d="m16 5 3 3M4 9V5a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2h-4" />
+        <rect x="2" y="11" width="12" height="10" rx="2" />
+        <circle cx="6" cy="15" r="1" />
+        <path d="m4 19 3-3 5 5" />
+      </symbol>
+      <symbol id="shield" viewBox="0 0 24 24">
+        <path d="M20 13c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V5l8-3 8 3v8Z" />
+        <path d="m9 12 2 2 4-4" />
+      </symbol>
+      <symbol id="arrow" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6" /></symbol>
+      <symbol id="check" viewBox="0 0 24 24"><path d="m5 12 4 4L19 6" /></symbol>
+    </svg>
+
+    <main class="mx-auto flex max-w-[1480px] flex-col gap-14 px-4 py-10 md:px-8">
+      <header class="max-w-4xl">
+        <div class="flex flex-wrap gap-2">
+          <span class="rounded-full bg-[#a21c1c] px-3 py-1 text-xs font-extrabold text-white"
+            >C243 · gate hi-fi</span
+          >
+          <span class="rounded-full border border-black/10 bg-white px-3 py-1 text-xs font-bold"
+            >Homepage pública · aberta</span
+          >
+          <span
+            class="rounded-full border border-[#184e92]/20 bg-[#eef4fb] px-3 py-1 text-xs font-extrabold text-[#184e92]"
+            >Sem selfie, engine, fotos ou contadores na home</span
+          >
+        </div>
+        <h1 class="display mt-4 text-3xl font-black tracking-[-0.03em]">
+          A home apresenta a busca; a experiência sensível começa só em /fotos/encontre
+        </h1>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-[#6c615e]">
+          Seção condicional, mobile-first, com uma ação dominante. Ela herda a gramática de bandas,
+          inset e hierarquia da home e usa o azul do álbum apenas para explicar proteção e controle.
+        </p>
+      </header>
+
+      <section aria-labelledby="desktop-title">
+        <p class="text-xs font-extrabold tracking-[0.1em] text-[#a21c1c] uppercase">
+          Cena 01 · 1280
+        </p>
+        <h2 id="desktop-title" class="display mt-1 text-xl font-black">
+          Entre a Central de Conteúdos e a newsletter
+        </h2>
+        <p class="mt-2 max-w-3xl text-sm leading-6 text-[#6c615e]">
+          A banda creme interrompe o catálogo branco sem competir com a newsletter cinza. O texto
+          explica o suficiente para uma decisão informada; o aviso completo e a autorização ficam na
+          página da busca.
+        </p>
+
+        <div class="stage mt-4 overflow-x-auto rounded-2xl border border-black/10 bg-white">
+          <div class="min-w-[1280px] bg-white">
+            <div
+              aria-hidden="true"
+              class="flex h-20 items-center justify-center border-b border-black/10 bg-white text-xs font-bold tracking-[0.08em] text-black/45 uppercase"
+            >
+              fim da seção · Central de Conteúdos
+            </div>
+
+            <!-- Port classe-a-classe: section border-b bg-(--campaign-cream); container
+                 max-w-[1160px] px-5 sm:px-8 lg:px-10 py-12 lg:py-16. -->
+            <section
+              aria-labelledby="selfie-home-desktop-title"
+              class="relative overflow-hidden border-b border-(--campaign-line) bg-(--campaign-cream)"
+            >
+              <div
+                aria-hidden="true"
+                class="pointer-events-none absolute -top-24 -right-20 size-64 rounded-full bg-(--pt-yellow)/45"
+              ></div>
+              <div
+                aria-hidden="true"
+                class="pointer-events-none absolute -bottom-32 left-[36%] size-64 rounded-full bg-(--pt-red)/8"
+              ></div>
+
+              <div
+                class="relative mx-auto grid w-full max-w-[1160px] grid-cols-[minmax(0,1.1fr)_minmax(360px,.9fr)] items-center gap-16 px-10 py-16"
+              >
+                <div class="max-w-[620px]">
+                  <p
+                    class="campaign-section-eyebrow m-0 font-black tracking-[0.1em] text-(--pt-red) uppercase"
+                  >
+                    Fotos da nossa caminhada
+                  </p>
+                  <h2
+                    id="selfie-home-desktop-title"
+                    class="campaign-section-title display m-0 mt-2 max-w-[560px] border-0 p-0 font-black tracking-[-0.03em] text-balance"
+                  >
+                    Encontre você nas fotos
+                  </h2>
+                  <p class="campaign-section-copy mt-4 max-w-[600px] text-(--campaign-muted)">
+                    Use uma selfie sua na página da busca para procurar, entre as fotos públicas
+                    aprovadas, aquelas em que você aparece.
+                  </p>
+
+                  <div class="mt-5 flex max-w-[610px] items-start gap-3 text-sm leading-6">
+                    <div
+                      class="mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl bg-[#184e92] text-white"
+                    >
+                      <svg aria-hidden="true" class="size-4 fill-none stroke-current stroke-2">
+                        <use href="#shield" />
+                      </svg>
+                    </div>
+                    <p class="m-0 text-[#365472]">
+                      <b class="text-[#143c70]">A selfie não sai do seu aparelho.</b> A busca cobre
+                      o índice anônimo do acervo aprovado, e você pode retirar seu rosto quando
+                      quiser.
+                    </p>
+                  </div>
+
+                  <div class="mt-7 flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <a href="/fotos/encontre" class="primary-action archive-focus">
+                      Encontrar minhas fotos
+                      <svg aria-hidden="true" class="size-4 fill-none stroke-current stroke-2">
+                        <use href="#arrow" />
+                      </svg>
+                    </a>
+                    <a href="/fotos" class="secondary-link archive-focus">
+                      Ver o álbum
+                      <svg aria-hidden="true" class="size-4 fill-none stroke-current stroke-2">
+                        <use href="#arrow" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+
+                <div
+                  class="assurance-mark relative overflow-hidden rounded-2xl border border-[#184e92]/15 p-6"
+                >
+                  <div
+                    aria-hidden="true"
+                    class="absolute top-5 right-5 grid size-12 place-items-center rounded-full bg-white text-[#184e92] shadow-[0_8px_28px_rgb(24_78_146/12%)]"
+                  >
+                    <svg aria-hidden="true" class="size-6 fill-none stroke-current stroke-2">
+                      <use href="#spark" />
+                    </svg>
+                  </div>
+                  <p class="display max-w-[250px] text-xl leading-tight font-black text-[#143c70]">
+                    Sua imagem fica com você. O controle também.
+                  </p>
+                  <ul class="mt-7 grid list-none gap-0 p-0">
+                    <li class="flex items-center gap-3 border-t border-[#184e92]/12 py-4">
+                      <svg
+                        aria-hidden="true"
+                        class="size-5 shrink-0 fill-none stroke-[#184e92] stroke-2"
+                      >
+                        <use href="#device" />
+                      </svg>
+                      <span class="text-sm font-bold text-[#143c70]"
+                        >Processamento no aparelho</span
+                      >
+                      <svg
+                        aria-hidden="true"
+                        class="ml-auto size-4 fill-none stroke-[#184e92] stroke-2"
+                      >
+                        <use href="#check" />
+                      </svg>
+                    </li>
+                    <li class="flex items-center gap-3 border-t border-[#184e92]/12 py-4">
+                      <svg
+                        aria-hidden="true"
+                        class="size-5 shrink-0 fill-none stroke-[#184e92] stroke-2"
+                      >
+                        <use href="#images" />
+                      </svg>
+                      <span class="text-sm font-bold text-[#143c70]"
+                        >Só o acervo público aprovado</span
+                      >
+                      <svg
+                        aria-hidden="true"
+                        class="ml-auto size-4 fill-none stroke-[#184e92] stroke-2"
+                      >
+                        <use href="#check" />
+                      </svg>
+                    </li>
+                    <li class="flex items-center gap-3 border-y border-[#184e92]/12 py-4">
+                      <svg
+                        aria-hidden="true"
+                        class="size-5 shrink-0 fill-none stroke-[#184e92] stroke-2"
+                      >
+                        <use href="#shield" />
+                      </svg>
+                      <span class="text-sm font-bold text-[#143c70]"
+                        >Saída do índice a qualquer momento</span
+                      >
+                      <svg
+                        aria-hidden="true"
+                        class="ml-auto size-4 fill-none stroke-[#184e92] stroke-2"
+                      >
+                        <use href="#check" />
+                      </svg>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            <div class="border-b border-black/10 bg-(--campaign-band) px-10 py-10 text-center">
+              <p
+                class="campaign-section-eyebrow font-black tracking-[0.1em] text-(--pt-red) uppercase"
+              >
+                Apoie e acompanhe
+              </p>
+              <p class="display mt-1 text-2xl font-black">Receba as novidades da campanha</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="mobile-title">
+        <p class="text-xs font-extrabold tracking-[0.1em] text-[#a21c1c] uppercase">
+          Cena 02 · 390
+        </p>
+        <h2 id="mobile-title" class="display mt-1 text-xl font-black">
+          Mobile-first · uma ação dominante, sem simular captura
+        </h2>
+
+        <div
+          class="stage mt-4 w-[390px] overflow-hidden rounded-[30px] border border-black/10 bg-white"
+        >
+          <div
+            aria-hidden="true"
+            class="flex h-16 items-center justify-center border-b border-black/10 bg-white text-[10px] font-bold tracking-[0.08em] text-black/40 uppercase"
+          >
+            fim da Central de Conteúdos
+          </div>
+
+          <section
+            aria-labelledby="selfie-home-mobile-title"
+            class="relative overflow-hidden border-b border-(--campaign-line) bg-(--campaign-cream)"
+          >
+            <div
+              aria-hidden="true"
+              class="pointer-events-none absolute -top-14 -right-14 size-40 rounded-full bg-(--pt-yellow)/45"
+            ></div>
+            <div class="relative px-5 py-12">
+              <p
+                class="campaign-section-eyebrow m-0 font-black tracking-[0.1em] text-(--pt-red) uppercase"
+              >
+                Fotos da nossa caminhada
+              </p>
+              <h2
+                id="selfie-home-mobile-title"
+                class="display m-0 mt-2 max-w-[320px] border-0 p-0 text-[30px] leading-[1.02] font-black tracking-[-0.03em] text-balance"
+              >
+                Encontre você nas fotos
+              </h2>
+              <p class="mt-4 text-[15px] leading-6 text-(--campaign-muted)">
+                Use uma selfie sua na página da busca para procurar as fotos públicas aprovadas em
+                que você aparece.
+              </p>
+
+              <div class="assurance-mark mt-6 rounded-2xl border border-[#184e92]/15 p-4">
+                <div class="flex items-start gap-3">
+                  <div
+                    class="grid size-10 shrink-0 place-items-center rounded-xl bg-[#184e92] text-white"
+                  >
+                    <svg aria-hidden="true" class="size-5 fill-none stroke-current stroke-2">
+                      <use href="#shield" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="text-sm font-extrabold text-[#143c70]">Sua selfie fica no aparelho</p>
+                    <p class="mt-1 text-xs leading-5 text-[#365472]">
+                      A selfie não sai deste aparelho. A busca cobre o acervo aprovado, e você pode
+                      retirar seu rosto do índice quando quiser.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <a href="/fotos/encontre" class="primary-action archive-focus mt-6 w-full">
+                Encontrar minhas fotos
+                <svg aria-hidden="true" class="size-4 fill-none stroke-current stroke-2">
+                  <use href="#arrow" />
+                </svg>
+              </a>
+              <a href="/fotos" class="secondary-link archive-focus mt-2 w-full justify-center">
+                Ver o álbum
+                <svg aria-hidden="true" class="size-4 fill-none stroke-current stroke-2">
+                  <use href="#arrow" />
+                </svg>
+              </a>
+            </div>
+          </section>
+
+          <div class="bg-(--campaign-band) px-5 py-9 text-center">
+            <p
+              class="campaign-section-eyebrow font-black tracking-[0.1em] text-(--pt-red) uppercase"
+            >
+              Apoie e acompanhe
+            </p>
+            <p class="display mt-1 text-[22px] leading-tight font-black">
+              Receba as novidades da campanha
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section
+        aria-labelledby="rules-title"
+        class="max-w-4xl rounded-2xl border border-black/10 bg-white p-6"
+      >
+        <p class="text-xs font-extrabold tracking-[0.1em] text-[#a21c1c] uppercase">
+          Contrato do port
+        </p>
+        <h2 id="rules-title" class="display mt-1 text-xl font-black">Estados e acessibilidade</h2>
+        <ul class="mt-4 grid list-none gap-3 p-0 text-sm leading-6 text-[#6c615e] sm:grid-cols-2">
+          <li class="rounded-xl bg-[#f9faff] p-4">
+            <b class="text-[#201b1a]">Fechada:</b> a seção inteira não é renderizada quando a flag,
+            o álbum publicado ou as fotos aprovadas não liberam a busca. Não há placeholder, aviso
+            nem CTA morto; Central de Conteúdos e newsletter se encostam pelo ritmo normal.
+          </li>
+          <li class="rounded-xl bg-[#f9faff] p-4">
+            <b class="text-[#201b1a]">Hierarquia:</b> o título da seção é <code>h2</code>; há um
+            único CTA preenchido. “Ver o álbum” permanece secundário, textual e com alvo mínimo de
+            44 px.
+          </li>
+          <li class="rounded-xl bg-[#f9faff] p-4">
+            <b class="text-[#201b1a]">Foco:</b> ambos os links usam o foco amarelo de 3 px do álbum,
+            com offset de 3 px e separação azul externa para permanecer visível sobre creme,
+            vermelho e branco.
+          </li>
+          <li class="rounded-xl bg-[#f9faff] p-4">
+            <b class="text-[#201b1a]">Movimento:</b> só o CTA reage ao hover/press; em
+            <code>prefers-reduced-motion: reduce</code>, transição e deslocamento são removidos.
+          </li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

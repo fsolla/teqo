@@ -8,24 +8,24 @@ import {
   FACE_SEARCH_CONSENT_KEY,
 } from '../../src/lib/campaignConsentKeys.js'
 import { FACE_SEARCH_MODEL, faceStubDescriptorFromBytes } from '../../src/lib/faceSearch.js'
-import { hashConsentContent } from '../../src/utilities/consentContentHash.js'
 import { adminHeaders } from '../helpers/adminApi'
 import { seedTestUser } from '../helpers/seedUser'
 import { waitForStreamSettled } from './fixtures/campaignE2EFixtures'
 import { expect, test } from './fixtures/e2eTest'
 
 /**
- * C234 — the selfie search over real HTTP: the entry gated by the album flag,
- * the Consent fail-closed, the A/C answer (only the enrolled subject's approved
- * photos, never a third-party name), the honest empty and the opt-out by
- * matched descriptor. The engine is the deterministic stub
- * (`NEXT_PUBLIC_FACE_SEARCH_STUB=1`): the fixture bytes derive the descriptor
- * the seeded subject carries, so no model is ever downloaded.
+ * C242 — the selfie search over real HTTP: the entry gated by the album flag,
+ * the Consent fail-closed, the scope B answer (anonymous descriptors of
+ * approved photos only, never a third-party name), the honest empty, the
+ * opt-out by matched descriptor and the homepage discovery section (C243). The
+ * engine is the deterministic stub (`NEXT_PUBLIC_FACE_SEARCH_STUB=1`): the
+ * fixture bytes derive the descriptor the seeded face rows carry, so no model
+ * is ever downloaded.
  *
  * Rows are seeded through the deployed REST API (admin session) so the server
- * process runs the real hooks. Serial: this spec owns its faceSubject/Consent
- * rows and flips the same `photoAlbum` global as the C233 spec (the project
- * depends on `frontendFotos`).
+ * process runs the real hooks. Serial: this spec owns its archivePhotoFace/
+ * Consent rows and flips the same `photoAlbum` global as the C233 spec (the
+ * project depends on `frontendFotos`).
  */
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
@@ -34,7 +34,6 @@ const REMOVAL_CHANNEL = 'https://example.org/acervo/remocao'
 type Headers = Record<string, string>
 
 const createdPhotoIds: number[] = []
-const createdSubjectIds: number[] = []
 const createdConsentKeys = new Set<string>()
 
 const uniqueMarker = () => randomUUID().slice(0, 8)
@@ -134,38 +133,36 @@ const ensureConsent = async (
   return { id: doc.id, text: doc.text }
 }
 
-const createSubject = async (
+/** One anonymous descriptor row, exactly like the batch writes it. */
+const createFaceRow = async (
   request: APIRequestContext,
   headers: Headers,
-  data: { vector: number[]; consentId: number; consentHash: string; matchedPhotos: number[] },
+  data: { photo: number; vector: number[] },
 ): Promise<number> => {
-  const response = await request.post(`${BASE_URL}/api/faceSubject`, {
+  const response = await request.post(`${BASE_URL}/api/archivePhotoFace`, {
     headers,
     data: {
-      label: `Pessoa de teste ${uniqueMarker()}`,
-      consent: data.consentId,
-      consentHash: data.consentHash,
+      photo: data.photo,
       model: FACE_SEARCH_MODEL,
+      detectedAt: new Date().toISOString(),
       vector: data.vector,
-      enrolledAt: new Date().toISOString(),
-      status: 'active',
-      matchedPhotos: data.matchedPhotos,
     },
   })
   expect(response.ok(), await response.text()).toBeTruthy()
-  const id = ((await response.json()) as { doc: { id: number } }).doc.id
-  createdSubjectIds.push(id)
-  return id
+  return ((await response.json()) as { doc: { id: number } }).doc.id
 }
 
-const faceSubjectById = async (
+const faceRowsOf = async (
   request: APIRequestContext,
   headers: Headers,
-  id: number,
-): Promise<{ status: string; vector: unknown }> => {
-  const response = await request.get(`${BASE_URL}/api/faceSubject/${id}?depth=0`, { headers })
+  photoId: number,
+): Promise<number> => {
+  const response = await request.get(
+    `${BASE_URL}/api/archivePhotoFace?limit=0&depth=0&where[photo][equals]=${photoId}`,
+    { headers },
+  )
   expect(response.ok(), await response.text()).toBeTruthy()
-  return (await response.json()) as { status: string; vector: unknown }
+  return ((await response.json()) as { totalDocs: number }).totalDocs
 }
 
 /** Consent card → pick screen with the given fixture, ready for the primary action. */
@@ -183,11 +180,8 @@ const reachPickWithFixture = async (
 
 test.describe.configure({ mode: 'serial' })
 
-test.describe('Frontend busca por selfie (C234)', () => {
+test.describe('Frontend busca por selfie (C242)', () => {
   let headers: Headers
-  let indexConsent: { id: number; text: unknown }
-  let indexConsentHash: string
-  let subjectId: number
   let linkedPhoto: number
   let draftLinkedPhoto: number
   let otherPhoto: number
@@ -213,8 +207,7 @@ test.describe('Frontend busca por selfie (C234)', () => {
     selfieB.buffer = await jpegWithFill('77')
 
     await ensureConsent(request, headers, FACE_SEARCH_CONSENT_KEY)
-    indexConsent = await ensureConsent(request, headers, FACE_INDEX_CONSENT_KEY)
-    indexConsentHash = hashConsentContent(indexConsent.text)
+    await ensureConsent(request, headers, FACE_INDEX_CONSENT_KEY)
 
     await setAlbum(request, headers, {
       published: true,
@@ -230,22 +223,16 @@ test.describe('Frontend busca por selfie (C234)', () => {
       data: { publicationStatus: 'draft' },
     })
 
-    subjectId = await createSubject(request, headers, {
-      vector: faceStubDescriptorFromBytes(new Uint8Array(selfieA.buffer)),
-      consentId: indexConsent.id,
-      consentHash: indexConsentHash,
-      matchedPhotos: [linkedPhoto, draftLinkedPhoto],
-    })
+    const descriptor = faceStubDescriptorFromBytes(new Uint8Array(selfieA.buffer))
+    await createFaceRow(request, headers, { photo: linkedPhoto, vector: descriptor })
+    // The draft row is seeded by hand on purpose: the search must intersect
+    // the index with the approved public read and never surface it.
+    await createFaceRow(request, headers, { photo: draftLinkedPhoto, vector: descriptor })
   })
 
   test.afterAll(async ({ request }) => {
     const cleanupHeaders = await adminHeaders(request, BASE_URL).catch(() => null)
     if (cleanupHeaders) {
-      for (const id of createdSubjectIds.splice(0)) {
-        await request
-          .delete(`${BASE_URL}/api/faceSubject/${id}`, { headers: cleanupHeaders })
-          .catch(() => undefined)
-      }
       for (const id of createdPhotoIds.splice(0)) {
         await request
           .delete(`${BASE_URL}/api/archivePhoto/${id}`, { headers: cleanupHeaders })
@@ -293,6 +280,23 @@ test.describe('Frontend busca por selfie (C234)', () => {
     await expect(primary).toBeDisabled()
     await page.getByRole('checkbox').check()
     await expect(primary).toBeEnabled()
+  })
+
+  test('shows the discovery section on the homepage while the search is open (C243)', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await waitForStreamSettled(page)
+
+    const section = page.getByRole('region', { name: 'Encontre você nas fotos' })
+    await expect(section).toBeVisible()
+    await expect(
+      section.getByRole('link', { name: 'Encontrar minhas fotos' }).first(),
+    ).toHaveAttribute('href', '/fotos/encontre')
+    await expect(section.getByRole('link', { name: 'Ver o álbum' }).first()).toHaveAttribute(
+      'href',
+      '/fotos',
+    )
   })
 
   test('finds only the approved photos of the matched subject, without third-party names', async ({
@@ -373,11 +377,13 @@ test.describe('Frontend busca por selfie (C234)', () => {
 
     await expect(page.getByRole('heading', { name: 'Confirmar saída do índice?' })).toBeVisible()
     await page.getByRole('button', { name: 'Confirmar saída do índice' }).click()
-    await expect(page.getByRole('heading', { name: 'Pronto — você saiu do índice' })).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Pronto — seu rosto saiu do índice' }),
+    ).toBeVisible()
 
-    const subject = await faceSubjectById(request, headers, subjectId)
-    expect(subject.status).toBe('removed')
-    expect(subject.vector).toBeNull()
+    // The person's face rows are gone from the index (the search stops
+    // answering); the photos themselves stay in the album.
+    expect(await faceRowsOf(request, headers, linkedPhoto)).toBe(0)
   })
 
   test('fails the engine honestly when the local processing breaks', async ({ page }) => {
@@ -428,6 +434,11 @@ test.describe('Frontend busca por selfie (C234)', () => {
       await page.goto('/fotos')
       await waitForStreamSettled(page)
       await expect(page.getByRole('link', { name: 'Começar busca por selfie' })).toHaveCount(0)
+
+      // C243 — closed leaves no dead CTA on the homepage either.
+      await page.goto('/')
+      await waitForStreamSettled(page)
+      await expect(page.getByRole('region', { name: 'Encontre você nas fotos' })).toHaveCount(0)
 
       // Through the API context on purpose: the browser would log the
       // document's own 404 and trip the console-error guard (same choice as

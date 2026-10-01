@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <title>Design — C234 · Busca de fotos por selfie</title>
+    <title>Design — C234/C242 · Busca de fotos por selfie</title>
     <style type="text/tailwindcss">
       @theme inline {
         --font-sans: Inter, Arimo, ui-sans-serif, system-ui, sans-serif;
@@ -225,28 +225,29 @@
       <header class="max-w-3xl">
         <div class="flex flex-wrap gap-2">
           <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-extrabold text-white"
-            >C234 · gate hi-fi</span
+            >C234 + C242 · gate hi-fi</span
           ><span class="rounded-full border border-border bg-white px-3 py-1 text-xs font-bold"
             >Fluxo sensível · LGPD fail-closed</span
           ><span
             class="rounded-full border border-[#184e92]/20 bg-[#eef4fb] px-3 py-1 text-xs font-extrabold text-[#184e92]"
-            >Estendido para a execução · 27 set 2026</span
+            >Escopo B · 01 out 2026</span
           >
         </div>
         <h1 class="display mt-4 text-3xl font-black tracking-[-.03em]">
           Encontre você nas fotos — privado, explícito e sem placar de semelhança
         </h1>
         <p class="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-          A pessoa parte do álbum, entende o uso de biometria, escolhe a própria selfie e recebe
-          apenas fotos públicas aprovadas em que aparece. A selfie permanece no dispositivo.
+          Qualquer visitante pode partir do álbum, entender o uso de biometria, escolher a própria
+          selfie e receber apenas fotos públicas aprovadas em que aparece. A selfie permanece no
+          dispositivo e é possível sair do índice.
         </p>
         <div class="mt-5 rounded-xl border border-[#184e92]/15 bg-[#f9faff] p-4 text-sm leading-6">
-          <p class="font-extrabold text-[#184e92]">Deltas de execução desta revisão</p>
+          <p class="font-extrabold text-[#184e92]">Delta de produto desta revisão · C242</p>
           <p class="mt-1 text-muted-foreground">
-            A entrada agora respeita o hero e a grade reais do C233; o fluxo é uma página própria em
-            <b class="text-foreground">/fotos/encontre</b>; resultado, vazio A/C, falhas do
-            processamento e opt-out sem reconhecimento ganham estados explícitos. Cenas revisadas
-            mantêm o número aprovado e recebem selo azul; cenas novas começam em 09.
+            O índice deixa de depender de adesão prévia por pessoa: ele cobre os rostos do acervo
+            público aprovado, sem nomes ou vínculo com cadastro. O aviso público do índice aparece
+            antes da autorização de consulta; “Minha presença” permite retirar o próprio rosto a
+            qualquer momento. As cenas sem delta visual permanecem intactas.
           </p>
         </div>
       </header>
@@ -259,7 +260,7 @@
       <section aria-labelledby="s1">
         <div class="flex flex-wrap items-center gap-2">
           <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 01</p>
-          <span class="revision-badge">Revisada · C234 execução</span>
+          <span class="revision-badge">Revisada · C242 escopo B</span>
         </div>
         <h2 id="s1" class="display mt-1 text-xl font-black">
           Entrada real na /fotos · flag ligada
@@ -317,8 +318,8 @@
                   <div>
                     <h3 class="display text-xl font-black">Encontre você nas fotos</h3>
                     <p class="mt-1 text-sm leading-6 text-muted-foreground">
-                      Use uma selfie sua. A imagem não sai deste dispositivo e a busca cobre quem
-                      autorizou participar do índice.
+                      Use uma selfie sua. A imagem não sai deste dispositivo. A busca cobre o acervo
+                      público aprovado, e você pode retirar seu rosto do índice.
                     </p>
                   </div>
                 </div>
@@ -393,7 +394,8 @@
                     <div>
                       <h3 class="display text-lg font-black">Encontre você nas fotos</h3>
                       <p class="mt-1 text-xs leading-5 text-muted-foreground">
-                        Sua selfie fica neste aparelho. A busca é para quem aderiu ao índice.
+                        Sua selfie fica neste aparelho. A busca cobre o acervo público aprovado, e
+                        você pode sair do índice.
                       </p>
                     </div>
                   </div>
@@ -447,7 +449,7 @@
       <section aria-labelledby="s2">
         <div class="flex flex-wrap items-center gap-2">
           <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 02</p>
-          <span class="revision-badge">Revisada · página /fotos/encontre</span>
+          <span class="revision-badge">Revisada · C242 aviso + consulta</span>
         </div>
         <h2 id="s2" class="display mt-1 text-xl font-black">
           Desktop ~1280 · aviso e consentimento na página própria, não em modal
@@ -491,10 +493,30 @@
                   Sua face é um dado biométrico sensível
                 </h3>
                 <p class="mt-3 text-sm leading-6 text-muted-foreground">
-                  Com sua autorização, comparamos a sua selfie com o índice formado por pessoas que
-                  autorizaram participar, para mostrar somente fotos públicas aprovadas em que você
-                  aparece.
+                  Com sua autorização, usamos a sua selfie somente nesta consulta para procurar você
+                  no índice biométrico anônimo do acervo público aprovado.
                 </p>
+                <div class="mt-5 rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4">
+                  <div class="flex items-start gap-3">
+                    <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#shield" /></svg>
+                    <div>
+                      <p class="text-sm font-extrabold text-[#143c70]">
+                        Aviso público sobre o índice de fotos
+                      </p>
+                      <p class="mt-1 text-sm leading-6 text-[#365472]">
+                        Rostos presentes nas fotos públicas aprovadas compõem um índice sem nomes e
+                        sem vínculo com cadastros de pessoas. Ele serve apenas para localizar as
+                        próprias fotos. Você pode retirar seu rosto do índice a qualquer momento em
+                        “Minha presença”.
+                      </p>
+                      <a
+                        href="#"
+                        class="focus-ring mt-2 inline-flex min-h-11 items-center text-sm font-extrabold text-[#184e92] underline underline-offset-4"
+                        >Ler o aviso completo do índice</a
+                      >
+                    </div>
+                  </div>
+                </div>
                 <div class="mt-5 grid gap-3 rounded-xl bg-[#f9faff] p-4 text-sm">
                   <div class="flex gap-3">
                     <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#device" /></svg>
@@ -508,10 +530,9 @@
                   <div class="flex gap-3">
                     <svg class="icon mt-0.5 shrink-0 text-[#184e92]"><use href="#lock" /></svg>
                     <p>
-                      <b>Você pode desistir e pedir remoção.</b><br /><span
-                        class="text-muted-foreground"
-                        >O resultado não mostra nomes de terceiros nem percentual de
-                        semelhança.</span
+                      <b>Você mantém o controle.</b><br /><span class="text-muted-foreground"
+                        >Saia do índice quando quiser. O resultado não mostra nomes de terceiros nem
+                        percentual de semelhança.</span
                       >
                     </p>
                   </div>
@@ -522,8 +543,8 @@
                     class="mt-0.5 grid size-5 shrink-0 place-items-center rounded border-2 border-[#184e92] bg-[#184e92] text-white"
                     ><svg class="icon size-3.5"><use href="#check" /></svg></span
                   ><span
-                    >Li e autorizo o uso temporário da minha biometria facial para procurar a mim
-                    mesmo neste álbum.</span
+                    >Li o aviso e autorizo o uso da minha selfie e da minha biometria somente nesta
+                    consulta para procurar a mim mesmo no álbum.</span
                   ></label
                 >
                 <p class="mt-3 text-xs leading-5 text-muted-foreground">
@@ -541,6 +562,15 @@
               </div>
             </div>
           </div>
+        </div>
+        <div
+          class="mt-4 max-w-3xl rounded-xl border border-[#184e92]/15 bg-[#f9faff] p-4 text-xs leading-5 text-muted-foreground"
+        >
+          <b class="text-foreground">Contrato de conteúdo:</b> o bloco azul é o aviso público
+          <code class="font-bold text-[#184e92]">busca-selfie-indice</code>, não um consentimento de
+          adesão ao índice. A caixa abaixo autoriza apenas o uso da própria selfie e biometria na
+          consulta atual (<code class="font-bold text-[#184e92]">busca-selfie-fotos</code>). Sem
+          qualquer um dos dois textos, vale a Cena 07.
         </div>
       </section>
 
@@ -799,7 +829,7 @@
       <section aria-labelledby="s6">
         <div class="flex flex-wrap items-center gap-2">
           <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 06</p>
-          <span class="revision-badge">Revisada · índice A/C</span>
+          <span class="revision-badge">Revisada · escopo B</span>
         </div>
         <h2 id="s6" class="display mt-1 text-xl font-black">
           Mobile ~390 · vazio honesto, sem “parecidos”
@@ -818,8 +848,8 @@
             </div>
             <h3 class="display mt-5 text-2xl font-black">Não encontramos fotos suas</h3>
             <p class="mt-2 max-w-[310px] text-sm leading-6 text-muted-foreground">
-              Esta busca funciona para quem autorizou participar do índice. Também pode não haver
-              uma foto sua entre os registros públicos aprovados.
+              Pode não haver uma foto sua entre os registros públicos aprovados, ou seu rosto pode
+              já ter sido retirado do índice.
             </p>
             <p class="mt-3 text-sm font-bold">
               Não mostramos pessoas parecidas nem tentamos adivinhar quem você é.
@@ -836,7 +866,7 @@
       <section aria-labelledby="s7">
         <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 07</p>
         <h2 id="s7" class="display mt-1 text-xl font-black">
-          Fail-closed · consentimento não configurado, fluxo indisponível
+          Fail-closed · aviso ou consentimento não configurado, fluxo indisponível
         </h2>
         <div class="stage mt-4 max-w-[920px] rounded-2xl border border-border bg-white p-8 sm:p-12">
           <div class="rounded-2xl border border-amber-300 bg-amber-50 px-6 py-10 text-center">
@@ -852,8 +882,8 @@
               A busca por selfie está indisponível
             </h3>
             <p class="mx-auto mt-3 max-w-lg text-sm leading-6 text-amber-900">
-              O texto de consentimento necessário ainda não está configurado. Por segurança, não
-              podemos receber nem processar sua selfie agora.
+              O aviso público do índice ou o consentimento da consulta não está configurado. Por
+              segurança, não podemos receber nem processar sua selfie agora.
             </p>
             <p class="mx-auto mt-3 max-w-lg text-sm font-bold text-amber-950">
               Nenhuma imagem foi capturada ou enviada.
@@ -869,10 +899,10 @@
       <section aria-labelledby="s8">
         <div class="flex flex-wrap items-center gap-2">
           <p class="text-xs font-extrabold tracking-[.08em] text-[#e4102f] uppercase">Cena 08</p>
-          <span class="revision-badge">Revisada · opt-out self-service</span>
+          <span class="revision-badge">Revisada · C242 saída do índice</span>
         </div>
         <h2 id="s8" class="display mt-1 text-xl font-black">
-          Mobile ~390 · opt-out e pedido de remoção com confirmação
+          Mobile ~390 · saída do índice a qualquer momento, com confirmação e sucesso
         </h2>
         <div class="mt-4 flex flex-wrap items-start gap-8">
           <div class="stage w-[390px] overflow-hidden rounded-[30px] border border-border bg-white">
@@ -885,10 +915,11 @@
               <p class="text-xs font-black tracking-[.08em] text-[#184e92] uppercase">
                 Privacidade
               </p>
-              <h3 class="display mt-1 text-2xl font-black">Você decide se quer aparecer</h3>
+              <h3 class="display mt-1 text-2xl font-black">Você controla sua presença no índice</h3>
               <p class="mt-2 text-sm leading-6 text-muted-foreground">
-                Para sair do índice, confirme sua identidade com uma selfie. Para retirar uma foto
-                pública, use o canal da equipe responsável pelo acervo.
+                Seu rosto pode fazer parte do índice anônimo por aparecer no acervo aprovado. Para
+                retirá-lo, use uma selfie sua. Para retirar uma foto pública, fale com a equipe do
+                acervo.
               </p>
               <label class="mt-5 flex gap-3 rounded-xl border-2 border-[#184e92] bg-[#f9faff] p-4"
                 ><span
@@ -897,7 +928,8 @@
                 ><span
                   ><b class="text-sm">Sair do índice de busca</b
                   ><small class="mt-1 block text-xs leading-5 text-muted-foreground"
-                    >Seu rosto deixa de ser usado para localizar fotos por selfie.</small
+                    >Apaga do índice as referências biométricas que correspondem ao seu
+                    rosto.</small
                   ></span
                 ></label
               >
@@ -931,8 +963,8 @@
               </div>
               <h3 class="display mt-4 text-xl font-black">Confirmar saída do índice?</h3>
               <p class="mt-2 text-sm leading-6 text-muted-foreground">
-                Vamos reconhecer você neste aparelho e, se houver correspondência, retirar sua
-                presença do índice de busca.
+                Vamos processar sua selfie neste aparelho e, se houver correspondência, apagar do
+                índice as referências biométricas do seu rosto. A selfie não será enviada.
               </p>
               <button
                 class="mt-6 flex min-h-11 w-full items-center justify-center rounded-[10px] bg-[#b42318] px-4 text-sm font-extrabold text-white"
@@ -942,6 +974,34 @@
               <button class="mt-3 w-full text-sm font-bold text-muted-foreground">
                 Voltar sem alterar
               </button>
+            </div>
+          </div>
+
+          <div class="stage w-[390px] overflow-hidden rounded-[30px] border border-border bg-white">
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4 text-white">
+              <span class="w-[18px]"></span><span class="text-sm font-bold">Minha presença</span
+              ><span class="w-[18px]"></span>
+            </header>
+            <div class="flex min-h-[635px] flex-col items-center justify-center px-6 text-center">
+              <div class="grid size-14 place-items-center rounded-full bg-[#eef4fb] text-[#184e92]">
+                <svg class="icon size-7"><use href="#shield" /></svg>
+              </div>
+              <h3 class="display mt-5 text-2xl font-black">Pronto — seu rosto saiu do índice</h3>
+              <p class="mt-3 max-w-[315px] text-sm leading-6 text-muted-foreground">
+                Apagamos as referências biométricas que correspondiam ao seu rosto. Ele deixa de ser
+                encontrado pela busca por selfie.
+              </p>
+              <p class="mt-3 max-w-[315px] text-sm font-bold">
+                As fotos públicas continuam no álbum. Para retirar uma foto específica, use o canal
+                da equipe responsável pelo acervo.
+              </p>
+              <a href="#" class="primary mt-7 w-full">Voltar ao álbum</a>
+              <a
+                href="#"
+                data-source="photoAlbum.removalChannelUrl"
+                class="focus-ring mt-4 inline-flex min-h-11 items-center text-sm font-extrabold text-[#184e92] underline underline-offset-4"
+                >Pedir remoção de uma foto</a
+              >
             </div>
           </div>
         </div>
@@ -1140,8 +1200,8 @@
             </div>
             <h3 class="display mt-5 text-2xl font-black">Não encontramos sua presença no índice</h3>
             <p class="mt-3 max-w-[310px] text-sm leading-6 text-muted-foreground">
-              Não foi possível reconhecer uma participação sua no índice com esta selfie. Nenhuma
-              alteração foi feita.
+              Não encontramos no índice referências biométricas que correspondam ao seu rosto com
+              esta selfie. Nenhuma alteração foi feita.
             </p>
             <button class="primary mt-7 w-full">Tentar outra selfie</button>
             <div class="mt-6 w-full border-t border-border pt-5">

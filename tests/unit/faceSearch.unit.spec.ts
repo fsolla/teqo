@@ -6,38 +6,19 @@ import type { ArchivePhotoPublicItem } from '@/lib/archivePhotoPublicCatalog'
 import {
   FACE_SEARCH_DESCRIPTOR_LENGTH,
   FACE_SEARCH_MAX_DISTANCE,
-  FACE_SEARCH_MODEL,
   faceEuclideanDistance,
   faceStubDescriptorFromBytes,
-  faceSubjectIsEligible,
-  findFaceMatch,
+  findFaceDescriptorPhotoIds,
   readFaceVector,
   toFaceSearchPhotoView,
 } from '@/lib/faceSearch'
 
-// C234 — the pure contract of the selfie search: vector validation, the
-// euclidean math, the eligibility of an enrolled subject and the result view
-// model that by shape cannot carry a score or a third-party name.
+// C242 — the pure contract of the selfie search: vector validation, the
+// euclidean math, the anonymous descriptor match (which by shape cannot carry a
+// score or a third-party name) and the result view model.
 
 const vectorOf = (value: number, length = FACE_SEARCH_DESCRIPTOR_LENGTH): number[] =>
   Array.from({ length }, () => value)
-
-const subjectOf = (
-  overrides: Partial<{
-    id: number
-    status: string
-    model: string
-    consentHash: string | null
-    vector: unknown
-  }> = {},
-) => ({
-  id: 1,
-  status: 'active',
-  model: FACE_SEARCH_MODEL,
-  consentHash: 'hash-atual',
-  vector: vectorOf(0),
-  ...overrides,
-})
 
 describe('readFaceVector', () => {
   it('accepts exactly the descriptor length of finite numbers', () => {
@@ -67,60 +48,41 @@ describe('faceEuclideanDistance', () => {
   })
 })
 
-describe('faceSubjectIsEligible', () => {
-  const current = { model: FACE_SEARCH_MODEL, consentHash: 'hash-atual' }
-
-  it('requires active status, the current model and the current consent hash', () => {
-    expect(faceSubjectIsEligible(subjectOf(), current)).toBe(true)
-    expect(faceSubjectIsEligible(subjectOf({ status: 'removed' }), current)).toBe(false)
-    expect(faceSubjectIsEligible(subjectOf({ model: 'outro-modelo' }), current)).toBe(false)
-    expect(faceSubjectIsEligible(subjectOf({ consentHash: 'hash-antigo' }), current)).toBe(false)
-    expect(faceSubjectIsEligible(subjectOf({ consentHash: null }), current)).toBe(false)
+describe('findFaceDescriptorPhotoIds', () => {
+  const near = (photoId: number, delta = 0.1) => ({
+    photoId,
+    vector: [...vectorOf(0).slice(1), delta],
   })
-})
-
-describe('findFaceMatch', () => {
-  const current = { model: FACE_SEARCH_MODEL, consentHash: 'hash-atual' }
-
-  it('returns the closest eligible subject strictly under the threshold', () => {
-    const far = subjectOf({ id: 1, vector: [...vectorOf(0).slice(1), 1] })
-    const near = subjectOf({ id: 2, vector: [...vectorOf(0).slice(1), 0.1] })
-    const match = findFaceMatch({
-      vector: vectorOf(0),
-      subjects: [far, near],
-      ...current,
-    })
-    expect(match?.id).toBe(2)
+  const far = (photoId: number, delta = FACE_SEARCH_MAX_DISTANCE + 1) => ({
+    photoId,
+    vector: [...vectorOf(0).slice(1), delta],
   })
 
-  it('ignores ineligible subjects and subjects with a malformed vector', () => {
-    const removed = subjectOf({ id: 1, status: 'removed', vector: vectorOf(0) })
-    const staleModel = subjectOf({ id: 2, model: 'outro', vector: vectorOf(0) })
-    const staleConsent = subjectOf({ id: 3, consentHash: 'antigo', vector: vectorOf(0) })
-    const broken = subjectOf({ id: 4, vector: [1, 2, 3] })
-    const eligible = subjectOf({ id: 5, vector: vectorOf(0) })
-
-    const match = findFaceMatch({
-      vector: vectorOf(0),
-      subjects: [removed, staleModel, staleConsent, broken, eligible],
-      ...current,
-    })
-    expect(match?.id).toBe(5)
+  it('returns the distinct photo ids with a face under the threshold', () => {
+    const ids = findFaceDescriptorPhotoIds(vectorOf(0), [
+      near(7),
+      near(7, 0.2),
+      near(9, 0.3),
+      far(11),
+    ])
+    expect(ids).toEqual([7, 9])
   })
 
-  it('never matches at or beyond the threshold and answers null when nothing is close', () => {
-    const atThreshold = subjectOf({
-      id: 1,
-      vector: [...vectorOf(0).slice(1), FACE_SEARCH_MAX_DISTANCE],
-    })
-    expect(findFaceMatch({ vector: vectorOf(0), subjects: [atThreshold], ...current })).toBeNull()
+  it('never matches at or beyond the threshold and answers empty when nothing is close', () => {
+    expect(
+      findFaceDescriptorPhotoIds(vectorOf(0), [
+        { photoId: 1, vector: [...vectorOf(0).slice(1), FACE_SEARCH_MAX_DISTANCE] },
+      ]),
+    ).toEqual([])
+    expect(findFaceDescriptorPhotoIds(vectorOf(0), [far(2)])).toEqual([])
+    expect(findFaceDescriptorPhotoIds(vectorOf(0), [])).toEqual([])
+  })
 
-    const far = subjectOf({
-      id: 2,
-      vector: [...vectorOf(0).slice(1), FACE_SEARCH_MAX_DISTANCE + 1],
-    })
-    expect(findFaceMatch({ vector: vectorOf(0), subjects: [far], ...current })).toBeNull()
-    expect(findFaceMatch({ vector: vectorOf(0), subjects: [], ...current })).toBeNull()
+  it('accepts Float32Array descriptors (the in-process cache shape)', () => {
+    const ids = findFaceDescriptorPhotoIds(vectorOf(0), [
+      { photoId: 3, vector: Float32Array.from(near(3).vector) },
+    ])
+    expect(ids).toEqual([3])
   })
 })
 

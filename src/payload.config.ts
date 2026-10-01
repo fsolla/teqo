@@ -12,6 +12,7 @@ import { pt } from 'payload/i18n/pt'
 import { Activity } from './collections/Activity'
 import { AllocationDecision } from './collections/AllocationDecision'
 import { ArchivePhoto } from './collections/ArchivePhoto'
+import { ArchivePhotoFace } from './collections/ArchivePhotoFace'
 import { CalendarFeed } from './collections/CalendarFeed'
 import { CampaignDemand } from './collections/CampaignDemand'
 import { CampaignInvite } from './collections/CampaignInvite'
@@ -26,7 +27,6 @@ import { ContentPiece } from './collections/ContentPiece'
 import { ElectionCandidate } from './collections/ElectionCandidate'
 import { ElectionCandidateVote } from './collections/ElectionCandidateVote'
 import { ElectionTally } from './collections/ElectionTally'
-import { FaceSubject } from './collections/FaceSubject'
 import { GoogleCalendarSync } from './collections/GoogleCalendarSync'
 import { InternetSpeechMedia } from './collections/InternetSpeechMedia'
 import { Jingle } from './collections/Jingle'
@@ -140,7 +140,7 @@ export default buildConfig({
     ContentPiece,
     ContentMedia,
     ArchivePhoto,
-    FaceSubject,
+    ArchivePhotoFace,
     ContentEvent,
     Recording,
     RecordingMedia,

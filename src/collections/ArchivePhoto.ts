@@ -27,6 +27,7 @@ import {
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
 import { canReadArchivePhoto, payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateArchivePhotosListing } from '@/utilities/documents'
+import { purgeFaceDescriptorsForPhoto } from '@/utilities/faceIndex/faceDescriptorIndex'
 
 /**
  * C231 — private upload collection of the Flickr photo archive: the ORIGINAL
@@ -283,6 +284,24 @@ const revalidateArchivePhotosListingAfterDelete: CollectionAfterDeleteHook = ({ 
 }
 
 /**
+ * C242 — a photo that stops being `approved` cannot keep answering the selfie
+ * search: the anonymous descriptor rows die with the public status (and on
+ * deletion), the same fail-closed spirit of the C233 read. The FK cascade
+ * covers direct SQL deletes; this covers the Local API lifecycle.
+ */
+const purgeFaceDescriptorsAfterChange: CollectionAfterChangeHook = async ({ doc, req }) => {
+  if (doc.publicationStatus !== 'approved') {
+    await purgeFaceDescriptorsForPhoto({ payload: req.payload, photoId: doc.id, req })
+  }
+  return doc
+}
+
+const purgeFaceDescriptorsAfterDelete: CollectionAfterDeleteHook = async ({ doc, req }) => {
+  await purgeFaceDescriptorsForPhoto({ payload: req.payload, photoId: doc.id, req })
+  return doc
+}
+
+/**
  * C234 — the batch state of the selfie-search index (`pnpm faces:index`). The
  * `checkedKey` is what lets the batch skip a photo honestly: it summarizes the
  * model plus every eligible subject, so a new enrollment (or a model change)
@@ -346,8 +365,8 @@ export const ArchivePhoto: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [deriveArchivePhotoCatalogIndex, requireRemovalChannelForApproval],
-    afterChange: [revalidateArchivePhotosListingAfterChange],
-    afterDelete: [revalidateArchivePhotosListingAfterDelete],
+    afterChange: [revalidateArchivePhotosListingAfterChange, purgeFaceDescriptorsAfterChange],
+    afterDelete: [revalidateArchivePhotosListingAfterDelete, purgeFaceDescriptorsAfterDelete],
   },
   fields: [
     {

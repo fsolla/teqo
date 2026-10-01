@@ -24,11 +24,12 @@ export const SelfieSearchEntry = () => (
         </h2>
         <p className="mt-1 text-sm leading-6 text-(--campaign-muted)">
           <span className="sm:hidden">
-            Sua selfie fica neste aparelho. A busca é para quem aderiu ao índice.
+            Sua selfie fica neste aparelho. A busca cobre o acervo público aprovado, e você pode
+            sair do índice.
           </span>
           <span className="hidden sm:inline">
-            Use uma selfie sua. A imagem não sai deste dispositivo e a busca cobre quem autorizou
-            participar do índice.
+            Use uma selfie sua. A imagem não sai deste dispositivo. A busca cobre o acervo público
+            aprovado, e você pode retirar seu rosto do índice.
           </span>
         </p>
       </div>

@@ -1,11 +1,9 @@
 /**
- * C234 — indexes the approved photo archive for the selfie search: each photo
+ * C242 — indexes the approved photo archive for the selfie search: each photo
  * is downloaded from the private storage, prepared small and handed to the SAME
- * face-api engine the browser runs; the descriptors are compared against the
- * enrolled subjects and thrown away — only the photo↔subject links and the
- * photo's revision marker are persisted (A/C scope of the gate, PR #1370: no
- * anonymous face index anywhere). Adding/re-enrolling a subject changes the
- * revision, so the next run reprocesses every approved photo.
+ * face-api engine the browser runs; the descriptors of every detected face are
+ * PERSISTED as anonymous rows in `archivePhotoFace` (scope B, decision of
+ * 2026-10-01: any visitor can find themselves; no identity, no score).
  *
  * Modes:
  *   pnpm faces:index                plan/dry-run (default) — the queue; no engine, no write
@@ -13,7 +11,7 @@
  *                                   FACE_INDEX_CONFIRM=1 outside local dev, the
  *                                   declared TEQO_ENV and the complete S3_* set
  *                                   when the target media is remote
- *   pnpm faces:index --verify       read-only inventory (indexed/stale/consent)
+ *   pnpm faces:index --verify       read-only inventory (indexed/stale/descriptors)
  *
  * Options: --limit <n> (canary), --refresh (ignores the marker), --out <dir>
  * (receipts, default `data/face`), --help.
@@ -25,7 +23,6 @@ import { join } from 'node:path'
 
 import { getPayload } from 'payload'
 
-import { FACE_INDEX_CONSENT_KEY } from '../src/lib/campaignConsentKeys.ts'
 import { FACE_SEARCH_MODEL } from '../src/lib/faceSearch.ts'
 
 import {
@@ -63,14 +60,14 @@ const HELP = `
 Uso: pnpm faces:index [opções]
 
 Indexa as fotos APROVADAS do acervo para a busca por selfie: por foto, detecta
-os rostos com os mesmos modelos do navegador, compara com os descritores das
-pessoas inscritas e grava só os vínculos (foto ↔ pessoa) + a revisão da foto.
-Os descritores dos rostos do acervo são descartados — não existe índice anônimo.
+os rostos com os mesmos modelos do navegador e grava os descritores como linhas
+anônimas (foto + vetor + modelo) em archivePhotoFace. Não há nome nem vínculo
+com pessoa; a busca responde só com fotos.
 
 Modos (mutuamente exclusivos; o default é o plano):
   (sem flag)         plano/dry-run — fila e revisão; sem engine nem escrita
   --apply            processa a fila (engine local + escrita transacional)
-  --verify           inventário read-only (indexadas/desatualizadas/consentimento)
+  --verify           inventário read-only (indexadas/desatualizadas/rostos)
 
 Opções:
   --limit <n>        --apply: processa no máximo n fotos (canário)
@@ -130,24 +127,22 @@ async function main() {
 
   const config = (await import('../src/payload.config.ts')).default
   const { listArchivePhotoFaceIndexQueue, indexArchivePhotoFaces } =
-    await import('../src/utilities/faceSubjects/faceSubjectPhotoIndex.ts')
-  const { listFaceSubjects } = await import('../src/utilities/faceSubjects/faceSubjectReads.ts')
-  const { getConsentByKey } = await import('../src/utilities/campaignConsent.ts')
+    await import('../src/utilities/faceIndex/faceDescriptorIndex.ts')
 
   const payload = await getPayload({ config })
   const startedAt = Date.now()
 
   if (mode === 'verify') {
-    const [queue, subjects, consent] = await Promise.all([
+    const [queue, descriptors] = await Promise.all([
       listArchivePhotoFaceIndexQueue({ payload }),
-      listFaceSubjects(payload),
-      getConsentByKey(payload, FACE_INDEX_CONSENT_KEY),
+      payload.count({
+        collection: 'archivePhotoFace',
+        where: { model: { equals: FACE_SEARCH_MODEL } },
+        // Intentional bypass: the batch CLI is a trusted operator with no session.
+        overrideAccess: true,
+      }),
     ])
-    const inventory = summarizeFaceIndexInventory({
-      queue,
-      subjects,
-      currentConsentHash: consent?.contentHash ?? null,
-    })
+    const inventory = summarizeFaceIndexInventory({ queue, descriptors: descriptors.totalDocs })
     const report = {
       runAt,
       mode,
@@ -160,21 +155,9 @@ async function main() {
     for (const line of formatFaceIndexInventory(inventory, FACE_SEARCH_MODEL)) console.log(line)
     console.log(`\n[faces:index] recibo JSON: ${reportPath}`)
 
-    const problems = []
-    if (!consent) {
-      problems.push(
-        `consentimento de adesão ausente (chave ${FACE_INDEX_CONSENT_KEY}) — a busca responde vazio para todos`,
-      )
-    }
-    if (inventory.staleConsentSubjects > 0) {
-      problems.push(
-        `${inventory.staleConsentSubjects} sujeito(s) com consentimento vencido — re-consentir e re-enrollar`,
-      )
-    }
     if (inventory.stale > 0) {
-      problems.push(`${inventory.stale} foto(s) desatualizada(s) — rode o --apply`)
+      die(`${inventory.stale} foto(s) desatualizada(s) — rode o --apply`)
     }
-    if (problems.length > 0) die(problems.join('; '))
     process.exit(0)
   }
 
@@ -194,10 +177,9 @@ async function main() {
         indexKey: queue.indexKey,
         totalApproved: queue.totalApproved,
         stale: queue.stale,
-        eligibleSubjects: queue.eligibleSubjects,
         items: queue.items.length,
       },
-      summary: { indexed: 0, failed: 0, linkedPhotos: 0, linksBySubject: [], failures: [] },
+      summary: { indexed: 0, failed: 0, descriptors: 0, failures: [] },
       preview: queue.items.slice(0, options.limit ?? 20).map((item) => ({ photoId: item.id })),
       durationMs: Date.now() - startedAt,
     }
@@ -207,10 +189,9 @@ async function main() {
     process.exit(0)
   }
 
-  if (queue.eligibleSubjects === 0) {
-    die(
-      'nenhuma pessoa elegível no índice — rode o faces:enroll antes (o lote não tem o que procurar).',
-    )
+  if (queue.items.length === 0) {
+    console.log('[faces:index] nada a fazer — todas as fotos aprovadas estão na revisão atual.')
+    process.exit(0)
   }
 
   const engine = await createNodeFaceEngine(process.cwd()).catch((error) => {
@@ -229,8 +210,8 @@ async function main() {
     const detail =
       result.status === 'failed'
         ? ` [${result.stage}]: ${result.error}`
-        : result.matchedSubjects.length > 0
-          ? ` → ${result.matchedSubjects.length} vínculo(s)`
+        : result.descriptorCount > 0
+          ? ` → ${result.descriptorCount} rosto(s)`
           : ''
     console.log(`[faces:index]   ${result.status}${detail} foto ${item.id}`)
   }
@@ -245,7 +226,6 @@ async function main() {
       indexKey: queue.indexKey,
       totalApproved: queue.totalApproved,
       stale: queue.stale,
-      eligibleSubjects: queue.eligibleSubjects,
       items: queue.items.length,
     },
     summary,

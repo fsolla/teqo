@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils'
 /** Shared class contracts of the public photo album (artefato C233, cenas 01–07). */
 
 export const ARCHIVE_PHOTO_FOCUS =
-  'focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-yellow)'
+  'focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-yellow) focus-visible:shadow-[0_0_0_6px_rgb(24_78_146/72%)]'
 
 export const ARCHIVE_PHOTO_CHIP = cn(
   'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-(--campaign-line) bg-white px-3 text-xs font-bold text-black',
