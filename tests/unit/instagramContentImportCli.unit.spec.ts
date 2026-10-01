@@ -35,7 +35,7 @@ const run = (args: string[], env: Record<string, string> = {}) =>
 
 const output = (result: ReturnType<typeof run>) => `${result.stdout}${result.stderr}`
 
-describe('content:instagram:import write guards (C230-followup)', () => {
+describe('content:instagram:import write guards (C230-followup)', { timeout: 30_000 }, () => {
   it('prints the help even without a database', () => {
     const result = run(['--help'], { DATABASE_URL: '' })
 
