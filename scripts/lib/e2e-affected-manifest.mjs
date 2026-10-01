@@ -94,6 +94,14 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontend'],
   },
   {
+    // The Payload live-preview bridge mounts on every `(frontend)` page and
+    // owns when a soft refresh may run; a diff there (or in the layout that
+    // mounts it) can silently drop the in-page anchors, so it wakes the hero
+    // owner (`frontend`) and the novidades anchor spec (`campaignNewsletter`).
+    prefixes: ['src/components/RefreshRouteOnSave.tsx', 'src/app/(frontend)/layout.tsx'],
+    specs: ['frontend', 'campaignNewsletter'],
+  },
+  {
     // S19/S29 — the share-link surface: the `[type]` branch serves the OG card,
     // the instant handoff and the announcement page (`.ics` included), and the
     // pure module/collection/cached read own the slug, mode, destination pool,
