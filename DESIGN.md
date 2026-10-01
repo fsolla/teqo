@@ -292,6 +292,8 @@ This file is the living owner of Teqo's visual decisions — a working document,
 
 **Public campaign archive actions (C233, 2026-09-26).** On campaign-branded public archive/read surfaces, the primary action is campaign red with white text. Kit yellow is an orientation and keyboard-focus signal — hero edge, restrained eyebrow, current-location underline, and high-contrast focus outline — never the competing CTA fill. This keeps one action dominant, separates public campaign expression from Petition Gold, and makes keyboard location unmistakable over both light and dark media surfaces.
 
+**Multi-media content gallery (C240, 2026-10-01).** A public piece with multiple media uses one stable stage plus position (“N de M”), previous/next controls, and a horizontally scrollable thumbnail strip; never shrink every thumbnail to force the whole set on screen. Download belongs to the selected media, while the single primary action shares the official source post — do not offer an ambiguous “download all” or make media-sharing compete with the source link. Partial arrival is an internal neutral processing state; the public gallery appears only when the complete set is ready. This keeps the action model honest across image-only, mixed video, and large carousels without inventing a second album product.
+
 How rules change:
 
 - **Decide, then update the owner.** When a better pattern wins — anti-slop review (`design-taste-frontend` / `gpt-taste`), a reference study (`awesome-design-md`), a redesign pass (`redesign-existing-projects`), or implementation judgment — update this file in the **same change** and say why. A pattern that only lives in code or in an agent's head is drift, not design.
