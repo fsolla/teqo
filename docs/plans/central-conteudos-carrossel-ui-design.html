@@ -1,0 +1,1585 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#ecebea" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — C240 · Carrossel como conteúdo de primeira classe</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+        --color-sidebar: var(--sidebar);
+      }
+      [data-theme='campaign'] {
+        --background: #fff;
+        --foreground: #1c1917;
+        --primary: #c51414;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --border: rgb(28 25 23/12%);
+        --sidebar: #fafaf9;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+      }
+      button,
+      a,
+      input,
+      textarea,
+      select,
+      summary {
+        touch-action: manipulation;
+      }
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible,
+      summary:focus-visible {
+        outline: 3px solid #c51414;
+        outline-offset: 3px;
+      }
+      .site button:focus-visible,
+      .site a:focus-visible,
+      .site input:focus-visible,
+      .site textarea:focus-visible,
+      .site select:focus-visible,
+      .site summary:focus-visible {
+        outline-color: #ffe607;
+      }
+      .board {
+        background: #ecebea;
+        background-image: radial-gradient(rgb(28 25 23/8%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .frame {
+        box-shadow: 0 20px 55px rgb(28 25 23/12%);
+      }
+      .desktop {
+        width: 1280px;
+        max-width: 100%;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .scene:after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #cbc7c2;
+      }
+      /* Desk (campaign) components */
+      .d-btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 13px;
+        font-weight: 650;
+      }
+      .d-primary {
+        background: #c51414;
+        color: #fff;
+      }
+      .d-outline {
+        border: 1px solid #d6d3d1;
+        background: #fff;
+        color: #1c1917;
+      }
+      .d-ghost {
+        border: 1px dashed #d6d3d1;
+        background: transparent;
+        color: #57534e;
+      }
+      .d-field {
+        min-height: 44px;
+        width: 100%;
+        border: 1px solid #d6d3d1;
+        border-radius: 6px;
+        background: #fff;
+        padding: 9px 12px;
+        font-size: 14px;
+        color: #1c1917;
+      }
+      .d-label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 12px;
+        font-weight: 650;
+      }
+      .d-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 650;
+      }
+      .d-ready {
+        background: #dcfce7;
+        color: #166534;
+      }
+      .d-work {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      .d-fail {
+        background: #fee2e2;
+        color: #991b1b;
+      }
+      .d-draft {
+        background: #f4f4f5;
+        color: #57534e;
+      }
+      .d-live {
+        background: #fff1f2;
+        color: #9f1239;
+      }
+      .d-neutral {
+        background: #f4f4f5;
+        color: #292524;
+      }
+      .d-type {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        border: 1px solid rgb(28 25 23/18%);
+        background: #fff;
+        padding: 3px 9px;
+        font-size: 12px;
+        font-weight: 650;
+        color: #1c1917;
+      }
+      .asset {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #e7e5e4, #f5f5f4);
+        color: #78716c;
+        text-align: center;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .shimmer {
+        background: linear-gradient(100deg, #eee 20%, #ddd 38%, #eee 56%);
+        background-size: 220% 100%;
+        animation: shine 1.6s infinite;
+      }
+      @keyframes shine {
+        to {
+          background-position: -220% 0;
+        }
+      }
+      /* Public (campaign-site / kit) components, scoped to .site */
+      .site {
+        --red: #a21c1c;
+        --dark: #47130e;
+        --yellow: #ffe607;
+        --cream: #fff8f2;
+        --smuted: #6c615e;
+        --line: rgb(0 0 0/12%);
+        --display: 'Exo 2', 'Arial Black', sans-serif;
+        font-family: Arimo, Arial, sans-serif;
+      }
+      .s-display {
+        font-family: var(--display);
+      }
+      .s-muted {
+        color: var(--smuted);
+      }
+      .s-btn {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 10px;
+        padding: 9px 13px;
+        font-size: 13px;
+        font-weight: 800;
+      }
+      .s-primary {
+        background: var(--red);
+        color: #fff;
+        box-shadow: 0 4px 0 #781010;
+      }
+      .s-outline {
+        border: 1.5px solid rgb(162 28 28/28%);
+        background: #fff;
+        color: var(--red);
+      }
+      .s-field {
+        min-height: 46px;
+        width: 100%;
+        border: 1px solid rgb(0 0 0/18%);
+        border-radius: 10px;
+        background: #fff;
+        padding: 10px 13px;
+        font-size: 15px;
+        color: #000;
+      }
+      .s-chip {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        padding: 7px 12px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #000;
+      }
+      .s-chip-active {
+        border-color: rgb(24 78 146/35%);
+        background: #eef4fb;
+        color: #184e92;
+      }
+      .s-card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgb(71 19 14/7%);
+      }
+      .s-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        border-radius: 999px;
+        background: #eef4fb;
+        padding: 4px 8px;
+        color: #184e92;
+        font-size: 11px;
+        font-weight: 800;
+      }
+      .s-asset {
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #e5e2df, #f7f5f3);
+        color: var(--smuted);
+        text-align: center;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+      }
+      .s-counter {
+        position: absolute;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 999px;
+        background: rgb(0 0 0/65%);
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        color: #fff;
+      }
+      .s-nav {
+        position: absolute;
+        top: 50%;
+        display: grid;
+        width: 44px;
+        height: 44px;
+        place-items: center;
+        transform: translateY(-50%);
+        border-radius: 999px;
+        background: rgb(255 255 255/92%);
+        color: #000;
+        box-shadow: 0 4px 14px rgb(0 0 0/22%);
+      }
+      .s-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: rgb(0 0 0/22%);
+      }
+      .s-dot-active {
+        width: 20px;
+        background: var(--red);
+      }
+      .s-thumb {
+        position: relative;
+        height: 52px;
+        width: 72px;
+        flex: none;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fff;
+      }
+      .s-thumb-active {
+        border: 2px solid var(--red);
+      }
+      .s-sheet {
+        box-shadow: 0 -12px 35px rgb(0 0 0/12%);
+      }
+      .annot {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border-radius: 6px;
+        background: #1c1917;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        color: #fafaf9;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-foreground antialiased">
+    <svg width="0" height="0" class="absolute" aria-hidden="true" focusable="false">
+      <symbol
+        id="i-images"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M18 22H4a2 2 0 0 1-2-2V6" />
+        <path d="m22 13-1.296-1.296a2.41 2.41 0 0 0-3.408 0L11 18" />
+        <circle cx="12" cy="8" r="2" />
+        <rect width="16" height="16" x="6" y="2" rx="2" />
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+        <path d="m8 5 11 7-11 7z" />
+      </symbol>
+      <symbol
+        id="i-download"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+        <path d="m7 10 5 5 5-5" />
+        <path d="M12 15V3" />
+      </symbol>
+      <symbol
+        id="i-left"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m15 18-6-6 6-6" />
+      </symbol>
+      <symbol
+        id="i-right"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m9 18 6-6-6-6" />
+      </symbol>
+      <symbol
+        id="i-check"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M20 6 9 17l-5-5" />
+      </symbol>
+      <symbol
+        id="i-chevron-down"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="m6 9 6 6 6-6" />
+      </symbol>
+      <symbol
+        id="i-copy"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <rect width="14" height="14" x="8" y="8" rx="2" />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </symbol>
+    </svg>
+
+    <main class="mx-auto max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="max-w-3xl">
+        <span class="d-badge bg-primary text-white">C240 · design hi-fi certificado</span>
+        <h1 class="mt-4 text-3xl font-semibold tracking-tight">
+          O carrossel é uma peça completa — não uma limitação.
+        </h1>
+        <p class="mt-2 text-sm leading-6 text-muted-foreground">
+          Ficha interna e superfície pública do carrossel como conteúdo de primeira classe: a
+          plataforma baixa automaticamente todas as mídias dos filhos pela API oficial, a ficha lê
+          <b>Carrossel</b> com a sua galeria (sem caixa âmbar de falha), e o eleitor vê a galeria
+          com <b>Baixar</b> (cada mídia) e <b>Compartilhar</b> (post oficial). Visitante: ler,
+          baixar e repassar. Assessoria: importar completo, revisar e publicar.
+        </p>
+
+        <div
+          class="mt-5 rounded-xl border border-black/10 bg-white p-4 text-xs leading-5 text-muted-foreground"
+        >
+          <b class="text-foreground">Literais travados no gate (não reabrir no design):</b>
+          tipo visível <b>“Carrossel”</b> (sem “álbum”); baixa automática de <b>todas</b> as mídias
+          (imagens e vídeos) pela API oficial, sem anexo manual e sem scraping; vídeos-filhos entram
+          na transcrição/catálogo; público com galeria + <b>Baixar</b> (cada mídia) +
+          <b>Compartilhar</b> (post oficial) + <b>Copiar link</b>; recibo conta carrossel como
+          conteúdo criado (sem bloco de ressalva de peça-link); ficha interna sem caixa âmbar “por
+          que o arquivo não foi baixado”; as 52 peças existentes (40 publicadas, 12 rascunhos)
+          ganham o mesmo tratamento.
+        </div>
+
+        <p class="mt-3 text-xs leading-5 text-muted-foreground">
+          Observação: os selos <b>Rascunho</b>, <b>Publicado</b>, <b>Processando</b> e
+          <b>Pronto</b> abaixo são estados do <i>produto</i> (vocabulário já existente da Central),
+          não uma certificação deste artefato. Os textos em caixa alta nesta página são anotação do
+          board de design, não chrome do app. As mídias reais aparecem marcadas como
+          <b>NEEDS ASSET</b>.
+        </p>
+      </header>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 01</span>
+          <h2>Ficha interna · desktop 1280 · Carrossel pronto com galeria (imagens + vídeo)</h2>
+        </div>
+        <p class="mb-3 max-w-3xl text-xs leading-5 text-muted-foreground">
+          A coluna de mídia deixa de ser um único preview de 300&nbsp;px e passa a ser a galeria do
+          carrossel: palco + trilha de miniaturas + “N de M”. O cabeçalho ganha a identidade
+          <b>Carrossel</b>. Nenhuma caixa âmbar: a peça lê como conteúdo completo.
+        </p>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <div class="grid grid-cols-[220px_1fr]">
+            <aside class="border-r border-black/10 bg-sidebar p-5">
+              <div class="flex h-10 items-center gap-2 px-1">
+                <div
+                  class="grid size-8 place-items-center rounded-lg bg-primary font-bold text-white"
+                >
+                  S
+                </div>
+                <div>
+                  <b class="text-sm">Solla</b>
+                  <p class="text-xs text-muted-foreground">Campanha</p>
+                </div>
+              </div>
+              <nav class="mt-8 space-y-1 text-sm">
+                <div class="rounded-md bg-muted px-3 py-2 font-semibold">Comunicação</div>
+                <div class="ml-3 border-l pl-3">
+                  <div
+                    class="mt-1 rounded-md bg-white px-3 py-2 font-semibold text-primary ring-1 ring-border"
+                  >
+                    Conteúdos
+                  </div>
+                </div>
+              </nav>
+            </aside>
+
+            <div class="min-h-[820px] p-8">
+              <a class="text-xs font-semibold text-primary">← Conteúdos</a>
+              <div class="mt-2 flex flex-wrap items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <h3 class="text-xl font-semibold">Fim da escala 6×1 é saúde</h3>
+                  <div class="mt-2 flex flex-wrap items-center gap-2">
+                    <span class="d-type">
+                      <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                      Carrossel
+                    </span>
+                    <span class="d-badge d-ready">Pronto</span>
+                    <span class="d-badge d-draft">Rascunho</span>
+                  </div>
+                </div>
+                <div class="flex shrink-0 items-center gap-2">
+                  <button class="d-btn d-primary">Publicar</button>
+                  <button class="d-btn d-ghost">Apagar</button>
+                </div>
+              </div>
+
+              <div class="mt-7 grid grid-cols-[400px_1fr] gap-8">
+                <aside>
+                  <div class="relative overflow-hidden rounded-xl border bg-stone-100">
+                    <div class="asset aspect-video">
+                      NEEDS ASSET · MÍDIA 1 (imagem real do carrossel)
+                    </div>
+                    <span
+                      class="absolute top-3 left-3 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-bold text-white"
+                    >
+                      1 de 8 · Foto
+                    </span>
+                  </div>
+
+                  <div class="mt-2 flex gap-2 overflow-x-auto pb-1">
+                    <button
+                      class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md ring-2 ring-[#c51414]"
+                    >
+                      <span class="asset h-full w-full">MÍDIA 1</span>
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 2</span>
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 3</span>
+                      <span
+                        class="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-black/70 text-[8px] text-white"
+                        aria-hidden="true"
+                        >▶</span
+                      >
+                      <span
+                        class="absolute right-1 bottom-1 rounded bg-black/70 px-1 text-[9px] text-white"
+                        >00:42</span
+                      >
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 4</span>
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 5</span>
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 6</span>
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 7</span>
+                      <span
+                        class="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-black/70 text-[8px] text-white"
+                        aria-hidden="true"
+                        >▶</span
+                      >
+                    </button>
+                    <button class="relative h-14 w-20 shrink-0 overflow-hidden rounded-md border">
+                      <span class="asset h-full w-full">MÍDIA 8</span>
+                    </button>
+                  </div>
+
+                  <div class="mt-3 flex items-center justify-between gap-3">
+                    <p class="text-xs text-muted-foreground">
+                      <b class="text-foreground">8 de 8 mídias</b> · imagens e vídeos
+                    </p>
+                    <button class="d-btn d-outline min-h-9 px-3 text-xs">Baixar esta mídia</button>
+                  </div>
+
+                  <dl class="mt-4 space-y-2 text-xs">
+                    <div class="flex justify-between gap-3">
+                      <dt class="text-muted-foreground">Origem</dt>
+                      <dd>Instagram</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                      <dt class="text-muted-foreground">Link</dt>
+                      <dd class="min-w-0 truncate text-primary">instagram.com/p/…</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                      <dt class="text-muted-foreground">Mídias</dt>
+                      <dd>8 (7 fotos · 1 vídeo)</dd>
+                    </div>
+                    <div class="flex justify-between gap-3">
+                      <dt class="text-muted-foreground">Vídeo-filho</dt>
+                      <dd>transcrito</dd>
+                    </div>
+                  </dl>
+                </aside>
+
+                <div>
+                  <div class="mb-6 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <p class="text-sm font-semibold text-green-900">Mídias e transcrição prontas</p>
+                    <p class="mt-1 text-xs leading-5 text-green-900/80">
+                      As 8 mídias do carrossel foram baixadas pela API oficial e a ficha foi
+                      catalogada — inclusive a transcrição do vídeo-filho. Revise os campos antes de
+                      publicar.
+                    </p>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <div class="col-span-2">
+                      <label class="d-label">Título</label>
+                      <input class="d-field" value="Fim da escala 6×1 é saúde" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="d-label">Legenda / descrição</label>
+                      <textarea class="d-field min-h-20">
+Jorge Solla explica por que reduzir a jornada protege a saúde de quem trabalha. Arraste para ver todas as mídias.</textarea
+                      >
+                    </div>
+                    <div>
+                      <label class="d-label">Tipo</label>
+                      <select class="d-field">
+                        <option>Carrossel</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="d-label">Data</label>
+                      <input class="d-field" placeholder="Data da peça" />
+                    </div>
+                    <div>
+                      <label class="d-label">Temas</label>
+                      <input class="d-field" value="Trabalho; Saúde" />
+                    </div>
+                    <div>
+                      <label class="d-label">Cidade · região</label>
+                      <input class="d-field" value="Salvador · Metropolitana" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="d-label">Transcrição (inclui o vídeo-filho)</label>
+                      <textarea class="d-field min-h-24">
+A redução da jornada sem redução de salário é também uma pauta de saúde pública…</textarea
+                      >
+                    </div>
+                    <div class="col-span-2 flex justify-end">
+                      <button class="d-btn d-outline">Salvar alterações</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mx-auto mt-4 flex max-w-[1280px] flex-wrap items-center gap-3 text-xs">
+          <span class="annot">AÇÕES DO CABEÇALHO</span>
+          <span class="inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
+            <span class="d-badge d-draft">Rascunho</span>
+            <button class="d-btn d-primary min-h-8 px-3 py-1 text-xs">Publicar</button>
+          </span>
+          <span class="text-stone-500">→ depois de publicado a ação vira o kill switch:</span>
+          <span class="inline-flex items-center gap-2 rounded-lg border bg-white px-3 py-2">
+            <span class="d-badge d-live">Publicado</span>
+            <button class="d-btn d-outline min-h-8 px-3 py-1 text-xs">Despublicar</button>
+          </span>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 02</span>
+          <h2>Ficha interna · mobile 390 · “baixando mídias” sem linguagem de falha</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[820px] overflow-hidden border bg-white">
+            <div class="flex h-14 items-center justify-between bg-primary px-4 text-white">
+              <b class="text-sm">Carrossel</b>
+              <span aria-hidden="true">☰</span>
+            </div>
+            <div class="p-4">
+              <a class="text-xs font-semibold text-primary">← Conteúdos</a>
+              <h3 class="mt-2 text-lg font-semibold">Fim da escala 6×1 é saúde</h3>
+              <div class="mt-2 flex flex-wrap items-center gap-2">
+                <span class="d-type">
+                  <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                  Carrossel
+                </span>
+                <span class="d-badge d-work">Processando</span>
+                <span class="d-badge d-draft">Rascunho</span>
+              </div>
+
+              <div class="relative mt-4 overflow-hidden rounded-xl border bg-stone-100">
+                <div class="asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+                <span
+                  class="absolute top-3 left-3 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-bold text-white"
+                >
+                  1 de 8 · Foto
+                </span>
+              </div>
+              <div class="mt-2 flex gap-2 overflow-x-auto pb-1">
+                <span class="inline-block h-12 w-16 shrink-0 rounded-md ring-2 ring-[#c51414]"
+                  ><span class="asset h-full w-full">1</span></span
+                >
+                <span class="inline-block h-12 w-16 shrink-0 rounded-md border"
+                  ><span class="asset h-full w-full">2</span></span
+                >
+                <span class="inline-block h-12 w-16 shrink-0 rounded-md border"
+                  ><span class="asset h-full w-full">3 ▶</span></span
+                >
+                <span class="inline-block h-12 w-16 shrink-0 overflow-hidden rounded-md border"
+                  ><span class="shimmer block h-full w-full"></span
+                ></span>
+                <span class="inline-block h-12 w-16 shrink-0 overflow-hidden rounded-md border"
+                  ><span class="shimmer block h-full w-full"></span
+                ></span>
+              </div>
+              <div class="mt-3 rounded-lg bg-muted p-3">
+                <div class="h-2 overflow-hidden rounded-full bg-background">
+                  <div class="h-full w-[38%] rounded-full bg-primary"></div>
+                </div>
+                <p class="text-xs leading-5 text-muted-foreground">
+                  <b class="text-foreground">Baixando mídias… 3 de 8.</b> O que já chegou pode ser
+                  revisado. As demais mídias seguem em segundo plano.
+                </p>
+              </div>
+
+              <button class="d-btn d-outline mt-3 w-full">Baixar esta mídia</button>
+
+              <button class="d-btn d-outline mt-5 w-full opacity-50" disabled>Publicar</button>
+              <p class="mt-2 text-center text-[11px] leading-4 text-muted-foreground">
+                Disponível quando todas as mídias estiverem prontas.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 03</span>
+          <h2>Ficha interna · desktop 1280 · galeria parcial (“baixando mídias”)</h2>
+        </div>
+        <div class="desktop mx-auto grid gap-6 xl:grid-cols-[1fr_320px]">
+          <div class="frame overflow-hidden rounded-xl bg-white">
+            <div class="flex min-h-[560px]">
+              <div class="min-w-0 flex-1 p-8">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <a class="text-xs font-semibold text-primary">← Conteúdos</a>
+                    <h3 class="mt-2 text-xl font-semibold">Fim da escala 6×1 é saúde</h3>
+                    <div class="mt-2 flex flex-wrap items-center gap-2">
+                      <span class="d-type">
+                        <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                        Carrossel
+                      </span>
+                      <span class="d-badge d-work">Processando</span>
+                      <span class="d-badge d-draft">Rascunho</span>
+                    </div>
+                  </div>
+                  <button class="d-btn d-outline" disabled>Publicar</button>
+                </div>
+
+                <div class="mt-6 grid grid-cols-[340px_1fr] gap-8">
+                  <div>
+                    <div class="relative overflow-hidden rounded-xl border bg-stone-100">
+                      <div class="asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+                      <span
+                        class="absolute top-3 left-3 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-bold text-white"
+                      >
+                        1 de 8 · Foto
+                      </span>
+                    </div>
+                    <div class="mt-2 flex gap-2 overflow-x-auto pb-1">
+                      <span class="inline-block h-14 w-20 shrink-0 rounded-md ring-2 ring-[#c51414]"
+                        ><span class="asset h-full w-full">1</span></span
+                      >
+                      <span class="inline-block h-14 w-20 shrink-0 rounded-md border"
+                        ><span class="asset h-full w-full">2</span></span
+                      >
+                      <span class="inline-block h-14 w-20 shrink-0 rounded-md border"
+                        ><span class="asset h-full w-full">3</span></span
+                      >
+                      <span
+                        class="inline-block h-14 w-20 shrink-0 overflow-hidden rounded-md border"
+                        ><span class="shimmer block h-full w-full"></span
+                      ></span>
+                      <span
+                        class="inline-block h-14 w-20 shrink-0 overflow-hidden rounded-md border"
+                        ><span class="shimmer block h-full w-full"></span
+                      ></span>
+                      <span
+                        class="inline-block h-14 w-20 shrink-0 overflow-hidden rounded-md border"
+                        ><span class="shimmer block h-full w-full"></span
+                      ></span>
+                    </div>
+
+                    <div class="mt-3 rounded-lg bg-muted p-3">
+                      <div class="h-2 overflow-hidden rounded-full bg-background">
+                        <div class="h-full w-[38%] rounded-full bg-primary"></div>
+                      </div>
+                      <p class="mt-2 text-xs leading-5 text-muted-foreground">
+                        <b class="text-foreground">Baixando mídias… 3 de 8.</b>
+                        As demais chegam em segundo plano; a ficha já pode ser revisada. A peça
+                        publica quando as mídias estiverem prontas.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div class="grid grid-cols-2 gap-4">
+                      <div class="col-span-2">
+                        <label class="d-label">Título</label>
+                        <input class="d-field" placeholder="Disponível após a catalogação" />
+                      </div>
+                      <div>
+                        <label class="d-label">Tipo</label>
+                        <select class="d-field">
+                          <option>Carrossel</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label class="d-label">Data</label>
+                        <input class="d-field" placeholder="Data da peça" />
+                      </div>
+                      <div class="col-span-2">
+                        <label class="d-label">Transcrição / texto</label>
+                        <div class="d-field min-h-24 bg-stone-50"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-4">
+            <div class="rounded-xl border bg-white p-4">
+              <span class="d-badge d-neutral">CONTRATO DA FICHA</span>
+              <p class="mt-3 text-sm font-semibold">Identidade Carrossel + galeria das mídias</p>
+              <p class="mt-1 text-xs leading-5 text-muted-foreground">
+                O estado parcial usa o painel neutro “Baixando mídias… N de M”. Não há caixa âmbar,
+                motivo de limitação nem pedido de anexo manual: baixar os filhos é o fluxo normal.
+              </p>
+              <p class="mt-3 text-xs leading-5 text-muted-foreground">
+                Peças de carrossel já criadas (importações anteriores/backfill) passam a ler assim:
+                a mesma galeria e a mesma identidade, sem box de ressalva.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 04</span>
+          <h2>Recibo da importação · carrossel conta como conteúdo criado</h2>
+        </div>
+        <div
+          class="desktop frame relative mx-auto min-h-[620px] overflow-hidden rounded-xl border bg-stone-200"
+        >
+          <div class="absolute inset-0 bg-black/30"></div>
+          <div class="relative mx-auto mt-12 w-[560px] rounded-xl bg-white p-6 shadow-2xl">
+            <div
+              class="mb-4 grid size-10 place-items-center rounded-full bg-green-100 text-green-700"
+            >
+              <svg class="size-5" aria-hidden="true"><use href="#i-check" /></svg>
+            </div>
+            <h3 class="text-lg font-semibold">Importação concluída</h3>
+            <p class="mt-1 text-sm text-muted-foreground">
+              As novidades já estão na Central como rascunho. Nada foi publicado.
+            </p>
+
+            <div class="mt-5 grid grid-cols-3 gap-2">
+              <div class="rounded-lg border border-green-200 bg-green-50 p-3">
+                <b class="block text-xl tabular-nums text-green-800">N</b>
+                <span class="text-xs font-medium text-green-800">novas criadas</span>
+              </div>
+              <div class="rounded-lg border bg-stone-50 p-3">
+                <b class="block text-xl tabular-nums">N</b>
+                <span class="text-xs font-medium text-muted-foreground">já estavam</span>
+              </div>
+              <div class="rounded-lg border bg-stone-50 p-3">
+                <b class="block text-xl tabular-nums">—</b>
+                <span class="text-xs font-medium text-muted-foreground">falharam</span>
+              </div>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-center gap-2 rounded-lg border p-3.5">
+              <span class="text-xs font-semibold">Criadas por tipo</span>
+              <span class="d-badge d-neutral">Vídeo · N</span>
+              <span class="d-type">
+                <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                Carrossel · N
+              </span>
+              <span class="d-badge d-neutral">Foto · N</span>
+            </div>
+
+            <p class="mt-3 text-xs leading-5 text-muted-foreground">
+              Carrosséis entram como conteúdo criado, com as mídias dos filhos baixadas
+              automaticamente pela API oficial. O bloco de ressalva de peça-link só aparece para
+              link não encontrado ou Instagram indisponível.
+            </p>
+
+            <div class="mt-5 flex justify-end gap-2">
+              <button class="d-btn d-outline">Fechar</button>
+              <button class="d-btn d-primary">Ver os rascunhos</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="site">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 05</span>
+          <h2>Catálogo público /conteudos · desktop 1280 · card do Carrossel e filtro Tipo</h2>
+        </div>
+        <p class="mb-3 max-w-3xl text-xs leading-5 text-muted-foreground">
+          Capa = primeiro filho (recomendação A do plano). A indicação de múltiplas mídias fica
+          sobre a capa (<b>8 mídias</b>, ícone de imagens) e o tipo aparece na tag <b>Carrossel</b>.
+          O filtro <b>Tipo</b> ganha Carrossel.
+        </p>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <img
+              src="../../public/campaign-kit/jorge-solla-negativo.png"
+              class="h-9"
+              alt="Jorge Solla"
+            />
+            <span class="text-sm font-bold text-white">Central de Conteúdos</span>
+          </header>
+
+          <div class="mx-auto max-w-6xl px-10 py-10">
+            <div class="grid grid-cols-[1fr_auto] gap-3">
+              <input class="s-field" placeholder="Encontre uma peça por assunto, cidade ou tema…" />
+              <button class="s-btn s-primary px-6">Buscar peças</button>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-start gap-2">
+              <details class="relative" open>
+                <summary class="s-chip s-chip-active list-none">
+                  Tipo
+                  <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg>
+                </summary>
+                <ul
+                  class="absolute z-20 mt-2 min-w-48 list-none rounded-xl border border-black/10 bg-white p-1.5 shadow-[0_14px_34px_rgb(0_0_0/16%)]"
+                >
+                  <li>
+                    <a class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium"
+                      >Vídeo</a
+                    >
+                  </li>
+                  <li>
+                    <a class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium"
+                      >Foto</a
+                    >
+                  </li>
+                  <li>
+                    <a class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium"
+                      >Texto</a
+                    >
+                  </li>
+                  <li>
+                    <a class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium"
+                      >Áudio</a
+                    >
+                  </li>
+                  <li>
+                    <a class="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium"
+                      >Card</a
+                    >
+                  </li>
+                  <li>
+                    <a
+                      class="flex min-h-10 items-center gap-2 rounded-lg bg-[#eef4fb] px-3 text-sm font-bold text-[#184e92]"
+                    >
+                      <svg class="size-4" aria-hidden="true"><use href="#i-images" /></svg>
+                      Carrossel
+                    </a>
+                  </li>
+                </ul>
+              </details>
+              <span class="s-chip"
+                >Cidade <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg
+              ></span>
+              <span class="s-chip"
+                >Região <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg
+              ></span>
+              <span class="s-chip"
+                >Tema <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg
+              ></span>
+              <span class="s-chip"
+                >Instituição
+                <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg
+              ></span>
+            </div>
+
+            <div class="mt-9 flex items-end justify-between">
+              <div>
+                <h3 class="s-display text-2xl font-black">Escolha, compartilhe e peça voto</h3>
+                <p class="mt-1 text-sm s-muted">O play só carrega a mídia quando você pedir.</p>
+              </div>
+              <span class="text-sm s-muted">Abra o título para ver detalhes</span>
+            </div>
+
+            <div class="mt-5 grid grid-cols-3 gap-6">
+              <article class="s-card">
+                <div
+                  class="relative grid aspect-video place-items-center overflow-hidden bg-[linear-gradient(135deg,#e5e2df,#f7f5f3)]"
+                >
+                  <span class="s-asset absolute inset-0">NEEDS ASSET · MÍDIA 1 DO CARROSSEL</span>
+                  <span class="s-counter top-3 left-3">
+                    <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                    8 mídias
+                  </span>
+                </div>
+                <div class="p-4">
+                  <span class="s-tag">
+                    <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                    Carrossel
+                  </span>
+                  <h4 class="s-display mt-2 text-base font-extrabold">Fim da escala 6×1 é saúde</h4>
+                  <p class="mt-1 text-xs s-muted">Trabalho · Salvador</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="s-btn s-outline">Ver galeria</button>
+                    <button class="s-btn s-primary">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="s-card">
+                <div class="s-asset relative aspect-video">
+                  <span>NEEDS ASSET · POSTER REAL</span>
+                  <button
+                    class="absolute grid size-14 place-items-center rounded-full bg-[#ffe607] text-xl shadow-lg"
+                    aria-label="Reproduzir vídeo"
+                  >
+                    ▶
+                  </button>
+                  <span
+                    class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs text-white"
+                    >02:14</span
+                  >
+                </div>
+                <div class="p-4">
+                  <span class="s-tag">Vídeo</span>
+                  <h4 class="s-display mt-2 text-base font-extrabold">Visita ao posto de saúde</h4>
+                  <p class="mt-1 text-xs s-muted">Saúde · Feira de Santana</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="s-btn s-outline">Baixar</button>
+                    <button class="s-btn s-outline">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+
+              <article class="s-card">
+                <div class="s-asset relative aspect-video bg-[#fff8f2] px-4">
+                  “Saúde é direito.”
+                </div>
+                <div class="p-4">
+                  <span class="s-tag">Texto</span>
+                  <h4 class="s-display mt-2 text-base font-extrabold">Por que defender o SUS</h4>
+                  <p class="mt-1 text-xs s-muted">Saúde · Bahia</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="s-btn s-outline">Baixar</button>
+                    <button class="s-btn s-outline">Compartilhar</button>
+                  </div>
+                </div>
+              </article>
+            </div>
+
+            <p class="mt-4 text-xs s-muted">
+              O card abre a galeria; nela, <b>Baixar</b> pertence sempre à mídia selecionada. Não há
+              ação ambígua de “baixar mídias” nem pacote único (zip).
+            </p>
+          </div>
+
+          <footer class="bg-[#180a09] px-10 py-5 text-xs leading-5 text-white/65">
+            Jorge José Santos Pereira Solla · Candidato a Deputado Federal · Nº 1313 · Federação
+            Brasil da Esperança (PT/PCdoB/PV) · CNPJ: 68.430.467/0001-05 · Propaganda eleitoral
+            gratuita · Eleições 2026 · 1º turno: 04/10/2026.
+          </footer>
+        </div>
+      </section>
+
+      <section class="site">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 06</span>
+          <h2>Catálogo público · mobile 390 · card do Carrossel e filtro Tipo</h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[840px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center justify-between bg-[#ae1603] px-4">
+              <img
+                src="../../public/campaign-kit/jorge-solla-negativo.png"
+                class="h-7"
+                alt="Jorge Solla"
+              />
+              <span class="text-white" aria-hidden="true">☰</span>
+            </header>
+            <div class="bg-[linear-gradient(145deg,#e4102f,#184e92)] px-5 py-7 text-white">
+              <p class="text-xs font-bold text-[#ffeb00]">PEÇA VOTO PRA SOLLA 1313</p>
+              <h3 class="s-display mt-1 text-3xl font-black leading-tight">
+                Mande uma peça.<br />Peça mais um voto.
+              </h3>
+            </div>
+            <div class="p-4">
+              <input class="s-field" placeholder="Busque um assunto…" />
+              <div class="mt-3 flex gap-2 overflow-hidden">
+                <span class="s-chip s-chip-active shrink-0"
+                  >Tipo · Carrossel <span aria-hidden="true">×</span></span
+                >
+                <span class="s-chip shrink-0"
+                  >Cidade
+                  <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg
+                ></span>
+                <span class="s-chip shrink-0"
+                  >Tema <svg class="size-3.5" aria-hidden="true"><use href="#i-chevron-down" /></svg
+                ></span>
+              </div>
+
+              <article class="s-card mt-5">
+                <div
+                  class="relative grid aspect-video place-items-center overflow-hidden bg-[linear-gradient(135deg,#e5e2df,#f7f5f3)]"
+                >
+                  <span class="s-asset absolute inset-0">NEEDS ASSET · MÍDIA 1</span>
+                  <span class="s-counter top-3 left-3">
+                    <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                    8 mídias
+                  </span>
+                </div>
+                <div class="p-4">
+                  <span class="s-tag">
+                    <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                    Carrossel
+                  </span>
+                  <h4 class="s-display mt-2 text-lg font-extrabold">Fim da escala 6×1 é saúde</h4>
+                  <p class="mt-1 text-xs s-muted">Trabalho · Salvador</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button class="s-btn s-outline">Ver galeria</button>
+                    <button class="s-btn s-primary">Compartilhar</button>
+                  </div>
+                  <a class="mt-3 block text-center text-xs font-bold text-[#a21c1c]"
+                    >Ver a galeria completa →</a
+                  >
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="site">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 07</span>
+          <h2>
+            Página pública /conteudos/&lt;slug&gt; · desktop 1280 · galeria, Baixar por mídia,
+            Compartilhar e nota de origem
+          </h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+            <img
+              src="../../public/campaign-kit/jorge-solla-negativo.png"
+              class="h-9"
+              alt="Jorge Solla"
+            />
+            <a class="text-sm font-bold text-white">Voltar à Central</a>
+          </header>
+
+          <div class="mx-auto grid max-w-5xl grid-cols-[1.2fr_.8fr] gap-10 px-10 py-12">
+            <div>
+              <div class="relative overflow-hidden rounded-2xl border border-black/10 bg-stone-200">
+                <div class="s-asset aspect-video">NEEDS ASSET · MÍDIA 1 (imagem real)</div>
+                <span class="s-counter top-3 left-3">
+                  <span aria-hidden="true">1 de 8 · Foto</span>
+                  <span class="sr-only">Mídia 1 de 8</span>
+                </span>
+                <button class="s-nav left-2" aria-label="Mídia anterior">
+                  <svg class="size-6" aria-hidden="true"><use href="#i-left" /></svg>
+                </button>
+                <button class="s-nav right-2" aria-label="Próxima mídia">
+                  <svg class="size-6" aria-hidden="true"><use href="#i-right" /></svg>
+                </button>
+              </div>
+
+              <div class="mt-3 flex items-center justify-between gap-3">
+                <button class="s-btn s-outline">
+                  <svg class="size-4" aria-hidden="true"><use href="#i-download" /></svg>
+                  Baixar
+                </button>
+                <span class="text-xs s-muted">Mídia 1 de 8 · Foto</span>
+              </div>
+
+              <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+                <span class="s-thumb s-thumb-active"
+                  ><span class="s-asset h-full w-full">1</span></span
+                >
+                <span class="s-thumb"><span class="s-asset h-full w-full">2</span></span>
+                <span class="s-thumb">
+                  <span class="s-asset h-full w-full">3</span>
+                  <span
+                    class="absolute top-1 right-1 grid size-4 place-items-center rounded-full bg-black/70 text-[8px] text-white"
+                    aria-hidden="true"
+                    >▶</span
+                  >
+                </span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">4</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">5</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">6</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">7</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">8</span></span>
+              </div>
+            </div>
+
+            <div>
+              <span class="s-tag">
+                <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                Carrossel
+              </span>
+              <h3 class="s-display mt-3 text-3xl font-black">Fim da escala 6×1 é saúde</h3>
+              <p class="mt-3 text-sm leading-6 s-muted">
+                Legenda oficial da publicação: Jorge Solla explica por que reduzir a jornada protege
+                a saúde de quem trabalha. Arraste para ver as 8 mídias e baixe a que quiser.
+              </p>
+
+              <dl class="mt-5 space-y-2 border-y py-4 text-sm">
+                <div class="flex justify-between">
+                  <dt class="s-muted">Tema</dt>
+                  <dd>Trabalho e saúde</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="s-muted">Local</dt>
+                  <dd>Salvador</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="s-muted">Mídias</dt>
+                  <dd>8 · 7 fotos, 1 vídeo</dd>
+                </div>
+                <div class="flex justify-between">
+                  <dt class="s-muted">Origem</dt>
+                  <dd>Instagram</dd>
+                </div>
+              </dl>
+
+              <div class="mt-5 grid grid-cols-2 gap-2">
+                <button class="s-btn s-primary">Compartilhar</button>
+                <button class="s-btn s-outline">
+                  <svg class="size-4" aria-hidden="true"><use href="#i-copy" /></svg>
+                  Copiar link
+                </button>
+              </div>
+              <p class="mt-3 text-center text-xs leading-5 s-muted">
+                O compartilhamento usa o link da publicação no Instagram. As mídias foram baixadas
+                do perfil oficial; baixe cada uma pela galeria.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="site">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 08</span>
+          <h2>
+            Página pública · mobile 390 · galeria com dots + sheet de compartilhamento existente
+          </h2>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8">
+          <div class="phone frame min-h-[860px] overflow-hidden bg-white">
+            <header class="flex h-14 items-center gap-3 bg-[#ae1603] px-4 text-white">
+              <span aria-hidden="true">←</span><b>Central de Conteúdos</b>
+            </header>
+            <div class="p-4">
+              <div class="relative overflow-hidden rounded-2xl border border-black/10 bg-stone-200">
+                <div class="s-asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+                <span class="s-counter top-3 left-3">1 de 8 · Foto</span>
+                <button class="s-nav left-2" aria-label="Mídia anterior">
+                  <svg class="size-6" aria-hidden="true"><use href="#i-left" /></svg>
+                </button>
+                <button class="s-nav right-2" aria-label="Próxima mídia">
+                  <svg class="size-6" aria-hidden="true"><use href="#i-right" /></svg>
+                </button>
+              </div>
+              <div class="mt-2 flex justify-center gap-1.5" aria-hidden="true">
+                <span class="s-dot s-dot-active"></span>
+                <span class="s-dot"></span>
+                <span class="s-dot"></span>
+                <span class="s-dot"></span>
+                <span class="s-dot"></span>
+                <span class="s-dot"></span>
+                <span class="s-dot"></span>
+                <span class="s-dot"></span>
+              </div>
+              <button class="s-btn s-outline mt-3 w-full">
+                <svg class="size-4" aria-hidden="true"><use href="#i-download" /></svg>
+                Baixar esta mídia
+              </button>
+
+              <span class="s-tag mt-4">
+                <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+                Carrossel
+              </span>
+              <h3 class="s-display mt-2 text-2xl font-black leading-tight">
+                Fim da escala 6×1 é saúde
+              </h3>
+              <p class="mt-2 text-sm leading-6 s-muted">
+                Arraste para ver as 8 mídias. Baixe a que quiser e repasse a que fizer sentido.
+              </p>
+              <div class="mt-4 grid grid-cols-2 gap-2">
+                <button class="s-btn s-primary">Compartilhar</button>
+                <button class="s-btn s-outline">Copiar link</button>
+              </div>
+            </div>
+
+            <!-- sheet existente, ancorado ao rodapé do telefone -->
+            <div
+              class="mt-5 rounded-t-2xl border border-black/10 bg-white p-4 shadow-[0_-12px_35px_rgb(0_0_0/12%)]"
+            >
+              <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-stone-300" aria-hidden="true"></div>
+              <div class="flex items-start justify-between gap-4">
+                <div>
+                  <h2 class="s-display text-xl font-black">Peça esse voto no WhatsApp</h2>
+                  <p class="mt-1 text-xs s-muted">A mensagem é sua: revise antes de abrir.</p>
+                </div>
+                <button
+                  class="grid size-8 shrink-0 place-items-center rounded-full border border-black/10 text-lg s-muted"
+                  aria-label="Fechar"
+                >
+                  ×
+                </button>
+              </div>
+              <textarea class="s-field mt-4 min-h-28 resize-none leading-5">
+Estamos na reta final e o Jorge Solla 1313 precisa do seu voto. Olha essa publicação: Fim da escala 6×1 é saúde — https://www.instagram.com/p/… . Peça voto pra Solla 1313 pra quem você conhece.</textarea
+              >
+              <button class="s-btn s-primary mt-3 w-full">Abrir no WhatsApp</button>
+              <button class="s-btn s-outline mt-3 w-full">Copiar link do post oficial</button>
+              <p class="mt-3 text-center text-[11px] leading-4 s-muted">
+                Sem destinatário e sem envio automático. Compartilhar e copiar usam o link do post
+                oficial; <b>Baixar esta mídia</b> permanece uma ação separada da galeria.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="site">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CENA 09</span>
+          <h2>Estados críticos da galeria · só imagens · com vídeo · grande · mídias chegando</h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-3">
+          <!-- só imagens -->
+          <article class="frame rounded-xl bg-white p-5">
+            <p class="text-xs font-black tracking-wide s-muted">SÓ IMAGENS · 5 MÍDIAS</p>
+            <div
+              class="relative mt-3 overflow-hidden rounded-xl border border-black/10 bg-stone-200"
+            >
+              <div class="s-asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+              <span class="s-counter top-3 left-3">1 de 5 · Foto</span>
+              <button class="s-nav left-2" aria-label="Mídia anterior">‹</button>
+              <button class="s-nav right-2" aria-label="Próxima mídia">›</button>
+            </div>
+            <div class="mt-3 flex items-center justify-between gap-3">
+              <button class="s-btn s-outline min-h-9 px-3">Baixar</button>
+              <span class="text-xs s-muted">5 fotos · sem vídeo</span>
+            </div>
+            <p class="mt-3 text-xs leading-5 s-muted">
+              Nenhum selo de play; o contador e a trilha bastam. A legenda segue pesquisável, sem
+              transcrição de vídeo.
+            </p>
+          </article>
+
+          <!-- com vídeo -->
+          <article class="frame rounded-xl bg-white p-5">
+            <p class="text-xs font-black tracking-wide s-muted">COM VÍDEO · POSTER → PLAYER</p>
+            <div
+              class="relative mt-3 overflow-hidden rounded-xl border border-black/10 bg-stone-200"
+            >
+              <div class="s-asset aspect-video">NEEDS ASSET · POSTER DO VÍDEO-FILHO</div>
+              <span class="s-counter top-3 left-3">3 de 8 · Vídeo</span>
+              <span
+                class="absolute right-3 bottom-3 rounded bg-black/70 px-2 py-1 text-xs text-white"
+                >00:42</span
+              >
+              <button
+                class="absolute inset-0 m-auto grid size-16 place-items-center rounded-full bg-[#ffe607] text-2xl shadow-lg"
+                aria-label="Reproduzir vídeo"
+              >
+                ▶
+              </button>
+            </div>
+            <div class="relative mt-3 overflow-hidden rounded-xl border border-black/10 bg-black">
+              <div
+                class="grid aspect-video place-items-center text-[10px] font-extrabold tracking-wide text-white/70"
+              >
+                NEEDS ASSET · VÍDEO EM REPRODUÇÃO (controles nativos)
+              </div>
+              <div class="absolute inset-x-3 bottom-3">
+                <div class="h-1.5 overflow-hidden rounded-full bg-white/35">
+                  <div class="h-full w-[38%] bg-[#ffeb07]"></div>
+                </div>
+              </div>
+            </div>
+            <p class="mt-3 text-xs leading-5 s-muted">
+              O vídeo só monta o player após o gesto; o vídeo-filho entra na transcrição da peça.
+            </p>
+          </article>
+
+          <!-- grande -->
+          <article class="frame rounded-xl bg-white p-5">
+            <p class="text-xs font-black tracking-wide s-muted">GRANDE · 12 MÍDIAS</p>
+            <div
+              class="relative mt-3 overflow-hidden rounded-xl border border-black/10 bg-stone-200"
+            >
+              <div class="s-asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+              <span class="s-counter top-3 left-3">1 de 12 · Foto</span>
+              <button class="s-nav left-2" aria-label="Mídia anterior">‹</button>
+              <button class="s-nav right-2" aria-label="Próxima mídia">›</button>
+            </div>
+            <div class="relative mt-3">
+              <div class="flex gap-2 overflow-x-auto pb-1">
+                <span class="s-thumb s-thumb-active"
+                  ><span class="s-asset h-full w-full">1</span></span
+                >
+                <span class="s-thumb"><span class="s-asset h-full w-full">2</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">3</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">4</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">5</span></span>
+                <span class="s-thumb"><span class="s-asset h-full w-full">6</span></span>
+              </div>
+              <span
+                class="pointer-events-none absolute inset-y-0 right-0 w-10"
+                style="background: linear-gradient(to left, #fff, transparent)"
+                aria-hidden="true"
+              ></span>
+            </div>
+            <p class="mt-3 text-xs leading-5 s-muted">
+              A trilha rola; o contador “N de M” e os botões ‹ › mantêm a navegação sem mapa de
+              miniaturas pressionado.
+            </p>
+          </article>
+        </div>
+
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+          <!-- mídias chegando -->
+          <article class="frame rounded-xl bg-white p-5">
+            <p class="text-xs font-black tracking-wide s-muted">
+              FICHA INTERNA · MÍDIAS AINDA CHEGANDO
+            </p>
+            <div
+              class="relative mt-3 overflow-hidden rounded-xl border border-black/10 bg-stone-200"
+            >
+              <div class="s-asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+              <span class="s-counter top-3 left-3">1 de 8 · Foto</span>
+            </div>
+            <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <span class="s-thumb s-thumb-active"
+                ><span class="s-asset h-full w-full">1</span></span
+              >
+              <span class="s-thumb"><span class="s-asset h-full w-full">2</span></span>
+              <span class="s-thumb"><span class="shimmer block h-full w-full"></span></span>
+              <span class="s-thumb"><span class="shimmer block h-full w-full"></span></span>
+            </div>
+            <div class="mt-3 rounded-lg bg-muted p-3">
+              <p class="text-xs leading-5 s-muted">
+                <b class="text-black">Baixando mídias… 3 de 8.</b> Estados honestos, sem caixa de
+                falha e sem bloquear o que já chegou.
+              </p>
+            </div>
+            <p class="mt-3 text-xs leading-5 s-muted">
+              Este é um estado da <b>ficha interna</b>. No público, a galeria só aparece depois que
+              todas as mídias estão prontas; o eleitor nunca recebe um slide incompleto.
+            </p>
+          </article>
+
+          <!-- legenda/texto -->
+          <article class="frame rounded-xl bg-white p-5">
+            <p class="text-xs font-black tracking-wide s-muted">LEGENDA / TEXTO DA PEÇA</p>
+            <div
+              class="relative mt-3 overflow-hidden rounded-xl border border-black/10 bg-stone-200"
+            >
+              <div class="s-asset aspect-video">NEEDS ASSET · MÍDIA 1</div>
+              <span class="s-counter top-3 left-3">1 de 8 · Foto</span>
+            </div>
+            <span class="s-tag mt-4">
+              <svg class="size-3.5" aria-hidden="true"><use href="#i-images" /></svg>
+              Carrossel
+            </span>
+            <h4 class="s-display mt-2 text-xl font-black">Fim da escala 6×1 é saúde</h4>
+            <p class="mt-2 text-sm leading-6 s-muted">
+              Legenda oficial da publicação exibida sob a galeria — é ela que dá contexto a cada
+              mídia e alimenta a busca (junto da transcrição do vídeo-filho).
+            </p>
+            <p class="mt-3 text-xs leading-5 s-muted">
+              A legenda é a mesma em todas as mídias: não há texto por slide.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section>
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-stone-600">
+          <span>CERTIFICAÇÃO VISUAL</span>
+          <h2>Contrato do port e escolhas que o gate humano confirma</h2>
+        </div>
+        <div class="rounded-xl border border-black/10 bg-white p-6">
+          <p class="rounded-lg bg-stone-900 px-3 py-2 text-sm font-bold text-white">
+            Design hi-fi certificado pelo designer de referência. A implementação deve portar estas
+            cenas com paridade; a aprovação final continua sendo decisão humana no gate.
+          </p>
+          <ol class="mt-5 list-decimal space-y-3 pl-5 text-sm leading-6 text-muted-foreground">
+            <li>
+              <b class="text-foreground">Identidade.</b> “Carrossel” aparece como tipo na ficha, no
+              card, na página e no filtro. O design não usa “álbum” em nenhum ponto.
+            </li>
+            <li>
+              <b class="text-foreground">Hierarquia pública.</b> No card, <b>Compartilhar</b> é o
+              único CTA primário e <b>Ver galeria</b> abre a peça. Na página,
+              <b>Baixar esta mídia</b>
+              pertence ao slide selecionado; não existe download ambíguo do conjunto.
+            </li>
+            <li>
+              <b class="text-foreground">Compartilhamento.</b> Compartilhar e Copiar link usam o
+              post oficial do Instagram. Compartilhar mídia não compete com esse gesto; a mídia é
+              obtida exclusivamente pelo botão de download do slide.
+            </li>
+            <li>
+              <b class="text-foreground">Capa e navegação.</b> O primeiro filho é a capa. A galeria
+              combina palco, contador “N de M”, setas e trilha rolável; carrossel grande não
+              comprime miniaturas para caber.
+            </li>
+            <li>
+              <b class="text-foreground">Processamento.</b> “Baixando mídias… N de M” é um estado
+              neutro da ficha em desktop e mobile. Publicar fica indisponível até todas chegarem; a
+              superfície pública nunca mostra slide parcial.
+            </li>
+            <li>
+              <b class="text-foreground">Vídeo-filho.</b> Poster e duração antecedem o play; o
+              player só carrega após gesto, nunca reproduz automaticamente ao trocar de slide. A
+              legenda e a transcrição dos vídeos alimentam a leitura e a busca.
+            </li>
+            <li>
+              <b class="text-foreground">Recibo e legado.</b> Carrossel entra na contagem criada e
+              no recorte por tipo, sem ressalva de peça-link. As 52 peças existentes recebem a mesma
+              identidade, galeria e estados das novas.
+            </li>
+            <li>
+              <b class="text-foreground">Acessibilidade do port.</b> Galeria como região nomeada;
+              setas com nome acessível; posição anunciada em texto; miniaturas como lista com estado
+              selecionado; navegação por teclado, foco visível e respeito a movimento reduzido.
+            </li>
+            <li>
+              <b class="text-foreground">Assets.</b> Nenhum SVG próprio foi necessário (ícones
+              lucide inline). As mídias reais seguem marcadas como <code>NEEDS ASSET</code>.
+            </li>
+          </ol>
+          <p class="mt-5 text-xs leading-5 text-stone-500">
+            Pendência do gate humano: confirmar a direção visual certificada — capa no primeiro
+            filho, Compartilhar como CTA primário e publicação pública somente com a galeria
+            completa. A forma de dados e o mecanismo de processamento permanecem decisões de
+            engenharia.
+          </p>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>
