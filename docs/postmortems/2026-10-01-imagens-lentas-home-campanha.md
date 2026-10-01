@@ -10,7 +10,7 @@
 | Severidade          | alta (degradação mensurável de segundos na página principal; sem indisponibilidade nem perda de dados) |
 | Ambiente            | prod                                                                                                   |
 | Issue(s)            | sem Issue                                                                                              |
-| PR do fix           | este PR (número atribuído no push)                                                                     |
+| PR do fix           | [#1421](https://github.com/fsolla/teqo/pull/1421)                                                      |
 | Detectado por       | humano (relato na sessão de 2026-10-01 ~19:30 -03; confirmou a lentidão na própria máquina)            |
 
 ## Timeline
@@ -20,7 +20,7 @@
 | Início provável       | 2026-08-16 00:49 -03  | Commit `7ddc281f` (`feat(site): publica home da campanha Jorge Solla 1313`) publica o hero com os 5 masters AVIF de 3840px (14–22MP) — a home passou a gerar derivados caros no otimizador.                                                     |
 | Detecção              | 2026-10-01 ~19:30 -03 | Humano relata "Images are loading slowly in jorgesolla1313.com.br" e confirma a lentidão na própria máquina. Medição em prod: `/_next/image` com TTFB ~1,6s em miniaturas 256w; um request de `RUI - 2-2.avif&w=256` pendurou >120s. Sem Issue. |
 | Correção implementada | 2026-10-01            | Worktree `fix/15`: 5 masters regerados, `minimumCacheTTL` 14400, srcs/sizes do hero corrigidos, aviso no gerador e 3 guards. Benchmark pós-fix: 38–171ms por miniatura (soma 381ms, 11× mais rápido); `pnpm gate:fast` verde.                   |
-| Correção mergeada     | pendente              | PR ainda não aberto — este post-mortem entra no mesmo PR.                                                                                                                                                                                       |
+| Correção mergeada     | pendente              | PR [#1421](https://github.com/fsolla/teqo/pull/1421) aberto em 2026-10-01 com o fix, os guards e este post-mortem; merge pendente do required check + auto-merge.                                                                               |
 | Deploy                | pendente              | Merge em `main` dispara o deploy; produção só após approve humano no environment `production`.                                                                                                                                                  |
 | Verificado em prod    | pendente              | Aguardando deploy e confirmação do humano.                                                                                                                                                                                                      |
 
