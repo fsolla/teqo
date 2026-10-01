@@ -1577,6 +1577,33 @@ docker compose --profile maintenance run --rm \
 para datar as peças publicadas; reexecutar converge (o que já é rascunho sai do
 conjunto). O recibo nomeia cada peça retirada, o período e as falhas.
 
+**Apagar peças anteriores a um corte (expurgo definitivo).** Diferente da
+retirada, o `content:instagram:prune` faz **hard delete** da peça e da mídia
+privada (arquivo e still do C226): a linha sai do catálogo, então uma importação
+futura não a recria como rascunho nem o `--publish-existing` a publica de novo.
+Use quando a peça fora do período não deve mais existir — o caso clássico é o
+rascunho pré-campanha que o `--publish-existing` ressuscita. Peça que o feed
+oficial não consegue datar **nunca é tocada** (apagar sem data seria risco de
+apagar peça de campanha) e aparece nomeada no recibo.
+
+```bash
+# 1) plano (dry-run; lista o que sairia, o período e o que não tem data):
+docker compose --profile maintenance run --rm \
+  -v ~/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:prune --before 2026-08-16
+# 2) expurgo (exige TEQO_ENV + confirmação; IRREVERSÍVEL):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e CONTENT_INSTAGRAM_PRUNE_CONFIRM=1 \
+  -v ~/content-instagram:/app/data/content-instagram \
+  teqo-1313-migrate pnpm content:instagram:prune --before 2026-08-16 --apply
+```
+
+`--scan-days <n>` (default **365**) é a profundidade da varredura do feed usada
+para datar as peças; o plano varre rascunhos e publicadas. Reexecutar converge
+(0 anteriores ao corte). O recibo nomeia cada peça apagada, o período e as
+falhas; a revalidação da Central só roda se alguma publicada saiu (mídia órfã é
+limpa após a linha, best-effort, como no delete da ficha).
+
 Os recibos JSON ficam em `data/content-instagram/` do container — monte o
 volume acima para preservá-los. Com `--publish`, o CLI revalida a Central
 pública ao final pela rota oficial de revalidação
