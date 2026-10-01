@@ -21,9 +21,9 @@
 | Detecção              | 2026-10-01 21:19Z | run `36924161319` (push em `main`, commit `0a8b0774`), job `verify`, step "E2E tests (full suite, single job, 4 workers)": 1 failed, 4 flaky, 329 passed (8.8m); o failed é `campaignNewsletter` (hash `#novidades` ausente nas 3 tentativas); Issue #1413 às 21:21:50Z (auto-unblock). |
 | Bloqueio do deploy    | 2026-10-01        | `deploy-staging` e `deploy-production` ficaram skipped no run vermelho — deploy do main bloqueado.                                                                                                                                                                                      |
 | Correção implementada | 2026-10-01        | worktree `fix/falha-do-job-verify-do-deploy-github-actions-desbloque-2`.                                                                                                                                                                                                                |
-| Correção mergeada     | a preencher       | PR #1415 aberto (Ready; auto-merge armado pelo safety net).                                                                                                                                                                                                                             |
-| Deploy                | a preencher       | a preencher.                                                                                                                                                                                                                                                                            |
-| Verificado em prod    | não se aplica     | bug de CI/teste; a confirmação é o `verify` verde no deploy pós-merge; produção depende do approve humano (não aprovado por esta sessão).                                                                                                                                               |
+| Correção mergeada     | 2026-10-01 22:38Z | PR #1415 mergeado pelo auto-merge nativo (rebase; merge commit `8db841f7`) após o check `checks` verde.                                                                                                                                                                                 |
+| Deploy                | 2026-10-01 23:43Z | run `36938361233` (requeue OPS104 do merge `8db841f7`): `verify` verde às 23:25:54Z e `deploy-staging` verde às 23:43:33Z; `deploy-production` aguardando approve humano (não aprovado por esta sessão).                                                                                |
+| Verificado em prod    | não se aplica     | bug de CI/teste; a confirmação é o `verify` verde do run `36938361233` (e2e full 332 passed, 0 failed — o `campaignNewsletter` que falhava passou); produção depende do approve humano (não aprovado por esta sessão).                                                                  |
 
 ## O bug
 
@@ -60,7 +60,7 @@ Resolve a causa: sem refresh posterior ao clique, o `HistoryUpdater` não regrav
 - GREEN com o fix: unit 2/2; e2e novo 1 passed; arquivo inteiro `--repeat-each=3 --retries=0` 18/18; arquivo inteiro `--repeat-each=2 --retries=0` 12/12 (verificador); hero irmão em `frontend.e2e.spec.ts` 1 passed.
 - Repro local (2026-10-01, worktree, modo prod com build `.next-e2e`, banco isolado `teqo_wt817_test`): `tests/e2e/campaignNewsletter.e2e.spec.ts` com `--retries=0 --repeat-each=4` deu 4 falhas em 20 execuções (16 passed), sempre no mesmo assert.
 - `pnpm gate:fast`: lint e typecheck verdes; unit 5089 passed / 6 failed — todos flakes de ambiente (timeouts de 5s em `archiveCatalogCli` (2), `flickrImportCli` (2), `faceCli` (1) — CLIs que spawnam subprocesso — e `contentPiecePeopleField` (1)), arquivos alheios ao diff; re-run isolado dos 4 arquivos: 31/31 passed, exit 0.
-- CI: a preencher (PR).
+- CI: check `checks` verde no PR #1415 e `verify` do deploy run `36938361233` verde — unit 460 arquivos / 5098 testes, int 109 arquivos / 1078 testes, e2e full 332 passed / 0 failed / 3 flaky no retry (o `campaignNewsletter` que falhava passou às 23:23Z, incluindo o caso de regressão novo).
 - Prod: não se aplica (bug de CI/teste); a confirmação é o `verify` verde no deploy pós-merge; produção depende do approve humano (não aprovado por esta sessão).
 
 ## Prevenção
