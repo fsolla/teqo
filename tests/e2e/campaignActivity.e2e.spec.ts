@@ -1,7 +1,12 @@
 import { formatBahiaCivilDate, parseBahiaDateTimeInput } from '../../src/lib/campaignTime.js'
 import { hookFilledCreateData } from '../../src/utilities/hookFilledData.js'
 import { campaignPageChrome, expect, test } from './fixtures/campaignE2EFixtures.js'
-import { civilDatePlusDays, dayLabelFor, ptBrMonthNames } from './helpers/agendaPeriodLabels.js'
+import {
+  calendarDaySelector,
+  civilDatePlusDays,
+  dayLabelFor,
+  ptBrMonthNames,
+} from './helpers/agendaPeriodLabels.js'
 
 /**
  * Agenda prologue shared by every journey in this file: opens the agenda
@@ -342,17 +347,14 @@ test.describe('Agenda — calendário operacional', () => {
     // Multi-day: the end picker lands on a later day, always +1 from today:
     // the target stays inside the picker's visible grid (an inside day, or
     // day 1 of the next month as an outside day) — no hardcoded dates (C134).
-    // The button label is date-fns pt-BR "PPPP" ("sexta-feira, 14 de agosto
-    // de 2026"): day without leading zero, month in lowercase — the string
-    // name matcher is case-insensitive, the day number is not.
-    const [endYear, endMonth, endDay] = civilDatePlusDays(
-      formatBahiaCivilDate(new Date()),
-      1,
-    ).split('-')
-    const endDayLabel = `${Number(endDay)} de ${ptBrMonthNames[Number(endMonth) - 1]} de ${endYear}`
+    // The cell is clicked by its `data-day` contract, not by the accessible
+    // name: "d de mês de ano" is a substring of "1d…"/"2d… de mês de ano"
+    // and name matching would resolve to several cells (C104 miss #55).
+    const endCivilDate = civilDatePlusDays(formatBahiaCivilDate(new Date()), 1)
+    const [endYear, endMonth, endDay] = endCivilDate.split('-')
     await page.getByRole('button', { name: 'Término', exact: true }).click()
     const endPicker = page.locator('[data-slot="popover-content"][data-state="open"]').last()
-    await endPicker.getByRole('button', { name: endDayLabel }).click()
+    await endPicker.locator(calendarDaySelector(endCivilDate)).click()
     await page.keyboard.press('Escape')
     await expect(page.getByRole('button', { name: 'Término', exact: true })).toHaveText(
       `${endDay}/${endMonth}/${endYear}`,
