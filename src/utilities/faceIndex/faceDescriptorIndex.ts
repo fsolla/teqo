@@ -1,23 +1,13 @@
 import 'server-only'
 
-import { createHash } from 'node:crypto'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { Payload } from 'payload'
+import type { Payload, PayloadRequest } from 'payload'
 import sharp from 'sharp'
 
 import { ARCHIVE_PHOTO_SLUG } from '@/lib/archivePhoto'
-import {
-  FACE_SEARCH_MAX_DISTANCE,
-  FACE_SEARCH_MODEL,
-  faceEuclideanDistance,
-  readFaceVector,
-} from '@/lib/faceSearch'
-import {
-  listFaceSubjects,
-  type FaceSubjectSummary,
-} from '@/utilities/faceSubjects/faceSubjectReads'
+import { FACE_SEARCH_MODEL, readFaceVector } from '@/lib/faceSearch'
 import { messageOf } from '@/utilities/media/ffmpeg'
 import { withPayloadTransaction } from '@/utilities/payloadTransaction'
 import {
@@ -26,18 +16,19 @@ import {
 } from '@/utilities/privateMedia/privateMediaResponse'
 
 /**
- * C234 — the batch index of the selfie search (`pnpm faces:index`). For every
- * approved photo it downloads the private original, prepares a small RGB image
- * and asks the INJECTED analyzer (the same face-api engine the browser runs)
- * for the descriptors of every face. The descriptors are TRANSIENT — they are
- * compared against the enrolled subjects and thrown away; only the
- * photo↔subject links are persisted, inside one transaction per photo. That is
- * the A/C line of the gate: there is no anonymous face index anywhere.
+ * C242 — the batch owner of the anonymous face index (`pnpm faces:index`). For
+ * every approved photo it downloads the private original, prepares a small RGB
+ * image and asks the INJECTED analyzer (the same face-api engine the browser
+ * runs) for the descriptors of every face; the descriptors are PERSISTED as
+ * identity-free rows in `archivePhotoFace` (scope B, decision of 2026-10-01:
+ * any visitor can find themselves). One photo's rows are replaced atomically —
+ * never merged with a previous revision.
  *
  * Skipping is honest by construction: the photo's `faces.checkedKey` records
- * the model plus the enrollment revision (`enrolledAt`) of every eligible
- * subject, so a new/updated/removed subject invalidates every photo and the
- * next run recomputes — while the batch's own writes never change the key.
+ * the model that produced the stored descriptors, so a model change marks every
+ * photo stale and the next run recomputes. The batch's own writes never change
+ * the key (`context.faceIndex` skips the catalog derivation and the marker
+ * write does not read it back).
  *
  * A failure of one photo is returned, never thrown: nothing is written, the
  * next run retries it and the receipt names the stage.
@@ -46,7 +37,7 @@ import {
 /** Long edge sent to the engine; the original never leaves the archive. */
 const IMAGE_MAX_EDGE = 1024
 
-export type ArchivePhotoFaceImage = {
+type ArchivePhotoFaceImage = {
   pixels: Buffer
   width: number
   height: number
@@ -57,10 +48,10 @@ export type ArchivePhotoFaceAnalyzer = (image: ArchivePhotoFaceImage) => Promise
 
 /**
  * Decodes any stored image (EXIF-rotated, alpha flattened, ≤1024px raw RGB) —
- * the exact input both the batch and the enrollment CLI hand to the engine, so
+ * the exact input both the batch and the browser compute descriptors over, so
  * the selfie and the archive enter the same space.
  */
-export const prepareFaceImage = async (filePath: string): Promise<ArchivePhotoFaceImage> => {
+const prepareFaceImage = async (filePath: string): Promise<ArchivePhotoFaceImage> => {
   const prepared = await sharp(filePath)
     .rotate()
     .resize({ width: IMAGE_MAX_EDGE, height: IMAGE_MAX_EDGE, fit: 'inside' })
@@ -80,8 +71,6 @@ export type ArchivePhotoFaceIndexItem = {
 export type ArchivePhotoFaceIndexQueue = {
   /** The revision every processed photo is stamped with. */
   indexKey: string
-  /** Subjects the batch will look for (`active` + current model + vector). */
-  eligibleSubjects: number
   totalApproved: number
   /** Approved photos whose `faces.checkedKey` is not the current revision. */
   stale: number
@@ -90,39 +79,17 @@ export type ArchivePhotoFaceIndexQueue = {
 }
 
 export type ArchivePhotoFaceIndexResult =
-  | { status: 'indexed'; matchedSubjects: number[] }
+  | { status: 'indexed'; descriptorCount: number }
   | {
       status: 'failed'
       stage: 'download' | 'image' | 'analyze' | 'write'
       error: string
     }
 
-const isIndexableSubject = (subject: FaceSubjectSummary): boolean =>
-  subject.status === 'active' &&
-  subject.model === FACE_SEARCH_MODEL &&
-  readFaceVector(subject.vector) !== null
-
 /**
- * The revision stamped on each processed photo: the model plus the enrollment
- * revision of every indexable subject. Deliberately ignores `updatedAt` (the
- * batch writes `matchedPhotos`, which would bump it and make every photo stale
- * forever) and ignores removed/stale subjects (they are not searched).
- */
-const facePhotoIndexKey = (subjects: readonly FaceSubjectSummary[]): string => {
-  const revisions = subjects
-    .filter(isIndexableSubject)
-    .map((subject) => `${subject.id}:${subject.enrolledAt ?? ''}`)
-    .sort()
-
-  return createHash('sha256')
-    .update([FACE_SEARCH_MODEL, ...revisions].join('\n'))
-    .digest('hex')
-}
-
-/**
- * The batch queue: the approved photos with their marker, the subjects that
- * will be searched, and the revision to stamp. `refresh` ignores the marker;
- * `limit` caps only the returned work list (the counts stay true).
+ * The batch queue: the approved photos with their marker and the revision to
+ * stamp. `refresh` ignores the marker; `limit` caps only the returned work list
+ * (the counts stay true).
  */
 export const listArchivePhotoFaceIndexQueue = async ({
   payload,
@@ -133,8 +100,7 @@ export const listArchivePhotoFaceIndexQueue = async ({
   refresh?: boolean
   limit?: number
 }): Promise<ArchivePhotoFaceIndexQueue> => {
-  const subjects = await listFaceSubjects(payload)
-  const indexKey = facePhotoIndexKey(subjects)
+  const indexKey = FACE_SEARCH_MODEL
 
   const photos = await payload.find({
     collection: ARCHIVE_PHOTO_SLUG,
@@ -157,7 +123,6 @@ export const listArchivePhotoFaceIndexQueue = async ({
 
   return {
     indexKey,
-    eligibleSubjects: subjects.filter(isIndexableSubject).length,
     totalApproved: photos.docs.length,
     stale: staleRows.length,
     items: limit && limit > 0 ? staleRows.slice(0, limit) : staleRows,
@@ -165,10 +130,9 @@ export const listArchivePhotoFaceIndexQueue = async ({
 }
 
 /**
- * One photo: download → prepare → analyze → transactional link update + marker.
- * The fresh subject read happens INSIDE the transaction, so an enrollment that
- * lands mid-run is respected (the photo is simply reprocessed by the changed
- * key on a later run).
+ * One photo: download → prepare → analyze → transactional descriptor replace +
+ * marker. The rows of the previous revision are deleted inside the same
+ * transaction, so a query never sees a half-replaced photo.
  */
 export const indexArchivePhotoFaces = async ({
   payload,
@@ -214,13 +178,13 @@ export const indexArchivePhotoFaces = async ({
     }
 
     try {
-      const matchedSubjects = await writeArchivePhotoFaceMatches({
+      const descriptorCount = await writeArchivePhotoFaceDescriptors({
         payload,
         photoId: item.id,
         descriptors,
         indexKey,
       })
-      return { status: 'indexed', matchedSubjects }
+      return { status: 'indexed', descriptorCount }
     } catch (error) {
       return { status: 'failed', stage: 'write', error: messageOf(error, 'erro desconhecido') }
     }
@@ -230,11 +194,12 @@ export const indexArchivePhotoFaces = async ({
 }
 
 /**
- * Replaces the links of one photo for every eligible subject and stamps the
- * marker — one transaction with a fresh read, so a concurrent enrollment or
- * takedown never meets a half-written state.
+ * Replaces the descriptor rows of one photo and stamps the marker — one
+ * transaction, so a concurrent takedown or search never meets a half-written
+ * photo. Invalid descriptors are dropped (fail-closed) instead of poisoning the
+ * index.
  */
-const writeArchivePhotoFaceMatches = async ({
+export const writeArchivePhotoFaceDescriptors = async ({
   payload,
   photoId,
   descriptors,
@@ -242,35 +207,35 @@ const writeArchivePhotoFaceMatches = async ({
 }: {
   payload: Payload
   photoId: number
-  descriptors: number[][]
+  descriptors: readonly number[][]
   indexKey: string
-}): Promise<number[]> =>
-  withPayloadTransaction(payload, async ({ req }) => {
-    const subjects = await listFaceSubjects(payload, req)
-    const matchedSubjects: number[] = []
+}): Promise<number> => {
+  const vectors = descriptors
+    .map((descriptor) => readFaceVector(descriptor))
+    .filter((vector): vector is number[] => vector !== null)
 
-    for (const subject of subjects) {
-      if (!isIndexableSubject(subject)) continue
+  const write = async (writeReq?: { transactionID?: number | string }) => {
+    await payload.delete({
+      collection: 'archivePhotoFace',
+      where: { photo: { equals: photoId } },
+      depth: 0,
+      req: writeReq,
+      // Intentional bypass: the batch CLI is a trusted operator with no session.
+      overrideAccess: true,
+    })
 
-      const vector = readFaceVector(subject.vector)
-      if (!vector) continue
-      const matched = descriptors.some(
-        (descriptor) => faceEuclideanDistance(descriptor, vector) < FACE_SEARCH_MAX_DISTANCE,
-      )
-      const linked = subject.matchedPhotoIds.includes(photoId)
-      if (matched) matchedSubjects.push(subject.id)
-      if (matched === linked) continue
-
-      const next = matched
-        ? [...subject.matchedPhotoIds, photoId]
-        : subject.matchedPhotoIds.filter((id) => id !== photoId)
-      await payload.update({
-        collection: 'faceSubject',
-        id: subject.id,
-        data: { matchedPhotos: next },
+    for (const vector of vectors) {
+      await payload.create({
+        collection: 'archivePhotoFace',
+        data: {
+          photo: photoId,
+          model: indexKey,
+          detectedAt: new Date().toISOString(),
+          vector,
+        },
         depth: 0,
-        req,
-        // Intentional bypass: the batch CLI is a trusted operator with no session.
+        req: writeReq,
+        // Intentional bypass: same trusted operator.
         overrideAccess: true,
       })
     }
@@ -280,11 +245,39 @@ const writeArchivePhotoFaceMatches = async ({
       id: photoId,
       data: { faces: { checkedAt: new Date().toISOString(), checkedKey: indexKey } },
       depth: 0,
-      req,
+      req: writeReq,
       context: { faceIndex: true },
-      // Intentional bypass: the batch CLI is a trusted operator with no session.
+      // Intentional bypass: same trusted operator.
       overrideAccess: true,
     })
+  }
 
-    return matchedSubjects
+  return withPayloadTransaction(payload, async ({ req }) => {
+    await write(req)
+    return vectors.length
   })
+}
+
+/**
+ * Purges every descriptor row of one photo. Called by the photo lifecycle hooks
+ * when a photo stops being `approved` (unapproval/removal) and on deletion — the
+ * DB-level FK cascade covers direct SQL deletes, this covers the Local API path.
+ */
+export const purgeFaceDescriptorsForPhoto = async ({
+  payload,
+  photoId,
+  req,
+}: {
+  payload: Payload
+  photoId: number
+  req?: PayloadRequest
+}): Promise<void> => {
+  await payload.delete({
+    collection: 'archivePhotoFace',
+    where: { photo: { equals: photoId } },
+    depth: 0,
+    req,
+    // Intentional bypass: lifecycle maintenance, never an actor-bound write.
+    overrideAccess: true,
+  })
+}

@@ -294,6 +294,8 @@ This file is the living owner of Teqo's visual decisions — a working document,
 
 **Multi-media content gallery (C240, 2026-10-01).** A public piece with multiple media uses one stable stage plus position (“N de M”), previous/next controls, and a horizontally scrollable thumbnail strip; never shrink every thumbnail to force the whole set on screen. Download belongs to the selected media, while the single primary action shares the official source post — do not offer an ambiguous “download all” or make media-sharing compete with the source link. Partial arrival is an internal neutral processing state; the public gallery appears only when the complete set is ready. This keeps the action model honest across image-only, mixed video, and large carousels without inventing a second album product.
 
+**Public light-surface focus separation (C243, 2026-10-01).** When the campaign-yellow focus outline sits on a cream, white, or yellow-tinted public surface, keep the 3px yellow signal but add a dark blue outer separator. Yellow alone does not separate reliably from these backgrounds; the second edge preserves the archive's established focus identity while making keyboard location unmistakable without turning blue into a competing action color.
+
 How rules change:
 
 - **Decide, then update the owner.** When a better pattern wins — anti-slop review (`design-taste-frontend` / `gpt-taste`), a reference study (`awesome-design-md`), a redesign pass (`redesign-existing-projects`), or implementation judgment — update this file in the **same change** and say why. A pattern that only lives in code or in an agent's head is drift, not design.

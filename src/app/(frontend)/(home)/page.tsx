@@ -6,10 +6,12 @@ import { CampaignHero } from '@/components/CampaignHero'
 import { CampaignProblemCard } from '@/components/CampaignProblemCard'
 import { CampaignStorySection } from '@/components/CampaignStorySection'
 import { ContentPieceHomeSection } from '@/components/conteudos/ContentPieceHomeSection'
+import { SelfieSearchHomeSection } from '@/components/fotos/SelfieSearchHomeSection'
 import { JingleHomeSection } from '@/components/jingles/JingleHomeSection'
 import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import { getPublishedContentPieceItems } from '@/utilities/content/contentPieceReads'
+import { getCachedGlobal } from '@/utilities/globalReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
 import type { ReactNode } from 'react'
 import { CampaignCardsSection } from './CampaignCardsSection'
@@ -123,13 +125,18 @@ export default async function HomePage() {
   // S27/S39 — one cached listing (tag `contentPieces`) feeds both the discovery
   // flag of the footer and the home sample; zero pieces hides both (fail-closed).
   // C233 — the same contract for the "Fotos" discovery flag (tag `archivePhotos`).
-  const [pixelId, jingles, contentPieces, showFotos] = await Promise.all([
+  const [pixelId, jingles, contentPieces, showFotos, album] = await Promise.all([
     getCampaignHomeMetaPixelId(),
     getPublishedJingleItems(),
     getPublishedContentPieceItems(),
     hasPublishedArchivePhotos(),
+    getCachedGlobal('photoAlbum')(),
   ])
   const homeJingles = jingles.slice(0, 3)
+  // C243 — the discovery section only exists while the selfie search is open
+  // (album published + own flag + approved photos); closed leaves no dead CTA.
+  const showSelfieSearch =
+    album.published !== false && album.selfieSearchEnabled === true && showFotos
 
   return (
     <>
@@ -255,6 +262,7 @@ export default async function HomePage() {
         <JingleHomeSection jingles={homeJingles} showAll={jingles.length > homeJingles.length} />
         <CampaignCardsSection />
         {contentPieces.length > 0 ? <ContentPieceHomeSection items={contentPieces} /> : null}
+        {showSelfieSearch ? <SelfieSearchHomeSection /> : null}
         <CampaignNewsletterSection pixelId={pixelId ?? undefined} />
       </main>
 

@@ -5,25 +5,21 @@ import { join } from 'node:path'
 import type { Payload } from 'payload'
 
 import { ARCHIVE_PHOTO_SLUG, type ArchivePhotoImport } from '@/lib/archivePhoto'
-import { FACE_INDEX_CONSENT_KEY } from '@/lib/campaignConsentKeys'
-import { FACE_SEARCH_DESCRIPTOR_LENGTH } from '@/lib/faceSearch'
-import { getConsentByKey } from '@/utilities/campaignConsent'
-import { enrollFaceSubject } from '@/utilities/faceSubjects/faceSubjectEnrollment'
+import { FACE_SEARCH_DESCRIPTOR_LENGTH, FACE_SEARCH_MODEL } from '@/lib/faceSearch'
+import { writeArchivePhotoFaceDescriptors } from '@/utilities/faceIndex/faceDescriptorIndex'
 import { ingestArchivePhoto } from '@/utilities/flickr/archivePhotoIngest'
 
 import { ARCHIVE_PHOTO_JPEG_BYTES } from './archivePhotoFixture'
 
 /**
- * C234 — the fixtures shared by the face-search int specs (subject/index and
- * the API): the file-backed archive photo over the real Payload test database
- * and the enrolled subject. The two spec files serialize on the same lease
- * because the index revision is derived state over EVERY enrolled subject — an
- * enrollment in the sibling spec changes the key and would legitimately mark
- * photos stale mid-assertion.
+ * C242 — the fixtures shared by the face-search int specs: the file-backed
+ * archive photo over the real Payload test database and the indexed face rows
+ * (scope B: anonymous descriptors, no subjects). The specs serialize on the
+ * same lease because the in-process descriptor cache is derived state.
  */
-export const FACE_SPECS_LEASE_KEY = 'c234-face-specs'
-export const FACE_INDEX_LEASE_KEY = 'c234-face-index-consent'
-export const FACE_SEARCH_LEASE_KEY = 'c234-face-search-consent'
+export const FACE_SPECS_LEASE_KEY = 'c240-face-specs'
+export const FACE_INDEX_LEASE_KEY = 'c240-face-index-consent'
+export const FACE_SEARCH_LEASE_KEY = 'c240-face-search-consent'
 
 export const faceTestVector = (value: number): number[] =>
   Array.from({ length: FACE_SEARCH_DESCRIPTOR_LENGTH }, () => value)
@@ -86,27 +82,24 @@ export const createFaceTestPhoto = async ({
   return { id: created.id, flickrId }
 }
 
-/** Enrolls a subject with the current index Consent resolved by stable key. */
-export const enrollFaceTestSubject = async ({
+/**
+ * Seeds the descriptor rows of one photo exactly like the batch does (rows +
+ * marker, one transaction). `model` lets a spec pin the old-model contract.
+ */
+export const indexFaceTestPhoto = async ({
   payload,
-  label,
-  vector,
-  trackedSubjectIds,
+  photoId,
+  descriptors,
+  model = FACE_SEARCH_MODEL,
 }: {
   payload: Payload
-  label: string
-  vector: number[]
-  trackedSubjectIds: Set<number>
-}): Promise<number> => {
-  const consent = await getConsentByKey(payload, FACE_INDEX_CONSENT_KEY)
-  if (!consent) throw new Error('index consent not configured')
-
-  const enrolled = await enrollFaceSubject({
+  photoId: number
+  descriptors: number[][]
+  model?: string
+}): Promise<number> =>
+  writeArchivePhotoFaceDescriptors({
     payload,
-    label,
-    descriptor: vector,
-    consent: { id: consent.id, contentHash: consent.contentHash },
+    photoId,
+    descriptors,
+    indexKey: model,
   })
-  trackedSubjectIds.add(enrolled.id)
-  return enrolled.id
-}

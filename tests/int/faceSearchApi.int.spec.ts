@@ -14,21 +14,18 @@ vi.mock('next/cache', () => ({
 import { POST as postSelfie } from '@/app/(frontend)/api/fotos/selfie/route'
 import { ARCHIVE_PHOTO_SLUG } from '@/lib/archivePhoto'
 import { FACE_INDEX_CONSENT_KEY, FACE_SEARCH_CONSENT_KEY } from '@/lib/campaignConsentKeys'
+import { FACE_SEARCH_MODEL } from '@/lib/faceSearch'
 import config from '@/payload.config'
-import { removeFaceSubjectFromIndex } from '@/utilities/faceSubjects/faceSubjectEnrollment'
-import {
-  indexArchivePhotoFaces,
-  listArchivePhotoFaceIndexQueue,
-} from '@/utilities/faceSubjects/faceSubjectPhotoIndex'
+import { invalidateFaceDescriptorIndex } from '@/utilities/faceIndex/faceDescriptorReads'
 
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
 import {
   createFaceTestPhoto,
-  enrollFaceTestSubject,
   FACE_INDEX_LEASE_KEY,
   FACE_SEARCH_LEASE_KEY,
   FACE_SPECS_LEASE_KEY,
   faceTestVector,
+  indexFaceTestPhoto,
 } from '../helpers/faceIntFixtures'
 import {
   acquireTestDatabaseLease,
@@ -37,14 +34,14 @@ import {
   withExclusiveTestDatabaseLease,
 } from '../helpers/testDatabaseLease'
 
-// C234 — the anonymous selfie endpoint over the real Payload `teqo_test`:
-// the kill switch and the Consent fail-closed layers, the A/C answer (only
-// enrolled subjects, only approved photos, never a score or a third-party
-// name), the opt-out by matched descriptor and the anonymous anti-abuse.
+// C242 — the anonymous selfie endpoint over the real Payload `teqo_test`:
+// the kill switch and the two Consent fail-closed layers, the scope B answer
+// (anonymous descriptors of approved photos only, never a score or a
+// third-party name), the opt-out by matched descriptor and the anonymous
+// anti-abuse.
 
 let payload: Payload
 const createdFlickrIds = new Set<string>()
-const createdSubjectIds = new Set<number>()
 const tempDirs: string[] = []
 
 installCampaignFixtures({
@@ -60,24 +57,10 @@ const createPhoto = (approved: boolean) =>
   createFaceTestPhoto({
     payload,
     approved,
-    prefix: 'c234-api',
+    prefix: 'c240-api',
     trackedFlickrIds: createdFlickrIds,
     tempDirs,
   })
-
-const enrollFixtureSubject = (label: string, vector: number[]) =>
-  enrollFaceTestSubject({ payload, label, vector, trackedSubjectIds: createdSubjectIds })
-
-const indexPhotoForSubject = async (photoId: number, vector: number[]): Promise<void> => {
-  const queue = await listArchivePhotoFaceIndexQueue({ payload, refresh: true })
-  const result = await indexArchivePhotoFaces({
-    payload,
-    item: queue.items.find((item) => item.id === photoId)!,
-    indexKey: queue.indexKey,
-    analyze: async () => [vector],
-  })
-  if (result.status !== 'indexed') throw new Error(`index fixture failed: ${result.status}`)
-}
 
 const setSelfieSearchEnabled = async (enabled: boolean): Promise<void> => {
   await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
@@ -98,7 +81,7 @@ const post = (body: unknown, headers: Record<string, string> = {}): Promise<Resp
     }),
   )
 
-describe('selfie search endpoint (C234)', () => {
+describe('selfie search endpoint (C242)', () => {
   let specsLease: Awaited<ReturnType<typeof acquireTestDatabaseLease>>
 
   beforeAll(async () => {
@@ -123,10 +106,8 @@ describe('selfie search endpoint (C234)', () => {
         overrideAccess: true,
       })
     }
-    for (const id of createdSubjectIds) {
-      await payload.delete({ collection: 'faceSubject', id, overrideAccess: true })
-    }
     await setSelfieSearchEnabled(false)
+    invalidateFaceDescriptorIndex()
     await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })))
     await specsLease.release()
   })
@@ -165,43 +146,51 @@ describe('selfie search endpoint (C234)', () => {
     await setSelfieSearchEnabled(false)
   })
 
-  it('fails closed (503) while the query Consent is not configured', async () => {
+  it('fails closed (503) while either Consent is not configured', async () => {
     await setSelfieSearchEnabled(true)
     try {
-      // The C234 specs lease already serializes every writer of this key, so
-      // the absence window is exclusive by construction.
       await payload.delete({
         collection: 'consent',
         where: { key: { equals: FACE_SEARCH_CONSENT_KEY } },
         overrideAccess: true,
       })
-      const response = await post({ vector: faceTestVector(0), intent: 'search' })
-      expect(response.status).toBe(503)
-      await expect(response.json()).resolves.toEqual({ ok: false, error: 'consent' })
-    } finally {
+      const withoutQuery = await post({ vector: faceTestVector(0), intent: 'search' })
+      expect(withoutQuery.status).toBe(503)
+      await expect(withoutQuery.json()).resolves.toEqual({ ok: false, error: 'consent' })
+
       await ensureLeasedConsent(payload, {
         consentKey: FACE_SEARCH_CONSENT_KEY,
         leaseKey: FACE_SEARCH_LEASE_KEY,
+      })
+      await payload.delete({
+        collection: 'consent',
+        where: { key: { equals: FACE_INDEX_CONSENT_KEY } },
+        overrideAccess: true,
+      })
+      const withoutNotice = await post({ vector: faceTestVector(0), intent: 'search' })
+      expect(withoutNotice.status).toBe(503)
+    } finally {
+      await ensureLeasedConsent(payload, {
+        consentKey: FACE_INDEX_CONSENT_KEY,
+        leaseKey: FACE_INDEX_LEASE_KEY,
       })
       await setSelfieSearchEnabled(false)
     }
   })
 
-  it('returns only the approved photos of the matched subject, without names or score', async () => {
+  it('returns only the approved photos with a matching face, without names or score', async () => {
     const vector = faceTestVector(0)
-    const subject = await enrollFixtureSubject('Pessoa encontrada', vector)
     const approved = await createPhoto(true)
     const draft = await createPhoto(false)
-    await indexPhotoForSubject(approved.id, vector)
-
-    // A draft linked by hand must never surface: the endpoint intersects the
-    // subject's links with the approved public read.
-    await payload.update({
-      collection: 'faceSubject',
-      id: subject,
-      data: { matchedPhotos: [approved.id, draft.id] },
+    await indexFaceTestPhoto({ payload, photoId: approved.id, descriptors: [vector] })
+    // A draft with descriptor rows by hand must never surface: the endpoint
+    // intersects the index with the approved public read.
+    await payload.create({
+      collection: 'archivePhotoFace',
+      data: { photo: draft.id, model: FACE_SEARCH_MODEL, vector },
       overrideAccess: true,
     })
+    invalidateFaceDescriptorIndex()
 
     await setSelfieSearchEnabled(true)
     const response = await post({ vector, intent: 'search' })
@@ -217,19 +206,18 @@ describe('selfie search endpoint (C234)', () => {
     expect(body.photos.map((photo) => photo.id)).toEqual([approved.id])
     expect(JSON.stringify(body)).not.toMatch(/"people"|"score"|"distance"|"similarity"/i)
 
-    // A face nobody enrolled in the index gets the honest empty answer.
+    // A face nobody has in the index gets the honest empty answer.
     const stranger = await post({ vector: faceTestVector(1), intent: 'search' })
     await expect(stranger.json()).resolves.toEqual({ ok: true, found: false })
 
     await setSelfieSearchEnabled(false)
-    await removeFaceSubjectFromIndex({ payload, id: subject })
   })
 
   it('serves the opt-out by matched descriptor and stops answering afterwards', async () => {
     const vector = faceTestVector(0.25)
-    const subject = await enrollFixtureSubject('Sai pelo endpoint', vector)
     const approved = await createPhoto(true)
-    await indexPhotoForSubject(approved.id, vector)
+    await indexFaceTestPhoto({ payload, photoId: approved.id, descriptors: [vector] })
+    invalidateFaceDescriptorIndex()
 
     await setSelfieSearchEnabled(true)
     const before = await post({ vector, intent: 'search' })
@@ -238,14 +226,12 @@ describe('selfie search endpoint (C234)', () => {
     const leave = await post({ vector, intent: 'leave-index' })
     await expect(leave.json()).resolves.toEqual({ ok: true, removed: true })
 
-    const stored = await payload.findByID({
-      collection: 'faceSubject',
-      id: subject,
-      depth: 0,
+    const rows = await payload.count({
+      collection: 'archivePhotoFace',
+      where: { photo: { equals: approved.id } },
       overrideAccess: true,
     })
-    expect(stored.status).toBe('removed')
-    expect(stored.vector).toBeNull()
+    expect(rows.totalDocs).toBe(0)
 
     const after = await post({ vector, intent: 'search' })
     await expect(after.json()).resolves.toEqual({ ok: true, found: false })
@@ -270,13 +256,14 @@ describe('selfie search endpoint (C234)', () => {
 
   it('keeps the model contract: only the current model can match', async () => {
     const vector = faceTestVector(0.75)
-    const subject = await enrollFixtureSubject('Modelo trocado', vector)
-    await payload.update({
-      collection: 'faceSubject',
-      id: subject,
-      data: { model: 'outro-modelo@0' },
-      overrideAccess: true,
+    const approved = await createPhoto(true)
+    await indexFaceTestPhoto({
+      payload,
+      photoId: approved.id,
+      descriptors: [vector],
+      model: 'outro-modelo@0',
     })
+    invalidateFaceDescriptorIndex()
 
     await setSelfieSearchEnabled(true)
     const response = await post({ vector, intent: 'search' })

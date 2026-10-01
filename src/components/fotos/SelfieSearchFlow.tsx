@@ -72,9 +72,11 @@ const STEP_SHELL = 'mx-auto w-full max-w-[650px]'
  */
 export const SelfieSearchFlow = ({
   consentText,
+  noticeText,
   removalChannelUrl,
 }: {
   consentText: ReactNode
+  noticeText: ReactNode
   removalChannelUrl: string | null
 }) => {
   const [step, setStep] = useState<FlowStep>({ kind: 'consent' })
@@ -234,8 +236,34 @@ export const SelfieSearchFlow = ({
           >
             Sua face é um dado biométrico sensível
           </h2>
-          <div className="mt-3 max-h-72 overflow-y-auto rounded-xl border border-(--campaign-line) bg-(--campaign-cream) p-4 text-sm leading-6 text-(--campaign-muted)">
-            {consentText}
+          <div className="mt-3 text-sm leading-6 text-(--campaign-muted)">{consentText}</div>
+          <div className="mt-4 rounded-xl border border-[#184e92]/20 bg-[#eef4fb] p-4 text-sm leading-6">
+            <div className="flex items-start gap-3">
+              <ShieldCheck
+                aria-hidden="true"
+                className="mt-0.5 size-[18px] shrink-0 text-[#184e92]"
+                strokeWidth={2}
+              />
+              <div>
+                <b className="text-[#184e92]">Aviso público sobre o índice de fotos</b>
+                <p className="mt-1 text-(--campaign-muted)">
+                  Rostos presentes nas fotos públicas aprovadas compõem um índice sem nomes e sem
+                  vínculo com cadastros de pessoas. Ele serve apenas para localizar as próprias
+                  fotos. Você pode retirar seu rosto do índice a qualquer momento em “Minha
+                  presença”.
+                </p>
+                <details className="mt-1">
+                  <summary
+                    className={`inline-flex min-h-11 cursor-pointer items-center text-sm font-extrabold text-[#184e92] underline underline-offset-4 ${ARCHIVE_PHOTO_FOCUS}`}
+                  >
+                    Ler o aviso completo do índice
+                  </summary>
+                  <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-(--campaign-line) bg-white p-3 text-(--campaign-muted)">
+                    {noticeText}
+                  </div>
+                </details>
+              </div>
+            </div>
           </div>
           <div className="mt-5 grid gap-3 rounded-xl bg-[#f9faff] p-4 text-sm">
             <div className="flex gap-3">
@@ -251,10 +279,11 @@ export const SelfieSearchFlow = ({
             <div className="flex gap-3">
               <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-[#184e92]" />
               <p>
-                <b>Você pode desistir e pedir remoção.</b>
+                <b>Você mantém o controle.</b>
                 <br />
                 <span className="text-(--campaign-muted)">
-                  O resultado não mostra nomes de terceiros nem percentual de semelhança.
+                  Saia do índice quando quiser. O resultado não mostra nomes de terceiros nem
+                  percentual de semelhança.
                 </span>
               </p>
             </div>
@@ -267,8 +296,8 @@ export const SelfieSearchFlow = ({
               className="mt-0.5 size-5 shrink-0 accent-[#184e92]"
             />
             <span>
-              Li e autorizo o uso temporário da minha biometria facial para procurar a mim mesmo
-              neste álbum.
+              Li o aviso e autorizo o uso da minha selfie e da minha biometria somente nesta
+              consulta para procurar a mim mesmo no álbum.
             </span>
           </label>
           <p className="mt-3 text-xs leading-5 text-(--campaign-muted)">
@@ -456,7 +485,7 @@ export const SelfieSearchFlow = ({
         <FlowStateCard
           icon={<ImageIcon aria-hidden="true" className="size-7" strokeWidth={2} />}
           title="Não encontramos fotos suas"
-          body="Esta busca funciona para quem autorizou participar do índice. Também pode não haver uma foto sua entre os registros públicos aprovados."
+          body="Pode não haver uma foto sua entre os registros públicos aprovados, ou seu rosto pode já ter sido retirado do índice."
           note="Não mostramos pessoas parecidas nem tentamos adivinhar quem você é."
           action={
             <button
@@ -513,24 +542,28 @@ export const SelfieSearchFlow = ({
             id="selfie-presence-title"
             className="mt-1 border-0 pb-0 font-[family-name:var(--font-exo2)] text-2xl font-black"
           >
-            Você decide se quer aparecer
+            Você controla sua presença no índice
           </h2>
           <p className="mt-2 text-sm leading-6 text-(--campaign-muted)">
-            Para sair do índice, confirme sua identidade com uma selfie. Para retirar uma foto
-            pública, use o canal da equipe responsável pelo acervo.
+            Seu rosto pode fazer parte do índice anônimo por aparecer no acervo aprovado. Para
+            retirá-lo, use uma selfie sua. Para retirar uma foto pública, fale com a equipe do
+            acervo.
           </p>
-          <div className="mt-5 flex gap-3 rounded-xl border-2 border-[#184e92] bg-[#f9faff] p-4">
-            <span
-              aria-hidden="true"
-              className="mt-0.5 size-5 shrink-0 rounded-full border-[5px] border-[#184e92]"
+          <label className="mt-5 flex cursor-pointer gap-3 rounded-xl border-2 border-[#184e92] bg-[#f9faff] p-4">
+            <input
+              type="radio"
+              name="presence-action"
+              value="leave-index"
+              defaultChecked
+              className="mt-0.5 size-5 shrink-0 accent-[#184e92]"
             />
             <span>
               <b className="text-sm">Sair do índice de busca</b>
               <small className="mt-1 block text-xs leading-5 text-(--campaign-muted)">
-                Seu rosto deixa de ser usado para localizar fotos por selfie.
+                Apaga do índice as referências biométricas que correspondem ao seu rosto.
               </small>
             </span>
-          </div>
+          </label>
           {removalChannelUrl ? (
             <a
               href={removalChannelUrl}
@@ -565,9 +598,9 @@ export const SelfieSearchFlow = ({
       {step.kind === 'removed' ? (
         <FlowStateCard
           icon={<ShieldCheck aria-hidden="true" className="size-7" strokeWidth={2} />}
-          title="Pronto — você saiu do índice"
-          body="Seu rosto deixou de ser usado para localizar fotos por selfie e o vetor foi apagado."
-          note="Se quiser voltar a participar, fale com a equipe responsável pelo acervo."
+          title="Pronto — seu rosto saiu do índice"
+          body="Apagamos as referências biométricas que correspondiam ao seu rosto. Ele deixa de ser encontrado pela busca por selfie."
+          note="As fotos públicas continuam no álbum. Para retirar uma foto específica, use o canal da equipe responsável pelo acervo."
           action={
             <Link
               href={ARCHIVE_PHOTO_ALBUM_PATH}
@@ -576,6 +609,16 @@ export const SelfieSearchFlow = ({
               Voltar ao álbum
             </Link>
           }
+          secondary={
+            removalChannelUrl ? (
+              <a
+                href={removalChannelUrl}
+                className={`mt-3 inline-flex min-h-11 items-center text-sm font-extrabold text-[#184e92] underline underline-offset-4 ${ARCHIVE_PHOTO_FOCUS}`}
+              >
+                Pedir remoção de uma foto
+              </a>
+            ) : null
+          }
         />
       ) : null}
 
@@ -583,7 +626,7 @@ export const SelfieSearchFlow = ({
         <FlowStateCard
           icon={<ShieldCheck aria-hidden="true" className="size-7" strokeWidth={2} />}
           title="Não encontramos sua presença no índice"
-          body="Não foi possível reconhecer uma participação sua no índice com esta selfie. Nenhuma alteração foi feita."
+          body="Não encontramos no índice referências biométricas que correspondam ao seu rosto com esta selfie. Nenhuma alteração foi feita."
           action={
             <button
               type="button"
@@ -594,7 +637,7 @@ export const SelfieSearchFlow = ({
             </button>
           }
           secondary={
-            <>
+            <div className="mt-6 w-full border-t border-(--campaign-line) pt-5">
               <p className="text-sm leading-6 text-(--campaign-muted)">
                 Quer retirar uma foto pública mesmo assim?
               </p>
@@ -606,10 +649,13 @@ export const SelfieSearchFlow = ({
                   Pedir remoção de uma foto
                 </a>
               ) : null}
-              <Link href={ARCHIVE_PHOTO_ALBUM_PATH} className={`${STATE_LINK} mt-4`}>
+              <Link
+                href={ARCHIVE_PHOTO_ALBUM_PATH}
+                className={`mt-4 inline-flex min-h-11 items-center text-sm font-bold text-(--campaign-muted) ${ARCHIVE_PHOTO_FOCUS}`}
+              >
                 Voltar ao álbum
               </Link>
-            </>
+            </div>
           }
         />
       ) : null}
@@ -862,8 +908,8 @@ const LeaveConfirmDialog = ({
           Confirmar saída do índice?
         </h2>
         <p className="mt-2 text-sm leading-6 text-(--campaign-muted)">
-          Vamos reconhecer você neste aparelho e, se houver correspondência, retirar sua presença do
-          índice de busca.
+          Vamos processar sua selfie neste aparelho e, se houver correspondência, apagar do índice
+          as referências biométricas do seu rosto. A selfie não será enviada.
         </p>
         <button
           type="button"

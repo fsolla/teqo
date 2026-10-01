@@ -3,12 +3,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 
 import { FACE_INDEX_CONSENT_KEY, FACE_SEARCH_CONSENT_KEY } from '@/lib/campaignConsentKeys'
-import {
-  FACE_SEARCH_MODEL,
-  FACE_SEARCH_RESULT_LIMIT,
-  findFaceMatch,
-  toFaceSearchPhotoView,
-} from '@/lib/faceSearch'
+import { FACE_SEARCH_RESULT_LIMIT, toFaceSearchPhotoView } from '@/lib/faceSearch'
 import { faceSearchRequestSchema } from '@/lib/schemas/faceSearch'
 import { getApprovedArchivePhotoItems } from '@/utilities/archivePhotos/archivePhotoReads'
 import { readBoundedRequestBody } from '@/utilities/boundedRequestBody'
@@ -17,28 +12,31 @@ import {
   checkContentEventRateLimit,
   contentEventClientKey,
 } from '@/utilities/content/contentEventRateLimit'
-import { removeFaceSubjectFromIndex } from '@/utilities/faceSubjects/faceSubjectEnrollment'
 import {
-  getFaceSubjectMatchedPhotoIds,
-  listSearchableFaceSubjects,
-} from '@/utilities/faceSubjects/faceSubjectReads'
+  deleteFaceDescriptorMatches,
+  findMatchedFacePhotoIds,
+  loadFaceDescriptorIndex,
+} from '@/utilities/faceIndex/faceDescriptorReads'
 import { isSameOriginRequest } from '@/utilities/sameOriginRequest'
 
 export const dynamic = 'force-dynamic'
 
 /**
- * C234 — the anonymous endpoint of the selfie search. The browser computes the
- * face descriptor ON DEVICE (the selfie image never reaches this server) and
- * sends only the 128-float vector plus the intent; the answer is a list of
- * approved photos, never a score and never a third-party name.
+ * C242 — the anonymous endpoint of the selfie search (scope B: the anonymous
+ * descriptor index of the approved archive, decision of 2026-10-01). The
+ * browser computes the face descriptor ON DEVICE (the selfie image never
+ * reaches this server) and sends only the 128-float vector plus the intent; the
+ * answer is a list of approved photos, never a score and never a third-party
+ * name.
  *
  * Fail-closed in layers: same-origin, bounded body, strict schema, a budget
  * much stricter than the beacon's (the endpoint answers a membership oracle),
- * the album's `selfieSearchEnabled` kill switch AND the query Consent resolved
- * server-side — the page closing is convenience, this is the gate. Scope A/C
- * of the gate (PR #1370): only subjects enrolled with consent answer; the
- * anonymous archive index (B) does not exist. `leave-index` is authorized by
- * the matched descriptor itself.
+ * the album's `selfieSearchEnabled` kill switch AND both configured Consents
+ * resolved server-side — the query consent (`busca-selfie-fotos`, accepted by
+ * the visitor) and the public index notice (`busca-selfie-indice`, the
+ * transparency document of the anonymous index). `leave-index` is authorized
+ * by the matched descriptor itself and erases the person's faces from the
+ * index.
  */
 
 const NO_STORE = { 'Cache-Control': 'no-store' } as const
@@ -79,45 +77,33 @@ export const POST = async (request: Request): Promise<NextResponse> => {
   }
 
   const payload = await getPayload({ config })
-  // Direct read (no cache): the kill switch and the consent must be the state
+  // Direct read (no cache): the kill switch and the consents must be the state
   // of this moment — the endpoint is the gate, the page is convenience. The
   // album global's read access is public by contract, so no bypass is needed.
-  const [album, searchConsent] = await Promise.all([
+  const [album, searchConsent, indexNotice] = await Promise.all([
     payload.findGlobal({ slug: 'photoAlbum', depth: 0 }).catch(() => null),
     getConsentByKey(payload, FACE_SEARCH_CONSENT_KEY),
+    getConsentByKey(payload, FACE_INDEX_CONSENT_KEY),
   ])
 
   if (album?.published === false || album?.selfieSearchEnabled !== true) {
     return jsonResponse({ ok: false, error: 'closed' }, 404)
   }
-  if (!searchConsent) return jsonResponse({ ok: false, error: 'consent' }, 503)
-
-  const [subjects, indexConsent] = await Promise.all([
-    listSearchableFaceSubjects(payload),
-    getConsentByKey(payload, FACE_INDEX_CONSENT_KEY),
-  ])
-
-  const match = indexConsent
-    ? findFaceMatch({
-        vector: parsed.data.vector,
-        subjects,
-        model: FACE_SEARCH_MODEL,
-        consentHash: indexConsent.contentHash,
-      })
-    : null
+  if (!searchConsent || !indexNotice) return jsonResponse({ ok: false, error: 'consent' }, 503)
 
   if (parsed.data.intent === 'leave-index') {
-    if (!match) return jsonResponse({ ok: true, removed: false })
-    await removeFaceSubjectFromIndex({ payload, id: match.id })
-    return jsonResponse({ ok: true, removed: true })
+    const removedFaces = await deleteFaceDescriptorMatches({
+      payload,
+      vector: parsed.data.vector,
+    })
+    return jsonResponse({ ok: true, removed: removedFaces > 0 })
   }
 
-  if (!match) return jsonResponse({ ok: true, found: false })
+  const index = await loadFaceDescriptorIndex(payload)
+  const matchedIds = findMatchedFacePhotoIds({ vector: parsed.data.vector, entries: index })
+  if (matchedIds.length === 0) return jsonResponse({ ok: true, found: false })
 
-  const [matchedIds, approved] = await Promise.all([
-    getFaceSubjectMatchedPhotoIds(payload, match.id),
-    getApprovedArchivePhotoItems(),
-  ])
+  const approved = await getApprovedArchivePhotoItems()
   const linked = new Set(matchedIds)
   const photos = approved
     .filter((item) => linked.has(item.id))

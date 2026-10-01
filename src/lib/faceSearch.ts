@@ -1,25 +1,26 @@
 /**
- * C234 — pure contract of the selfie search over the public photo album.
+ * C242 — pure contract of the selfie search over the public photo album
+ * (scope B: the anonymous descriptor index of the approved archive, decision
+ * of 2026-10-01, supersedes the A/C enrollment of C234).
  *
  * The visitor's face descriptor is computed on their own device (the selfie
  * never leaves it); the server only ever sees the 128-float vector and answers
  * with photos, never with a score. This module owns the wire vocabulary (the
- * descriptor length, the model id, the intents), the distance math, the
- * eligibility of an enrolled subject (active + current model + current consent
- * hash — fail-closed on any of the three), the result view model (which by
- * SHAPE cannot carry a similarity number or a third-party name) and the
- * deterministic stub the e2e build uses in place of the engine.
+ * descriptor length, the model id, the intents), the distance math, the match
+ * over photo descriptors (which by SHAPE cannot carry a similarity number),
+ * the result view model (no third-party names) and the deterministic stub the
+ * e2e build uses in place of the engine.
  *
- * Scope lock of the gate (PR #1370): only consented/indexed faces exist in the
- * index (A/C); the anonymous-archive index (B) is out. The vector of the
- * visitor is never persisted — it lives in the request only.
+ * The anonymous photo descriptors live in `archivePhotoFace` (photo-level, no
+ * identity); a match never resolves a person — only photos. The visitor's
+ * vector is never persisted: it lives in the request only.
  */
 import type { ArchivePhotoPublicItem } from '@/lib/archivePhotoPublicCatalog'
 
 /** face-api's faceRecognitionNet descriptor (128 floats, euclidean space). */
 export const FACE_SEARCH_DESCRIPTOR_LENGTH = 128
 
-/** The engine+model the enrolled vectors belong to — a match across models is void. */
+/** The engine+model the indexed vectors belong to — a match across models is void. */
 export const FACE_SEARCH_MODEL = 'face-api@1.7.15/faceRecognitionNet'
 
 /**
@@ -61,8 +62,11 @@ export const readFaceVector = (value: unknown): number[] | null => {
   return vector
 }
 
-/** Euclidean distance of same-length descriptors; a length mismatch is never a match. */
-export const faceEuclideanDistance = (a: readonly number[], b: readonly number[]): number => {
+/**
+ * Euclidean distance of same-length descriptors; a length mismatch is never a
+ * match. Accepts typed arrays so the cached index can stay in `Float32Array`.
+ */
+export const faceEuclideanDistance = (a: ArrayLike<number>, b: ArrayLike<number>): number => {
   if (a.length !== b.length || a.length === 0) return Number.POSITIVE_INFINITY
 
   let sum = 0
@@ -73,58 +77,37 @@ export const faceEuclideanDistance = (a: readonly number[], b: readonly number[]
   return Math.sqrt(sum)
 }
 
-export type FaceSearchSubject = {
-  id: number
-  status?: string | null
-  model?: string | null
-  consentHash?: string | null
-  vector?: unknown
+/**
+ * One indexed face of the approved archive: the photo it was found in and its
+ * descriptor. The row has no identity by construction — this is the scope B
+ * (anonymous) contract.
+ */
+export type FaceDescriptorEntry = {
+  photoId: number
+  vector: ArrayLike<number>
 }
 
 /**
- * A subject only answers while it is `active`, was enrolled with the model the
- * query belongs to and its consent snapshot is still the configured text
- * (editing the Consent text invalidates every enrolled descriptor until the
- * person is re-consented — fail-closed).
+ * The distinct photo ids with at least one indexed face strictly under
+ * `maxDistance` from the query vector, in the order the photos appear in the
+ * index. `FACE_SEARCH_MAX_DISTANCE` is the only threshold: no caller ever
+ * receives a distance or a score.
  */
-export const faceSubjectIsEligible = (
-  subject: FaceSearchSubject,
-  { model, consentHash }: { model: string; consentHash: string },
-): boolean =>
-  subject.status === 'active' && subject.model === model && subject.consentHash === consentHash
+export const findFaceDescriptorPhotoIds = (
+  vector: ArrayLike<number>,
+  descriptors: readonly FaceDescriptorEntry[],
+): number[] => {
+  const matched: number[] = []
+  const seen = new Set<number>()
 
-/**
- * The best eligible subject strictly under `maxDistance`, or null. Subject
- * order breaks nothing: the comparison is strict, so only a closer subject
- * replaces the current best.
- */
-export const findFaceMatch = ({
-  vector,
-  subjects,
-  model,
-  consentHash,
-}: {
-  vector: readonly number[]
-  subjects: readonly FaceSearchSubject[]
-  model: string
-  consentHash: string
-}): FaceSearchSubject | null => {
-  let best: FaceSearchSubject | null = null
-  let bestDistance = FACE_SEARCH_MAX_DISTANCE
-
-  for (const subject of subjects) {
-    if (!faceSubjectIsEligible(subject, { model, consentHash })) continue
-    const candidate = readFaceVector(subject.vector)
-    if (!candidate) continue
-
-    const distance = faceEuclideanDistance(vector, candidate)
-    if (distance < bestDistance) {
-      bestDistance = distance
-      best = subject
-    }
+  for (const entry of descriptors) {
+    if (seen.has(entry.photoId)) continue
+    if (faceEuclideanDistance(vector, entry.vector) >= FACE_SEARCH_MAX_DISTANCE) continue
+    seen.add(entry.photoId)
+    matched.push(entry.photoId)
   }
 
-  return best
+  return matched
 }
 
 /**
@@ -165,7 +148,7 @@ export const toFaceSearchPhotoView = (item: ArchivePhotoPublicItem): FaceSearchP
 /**
  * Deterministic stand-in for the on-device engine (`NEXT_PUBLIC_FACE_SEARCH_STUB=1`,
  * e2e builds only): the same bytes always derive the same descriptor, so the
- * spec can seed a subject whose vector equals the fixture's without ever
+ * spec can seed an indexed face whose vector equals the fixture's without ever
  * loading a model. Never used outside the stub seam.
  */
 export const faceStubDescriptorFromBytes = (bytes: Uint8Array): number[] => {

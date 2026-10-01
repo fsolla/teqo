@@ -14,7 +14,7 @@ import {
   ARCHIVE_PHOTO_ALBUM_ENTRY_PATH,
   ARCHIVE_PHOTO_ALBUM_PATH,
 } from '@/lib/archivePhotoPublicCatalog'
-import { FACE_SEARCH_CONSENT_KEY } from '@/lib/campaignConsentKeys'
+import { FACE_INDEX_CONSENT_KEY, FACE_SEARCH_CONSENT_KEY } from '@/lib/campaignConsentKeys'
 import { getConsentByKey } from '@/utilities/campaignConsent'
 import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
@@ -79,7 +79,10 @@ export default async function FotosEncontrePage() {
   if (album.published === false || album.selfieSearchEnabled !== true) notFound()
 
   const payload = await getPayload({ config })
-  const consent = await getConsentByKey(payload, FACE_SEARCH_CONSENT_KEY)
+  const [consent, indexNotice] = await Promise.all([
+    getConsentByKey(payload, FACE_SEARCH_CONSENT_KEY),
+    getConsentByKey(payload, FACE_INDEX_CONSENT_KEY),
+  ])
   const removalChannelUrl = isArchivePhotoRemovalChannelUrl(album.removalChannelUrl)
     ? album.removalChannelUrl.trim()
     : null
@@ -98,9 +101,10 @@ export default async function FotosEncontrePage() {
             </Link>
           </nav>
         </div>
-        {consent ? (
+        {consent && indexNotice ? (
           <SelfieSearchFlow
             consentText={<ConsentText data={consent.text} />}
+            noticeText={<ConsentText data={indexNotice.text} />}
             removalChannelUrl={removalChannelUrl}
           />
         ) : (

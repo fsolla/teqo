@@ -228,15 +228,15 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontendFotos', 'frontendFotosSelfie'],
   },
   {
-    // C234 — the selfie search: the `/fotos/encontre` page (already matched by
-    // the C233 prefix above), the anonymous descriptor endpoint, the consented
-    // subjects and the bounded-body/rate-limit owners it shares. The migration
-    // makes every PR of this delivery high-risk (curated only).
+    // C242 — the selfie search: the `/fotos/encontre` page (already matched by
+    // the C233 prefix above), the anonymous descriptor endpoint, the anonymous
+    // photo-face index and the bounded-body/rate-limit owners it shares. The
+    // migration makes every PR of this delivery high-risk (curated only).
     prefixes: [
       'src/app/(frontend)/api/fotos',
       'src/lib/faceSearch.ts',
-      'src/utilities/faceSubjects',
-      'src/collections/FaceSubject.ts',
+      'src/utilities/faceIndex',
+      'src/collections/ArchivePhotoFace.ts',
       'src/collections/Consent.ts',
       'src/utilities/campaignConsent.ts',
       'src/lib/campaignConsentKeys.ts',

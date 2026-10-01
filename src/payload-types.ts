@@ -96,7 +96,7 @@ export interface Config {
     contentPiece: ContentPiece;
     contentMedia: ContentMedia;
     archivePhoto: ArchivePhoto;
-    faceSubject: FaceSubject;
+    archivePhotoFace: ArchivePhotoFace;
     contentEvent: ContentEvent;
     recording: Recording;
     recordingMedia: RecordingMedia;
@@ -154,7 +154,7 @@ export interface Config {
     contentPiece: ContentPieceSelect<false> | ContentPieceSelect<true>;
     contentMedia: ContentMediaSelect<false> | ContentMediaSelect<true>;
     archivePhoto: ArchivePhotoSelect<false> | ArchivePhotoSelect<true>;
-    faceSubject: FaceSubjectSelect<false> | FaceSubjectSelect<true>;
+    archivePhotoFace: ArchivePhotoFaceSelect<false> | ArchivePhotoFaceSelect<true>;
     contentEvent: ContentEventSelect<false> | ContentEventSelect<true>;
     recording: RecordingSelect<false> | RecordingSelect<true>;
     recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
@@ -1585,33 +1585,22 @@ export interface ArchivePhoto {
   focalY?: number | null;
 }
 /**
- * Pessoas que consentiram entrar no índice da busca por selfie (/fotos/encontre). Operado pela CLI faces:enroll/faces:index; a remoção é registrada no status.
+ * Índice facial anônimo do acervo público aprovado (C242). Operado pela CLI faces:index; o descriptor nunca é exposto.
  *
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "faceSubject".
+ * via the `definition` "archivePhotoFace".
  */
-export interface FaceSubject {
+export interface ArchivePhotoFace {
   id: number;
   /**
-   * Como a assessoria identifica a pessoa; nunca aparece no site.
+   * Foto aprovada em que o rosto foi detectado.
    */
-  label: string;
+  photo: number | ArchivePhoto;
   /**
-   * O Consent da adesão ao índice (chave estável busca-selfie-indice).
+   * Modelo do descriptor (troca de modelo invalida a revisão e o lote reprocessa).
    */
-  consent: number | Consent;
-  /**
-   * Snapshot do texto aceito no enrollment; se o texto mudar, a pessoa fica inelegível até re-consentir.
-   */
-  consentHash?: string | null;
-  /**
-   * Modelo do descriptor (troca de modelo invalida o índice: re-enrollment).
-   */
-  model?: string | null;
-  /**
-   * Muda a cada enrollment/re-enrollment; é o que marca o lote como stale (o updated_at muda também quando o lote escreve os vínculos).
-   */
-  enrolledAt?: string | null;
+  model: string;
+  detectedAt?: string | null;
   vector?:
     | {
         [k: string]: unknown;
@@ -1621,18 +1610,6 @@ export interface FaceSubject {
     | number
     | boolean
     | null;
-  /**
-   * Removida: pedido de saída atendido — o vetor é apagado e a pessoa deixa de ser encontrada.
-   */
-  status: 'active' | 'removed';
-  /**
-   * Data do atendimento da saída do índice.
-   */
-  removedAt?: string | null;
-  /**
-   * Derivado do lote (pnpm faces:index): fotos aprovadas em que o descriptor foi encontrado.
-   */
-  matchedPhotos?: (number | ArchivePhoto)[] | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -2471,8 +2448,8 @@ export interface PayloadLockedDocument {
         value: number | ArchivePhoto;
       } | null)
     | ({
-        relationTo: 'faceSubject';
-        value: number | FaceSubject;
+        relationTo: 'archivePhotoFace';
+        value: number | ArchivePhotoFace;
       } | null)
     | ({
         relationTo: 'contentEvent';
@@ -3286,18 +3263,13 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "faceSubject_select".
+ * via the `definition` "archivePhotoFace_select".
  */
-export interface FaceSubjectSelect<T extends boolean = true> {
-  label?: T;
-  consent?: T;
-  consentHash?: T;
+export interface ArchivePhotoFaceSelect<T extends boolean = true> {
+  photo?: T;
   model?: T;
-  enrolledAt?: T;
+  detectedAt?: T;
   vector?: T;
-  status?: T;
-  removedAt?: T;
-  matchedPhotos?: T;
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4191,7 +4163,7 @@ export interface TaskCreateCollectionExport {
       | 'contentPiece'
       | 'contentMedia'
       | 'archivePhoto'
-      | 'faceSubject'
+      | 'archivePhotoFace'
       | 'contentEvent'
       | 'recording'
       | 'recordingMedia'

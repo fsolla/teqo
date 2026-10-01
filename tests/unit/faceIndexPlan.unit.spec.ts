@@ -12,8 +12,8 @@ import {
   summarizeFaceIndexResults,
 } from '../../scripts/lib/faceIndexPlan.mjs'
 
-// C234 — the pure parser/summaries of `pnpm faces:index`: the honest staleness
-// accounting and the operator-facing lines.
+// C242 — the pure parser/summaries of `pnpm faces:index`: the honest staleness
+// accounting (scope B: descriptors, not subjects) and the operator-facing lines.
 
 describe('parseFaceIndexCliArgs', () => {
   it('defaults to the dry-run and parses the modes', () => {
@@ -47,82 +47,43 @@ describe('parseFaceIndexCliArgs', () => {
 })
 
 describe('summarizeFaceIndexResults', () => {
-  it('counts indexed/linked/failed and aggregates links per subject', () => {
+  it('counts indexed photos, stored descriptors and failures with the stage', () => {
     const summary = summarizeFaceIndexResults([
-      { photoId: 1, status: 'indexed', matchedSubjects: [3, 4] },
-      { photoId: 2, status: 'indexed', matchedSubjects: [3] },
-      { photoId: 3, status: 'indexed', matchedSubjects: [] },
+      { photoId: 1, status: 'indexed', descriptorCount: 3 },
+      { photoId: 2, status: 'indexed', descriptorCount: 0 },
+      { photoId: 3, status: 'indexed', descriptorCount: 1 },
       { photoId: 4, status: 'failed', stage: 'download', error: 'sem arquivo' },
     ])
 
     expect(summary.indexed).toBe(3)
+    expect(summary.descriptors).toBe(4)
     expect(summary.failed).toBe(1)
-    expect(summary.linkedPhotos).toBe(2)
-    expect(summary.linksBySubject).toEqual([
-      { subjectId: 3, photos: 2 },
-      { subjectId: 4, photos: 1 },
-    ])
     expect(summary.failures).toEqual([{ photoId: 4, stage: 'download', error: 'sem arquivo' }])
   })
 })
 
 describe('summarizeFaceIndexInventory', () => {
-  const queue = { indexKey: 'k', eligibleSubjects: 2, totalApproved: 10, stale: 4 }
-  const subjects = [
-    {
-      id: 1,
-      status: 'active',
-      model: 'face-api@1.7.15/faceRecognitionNet',
-      consentHash: 'hash-atual',
-      vector: [0],
-      matchedPhotoIds: [1, 2],
-    },
-    {
-      id: 2,
-      status: 'active',
-      model: 'face-api@1.7.15/faceRecognitionNet',
-      consentHash: 'hash-antigo',
-      vector: [0],
-      matchedPhotoIds: [],
-    },
-    {
-      id: 3,
-      status: 'removed',
-      model: 'face-api@1.7.15/faceRecognitionNet',
-      consentHash: 'hash-atual',
-      vector: null,
-      matchedPhotoIds: [],
-    },
-  ]
-
-  it('derives the honest gap, the consent staleness and the links breakdown', () => {
+  it('derives the honest gap and the stored descriptor count', () => {
     const inventory = summarizeFaceIndexInventory({
-      queue,
-      subjects,
-      currentConsentHash: 'hash-atual',
+      queue: { indexKey: 'face-api@1.7.15/faceRecognitionNet', totalApproved: 10, stale: 4 },
+      descriptors: 23,
     })
 
     expect(inventory).toEqual({
-      indexKey: 'k',
+      indexKey: 'face-api@1.7.15/faceRecognitionNet',
       totalApproved: 10,
       indexed: 6,
       stale: 4,
-      eligibleSubjects: 2,
-      activeSubjects: 2,
-      removedSubjects: 1,
-      staleConsentSubjects: 1,
-      linkedPhotos: 2,
-      linksBySubject: [{ subjectId: 1, photos: 2 }],
+      descriptors: 23,
     })
   })
 
-  it('treats a missing current consent as stale for everyone', () => {
+  it('never reports a negative indexed count', () => {
     const inventory = summarizeFaceIndexInventory({
-      queue,
-      subjects,
-      currentConsentHash: null,
+      queue: { indexKey: 'k', totalApproved: 2, stale: 5 },
+      descriptors: 0,
     })
-    expect(inventory.staleConsentSubjects).toBe(2)
+    expect(inventory.indexed).toBe(0)
   })
 })
 
@@ -136,20 +97,14 @@ describe('formatting', () => {
         totalApproved: 10,
         indexed: 6,
         stale: 4,
-        eligibleSubjects: 2,
-        activeSubjects: 2,
-        removedSubjects: 1,
-        staleConsentSubjects: 1,
-        linkedPhotos: 2,
-        linksBySubject: [{ subjectId: 1, photos: 2 }],
+        descriptors: 23,
       },
       'face-api@1.7.15/faceRecognitionNet',
     )
     const text = lines.join('\n')
     expect(text).toContain('fotos aprovadas: 10')
     expect(text).toContain('desatualizadas (a processar): 4')
-    expect(text).toContain('consentimento vencido')
-    expect(text).toContain('sujeito #1: 2 foto(s)')
+    expect(text).toContain('rostos no índice (modelo atual): 23')
   })
 
   it('prints the apply summary with failures', () => {
@@ -157,20 +112,18 @@ describe('formatting', () => {
       mode: 'apply',
       target: 'host/db',
       model: 'face-api@1.7.15/faceRecognitionNet',
-      queue: { items: 3, totalApproved: 10, eligibleSubjects: 1 },
+      queue: { items: 3, totalApproved: 10 },
       summary: {
         indexed: 2,
         failed: 1,
-        linkedPhotos: 1,
-        linksBySubject: [{ subjectId: 3, photos: 1 }],
+        descriptors: 5,
         failures: [{ photoId: 4, stage: 'analyze', error: 'engine fora' }],
       },
     }
     const text = formatFaceIndexReport(report).join('\n')
 
     expect(text).toContain('modo: apply')
-    expect(text).toContain('processadas: 2 | vinculadas a alguém: 1 | falharam: 1')
-    expect(text).toContain('sujeito #3: 1 foto(s)')
+    expect(text).toContain('processadas: 2 | rostos indexados: 5 | falharam: 1')
     expect(text).toContain('✗ foto 4 [analyze]: engine fora')
   })
 })

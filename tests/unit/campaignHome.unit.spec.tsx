@@ -64,11 +64,25 @@ vi.mock('@/utilities/content/contentPieceReads', () => ({
   getPublishedContentPieceItems: async () => contentPieces.items,
 }))
 
-// C233 — the footer's "Fotos" discovery flag reads the approved archive photos
-// through the Payload DB; the unit env has no database and the real listing is
-// e2e-covered (frontendFotos.e2e.spec.ts).
+// C233/C243 — the footer's "Fotos" discovery flag and the selfie-search section
+// read the approved archive photos and the photoAlbum global through the
+// Payload DB; the unit env has no database and the real gate is e2e-covered
+// (frontendFotosSelfie.e2e.spec.ts).
+const homePhotoAlbum = vi.hoisted(() => ({
+  hasPhotos: false,
+  selfieSearchEnabled: false,
+  published: true,
+}))
+
 vi.mock('@/utilities/archivePhotos/archivePhotoReads', () => ({
-  hasPublishedArchivePhotos: async () => false,
+  hasPublishedArchivePhotos: async () => homePhotoAlbum.hasPhotos,
+}))
+
+vi.mock('@/utilities/globalReads', () => ({
+  getCachedGlobal: () => async () => ({
+    published: homePhotoAlbum.published,
+    selfieSearchEnabled: homePhotoAlbum.selfieSearchEnabled,
+  }),
 }))
 
 // S14 — the card section renders the client studio island (next/font local
@@ -84,6 +98,9 @@ vi.mock('@/components/cards/CardsStudio', () => ({
 
 afterEach(() => {
   contentPieces.items = []
+  homePhotoAlbum.hasPhotos = false
+  homePhotoAlbum.selfieSearchEnabled = false
+  homePhotoAlbum.published = true
   cleanup()
 })
 
@@ -143,5 +160,30 @@ describe('Campaign home', () => {
 
     expect(screen.queryByRole('heading', { name: 'Peça voto pra Solla 1313' })).toBeNull()
     expect(screen.queryByRole('link', { name: /Ver todas as peças/ })).toBeNull()
+  })
+
+  it('mostra a seção da busca por selfie só quando a busca está aberta (C243, fail-closed)', async () => {
+    homePhotoAlbum.hasPhotos = true
+    homePhotoAlbum.selfieSearchEnabled = true
+    render(await HomePage())
+
+    expect(screen.getByRole('heading', { name: 'Encontre você nas fotos' })).toBeTruthy()
+    const ctas = screen.getAllByRole('link', { name: /Encontrar minhas fotos/ })
+    expect(ctas.length).toBeGreaterThan(0)
+    for (const cta of ctas) expect(cta.getAttribute('href')).toBe('/fotos/encontre')
+
+    cleanup()
+
+    homePhotoAlbum.selfieSearchEnabled = false
+    render(await HomePage())
+    expect(screen.queryByRole('heading', { name: 'Encontre você nas fotos' })).toBeNull()
+
+    cleanup()
+
+    // Flag on but no approved photo is still closed: no dead CTA.
+    homePhotoAlbum.selfieSearchEnabled = true
+    homePhotoAlbum.hasPhotos = false
+    render(await HomePage())
+    expect(screen.queryByRole('heading', { name: 'Encontre você nas fotos' })).toBeNull()
   })
 })

@@ -30,14 +30,15 @@ export const CAMPAIGN_PUSH_CONSENT_MISSING_MESSAGE =
   'Consentimento de notificações push ainda não configurado.'
 
 /**
- * C234 — the public selfie search on the photo album. Two keys because the
- * two biometric uses are distinct: `FACE_SEARCH_CONSENT_KEY` is the temporary
- * use of the querying person's face to find themselves in the album (the
- * vector is discarded with the request), while `FACE_INDEX_CONSENT_KEY` is
- * the enrollment in the search index (the vector is stored until removal).
- * Both fail closed: without the Consent row with the exact key the flow is
- * closed, and editing the text invalidates every enrolled subject until
- * re-consent.
+ * C242 — the public selfie search on the photo album (scope B: the anonymous
+ * descriptor index of the approved archive). Two keys because the two
+ * biometric documents are distinct: `FACE_SEARCH_CONSENT_KEY` is the visitor's
+ * consent for the temporary use of their own face in this query (the vector is
+ * discarded with the request), while `FACE_INDEX_CONSENT_KEY` is the PUBLIC
+ * NOTICE of the anonymous archive index (transparency + self-service opt-out;
+ * there is no per-person enrollment). Both fail closed: without the Consent row
+ * with the exact key the flow is closed, and the texts are versioned in
+ * `scripts/lib/faceConsentTexts.mjs` (provisioned by `pnpm seed:face-consents`).
  */
 export const FACE_SEARCH_CONSENT_KEY = 'busca-selfie-fotos'
 export const FACE_INDEX_CONSENT_KEY = 'busca-selfie-indice'
