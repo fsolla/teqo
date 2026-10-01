@@ -1,0 +1,1127 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#ecebea" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design — S45 · Cards verticais da Central de Conteúdos</title>
+    <style type="text/tailwindcss">
+      @theme inline {
+        --font-sans: Arimo, Arial, sans-serif;
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-primary: var(--primary);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-border: var(--border);
+      }
+
+      [data-theme='campaign'] {
+        --background: #ffffff;
+        --foreground: #1c1917;
+        --primary: #c51414;
+        --muted: #f4f4f5;
+        --muted-foreground: #6b7280;
+        --border: rgb(28 25 23 / 12%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        max-width: 100%;
+        overflow-x: hidden;
+      }
+
+      body {
+        margin: 0;
+        font-family: Arimo, Arial, sans-serif;
+      }
+
+      button,
+      a {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      button:focus-visible,
+      a:focus-visible {
+        outline: 3px solid #ffe607;
+        outline-offset: 3px;
+      }
+
+      .site {
+        --red: #a21c1c;
+        --dark: #47130e;
+        --yellow: #ffe607;
+        --yellow-ink: #000;
+        --cream: #fff8f2;
+        --muted-ink: #6c615e;
+        --surface: #f9faff;
+        --band: #ebe9e9;
+        --line: rgb(0 0 0 / 12%);
+        --display: 'Exo 2', 'Arial Black', Arial, sans-serif;
+        color: #000;
+      }
+
+      .display {
+        font-family: var(--display);
+      }
+
+      .board {
+        background: #ecebea;
+        background-image: radial-gradient(rgb(24 78 146 / 8%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+
+      .frame {
+        box-shadow: 0 20px 55px rgb(28 25 23 / 12%);
+      }
+
+      .desktop {
+        width: 1280px;
+        max-width: 100%;
+      }
+
+      .phone {
+        width: 390px;
+        max-width: 100%;
+        border-radius: 28px;
+      }
+
+      .scene::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #cbc7c2;
+      }
+
+      .card {
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        background: #fff;
+        box-shadow: 0 8px 24px rgb(71 19 14 / 7%);
+      }
+
+      .tag {
+        display: inline-flex;
+        min-height: 24px;
+        align-items: center;
+        border-radius: 999px;
+        background: #eef4fb;
+        padding: 4px 8px;
+        color: #184e92;
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .local-tag {
+        background: #fff3c4;
+        color: #6b5100;
+      }
+
+      .button {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        border-radius: 10px;
+        padding: 9px 13px;
+        font-family: var(--display);
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+      }
+
+      .button-primary {
+        background: var(--red);
+        color: #fff;
+        box-shadow: 0 4px 0 #781010;
+      }
+
+      .button-outline {
+        border: 1.5px solid rgb(162 28 28 / 28%);
+        background: #fff;
+        color: var(--red);
+      }
+
+      .media-slot {
+        position: relative;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: linear-gradient(135deg, #e5e2df, #f7f5f3);
+      }
+
+      .safe-media {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .placeholder-label {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        z-index: 2;
+        border: 1px dashed rgb(255 255 255 / 65%);
+        border-radius: 999px;
+        background: rgb(0 0 0 / 62%);
+        padding: 5px 8px;
+        color: #fff;
+        font-size: 9px;
+        font-weight: 900;
+        letter-spacing: 0.08em;
+      }
+
+      .play {
+        position: absolute;
+        z-index: 3;
+        display: grid;
+        width: 56px;
+        height: 56px;
+        place-items: center;
+        border: 0;
+        border-radius: 999px;
+        background: var(--yellow);
+        color: var(--yellow-ink);
+        box-shadow:
+          0 6px 0 #cfb900,
+          0 10px 22px rgb(0 0 0 / 15%);
+      }
+
+      .play-small {
+        width: 44px;
+        height: 44px;
+      }
+
+      .duration {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        z-index: 3;
+        border-radius: 4px;
+        background: rgb(0 0 0 / 70%);
+        padding: 4px 8px;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .poster-reel {
+        background:
+          linear-gradient(180deg, transparent 58%, rgb(15 23 42 / 86%) 100%),
+          radial-gradient(circle at 50% 31%, #c9d6dd 0 9%, transparent 9.5%),
+          linear-gradient(145deg, #184e92 0 35%, #d8e7ef 35% 58%, #e4102f 58% 100%);
+      }
+
+      .poster-photo {
+        background:
+          linear-gradient(180deg, transparent 58%, rgb(71 19 14 / 78%) 100%),
+          radial-gradient(circle at 50% 34%, #f5d5c4 0 10%, transparent 10.5%),
+          linear-gradient(150deg, #ffe607 0 30%, #f8eee8 30% 64%, #a21c1c 64% 100%);
+      }
+
+      .horizontal-art {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        background:
+          linear-gradient(90deg, rgb(24 78 146 / 92%) 0 46%, transparent 46%),
+          linear-gradient(145deg, #ffe607, #e4102f);
+      }
+
+      .model-art {
+        background:
+          radial-gradient(circle at 50% 35%, rgb(255 255 255 / 20%) 0 14%, transparent 14.5%),
+          linear-gradient(155deg, #184e92 0 46%, #e4102f 46% 72%, #ffe607 72% 100%);
+      }
+
+      .neutral-stage {
+        background:
+          radial-gradient(circle at 18% 12%, rgb(24 78 146 / 7%) 0 18%, transparent 18.5%),
+          radial-gradient(circle at 88% 90%, rgb(228 16 47 / 7%) 0 22%, transparent 22.5%), #ebe9e9;
+      }
+
+      .audio-wave {
+        display: flex;
+        height: 42px;
+        align-items: center;
+        gap: 5px;
+      }
+
+      .audio-wave span {
+        width: 5px;
+        border-radius: 999px;
+        background: #a21c1c;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          scroll-behavior: auto !important;
+          animation: none !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen overflow-x-hidden text-foreground antialiased">
+    <main class="mx-auto w-full max-w-[1480px] space-y-16 px-4 py-12 md:px-8">
+      <header class="site max-w-4xl">
+        <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white"
+          >S45 · design para o gate</span
+        >
+        <h1 class="display mt-4 text-4xl leading-tight font-black tracking-[-0.02em]">
+          A peça aparece na forma em que foi criada.
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-[#6c615e]">
+          Reels respiram em 9:16, fotos em 4:5 e modelos em 3:4. Nenhuma mídia é cortada: horizontal
+          fica inteira sobre a superfície neutra. Áudio, texto e link continuam largos.
+        </p>
+        <div class="mt-5 grid max-w-3xl gap-3 sm:grid-cols-3">
+          <div class="rounded-xl border border-black/10 bg-white p-4">
+            <b class="display text-sm">Vídeo · 9:16</b>
+            <p class="mt-1 text-xs leading-5 text-[#6c615e]">Frame e player usam contain.</p>
+          </div>
+          <div class="rounded-xl border border-black/10 bg-white p-4">
+            <b class="display text-sm">Foto · 4:5</b>
+            <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+              Imagem inteira, inclusive horizontal.
+            </p>
+          </div>
+          <div class="rounded-xl border border-black/10 bg-white p-4">
+            <b class="display text-sm">Modelo · 3:4</b>
+            <p class="mt-1 text-xs leading-5 text-[#6c615e]">Arte vertical, convite para /cards.</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- CENA 01 -->
+      <section class="site" aria-labelledby="catalog-desktop-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2 id="catalog-desktop-title">Catálogo · desktop 1280 · quatro colunas verticais</h2>
+        </div>
+        <div class="overflow-x-auto pb-5">
+          <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+            <header class="flex h-16 items-center justify-between bg-[#ae1603] px-10">
+              <div class="h-9 w-44 rounded bg-white/20" aria-label="Jorge Solla"></div>
+              <b class="text-sm text-white">Central de Conteúdos</b>
+            </header>
+            <div class="mx-auto max-w-6xl px-10 py-10">
+              <div class="rounded-xl bg-[#fff8f2] p-4">
+                <div
+                  class="min-h-11 rounded-[10px] border border-black/18 bg-white px-3 py-3 text-sm text-[#6c615e]"
+                >
+                  Encontre uma peça por assunto, cidade ou tema…
+                </div>
+                <div class="mt-3 flex flex-wrap gap-2">
+                  <span
+                    class="inline-flex min-h-9 items-center rounded-full border border-black/12 bg-white px-3 text-xs font-bold"
+                    >Tipo⌄</span
+                  >
+                  <span
+                    class="inline-flex min-h-9 items-center rounded-full border border-black/12 bg-white px-3 text-xs font-bold"
+                    >Cidade⌄</span
+                  >
+                  <span
+                    class="inline-flex min-h-9 items-center rounded-full border border-black/12 bg-white px-3 text-xs font-bold"
+                    >Região⌄</span
+                  >
+                  <span
+                    class="inline-flex min-h-9 items-center rounded-full border border-black/12 bg-white px-3 text-xs font-bold"
+                    >Tema⌄</span
+                  >
+                </div>
+              </div>
+              <div class="mt-8 flex items-end justify-between gap-6">
+                <div>
+                  <h3 class="display text-2xl font-black">Escolha, compartilhe e peça voto</h3>
+                  <p class="mt-1 text-sm text-[#6c615e]">A mídia só carrega quando você tocar.</p>
+                </div>
+                <span class="text-xs font-bold text-[#6c615e]">Grade: 4 colunas · gap 20px</span>
+              </div>
+
+              <div class="mt-5 grid grid-cols-4 items-start gap-5">
+                <article class="card">
+                  <div class="media-slot aspect-[9/16]">
+                    <div class="poster-reel h-full w-full" aria-hidden="true"></div>
+                    <span class="placeholder-label">NEEDS ASSET · FRAME REAL</span>
+                    <button class="play" aria-label="Reproduzir vídeo">
+                      <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                    </button>
+                    <span class="duration">Duração</span>
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Vídeo</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Título da peça em vídeo</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Tema · Cidade</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <span class="button button-outline px-2">Baixar</span>
+                      <span class="button button-outline px-2">Compartilhar</span>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="card">
+                  <div class="media-slot aspect-[3/4]">
+                    <div
+                      class="model-art relative grid h-full w-full place-items-center overflow-hidden text-center text-white"
+                    >
+                      <div>
+                        <b class="display block text-4xl">#SOU</b>
+                        <b class="display mt-2 block bg-[#e4102f] px-4 py-1 text-lg text-[#ffe607]"
+                          >____</b
+                        >
+                      </div>
+                      <span class="absolute right-3 bottom-3 text-[9px] font-black"
+                        >NEEDS ASSET · ARTE REAL</span
+                      >
+                    </div>
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Card</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Card com seu nome</h4>
+                    <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                      Coloque seu nome no card oficial.
+                    </p>
+                    <span class="button button-outline mt-4 w-full px-2"
+                      >Escolher este modelo →</span
+                    >
+                  </div>
+                </article>
+
+                <article class="card">
+                  <div class="media-slot aspect-[4/5]">
+                    <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                    <span class="placeholder-label">NEEDS ASSET · FOTO REAL</span>
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Foto</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Título da foto publicada</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Tema da peça</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <span class="button button-outline px-2">Baixar</span>
+                      <span class="button button-outline px-2">Compartilhar</span>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="card">
+                  <div class="media-slot neutral-stage aspect-[9/16] p-3">
+                    <div class="horizontal-art grid place-items-center text-white">
+                      <b class="display text-lg">PEÇA HORIZONTAL</b>
+                    </div>
+                    <span class="placeholder-label">NEEDS ASSET · MÍDIA REAL</span>
+                    <button class="play" aria-label="Reproduzir vídeo horizontal">
+                      <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                    </button>
+                    <span class="duration">Duração</span>
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Vídeo</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Peça horizontal inteira</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Letterbox neutro · sem corte</p>
+                    <div class="mt-4 grid grid-cols-2 gap-2">
+                      <span class="button button-outline px-2">Baixar</span>
+                      <span class="button button-outline px-2">Compartilhar</span>
+                    </div>
+                  </div>
+                </article>
+              </div>
+
+              <div class="mt-6 grid grid-cols-2 gap-5">
+                <article class="card grid min-h-[170px] grid-cols-[190px_1fr]">
+                  <div class="media-slot bg-[#fff8f2] px-5">
+                    <span
+                      class="absolute top-3 left-3 text-[10px] font-black tracking-[0.14em] text-[#6c615e] uppercase"
+                      >Áudio</span
+                    >
+                    <div class="audio-wave" aria-hidden="true">
+                      <span class="h-4"></span><span class="h-8"></span><span class="h-6"></span
+                      ><span class="h-10"></span><span class="h-5"></span><span class="h-7"></span>
+                    </div>
+                    <button class="play play-small" aria-label="Reproduzir áudio">
+                      <svg viewBox="0 0 24 24" class="size-5 fill-current" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Áudio</span>
+                    <h4 class="mt-2 font-extrabold">Mensagem para compartilhar</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">
+                      Formato largo: não existe enquadramento visual a preservar.
+                    </p>
+                    <div class="mt-4 flex gap-2">
+                      <span class="button button-outline">Baixar</span
+                      ><span class="button button-outline">Compartilhar</span>
+                    </div>
+                  </div>
+                </article>
+                <article class="card grid min-h-[170px] grid-cols-[190px_1fr]">
+                  <div
+                    class="media-slot bg-[linear-gradient(145deg,#fff4f5,#eef4fb)] px-4 text-center"
+                  >
+                    <div>
+                      <p class="text-[10px] font-black tracking-[0.16em] text-[#6c615e] uppercase">
+                        Peça no Instagram
+                      </p>
+                      <b class="display mt-2 block text-2xl text-[#e4102f]">Instagram</b>
+                    </div>
+                  </div>
+                  <div class="p-4">
+                    <span class="tag">Instagram</span>
+                    <h4 class="mt-2 font-extrabold">Publicação na plataforma</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">
+                      Link largo: a plataforma é a pista, não uma moldura vazia.
+                    </p>
+                    <span class="button button-outline mt-4">Compartilhar</span>
+                  </div>
+                </article>
+              </div>
+
+              <div class="mt-6 grid grid-cols-2 gap-5">
+                <article class="card flex items-center gap-4 p-3">
+                  <div class="media-slot aspect-[4/5] w-24 shrink-0 rounded-lg">
+                    <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                    <span
+                      class="absolute right-1 bottom-1 rounded bg-black/65 px-1.5 py-0.5 text-[8px] font-bold text-white"
+                      >NEEDS ASSET</span
+                    >
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <span class="tag">Foto</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Foto compacta na linha</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Thumb 96 × 120 · 4:5 inteiro</p>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                      <span class="button button-outline">Baixar</span
+                      ><span class="button button-outline">Compartilhar</span>
+                    </div>
+                  </div>
+                </article>
+                <div
+                  class="rounded-xl border border-dashed border-black/15 bg-[#f9faff] p-5 text-sm leading-6 text-[#6c615e]"
+                >
+                  <b class="display block text-black">Densidade decidida</b>
+                  O board principal passa de 3 para 4 colunas em <code>lg</code>, mantém 2 em
+                  <code>sm</code> e 1 no celular. Áudio e link ocupam uma grade larga de 2 colunas;
+                  fotos compactas preservam a linha.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 02 -->
+      <section class="site" aria-labelledby="catalog-mobile-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 02</span>
+          <h2 id="catalog-mobile-title">Catálogo · mobile 390 · uma coluna, sem overflow</h2>
+        </div>
+        <div class="phone frame mx-auto overflow-hidden bg-white">
+          <header class="flex h-14 items-center justify-between bg-[#ae1603] px-5">
+            <div class="h-7 w-32 rounded bg-white/20" aria-label="Jorge Solla"></div>
+            <b class="text-xs text-white">Conteúdos</b>
+          </header>
+          <div class="px-5 py-7">
+            <h3 class="display text-2xl font-black">Escolha uma peça</h3>
+            <p class="mt-1 text-sm text-[#6c615e]">Toque para ver, baixar ou compartilhar.</p>
+            <div class="mt-5 space-y-5">
+              <article class="card">
+                <div class="media-slot aspect-[9/16]">
+                  <div class="poster-reel h-full w-full" aria-hidden="true"></div>
+                  <span class="placeholder-label">NEEDS ASSET · FRAME REAL</span>
+                  <button class="play" aria-label="Reproduzir vídeo">
+                    <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                  </button>
+                  <span class="duration">Duração</span>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Vídeo</span>
+                  <h4 class="mt-2 font-extrabold">Título da peça em vídeo</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Reel inteiro · 9:16</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <span class="button button-outline">Baixar</span
+                    ><span class="button button-outline">Compartilhar</span>
+                  </div>
+                  <a
+                    class="mt-3 flex min-h-11 items-center justify-center text-xs font-bold text-[#a21c1c] underline-offset-4"
+                    >Ver detalhes da peça →</a
+                  >
+                </div>
+              </article>
+
+              <article class="card">
+                <div class="media-slot aspect-[4/5]">
+                  <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                  <span class="placeholder-label">NEEDS ASSET · FOTO REAL</span>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Foto</span>
+                  <h4 class="mt-2 font-extrabold">Título da foto publicada</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Foto inteira · 4:5</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <span class="button button-outline">Baixar</span
+                    ><span class="button button-outline">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card">
+                <div class="media-slot neutral-stage aspect-[9/16] p-4">
+                  <div class="horizontal-art grid place-items-center text-white">
+                    <b class="display text-xl">16:9 INTEIRO</b>
+                  </div>
+                  <span class="placeholder-label">NEEDS ASSET · MÍDIA REAL</span>
+                  <button class="play" aria-label="Reproduzir peça horizontal">
+                    <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                  </button>
+                  <span class="duration">Duração</span>
+                </div>
+                <div class="p-4">
+                  <span class="tag">Vídeo</span>
+                  <h4 class="mt-2 font-extrabold">Peça horizontal inteira</h4>
+                  <p class="mt-1 text-xs text-[#6c615e]">Letterbox neutro · sem corte</p>
+                  <div class="mt-4 grid grid-cols-2 gap-2">
+                    <span class="button button-outline">Baixar</span
+                    ><span class="button button-outline">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+
+              <article class="card grid grid-cols-[96px_minmax(0,1fr)] items-start p-3">
+                <div class="media-slot aspect-[4/5] w-24 rounded-lg">
+                  <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                  <span
+                    class="absolute right-1 bottom-1 rounded bg-black/65 px-1 py-0.5 text-[8px] font-black text-white"
+                    >NEEDS ASSET</span
+                  >
+                </div>
+                <div class="min-w-0 pl-3">
+                  <span class="tag">Foto</span>
+                  <h4 class="mt-2 text-sm font-extrabold">Foto compacta na linha</h4>
+                  <p class="mt-1 text-[11px] leading-4 text-[#6c615e]">Portrait inteiro · 4:5</p>
+                  <div class="mt-3 grid grid-cols-2 gap-2">
+                    <span class="button button-outline min-h-11 px-2 text-xs">Baixar</span>
+                    <span class="button button-outline min-h-11 px-2 text-xs">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+
+              <a
+                class="card grid grid-cols-[112px_minmax(0,1fr)] text-black no-underline"
+                href="/cards"
+              >
+                <div class="media-slot aspect-[3/4] w-28">
+                  <div
+                    class="model-art grid h-full w-full place-items-center text-center text-white"
+                  >
+                    <b class="display text-xl"
+                      >#SOU<br /><span class="text-[#ffe607]">____</span></b
+                    >
+                  </div>
+                  <span class="absolute right-1 bottom-1 text-[7px] font-black text-white"
+                    >NEEDS ASSET</span
+                  >
+                </div>
+                <div class="min-w-0 p-4">
+                  <span class="tag">Card</span>
+                  <h4 class="mt-2 text-sm font-extrabold">Card com seu nome</h4>
+                  <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                    Convite para criar, sem cromo de mídia.
+                  </p>
+                  <span class="mt-3 flex min-h-11 items-center text-xs font-bold text-[#a21c1c]"
+                    >Escolher →</span
+                  >
+                </div>
+              </a>
+
+              <article class="card">
+                <div class="grid grid-cols-[112px_minmax(0,1fr)]">
+                  <div class="media-slot min-h-[156px] bg-[#fff8f2]">
+                    <span
+                      class="absolute top-2 left-2 text-[9px] font-black text-[#6c615e] uppercase"
+                      >Áudio</span
+                    >
+                    <button class="play play-small" aria-label="Reproduzir áudio">
+                      <svg viewBox="0 0 24 24" class="size-5 fill-current" aria-hidden="true">
+                        <path d="m8 5 11 7-11 7z" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div class="min-w-0 p-4">
+                    <span class="tag">Áudio</span>
+                    <h4 class="mt-2 text-sm font-extrabold">Mensagem para compartilhar</h4>
+                    <p class="mt-1 text-xs text-[#6c615e]">Largo, sem vazio vertical.</p>
+                    <span class="button button-outline mt-3 w-full">Compartilhar</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+            <p
+              class="mt-5 rounded-lg bg-[#f5f5f4] p-3 text-center text-[11px] leading-5 text-[#6c615e]"
+            >
+              Conteúdo útil: 350px dentro de 390px, com 20px de respiro de cada lado. Nenhum
+              elemento excede o viewport.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 03 -->
+      <section class="site" aria-labelledby="home-desktop-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 03</span>
+          <h2 id="home-desktop-title">Home · desktop 1280 · até três peças verticais</h2>
+        </div>
+        <div class="overflow-x-auto pb-5">
+          <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+            <div class="border-b border-black/10 bg-[#fff8f2] px-10 py-7 text-center">
+              <p class="text-xs font-black tracking-[0.1em] text-[#a21c1c] uppercase">
+                Seção existente acima
+              </p>
+            </div>
+            <section class="relative overflow-hidden border-b border-black/10 bg-white px-10 py-14">
+              <div class="absolute -top-24 -right-20 size-64 rounded-full bg-[#ffe607]/30"></div>
+              <div class="relative mx-auto max-w-[1080px]">
+                <div class="mx-auto max-w-2xl text-center">
+                  <p class="text-xs font-black tracking-[0.1em] text-[#a21c1c] uppercase">
+                    Central de Conteúdos
+                  </p>
+                  <h2 class="display mt-2 text-4xl font-black tracking-tight">
+                    Peça voto pra Solla 1313
+                  </h2>
+                  <p class="mt-3 text-base text-[#6c615e]">
+                    Material do seu território para compartilhar.
+                  </p>
+                  <span class="tag local-tag mt-3 min-h-9 px-2.5">⌖ Para seu município</span>
+                </div>
+                <div class="mt-9 grid grid-cols-3 items-start gap-6">
+                  <article class="card">
+                    <div class="media-slot aspect-[4/5]">
+                      <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                      <span class="placeholder-label">NEEDS ASSET · FOTO REAL</span>
+                    </div>
+                    <div class="p-4">
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="tag">Foto</span
+                        ><span class="tag local-tag">Do seu município</span>
+                      </div>
+                      <h3 class="mt-2 font-extrabold">Título da peça local</h3>
+                      <p class="mt-1 text-xs text-[#6c615e]">Seu município · Tema</p>
+                      <span class="button button-outline mt-4 w-full">Compartilhar</span>
+                      <a
+                        class="mt-2 flex min-h-9 items-center justify-center text-xs font-extrabold text-[#a21c1c]"
+                        >Ver esta peça →</a
+                      >
+                    </div>
+                  </article>
+                  <article class="card">
+                    <div class="media-slot aspect-[9/16]">
+                      <div class="poster-reel h-full w-full" aria-hidden="true"></div>
+                      <span class="placeholder-label">NEEDS ASSET · FRAME REAL</span>
+                      <button class="play" aria-label="Reproduzir vídeo">
+                        <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                          <path d="m8 5 11 7-11 7z" />
+                        </svg>
+                      </button>
+                      <span class="duration">Duração</span>
+                    </div>
+                    <div class="p-4">
+                      <div class="flex flex-wrap gap-1.5">
+                        <span class="tag">Vídeo</span
+                        ><span class="tag local-tag">Da sua região</span>
+                      </div>
+                      <h3 class="mt-2 font-extrabold">Título da peça regional</h3>
+                      <p class="mt-1 text-xs text-[#6c615e]">Sem autoplay</p>
+                      <span class="button button-outline mt-4 w-full">Compartilhar</span>
+                      <a
+                        class="mt-2 flex min-h-9 items-center justify-center text-xs font-extrabold text-[#a21c1c]"
+                        >Ver esta peça →</a
+                      >
+                    </div>
+                  </article>
+                  <article class="card">
+                    <div class="grid min-h-[188px] grid-cols-[128px_1fr] sm:block">
+                      <div class="media-slot aspect-video bg-[#fff8f2] sm:aspect-[16/9]">
+                        <span
+                          class="absolute top-3 left-3 text-[10px] font-black text-[#6c615e] uppercase"
+                          >Áudio</span
+                        >
+                        <button class="play" aria-label="Reproduzir áudio">
+                          <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                            <path d="m8 5 11 7-11 7z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div class="p-4">
+                        <div class="flex flex-wrap gap-1.5">
+                          <span class="tag">Áudio</span><span class="tag">Mais recente</span>
+                        </div>
+                        <h3 class="mt-2 font-extrabold">Mensagem recente</h3>
+                        <p class="mt-1 text-xs text-[#6c615e]">Mantém o bloco largo.</p>
+                        <span class="button button-outline mt-4 w-full">Compartilhar</span>
+                        <a
+                          class="mt-2 flex min-h-9 items-center justify-center text-xs font-extrabold text-[#a21c1c]"
+                          >Ver esta peça →</a
+                        >
+                      </div>
+                    </div>
+                  </article>
+                </div>
+                <div class="mt-9 text-center">
+                  <a class="button button-primary" href="/conteudos">Ver todas as peças →</a>
+                </div>
+              </div>
+            </section>
+            <div class="bg-[#ebe9e9] px-10 py-7 text-center">
+              <p class="text-xs font-black tracking-[0.1em] text-[#a21c1c] uppercase">
+                Seção existente abaixo
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 04 -->
+      <section class="site" aria-labelledby="home-mobile-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 04</span>
+          <h2 id="home-mobile-title">Home · mobile 390 · thumb vertical de 124px</h2>
+        </div>
+        <div class="phone frame mx-auto overflow-hidden bg-white">
+          <section class="relative overflow-hidden px-5 py-10">
+            <div class="absolute -top-16 -right-20 size-48 rounded-full bg-[#ffe607]/30"></div>
+            <div class="relative text-center">
+              <p class="text-[10px] font-black tracking-[0.1em] text-[#a21c1c] uppercase">
+                Central de Conteúdos
+              </p>
+              <h2 class="display mt-2 text-[30px] leading-[1.05] font-black">
+                Peça voto pra<br />Solla 1313
+              </h2>
+              <p class="mt-3 text-sm text-[#6c615e]">
+                Material do seu território para compartilhar.
+              </p>
+            </div>
+            <div class="relative mt-6 space-y-4">
+              <article class="card grid grid-cols-[124px_minmax(0,1fr)] items-start">
+                <div class="media-slot aspect-[4/5] w-[124px]">
+                  <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                  <span
+                    class="absolute right-1 bottom-1 rounded bg-black/65 px-1 py-0.5 text-[8px] font-black text-white"
+                    >NEEDS ASSET</span
+                  >
+                </div>
+                <div class="min-w-0 p-3.5">
+                  <div class="flex flex-wrap gap-1">
+                    <span class="tag min-h-10 px-2.5">Foto</span
+                    ><span class="tag local-tag min-h-10 px-2.5">Local</span>
+                  </div>
+                  <h3 class="mt-2 text-sm font-extrabold">Título da peça local</h3>
+                  <span class="button button-outline mt-3 w-full">Compartilhar</span>
+                  <a
+                    class="mt-1 flex min-h-11 items-center justify-center text-xs font-bold text-[#a21c1c]"
+                    >Ver esta peça →</a
+                  >
+                </div>
+              </article>
+              <article class="card grid grid-cols-[124px_minmax(0,1fr)] items-start">
+                <div class="media-slot aspect-[9/16] w-[124px]">
+                  <div class="poster-reel h-full w-full" aria-hidden="true"></div>
+                  <span
+                    class="absolute right-1 bottom-1 rounded bg-black/65 px-1 py-0.5 text-[8px] font-black text-white"
+                    >Duração</span
+                  >
+                  <button class="play play-small" aria-label="Reproduzir vídeo">
+                    <svg viewBox="0 0 24 24" class="size-5 fill-current" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="min-w-0 p-3.5">
+                  <div class="flex flex-wrap gap-1">
+                    <span class="tag min-h-10 px-2.5">Vídeo</span
+                    ><span class="tag local-tag min-h-10 px-2.5">Região</span>
+                  </div>
+                  <h3 class="mt-2 text-sm font-extrabold">Título da peça regional</h3>
+                  <span class="button button-outline mt-3 w-full">Compartilhar</span>
+                  <a
+                    class="mt-1 flex min-h-11 items-center justify-center text-xs font-bold text-[#a21c1c]"
+                    >Ver esta peça →</a
+                  >
+                </div>
+              </article>
+              <article class="card grid grid-cols-[124px_minmax(0,1fr)] items-start">
+                <div class="media-slot h-[156px] w-[124px] bg-[#fff8f2]">
+                  <span class="absolute top-2 left-2 text-[9px] font-black text-[#6c615e] uppercase"
+                    >Áudio</span
+                  >
+                  <button class="play play-small" aria-label="Reproduzir áudio">
+                    <svg viewBox="0 0 24 24" class="size-5 fill-current" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                  </button>
+                </div>
+                <div class="min-w-0 p-3.5">
+                  <div class="flex flex-wrap gap-1">
+                    <span class="tag min-h-10 px-2.5">Áudio</span
+                    ><span class="tag min-h-10 px-2.5">Recente</span>
+                  </div>
+                  <h3 class="mt-2 text-sm font-extrabold">Mensagem recente</h3>
+                  <span class="button button-outline mt-3 w-full">Compartilhar</span>
+                </div>
+              </article>
+            </div>
+            <a class="button button-primary relative mt-7 w-full" href="/conteudos"
+              >Ver todas as peças →</a
+            >
+          </section>
+        </div>
+      </section>
+
+      <!-- CENA 05 -->
+      <section class="site" aria-labelledby="detail-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 05</span>
+          <h2 id="detail-title">Página da peça · o detalhe cumpre a promessa do card</h2>
+        </div>
+        <div class="grid gap-8 xl:grid-cols-[1fr_390px]">
+          <div class="frame overflow-hidden rounded-xl bg-white">
+            <header class="flex h-16 items-center justify-between bg-[#ae1603] px-8">
+              <div class="h-9 w-44 rounded bg-white/20"></div>
+              <b class="text-sm text-white">Central de Conteúdos</b>
+            </header>
+            <div class="mx-auto max-w-[980px] px-8 py-10">
+              <a class="inline-flex min-h-11 items-center text-sm font-bold text-[#a21c1c]"
+                >← Voltar para conteúdos</a
+              >
+              <div class="mt-5 grid grid-cols-[360px_minmax(0,1fr)] items-start gap-10">
+                <div class="media-slot aspect-[9/16] rounded-2xl border border-black/10">
+                  <div class="poster-reel h-full w-full" aria-hidden="true"></div>
+                  <span class="placeholder-label">NEEDS ASSET · FRAME REAL</span>
+                  <button class="play" aria-label="Reproduzir vídeo">
+                    <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                      <path d="m8 5 11 7-11 7z" />
+                    </svg>
+                  </button>
+                  <span class="duration">Duração</span>
+                </div>
+                <div>
+                  <span class="tag">Vídeo</span>
+                  <h1 class="display mt-3 text-3xl leading-[1.05] font-black tracking-[-0.02em]">
+                    Título da peça em vídeo
+                  </h1>
+                  <p class="mt-3 text-sm leading-6 text-[#6c615e]">
+                    Descrição da peça publicada, preservada como hoje.
+                  </p>
+                  <dl class="mt-5 border-y border-black/12 py-4 text-sm">
+                    <div class="flex justify-between gap-4 py-1">
+                      <dt class="text-[#6c615e]">Tema</dt>
+                      <dd class="text-right font-medium">Tema da peça</dd>
+                    </div>
+                    <div class="flex justify-between gap-4 py-1">
+                      <dt class="text-[#6c615e]">Local</dt>
+                      <dd class="text-right font-medium">Município</dd>
+                    </div>
+                    <div class="flex justify-between gap-4 py-1">
+                      <dt class="text-[#6c615e]">Duração</dt>
+                      <dd class="text-right font-medium">Informada na peça</dd>
+                    </div>
+                  </dl>
+                  <div class="mt-5 grid grid-cols-2 gap-2">
+                    <span class="button button-outline">Baixar</span
+                    ><span class="button button-outline">Compartilhar</span>
+                  </div>
+                  <div class="mt-6 rounded-lg bg-[#f5f5f4] p-4 text-xs leading-5 text-[#6c615e]">
+                    <b class="block text-black">Palco compartilhado</b>Vídeo usa 9:16; foto usa 4:5.
+                    A coluna de mídia tem 360px no desktop e não cresce até dominar o texto.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="phone frame mx-auto overflow-hidden bg-white">
+            <header class="flex h-14 items-center bg-[#ae1603] px-5">
+              <b class="text-xs text-white">Central de Conteúdos</b>
+            </header>
+            <div class="px-5 py-7">
+              <a class="flex min-h-11 items-center text-sm font-bold text-[#a21c1c]">← Voltar</a>
+              <div class="media-slot mt-4 aspect-[4/5] rounded-2xl border border-black/10">
+                <div class="poster-photo h-full w-full" aria-hidden="true"></div>
+                <span class="placeholder-label">NEEDS ASSET · FOTO REAL</span>
+              </div>
+              <span class="tag mt-5">Foto</span>
+              <h1 class="display mt-3 text-3xl leading-[1.05] font-black">
+                Título da foto publicada
+              </h1>
+              <p class="mt-3 text-sm leading-6 text-[#6c615e]">
+                A foto inteira continua sendo a primeira evidência da página.
+              </p>
+              <div class="mt-5 grid grid-cols-2 gap-2">
+                <span class="button button-outline">Baixar</span
+                ><span class="button button-outline">Compartilhar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CENA 06 -->
+      <section class="site" aria-labelledby="states-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 06</span>
+          <h2 id="states-title">
+            Estados críticos · sem frame, em reprodução e horizontal inteiro
+          </h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-3">
+          <article class="frame overflow-hidden rounded-xl bg-white">
+            <div class="media-slot neutral-stage aspect-[9/16]">
+              <span
+                class="absolute top-3 left-3 flex items-center gap-2 text-[10px] font-black tracking-[0.1em] text-[#6c615e] uppercase"
+                ><span
+                  class="grid size-6 place-items-center rounded-full border border-black/10 bg-white"
+                  >×</span
+                >Frame indisponível</span
+              >
+              <button class="play" aria-label="Reproduzir vídeo sem frame">
+                <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                  <path d="m8 5 11 7-11 7z" />
+                </svg>
+              </button>
+              <span class="duration">Duração</span>
+            </div>
+            <div class="p-4">
+              <span class="tag">Vídeo</span>
+              <h3 class="mt-2 font-extrabold">Sem frame</h3>
+              <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                Superfície neutra, play e duração. Sem imagem quebrada e sem novo cromo.
+              </p>
+            </div>
+          </article>
+          <article class="frame overflow-hidden rounded-xl bg-white">
+            <div class="media-slot aspect-[9/16] bg-[#180a09] p-3">
+              <div class="poster-reel h-full w-full rounded-md" aria-hidden="true"></div>
+              <div class="absolute right-3 bottom-3 left-3 rounded-lg bg-black/75 p-3 text-white">
+                <div class="h-1.5 rounded-full bg-white/35">
+                  <div class="h-full w-1/3 rounded-full bg-white"></div>
+                </div>
+                <div class="mt-3 flex min-h-11 items-center justify-between">
+                  <span class="grid size-11 place-items-center rounded-full border border-white/50"
+                    >Ⅱ</span
+                  ><span class="text-xs font-bold">Vídeo em reprodução</span
+                  ><span class="text-xs">↗</span>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <span class="tag">Vídeo</span>
+              <h3 class="mt-2 font-extrabold">Depois do toque</h3>
+              <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                O vídeo toca dentro do mesmo 9:16, com contain. Não há autoplay no carregamento da
+                página.
+              </p>
+            </div>
+          </article>
+          <article class="frame overflow-hidden rounded-xl bg-white">
+            <div class="media-slot neutral-stage aspect-[9/16] p-4">
+              <div class="horizontal-art grid place-items-center text-white">
+                <b class="display text-2xl">16:9 INTEIRO</b>
+              </div>
+              <span class="placeholder-label">NEEDS ASSET · MÍDIA REAL</span>
+              <button class="play" aria-label="Reproduzir peça horizontal">
+                <svg viewBox="0 0 24 24" class="size-6 fill-current" aria-hidden="true">
+                  <path d="m8 5 11 7-11 7z" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-4">
+              <span class="tag">Vídeo</span>
+              <h3 class="mt-2 font-extrabold">Horizontal em letterbox</h3>
+              <p class="mt-1 text-xs leading-5 text-[#6c615e]">
+                A superfície continua 9:16; a mídia usa contain. Nunca estica, nunca corta.
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- CENA 07 -->
+      <section class="site" aria-labelledby="decision-title">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 07</span>
+          <h2 id="decision-title">
+            Decisão do gate · uma regra de enquadramento, sem redesenhar o cromo
+          </h2>
+        </div>
+        <div class="frame rounded-xl bg-white p-6 md:p-8">
+          <div class="grid gap-6 md:grid-cols-2">
+            <div>
+              <h3 class="display text-2xl font-black">Forma por tipo na v1</h3>
+              <ul class="mt-4 space-y-3 text-sm leading-6 text-[#514945]">
+                <li>
+                  <b class="text-black">Vídeo/Reel:</b> slot 9:16; frame e vídeo em
+                  <code>object-contain</code>.
+                </li>
+                <li>
+                  <b class="text-black">Foto/carrossel:</b> slot 4:5; imagem em
+                  <code>object-contain</code>.
+                </li>
+                <li>
+                  <b class="text-black">Modelo S38:</b> palco 3:4; a arte real cabe inteira e o item
+                  continua sendo convite para <code>/cards</code>.
+                </li>
+                <li>
+                  <b class="text-black">Áudio, texto e link:</b> largos; verticalizá-los produziria
+                  vazio sem ganho de reconhecimento.
+                </li>
+              </ul>
+            </div>
+            <div class="rounded-xl bg-[#f5f5f4] p-5">
+              <h3 class="display text-lg font-black">Limites preservados</h3>
+              <ul class="mt-3 space-y-2 text-sm leading-6 text-[#514945]">
+                <li>Sem autoplay: a mídia entra somente após o toque.</li>
+                <li>Play atual: 56px no card, 44px no thumb; sem o cromo futuro da C228.</li>
+                <li>Um CTA primário por superfície; ações do card permanecem outline.</li>
+                <li>Alvos de toque com pelo menos 44px; foco amarelo visível.</li>
+                <li>
+                  390px: conteúdo com 20px de inset e trilhas <code>minmax(0,1fr)</code>; overflow
+                  horizontal esperado = 0.
+                </li>
+                <li>Detalhe incluído: card e página da peça usam o mesmo palco.</li>
+              </ul>
+            </div>
+          </div>
+          <p class="mt-6 border-t border-black/10 pt-5 text-xs leading-5 text-[#6c615e]">
+            <b class="text-black">Por que não uma moldura única?</b> 9:16 para tudo alongaria fotos
+            e modelos sem necessidade; 4:5 para Reels reduziria justamente o conteúdo que precisa
+            respirar. A família 9:16 · 4:5 · 3:4 preserva a intenção de cada tipo sem depender de
+            nova leitura de dimensões. Uma mídia horizontal continua inteira por
+            <em>contain</em> dentro da superfície neutra do seu tipo.
+          </p>
+        </div>
+      </section>
+
+      <footer class="site border-t border-black/10 pt-6 text-xs leading-5 text-[#6c615e]">
+        <b class="text-black">Identificação:</b> comunicação de campanha · Jorge Solla 1313 · PT
+        Bahia. Este artefato decide somente enquadramento e densidade. Filtros, busca, ações, LGPD,
+        kill switch e copy permanecem como aprovados nas entregas irmãs.
+      </footer>
+    </main>
+  </body>
+</html>
