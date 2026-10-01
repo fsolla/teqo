@@ -241,6 +241,39 @@ test.describe('Campaign home novidades hash scroll', () => {
     await page.goto(`/?e2e=scroll-${scrollSuffix}#novidades`)
     await expect(page.locator('[data-home-section="newsletter"]')).toBeInViewport()
   })
+
+  test('hero CTA keeps the hash when an on-mount refresh lands late', async ({ page }) => {
+    // The Payload live-preview bridge used to call `router.refresh()` on every
+    // standalone load; when the soft refresh landed after the CTA click, the
+    // App Router rewrote the canonical URL and dropped `#novidades` (the
+    // deploy-verify race). Hold the home soft refresh until after the click so
+    // the race is deterministic: outside the admin preview there must be no
+    // refresh at all, and the hash survives.
+    let releaseRefresh: (() => void) | undefined
+    const refreshGate = new Promise<void>((resolve) => {
+      releaseRefresh = resolve
+    })
+
+    await page.route(
+      (url) => url.searchParams.has('_rsc'),
+      async (route) => {
+        if (new URL(route.request().url()).pathname !== '/') {
+          await route.continue()
+          return
+        }
+        await refreshGate
+        await route.continue()
+      },
+    )
+
+    await page.goto(`/?e2e=refresh-${scrollSuffix}`)
+    await page.locator('[data-cta="secondary"]').click()
+    await expect(page).toHaveURL(/#novidades/)
+
+    releaseRefresh?.()
+    await page.waitForTimeout(1_000)
+    await expect(page).toHaveURL(/#novidades/)
+  })
 })
 
 test.describe('Campaign home novidades hash scroll — desktop', () => {
