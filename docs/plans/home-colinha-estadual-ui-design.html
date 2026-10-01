@@ -1,0 +1,1335 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="campaign-site">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <title>Design S43 · Colinha do estadual na home</title>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: Arimo, Arial, sans-serif;
+      }
+      :root {
+        --pt-red: #a21c1c;
+        --pt-red-dark: #47130e;
+        --pt-yellow: #ffe607;
+        --pt-yellow-ink: #000;
+        --campaign-cream: #fff8f2;
+        --campaign-ink: #000;
+        --campaign-muted: #6c615e;
+        --campaign-surface: #f9faff;
+        --campaign-band: #ebe9e9;
+        --campaign-line: rgb(0 0 0 / 12%);
+        --field-border: rgb(0 0 0 / 18%);
+        --brand-red: #e4102f;
+        --brand-blue: #184e92;
+        --display: 'Exo 2', 'Arial Black', Arial, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: Arimo, Arial, sans-serif;
+      }
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+      .display {
+        font-family: var(--display);
+      }
+      .board {
+        background: #dedbd8;
+        background-image: radial-gradient(rgb(24 78 146 / 8%) 0.7px, transparent 0.7px);
+        background-size: 18px 18px;
+      }
+      .frame {
+        box-shadow: 0 24px 64px rgb(39 25 22 / 14%);
+      }
+      .desktop {
+        width: 1280px;
+      }
+      .phone {
+        width: 390px;
+        border-radius: 28px;
+      }
+      .scene::after {
+        content: '';
+        height: 1px;
+        flex: 1;
+        background: #c6c1bd;
+      }
+      .eyebrow {
+        color: var(--pt-red);
+        font-size: 12px;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      button:focus-visible,
+      input:focus-visible,
+      textarea:focus-visible {
+        outline: 3px solid var(--pt-yellow);
+        outline-offset: 3px;
+        box-shadow: 0 0 0 5px var(--pt-red);
+      }
+      .search {
+        display: flex;
+        min-height: 48px;
+        align-items: center;
+        gap: 10px;
+        border: 1px solid var(--field-border);
+        border-radius: 12px;
+        background: #fff;
+        padding: 0 14px;
+      }
+      .candidate-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+      }
+      .candidate {
+        position: relative;
+        display: grid;
+        min-height: 104px;
+        grid-template-columns: 84px minmax(0, 1fr);
+        overflow: hidden;
+        border: 1px solid var(--campaign-line);
+        border-radius: 14px;
+        background: #fff;
+        color: #000;
+        text-align: left;
+        scroll-snap-align: start;
+        transition:
+          border-color 150ms ease-out,
+          transform 150ms ease-out,
+          box-shadow 150ms ease-out;
+      }
+      .candidate:hover {
+        transform: translateY(-2px);
+        border-color: rgb(162 28 28 / 35%);
+      }
+      .candidate.selected {
+        border: 2px solid var(--pt-red);
+        background: #fffaf8;
+        box-shadow: 0 0 0 3px rgb(255 230 7 / 65%);
+      }
+      .candidate-photo {
+        position: relative;
+        min-height: 104px;
+        overflow: hidden;
+        background: #dbe9f2;
+      }
+      .candidate-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transform: scale(2.15);
+        transform-origin: 68% 46%;
+      }
+      .candidate-copy {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        justify-content: center;
+        padding: 11px;
+      }
+      .candidate-name {
+        font-family: var(--display);
+        font-size: 14px;
+        line-height: 1.08;
+        font-weight: 900;
+      }
+      .candidate-number {
+        margin-top: 7px;
+        color: var(--pt-red);
+        font-family: var(--display);
+        font-size: 22px;
+        line-height: 1;
+        font-weight: 900;
+        letter-spacing: 0.035em;
+      }
+      .check {
+        position: absolute;
+        top: 7px;
+        right: 7px;
+        display: grid;
+        width: 26px;
+        height: 26px;
+        place-items: center;
+        border-radius: 999px;
+        background: var(--pt-red);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 900;
+      }
+      .desktop-scroll {
+        max-height: 430px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable;
+        padding: 3px 10px 18px 3px;
+      }
+      .desktop-scroll::-webkit-scrollbar {
+        width: 10px;
+      }
+      .desktop-scroll::-webkit-scrollbar-thumb {
+        border: 2px solid #fff;
+        border-radius: 999px;
+        background: #b8afaa;
+      }
+      .desktop-scroll::-webkit-scrollbar-track {
+        background: #f1eeec;
+        border-radius: 999px;
+      }
+      .mobile-rail-shell {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+      }
+      .mobile-rail {
+        display: flex;
+        width: 100%;
+        gap: 10px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x mandatory;
+        scrollbar-width: none;
+        padding: 4px 34px 12px 3px;
+      }
+      .mobile-rail::-webkit-scrollbar {
+        display: none;
+      }
+      .mobile-rail .candidate {
+        display: flex;
+        min-height: 0;
+        flex: 0 0 162px;
+        flex-direction: column;
+      }
+      .mobile-rail .candidate-photo {
+        aspect-ratio: 4 / 3;
+        min-height: 0;
+      }
+      .mobile-rail .candidate-copy {
+        min-height: 86px;
+        justify-content: flex-start;
+        padding: 10px;
+      }
+      .rail-fade {
+        pointer-events: none;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 12px;
+        width: 46px;
+        background: linear-gradient(90deg, transparent, white 88%);
+      }
+      .primary,
+      .outline {
+        display: inline-flex;
+        min-height: 44px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-family: var(--display);
+        font-size: 14px;
+        font-weight: 900;
+      }
+      .primary {
+        border: 1px solid var(--pt-red);
+        background: var(--pt-red);
+        color: #fff;
+      }
+      .primary:hover {
+        background: #861717;
+      }
+      .outline {
+        border: 1.5px solid rgb(162 28 28 / 30%);
+        background: #fff;
+        color: var(--pt-red);
+      }
+      .outline:hover {
+        border-color: var(--pt-red);
+        background: rgb(162 28 28 / 6%);
+      }
+      .empty {
+        display: grid;
+        min-height: 210px;
+        place-items: center;
+        border: 1px dashed rgb(0 0 0 / 22%);
+        border-radius: 14px;
+        background: #fff;
+        padding: 28px;
+        text-align: center;
+      }
+      .colinha {
+        position: relative;
+        aspect-ratio: 9 / 16;
+        overflow: hidden;
+        background: #fff;
+        container-type: inline-size;
+      }
+      .colinha > img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .state-mask {
+        position: absolute;
+        z-index: 2;
+        top: 55.9%;
+        left: 24.5%;
+        width: 57.4%;
+        height: 2.9%;
+        background: #fff;
+      }
+      .no-state-mask {
+        position: absolute;
+        z-index: 4;
+        top: 54.8%;
+        left: 19%;
+        width: 67%;
+        height: 9%;
+        background: #fff;
+      }
+      .state-copy {
+        position: absolute;
+        z-index: 3;
+        top: 56.46%;
+        left: 26.9%;
+        width: 52.8%;
+        display: flex;
+        align-items: baseline;
+        justify-content: flex-end;
+        gap: 1.2cqw;
+        white-space: nowrap;
+        font-family: Arial, Helvetica, sans-serif;
+        line-height: 1;
+      }
+      .state-office {
+        color: #202020;
+        font-size: 2.05cqw;
+        font-weight: 400;
+      }
+      .state-name {
+        color: #e4102f;
+        font-size: 2.85cqw;
+        font-weight: 900;
+        letter-spacing: -0.04em;
+      }
+      .digit {
+        position: absolute;
+        z-index: 3;
+        top: 58.4%;
+        display: grid;
+        width: 6.1%;
+        height: 4.35%;
+        place-items: center;
+        color: #171717;
+        font-family: 'Arial Black', Arial, sans-serif;
+        font-size: 4.25cqw;
+        line-height: 1;
+        font-weight: 900;
+      }
+      .d1 {
+        left: 25.9%;
+      }
+      .d2 {
+        left: 32.8%;
+      }
+      .d3 {
+        left: 39.7%;
+      }
+      .d4 {
+        left: 46.6%;
+      }
+      .d5 {
+        left: 53.5%;
+      }
+      [data-preview] .selected-state {
+        display: none;
+      }
+      [data-preview].has-selection .no-state-mask {
+        display: none;
+      }
+      [data-preview].has-selection .selected-state {
+        display: block;
+      }
+      [data-preview].has-selection .state-copy.selected-state {
+        display: flex;
+      }
+      .sheet-panel {
+        border: 1px solid var(--campaign-line);
+        background: #fff;
+      }
+      .share-message {
+        min-height: 132px;
+        width: 100%;
+        resize: none;
+        border: 1px solid var(--field-border);
+        border-radius: 10px;
+        background: #fff;
+        padding: 12px;
+        color: #000;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .direct-link {
+        overflow-wrap: anywhere;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          transition: none !important;
+        }
+      }
+    </style>
+  </head>
+  <body class="board min-h-screen text-black antialiased">
+    <div
+      class="border-b border-emerald-800/20 bg-[#fff8f2] px-4 py-2 text-center text-[11px] font-black tracking-[.12em] text-[#6b2d15] uppercase"
+    >
+      Design tier: openai/gpt-5.6-sol · frontier · gate humano obrigatório
+    </div>
+    <main class="mx-auto max-w-[1480px] space-y-16 overflow-x-hidden px-4 py-12 md:px-8">
+      <header class="max-w-4xl">
+        <span class="rounded-full bg-[#e4102f] px-3 py-1 text-xs font-bold text-white"
+          >S43 · gate hi-fi · revisão do dono</span
+        >
+        <h1 class="display mt-4 text-4xl font-black tracking-tight sm:text-5xl">
+          Escolha se quiser. Sua colinha já está pronta.
+        </h1>
+        <p class="mt-3 max-w-3xl text-sm leading-6 text-[#6c615e]">
+          A prévia vive na seção e atualiza na hora. Sem estadual, as cinco escolhas fixas continuam
+          válidas; com estadual, entram nome e cinco dígitos. Baixar e compartilhar nunca ficam
+          bloqueados.
+        </p>
+        <div class="mt-5 flex flex-wrap gap-2 text-[11px] font-bold text-[#4a3f3d]">
+          <span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >desktop · rolagem vertical</span
+          ><span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >mobile · carrossel horizontal</span
+          ><span class="rounded-full border border-black/10 bg-white px-3 py-2">sem paginação</span
+          ><span class="rounded-full border border-black/10 bg-white px-3 py-2"
+            >PNG 1080×1920 sempre disponível</span
+          >
+        </div>
+      </header>
+
+      <section id="scene-01">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 01</span>
+          <h2>Desktop 1280 · lista vertical e prévia embutida</h2>
+        </div>
+        <div class="desktop frame mx-auto overflow-hidden rounded-xl bg-white">
+          <div class="border-b border-black/10 bg-[#fff8f2] px-10 py-6 text-center">
+            <p class="eyebrow">Faça parte</p>
+            <h3 class="display mt-1 text-xl font-black">Mostre que você está com Solla</h3>
+            <div class="mx-auto mt-3 grid max-w-3xl grid-cols-6 gap-3" aria-hidden="true">
+              <div class="h-10 rounded-lg bg-[#ebe9e9]"></div>
+              <div class="h-10 rounded-lg bg-[#ebe9e9]"></div>
+              <div class="h-10 rounded-lg bg-[#ebe9e9]"></div>
+              <div class="h-10 rounded-lg bg-[#ebe9e9]"></div>
+              <div class="h-10 rounded-lg bg-[#ebe9e9]"></div>
+              <div class="h-10 rounded-lg bg-[#ebe9e9]"></div>
+            </div>
+          </div>
+          <section id="colinha" data-demo class="relative border-b border-black/10 px-10 py-12">
+            <div
+              aria-hidden="true"
+              class="absolute top-0 left-0 h-1.5 w-full bg-[var(--pt-yellow)]"
+            ></div>
+            <div class="mx-auto max-w-[1080px]">
+              <div class="mx-auto max-w-2xl text-center">
+                <p class="eyebrow">Sua dobradinha</p>
+                <h2 class="display mt-2 text-4xl font-black tracking-tight">
+                  Monte sua colinha de votação
+                </h2>
+                <p class="mx-auto mt-3 max-w-xl text-base leading-6 text-[var(--campaign-muted)]">
+                  Sua colinha já pode ser baixada. Se quiser, escolha um estadual para completar.
+                </p>
+              </div>
+              <div class="mt-8 grid grid-cols-[1fr_350px] items-start gap-9">
+                <div>
+                  <label for="search-desktop" class="block text-sm font-bold"
+                    >Busque seu estadual</label
+                  >
+                  <div class="search mt-2">
+                    <svg
+                      aria-hidden="true"
+                      class="size-5 shrink-0 text-[var(--campaign-muted)]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.3-4.3"></path></svg
+                    ><input
+                      id="search-desktop"
+                      data-filter-input="desktop-grid"
+                      class="min-w-0 flex-1 bg-transparent text-base outline-none"
+                      placeholder="Digite o nome do estadual"
+                    />
+                  </div>
+                  <div
+                    class="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--campaign-muted)]"
+                  >
+                    <span>54 nomes · todos nesta lista</span
+                    ><span class="font-bold text-[var(--pt-red)]">Role para baixo ↓</span>
+                  </div>
+                  <div
+                    id="desktop-grid"
+                    class="desktop-scroll candidate-grid mt-3"
+                    aria-label="Lista vertical dos estaduais"
+                  >
+                    <button
+                      class="candidate selected"
+                      data-name="juliete barreto 65100"
+                      data-person="Juliete Barreto"
+                      data-number="65100"
+                      data-slug="juliete"
+                      type="button"
+                      aria-pressed="true"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/juliete-fotos.webp"
+                          alt="Juliete Barreto" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Juliete Barreto</span
+                        ><span class="candidate-number">65100</span></span
+                      ><span class="check" aria-label="Escolhida">✓</span>
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="julio pinheiro 13999"
+                      data-person="Julio Pinheiro"
+                      data-number="13999"
+                      data-slug="julio"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/julio-fotos.webp"
+                          alt="Julio Pinheiro" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Julio Pinheiro</span
+                        ><span class="candidate-number">13999</span></span
+                      >
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="carol da pitanguinha 13110"
+                      data-person="Carol da Pitanguinha"
+                      data-number="13110"
+                      data-slug="carol"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/carol-fotos.webp"
+                          alt="Carol da Pitanguinha" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Carol da Pitanguinha</span
+                        ><span class="candidate-number">13110</span></span
+                      >
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="kleber rosa 50500"
+                      data-person="Kleber Rosa"
+                      data-number="50500"
+                      data-slug="kleber"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/kleber-fotos.webp"
+                          alt="Kleber Rosa" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Kleber Rosa</span
+                        ><span class="candidate-number">50500</span></span
+                      >
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="leninha valente 13111"
+                      data-person="Lenínha Valente"
+                      data-number="13111"
+                      data-slug="leninha"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/leninha-fotos.webp"
+                          alt="Lenínha Valente" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Lenínha Valente</span
+                        ><span class="candidate-number">13111</span></span
+                      >
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="ze raimundo 13222"
+                      data-person="Zé Raimundo"
+                      data-number="13222"
+                      data-slug="ze-raimundo"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/ze-raimundo-fotos.webp"
+                          alt="Zé Raimundo" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Zé Raimundo</span
+                        ><span class="candidate-number">13222</span></span
+                      >
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="fabiola mansur 43123"
+                      data-person="Dra. Fabíola Mansur"
+                      data-number="43123"
+                      data-slug="fabiola"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/fabiola-fotos.webp"
+                          alt="Dra. Fabíola Mansur" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Dra. Fabíola Mansur</span
+                        ><span class="candidate-number">43123</span></span
+                      >
+                    </button>
+                    <button
+                      class="candidate"
+                      data-name="rosival leite 13333"
+                      data-person="Rosival Leite"
+                      data-number="13333"
+                      data-slug="rosival"
+                      type="button"
+                    >
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/rosival-fotos.webp"
+                          alt="Rosival Leite" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Rosival Leite</span
+                        ><span class="candidate-number">13333</span></span
+                      >
+                    </button>
+                  </div>
+                  <p class="mt-2 text-center text-[11px] font-bold text-[var(--campaign-muted)]">
+                    Sem páginas e sem “carregar mais”: a barra vertical percorre os 54 nomes.
+                  </p>
+                </div>
+                <aside
+                  class="sticky top-4 rounded-2xl bg-[var(--campaign-cream)] p-5 ring-1 ring-black/10"
+                >
+                  <div class="flex items-center justify-between gap-3">
+                    <div>
+                      <p class="text-xs font-bold text-[var(--campaign-muted)]">
+                        Prévia atualizada na hora
+                      </p>
+                      <p data-choice-label class="display mt-1 text-lg font-black">
+                        Juliete Barreto · 65100
+                      </p>
+                    </div>
+                    <button
+                      data-clear
+                      class="min-h-11 text-xs font-bold text-[var(--pt-red)] underline underline-offset-4"
+                    >
+                      Remover
+                    </button>
+                  </div>
+                  <div
+                    data-preview
+                    class="has-selection mx-auto mt-3 w-[250px] overflow-hidden rounded-xl border border-black/10 shadow-lg"
+                  >
+                    <div class="colinha">
+                      <img
+                        src="../../public/cards/modelo-colinha.jpeg"
+                        alt="Prévia da colinha"
+                      /><span class="no-state-mask"></span
+                      ><span class="state-mask selected-state"></span
+                      ><span class="state-copy selected-state"
+                        ><span class="state-office">DEPUTADO ESTADUAL</span
+                        ><span data-preview-name class="state-name">JULIETE BARRETO</span></span
+                      ><span data-digit="0" class="digit d1 selected-state">6</span
+                      ><span data-digit="1" class="digit d2 selected-state">5</span
+                      ><span data-digit="2" class="digit d3 selected-state">1</span
+                      ><span data-digit="3" class="digit d4 selected-state">0</span
+                      ><span data-digit="4" class="digit d5 selected-state">0</span>
+                    </div>
+                  </div>
+                  <div class="mt-4 grid grid-cols-2 gap-3">
+                    <button class="primary">Baixar o PNG</button
+                    ><button class="outline">Compartilhar</button>
+                  </div>
+                  <p class="mt-3 text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                    Sempre disponíveis · PNG 1080×1920 · sem cadastro
+                  </p>
+                </aside>
+              </div>
+            </div>
+          </section>
+          <div class="relative overflow-hidden px-10 py-7 text-center">
+            <div class="absolute -top-20 -right-16 size-52 rounded-full bg-[#ffe607]/30"></div>
+            <p class="eyebrow relative">Central de Conteúdos</p>
+            <h3 class="display relative mt-1 text-xl font-black">Peça voto pra Solla 1313</h3>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-02">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 02</span>
+          <h2>Mobile 390 · uma linha horizontal, prévia abaixo e página sem overflow</h2>
+        </div>
+        <div class="phone frame mx-auto overflow-hidden bg-white">
+          <div class="border-b border-black/10 bg-[#fff8f2] px-5 py-5 text-center">
+            <p class="eyebrow">Faça parte</p>
+            <h3 class="display mt-1 text-lg font-black">Mostre que você está com Solla</h3>
+            <div class="mt-3 h-9 rounded-lg bg-[#ebe9e9]"></div>
+          </div>
+          <section data-demo class="relative px-5 py-9">
+            <div
+              aria-hidden="true"
+              class="absolute top-0 left-0 h-1.5 w-full bg-[var(--pt-yellow)]"
+            ></div>
+            <div class="text-center">
+              <p class="eyebrow">Sua dobradinha</p>
+              <h2 class="display mt-2 text-[29px] leading-[1.02] font-black tracking-tight">
+                Monte sua colinha de votação
+              </h2>
+              <p class="mt-3 text-sm leading-5 text-[var(--campaign-muted)]">
+                Ela já está pronta. Escolher o estadual é opcional.
+              </p>
+            </div>
+            <label for="search-mobile" class="mt-6 block text-sm font-bold"
+              >Busque seu estadual</label
+            >
+            <div class="search mt-2">
+              <svg
+                aria-hidden="true"
+                class="size-5 shrink-0 text-[var(--campaign-muted)]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path></svg
+              ><input
+                id="search-mobile"
+                data-filter-input="mobile-rail"
+                class="min-w-0 flex-1 bg-transparent text-base outline-none"
+                placeholder="Nome do estadual"
+              />
+            </div>
+            <div
+              class="mt-3 flex items-center justify-between text-xs text-[var(--campaign-muted)]"
+            >
+              <span>54 nomes</span
+              ><span class="font-bold text-[var(--pt-red)]">Arraste para o lado →</span>
+            </div>
+            <div class="mobile-rail-shell mt-2">
+              <div
+                id="mobile-rail"
+                class="mobile-rail"
+                aria-label="Carrossel horizontal dos estaduais"
+              >
+                <button
+                  class="candidate"
+                  data-name="juliete barreto 65100"
+                  data-person="Juliete Barreto"
+                  data-number="65100"
+                  data-slug="juliete"
+                >
+                  <span class="candidate-photo"
+                    ><img
+                      src="../../public/cards/estaduais/juliete-fotos.webp"
+                      alt="Juliete Barreto" /></span
+                  ><span class="candidate-copy"
+                    ><span class="candidate-name">Juliete Barreto</span
+                    ><span class="candidate-number">65100</span></span
+                  ></button
+                ><button
+                  class="candidate"
+                  data-name="julio pinheiro 13999"
+                  data-person="Julio Pinheiro"
+                  data-number="13999"
+                  data-slug="julio"
+                >
+                  <span class="candidate-photo"
+                    ><img
+                      src="../../public/cards/estaduais/julio-fotos.webp"
+                      alt="Julio Pinheiro" /></span
+                  ><span class="candidate-copy"
+                    ><span class="candidate-name">Julio Pinheiro</span
+                    ><span class="candidate-number">13999</span></span
+                  ></button
+                ><button
+                  class="candidate"
+                  data-name="carol da pitanguinha 13110"
+                  data-person="Carol da Pitanguinha"
+                  data-number="13110"
+                  data-slug="carol"
+                >
+                  <span class="candidate-photo"
+                    ><img
+                      src="../../public/cards/estaduais/carol-fotos.webp"
+                      alt="Carol da Pitanguinha" /></span
+                  ><span class="candidate-copy"
+                    ><span class="candidate-name">Carol da Pitanguinha</span
+                    ><span class="candidate-number">13110</span></span
+                  ></button
+                ><button
+                  class="candidate"
+                  data-name="kleber rosa 50500"
+                  data-person="Kleber Rosa"
+                  data-number="50500"
+                  data-slug="kleber"
+                >
+                  <span class="candidate-photo"
+                    ><img
+                      src="../../public/cards/estaduais/kleber-fotos.webp"
+                      alt="Kleber Rosa" /></span
+                  ><span class="candidate-copy"
+                    ><span class="candidate-name">Kleber Rosa</span
+                    ><span class="candidate-number">50500</span></span
+                  >
+                </button>
+              </div>
+              <div class="rail-fade" aria-hidden="true"></div>
+            </div>
+            <div class="mt-6 rounded-2xl bg-[var(--campaign-cream)] p-4 ring-1 ring-black/10">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-xs font-bold text-[var(--campaign-muted)]">Prévia</p>
+                  <p data-choice-label class="display mt-1 text-base font-black">
+                    Sem estadual · cinco linhas fixas
+                  </p>
+                </div>
+                <span
+                  class="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-[var(--campaign-muted)] ring-1 ring-black/10"
+                  >válida</span
+                >
+              </div>
+              <div
+                data-preview
+                class="mx-auto mt-3 w-[246px] overflow-hidden rounded-xl border border-black/10 shadow-md"
+              >
+                <div class="colinha">
+                  <img
+                    src="../../public/cards/modelo-colinha.jpeg"
+                    alt="Colinha sem a linha de deputado estadual"
+                  /><span class="no-state-mask"></span
+                  ><span class="state-mask selected-state"></span
+                  ><span class="state-copy selected-state"
+                    ><span class="state-office">DEPUTADO ESTADUAL</span
+                    ><span data-preview-name class="state-name"></span></span
+                  ><span data-digit="0" class="digit d1 selected-state"></span
+                  ><span data-digit="1" class="digit d2 selected-state"></span
+                  ><span data-digit="2" class="digit d3 selected-state"></span
+                  ><span data-digit="3" class="digit d4 selected-state"></span
+                  ><span data-digit="4" class="digit d5 selected-state"></span>
+                </div>
+              </div>
+              <div class="mt-4 grid grid-cols-2 gap-3">
+                <button class="primary px-2">Baixar o PNG</button
+                ><button class="outline px-2">Compartilhar</button>
+              </div>
+              <p class="mt-3 text-center text-[11px] leading-4 text-[var(--campaign-muted)]">
+                Os dois botões já estão ativos, mesmo sem estadual.
+              </p>
+            </div>
+          </section>
+          <div class="border-t border-black/10 px-5 py-7 text-center">
+            <p class="eyebrow">Central de Conteúdos</p>
+            <h3 class="display mt-1 text-lg font-black">Peça voto pra Solla 1313</h3>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-03">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENAS 03–04</span>
+          <h2>Busca ativa filtrada e busca vazia · prévia permanece utilizável</h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-2">
+          <article class="frame rounded-xl bg-white p-7">
+            <p class="eyebrow">Cena 03 · busca “julio”</p>
+            <h3 class="display mt-1 text-2xl font-black">Um resultado, sem paginação</h3>
+            <div class="search mt-5 border-[var(--pt-red)] ring-3 ring-red-100">
+              <svg
+                aria-hidden="true"
+                class="size-5 text-[var(--pt-red)]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path></svg
+              ><input
+                value="julio"
+                aria-label="Buscar estadual"
+                class="min-w-0 flex-1 bg-transparent outline-none"
+              /><button
+                aria-label="Limpar busca"
+                class="grid size-11 place-items-center rounded-full text-xl"
+              >
+                ×
+              </button>
+            </div>
+            <p class="mt-2 text-xs text-[var(--campaign-muted)]">1 estadual encontrado</p>
+            <button class="candidate selected mt-5 w-full max-w-[330px]">
+              <span class="candidate-photo"
+                ><img
+                  src="../../public/cards/estaduais/julio-fotos.webp"
+                  alt="Julio Pinheiro" /></span
+              ><span class="candidate-copy"
+                ><span class="candidate-name">Julio Pinheiro</span
+                ><span class="candidate-number">13999</span></span
+              ><span class="check">✓</span>
+            </button>
+            <div class="mt-5 flex items-center gap-4 rounded-xl bg-[var(--campaign-cream)] p-4">
+              <div
+                data-preview
+                class="has-selection w-[118px] shrink-0 overflow-hidden rounded-lg border border-black/10"
+              >
+                <div class="colinha">
+                  <img
+                    src="../../public/cards/modelo-colinha.jpeg"
+                    alt="Colinha com Julio Pinheiro"
+                  /><span class="no-state-mask"></span
+                  ><span class="state-mask selected-state"></span
+                  ><span class="state-copy selected-state"
+                    ><span class="state-office">DEPUTADO ESTADUAL</span
+                    ><span class="state-name">JULIO PINHEIRO</span></span
+                  ><span class="digit d1 selected-state">1</span
+                  ><span class="digit d2 selected-state">3</span
+                  ><span class="digit d3 selected-state">9</span
+                  ><span class="digit d4 selected-state">9</span
+                  ><span class="digit d5 selected-state">9</span>
+                </div>
+              </div>
+              <div class="flex-1">
+                <p class="display text-base font-black">Prévia atualizada</p>
+                <p class="mt-1 text-xs text-[var(--campaign-muted)]">Julio Pinheiro · 13999</p>
+                <div class="mt-3 grid gap-2">
+                  <button class="primary">Baixar o PNG</button
+                  ><button class="outline">Compartilhar</button>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="frame rounded-xl bg-white p-7">
+            <p class="eyebrow">Cena 04 · nenhum resultado</p>
+            <h3 class="display mt-1 text-2xl font-black">A colinha não some com a lista</h3>
+            <div class="search mt-5">
+              <svg
+                aria-hidden="true"
+                class="size-5 text-[var(--campaign-muted)]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.3-4.3"></path></svg
+              ><input
+                value="Nome que não está na lista"
+                aria-label="Buscar estadual"
+                class="min-w-0 flex-1 bg-transparent outline-none"
+              />
+            </div>
+            <div class="empty mt-4">
+              <div>
+                <p class="display text-lg font-black">Nenhum estadual encontrado.</p>
+                <p class="mt-1 text-sm text-[var(--campaign-muted)]">
+                  Confira a escrita ou limpe a busca.
+                </p>
+                <button class="outline mt-4">Limpar busca</button>
+              </div>
+            </div>
+            <div
+              class="mt-5 flex items-center justify-between gap-4 rounded-xl bg-[var(--campaign-cream)] p-4"
+            >
+              <div>
+                <p class="text-sm font-bold">Colinha sem estadual</p>
+                <p class="mt-1 text-xs text-[var(--campaign-muted)]">
+                  Cinco linhas fixas · continua válida.
+                </p>
+              </div>
+              <div class="flex gap-2">
+                <button class="primary px-3">Baixar</button
+                ><button class="outline px-3">Compartilhar</button>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="scene-05">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 05</span>
+          <h2>Chegada por /?estadual=juliete#colinha · tudo inline</h2>
+        </div>
+        <div class="desktop frame mx-auto max-w-full overflow-hidden rounded-xl bg-white">
+          <section class="relative px-10 py-12">
+            <div class="absolute top-0 left-0 h-1.5 w-full bg-[var(--pt-yellow)]"></div>
+            <div class="mx-auto max-w-[1080px]">
+              <div class="text-center">
+                <p class="eyebrow">Sua dobradinha</p>
+                <h3 class="display mt-2 text-4xl font-black">Sua colinha abriu pronta</h3>
+                <p class="mt-3 text-[var(--campaign-muted)]">
+                  Juliete Barreto veio selecionada pelo link recebido. Nada abre por cima da seção.
+                </p>
+              </div>
+              <div class="mt-8 grid grid-cols-[1fr_350px] gap-10">
+                <div>
+                  <div class="search">
+                    <svg
+                      aria-hidden="true"
+                      class="size-5 text-[var(--campaign-muted)]"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.3-4.3"></path></svg
+                    ><input
+                      placeholder="Digite o nome do estadual"
+                      class="flex-1 bg-transparent outline-none"
+                    />
+                  </div>
+                  <p class="mt-2 text-xs text-[var(--campaign-muted)]">
+                    54 nomes · role verticalmente para trocar
+                  </p>
+                  <div class="candidate-grid mt-4">
+                    <button class="candidate selected">
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/juliete-fotos.webp"
+                          alt="Juliete Barreto" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Juliete Barreto</span
+                        ><span class="candidate-number">65100</span></span
+                      ><span class="check">✓</span></button
+                    ><button class="candidate">
+                      <span class="candidate-photo"
+                        ><img
+                          src="../../public/cards/estaduais/julio-fotos.webp"
+                          alt="Julio Pinheiro" /></span
+                      ><span class="candidate-copy"
+                        ><span class="candidate-name">Julio Pinheiro</span
+                        ><span class="candidate-number">13999</span></span
+                      >
+                    </button>
+                  </div>
+                </div>
+                <aside class="rounded-2xl bg-[var(--campaign-cream)] p-5 ring-1 ring-black/10">
+                  <p class="display text-lg font-black">Juliete Barreto · 65100</p>
+                  <div
+                    data-preview
+                    class="has-selection mx-auto mt-3 w-[250px] overflow-hidden rounded-xl border border-black/10 shadow-lg"
+                  >
+                    <div class="colinha">
+                      <img
+                        src="../../public/cards/modelo-colinha.jpeg"
+                        alt="Colinha com Juliete Barreto 65100"
+                      /><span class="no-state-mask"></span
+                      ><span class="state-mask selected-state"></span
+                      ><span class="state-copy selected-state"
+                        ><span class="state-office">DEPUTADO ESTADUAL</span
+                        ><span class="state-name">JULIETE BARRETO</span></span
+                      ><span class="digit d1 selected-state">6</span
+                      ><span class="digit d2 selected-state">5</span
+                      ><span class="digit d3 selected-state">1</span
+                      ><span class="digit d4 selected-state">0</span
+                      ><span class="digit d5 selected-state">0</span>
+                    </div>
+                  </div>
+                  <div class="mt-4 grid grid-cols-2 gap-3">
+                    <button class="primary">Baixar o PNG</button
+                    ><button class="outline">Compartilhar</button>
+                  </div>
+                  <p class="direct-link mt-3 text-center text-[11px] text-[var(--campaign-muted)]">
+                    Link: /?estadual=juliete#colinha
+                  </p>
+                </aside>
+              </div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="scene-06">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 06</span>
+          <h2>Estado inicial válido · a linha de estadual inteira não aparece</h2>
+        </div>
+        <div class="frame grid gap-8 rounded-xl bg-white p-8 lg:grid-cols-[310px_1fr]">
+          <div
+            class="mx-auto w-[290px] overflow-hidden rounded-xl border border-black/10 shadow-xl"
+          >
+            <div data-preview class="colinha">
+              <img
+                src="../../public/cards/modelo-colinha.jpeg"
+                alt="Colinha somente com as cinco linhas fixas"
+              /><span class="no-state-mask"></span>
+            </div>
+          </div>
+          <div class="flex flex-col justify-center">
+            <p class="eyebrow">Sem estadual escolhido</p>
+            <h3 class="display mt-2 text-3xl font-black">Cinco linhas fixas. Nada incompleto.</h3>
+            <p class="mt-3 max-w-xl text-sm leading-6 text-[var(--campaign-muted)]">
+              A faixa inteira de deputado estadual — rótulo, caixas, número e “confirma” — é
+              omitida. As escolhas de deputado federal, dois senadores, governador e presidente
+              permanecem exatamente como na arte aprovada.
+            </p>
+            <div
+              class="mt-5 max-w-md rounded-xl bg-[var(--campaign-cream)] p-4 ring-1 ring-black/10"
+            >
+              <p class="text-sm font-bold">Pronta para usar sem escolha adicional</p>
+              <p class="mt-1 text-xs text-[var(--campaign-muted)]">
+                Link: jorgesolla1313.com.br/#colinha
+              </p>
+            </div>
+            <div class="mt-5 grid max-w-md grid-cols-2 gap-3">
+              <button class="primary">Baixar o PNG</button
+              ><button class="outline">Compartilhar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="scene-07">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 07</span>
+          <h2>Folha de compartilhamento · sem estadual e com estadual</h2>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-2">
+          <aside class="sheet-panel frame rounded-2xl p-5">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="eyebrow">Sem estadual</p>
+                <h3 class="display mt-1 text-xl font-black">Compartilhe sua colinha</h3>
+                <p class="mt-1 text-xs text-[var(--campaign-muted)]">
+                  A mensagem é sua: revise antes de abrir.
+                </p>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="grid size-11 place-items-center rounded-full border border-black/10 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            <label for="share-empty" class="sr-only">Mensagem para compartilhar sem estadual</label
+            ><textarea id="share-empty" class="share-message mt-4">
+Montei minha colinha de votação com Jorge Solla 1313. Monte a sua: https://jorgesolla1313.com.br/#colinha</textarea
+            ><button class="primary mt-3 w-full">Abrir no WhatsApp</button>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button class="outline">Compartilhar o PNG</button
+              ><button class="outline">Copiar link</button>
+            </div>
+            <div class="mt-4 rounded-lg bg-[var(--campaign-cream)] p-3">
+              <p class="text-[11px] font-bold text-[var(--campaign-muted)]">
+                Link direto · sem parâmetro
+              </p>
+              <p class="direct-link mt-1 text-xs font-bold">jorgesolla1313.com.br/#colinha</p>
+            </div>
+            <p class="mt-3 text-center text-[11px] text-[var(--campaign-muted)]">
+              Sem destinatário e sem envio automático.
+            </p>
+          </aside>
+          <aside class="sheet-panel frame rounded-2xl p-5">
+            <div class="flex items-start justify-between">
+              <div>
+                <p class="eyebrow">Com estadual</p>
+                <h3 class="display mt-1 text-xl font-black">Compartilhe sua colinha</h3>
+                <p class="mt-1 text-xs text-[var(--campaign-muted)]">
+                  A mensagem é sua: revise antes de abrir.
+                </p>
+              </div>
+              <button
+                aria-label="Fechar"
+                class="grid size-11 place-items-center rounded-full border border-black/10 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            <label for="share-filled" class="sr-only">Mensagem para compartilhar com estadual</label
+            ><textarea id="share-filled" class="share-message mt-4">
+Montei minha colinha: Juliete Barreto 65100 para deputado estadual, com Jorge Solla 1313. Monte a sua: https://jorgesolla1313.com.br/?estadual=juliete#colinha</textarea
+            ><button class="primary mt-3 w-full">Abrir no WhatsApp</button>
+            <div class="mt-3 grid grid-cols-2 gap-2">
+              <button class="outline">Compartilhar o PNG</button
+              ><button class="outline">Copiar link</button>
+            </div>
+            <div class="mt-4 rounded-lg bg-[var(--campaign-cream)] p-3">
+              <p class="text-[11px] font-bold text-[var(--campaign-muted)]">
+                Link direto · reabre preenchida
+              </p>
+              <p class="direct-link mt-1 text-xs font-bold">
+                jorgesolla1313.com.br/?estadual=juliete#colinha
+              </p>
+            </div>
+            <p class="mt-3 text-center text-[11px] text-[var(--campaign-muted)]">
+              Sem destinatário e sem envio automático. A mídia abre a folha do aparelho; se não
+              puder, baixa o PNG.
+            </p>
+          </aside>
+        </div>
+      </section>
+
+      <section id="scene-08">
+        <div class="scene mb-3 flex items-center gap-3 text-xs font-bold text-[#6c615e]">
+          <span>CENA 08</span>
+          <h2>Fail-closed · candidato sem material some; lista cruzada vazia não mata a seção</h2>
+        </div>
+        <div class="frame rounded-xl bg-white p-8">
+          <div class="grid gap-8 lg:grid-cols-[1fr_320px]">
+            <div>
+              <span
+                class="rounded-full bg-[#47130e] px-3 py-1 text-[11px] font-black text-white uppercase"
+                >Lista oficial vazia</span
+              >
+              <h3 class="display mt-4 text-2xl font-black">Nenhum estadual encontrado.</h3>
+              <p class="mt-2 max-w-xl text-sm leading-6 text-[var(--campaign-muted)]">
+                A busca e o espaço da lista permanecem. Quem não tem foto + número oficial não ganha
+                placeholder e não aparece — inclusive registros marcados “apagar”.
+              </p>
+              <div class="search mt-5 max-w-xl">
+                <svg
+                  aria-hidden="true"
+                  class="size-5 text-[var(--campaign-muted)]"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.3-4.3"></path></svg
+                ><input
+                  placeholder="Digite o nome do estadual"
+                  class="flex-1 bg-transparent outline-none"
+                />
+              </div>
+              <div class="empty mt-4 max-w-xl">
+                <div>
+                  <p class="display text-lg font-black">Nenhum estadual encontrado.</p>
+                  <p class="mt-1 text-sm text-[var(--campaign-muted)]">
+                    A colinha sem estadual continua disponível ao lado.
+                  </p>
+                </div>
+              </div>
+              <div
+                class="mt-5 rounded-lg border border-dashed border-black/20 bg-[#f6f4f3] p-4 text-xs leading-5 text-[var(--campaign-muted)]"
+              >
+                <strong class="text-black">Recorte de ausência:</strong> “Candidato sem material”
+                não é um card desabilitado; é ausência total da lista. Nenhuma foto, número ou
+                mensagem de erro é inventada.
+              </div>
+            </div>
+            <aside class="rounded-2xl bg-[var(--campaign-cream)] p-5 ring-1 ring-black/10">
+              <p class="display text-lg font-black">Colinha sem estadual</p>
+              <div
+                data-preview
+                class="mx-auto mt-3 w-[230px] overflow-hidden rounded-xl border border-black/10 shadow-md"
+              >
+                <div class="colinha">
+                  <img
+                    src="../../public/cards/modelo-colinha.jpeg"
+                    alt="Colinha com as cinco linhas fixas"
+                  /><span class="no-state-mask"></span>
+                </div>
+              </div>
+              <div class="mt-4 grid grid-cols-2 gap-3">
+                <button class="primary px-2">Baixar o PNG</button
+                ><button class="outline px-2">Compartilhar</button>
+              </div>
+              <p class="mt-3 text-center text-[11px] text-[var(--campaign-muted)]">
+                Ativos mesmo com zero candidatos.
+              </p>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <footer class="border-t border-black/15 pt-8 text-xs leading-5 text-[#6c615e]">
+        <p>
+          <strong class="text-black">Ativos:</strong> derivados oficiais em
+          <code>public/cards/estaduais/</code> e arte aprovada
+          <code>public/cards/modelo-colinha.jpeg</code>. Nenhum banco de imagem.
+        </p>
+        <p class="mt-1">
+          <strong class="text-black">NEEDS ASSET:</strong> nenhum para aprovar este gate. Os oito
+          nomes são amostra visual da lista cruzada, não seu total.
+        </p>
+      </footer>
+    </main>
+    <script>
+      const normalize = (value) =>
+        value
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .toLowerCase()
+          .trim()
+      document.querySelectorAll('[data-filter-input]').forEach((input) => {
+        input.addEventListener('input', () => {
+          const list = document.getElementById(input.dataset.filterInput)
+          const query = normalize(input.value)
+          list?.querySelectorAll('[data-name]').forEach((card) => {
+            card.hidden = !normalize(card.dataset.name).includes(query)
+          })
+        })
+      })
+      const paintPreview = (demo, card) => {
+        const preview = demo.querySelector('[data-preview]')
+        const label = demo.querySelector('[data-choice-label]')
+        demo.querySelectorAll('.candidate').forEach((item) => {
+          item.classList.toggle('selected', item === card)
+          item.setAttribute('aria-pressed', String(item === card))
+          item.querySelector('.check')?.remove()
+        })
+        if (!card) {
+          preview?.classList.remove('has-selection')
+          if (label) label.textContent = 'Sem estadual · cinco linhas fixas'
+          return
+        }
+        card.insertAdjacentHTML('beforeend', '<span class="check" aria-label="Escolhido">✓</span>')
+        preview?.classList.add('has-selection')
+        const person = card.dataset.person
+        const number = card.dataset.number
+        if (label) label.textContent = `${person} · ${number}`
+        const previewName = preview?.querySelector('[data-preview-name]')
+        if (previewName) previewName.textContent = person.toUpperCase()
+        ;[...number].forEach((digit, index) => {
+          const slot = preview?.querySelector(`[data-digit="${index}"]`)
+          if (slot) slot.textContent = digit
+        })
+      }
+      document.querySelectorAll('[data-demo]').forEach((demo) => {
+        demo.addEventListener('click', (event) => {
+          const card = event.target.closest('.candidate')
+          if (card) paintPreview(demo, card)
+          if (event.target.closest('[data-clear]')) paintPreview(demo, null)
+        })
+      })
+    </script>
+  </body>
+</html>
