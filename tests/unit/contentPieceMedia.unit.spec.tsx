@@ -72,6 +72,8 @@ describe('ContentPieceMedia — the video still before the play (C226)', () => {
     renderSlot({})
 
     expect(frameImage()).not.toBeNull()
+    // S45 — the still shows whole in the slot, never cropped.
+    expect(frameImage()?.className).toContain('object-contain')
     expect(document.querySelector('video')).toBeNull()
     expect(document.querySelector('audio')).toBeNull()
     // S27: the element that would fetch the file only exists after the tap.
@@ -246,5 +248,7 @@ describe('ContentPieceMedia — the video still before the play (C226)', () => {
 
     expect(document.querySelectorAll('img')).toHaveLength(1)
     expect(document.querySelector('img')?.getAttribute('src')).toBe('/conteudos/peca-7/midia')
+    // S45 — the photo shows whole in its 4:5 slot, never cropped.
+    expect(document.querySelector('img')?.className).toContain('object-contain')
   })
 })

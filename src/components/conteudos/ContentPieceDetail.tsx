@@ -3,7 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 
 import { sendContentPieceEvent } from '@/lib/contentEvents'
-import type { ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
+import {
+  contentPieceAspectClass,
+  contentPieceMediaKind,
+  type ContentPiecePublicItem,
+} from '@/lib/contentPieceCatalog'
 import { cn } from '@/lib/utils'
 
 import { ContentPieceDownloadLink, ContentPieceShareButton } from './ContentPieceActions'
@@ -50,14 +54,17 @@ export const ContentPieceDetail = ({ item }: { item: ContentPiecePublicItem }) =
 
   return (
     <>
-      <div className="grid gap-8 lg:grid-cols-[1.2fr_.8fr] lg:gap-10">
+      {/* S45 — the piece page keeps the card's promise: the 360px media column
+          (artefato cena 05) and the frame of the type — Reel 9:16, photo 4:5,
+          wide kinds 16:9 — with the media whole, never cropped. */}
+      <div className="grid items-start gap-8 lg:grid-cols-[360px_minmax(0,1fr)] lg:gap-10">
         <ContentPieceMedia
           item={item}
           playing={playing}
           onToggle={() => setPlaying((current) => !current)}
           onEnded={() => setPlaying(false)}
           variant="detail"
-          className="aspect-video"
+          className={contentPieceAspectClass(contentPieceMediaKind(item)) ?? 'aspect-video'}
         />
 
         <div>

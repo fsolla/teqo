@@ -50,7 +50,12 @@ const PlayButton = ({
     aria-label={label}
     className={cn(
       'absolute grid place-items-center rounded-full bg-(--pt-yellow) text-(--pt-yellow-ink) shadow-[0_6px_0_#cfb900,0_10px_22px_rgb(0_0_0/15%)] transition-[transform,box-shadow] duration-150 ease-out hover:-translate-y-0.5 active:translate-y-[3px] active:shadow-[0_3px_0_#cfb900] motion-reduce:transition-none',
-      compact ? 'size-11 sm:size-16' : 'size-14 sm:size-16',
+      // C243 — public light-surface focus: the yellow signal plus the dark blue
+      // outer separator, so the ring separates from the yellow button itself.
+      'focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-yellow) focus-visible:shadow-[0_0_0_6px_rgb(24_78_146/72%)]',
+      // S45 — the approved play (artefato cena 07): 56px on the card, 44px on
+      // the compact thumb (44 → 56 from `sm`, where that card becomes a block).
+      compact ? 'size-11 sm:size-14' : 'size-14',
     )}
   >
     <PlayIcon />
@@ -141,6 +146,7 @@ export const ContentPieceMedia = ({
   if (kind === null) {
     return (
       <div
+        data-content-piece-media=""
         className={cn(
           base,
           'grid place-items-center bg-[linear-gradient(145deg,#fff4f5,#eef4fb)]',
@@ -163,7 +169,9 @@ export const ContentPieceMedia = ({
             className={cn(
               'mt-2 font-[family-name:var(--font-exo2)] font-black',
               item.origin === 'instagram' ? 'text-[#e4102f]' : 'text-[#184e92]',
-              variant === 'detail' ? 'text-4xl' : 'text-2xl',
+              // S45 — the wide row of the catalogue and the home thumb carry a
+              // narrow media column on the phone; from `sm` the full scale returns.
+              variant === 'detail' ? 'text-4xl' : 'text-base sm:text-2xl',
             )}
           >
             {item.originLabel}
@@ -180,14 +188,17 @@ export const ContentPieceMedia = ({
 
   if (kind === 'image') {
     return (
-      <div className={cn(base, variant === 'detail' && 'rounded-2xl border border-black/10')}>
+      <div
+        data-content-piece-media=""
+        className={cn(base, variant === 'detail' && 'rounded-2xl border border-black/10')}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element -- private proxy path with on-demand headers */}
         <img
           src={item.file?.path}
           alt={item.title}
           loading="lazy"
           decoding="async"
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
         />
       </div>
     )
@@ -196,6 +207,7 @@ export const ContentPieceMedia = ({
   if (kind === 'text') {
     return (
       <div
+        data-content-piece-media=""
         className={cn(
           base,
           'grid place-items-center bg-(--campaign-cream) px-3 text-center',
@@ -218,6 +230,7 @@ export const ContentPieceMedia = ({
     if (playing) {
       return (
         <div
+          data-content-piece-media=""
           className={cn(
             base,
             'bg-[#180a09]',
@@ -252,6 +265,7 @@ export const ContentPieceMedia = ({
 
     return (
       <div
+        data-content-piece-media=""
         className={cn(
           base,
           'grid place-items-center bg-[linear-gradient(135deg,#e5e2df,#f7f5f3)]',
@@ -274,7 +288,7 @@ export const ContentPieceMedia = ({
             // the browser's broken-image glyph over the slot for a moment, and
             // the design's honest state is the neutral surface, never a glyph.
             className={cn(
-              'absolute inset-0 h-full w-full object-cover transition-opacity duration-200',
+              'absolute inset-0 h-full w-full object-contain transition-opacity duration-200 motion-reduce:transition-none',
               frameState !== 'ready' && 'opacity-0',
             )}
           />
@@ -304,6 +318,7 @@ export const ContentPieceMedia = ({
 
   return (
     <div
+      data-content-piece-media=""
       className={cn(
         base,
         'grid place-items-center bg-[linear-gradient(135deg,#e5e2df,#f7f5f3)] px-3 text-center',

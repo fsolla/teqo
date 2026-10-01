@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 import { sendCardOpeningEvent } from '@/lib/contentEvents'
 import { contentPieceTypeLabels } from '@/lib/contentPiece'
-import type { CardCatalogItem } from '@/lib/contentPieceCatalog'
+import { CONTENT_PIECE_ASPECT_CLASS, type CardCatalogItem } from '@/lib/contentPieceCatalog'
 import { cn } from '@/lib/utils'
 
 import {
@@ -15,7 +15,7 @@ import {
 
 /**
  * S38 — the art of a model item (artefato: cenas 01–03): the model's real file
- * cropped from the top (the banners and the name line live there), or the
+ * whole in the 3:4 vertical slot (S45 — the art is never cropped), or the
  * neutral dashed placeholder of the photo models, whose master is only the
  * frame with a transparent photo window. The `NOVO` badge of the newest model
  * sits on the art.
@@ -23,7 +23,8 @@ import {
 const CardItemArt = ({ item }: { item: CardCatalogItem }) => (
   <span
     className={cn(
-      'relative grid min-h-40 place-items-center overflow-hidden sm:aspect-video sm:min-h-0',
+      'relative grid place-items-center overflow-hidden',
+      CONTENT_PIECE_ASPECT_CLASS.model,
       item.art.kind === 'placeholder'
         ? 'bg-[linear-gradient(145deg,#eee9e5,#fff)]'
         : 'bg-[linear-gradient(145deg,#184e92,#0876ac)]',
@@ -44,8 +45,8 @@ const CardItemArt = ({ item }: { item: CardCatalogItem }) => (
         src={item.art.src}
         alt=""
         fill
-        sizes="(min-width: 1024px) 360px, (min-width: 640px) 45vw, 128px"
-        className="object-cover object-top"
+        sizes="(min-width: 1024px) 260px, (min-width: 640px) 45vw, 112px"
+        className="object-contain"
       />
     )}
 
@@ -72,7 +73,7 @@ export const ContentCatalogCardItem = ({ item }: { item: CardCatalogItem }) => (
     onClick={() => sendCardOpeningEvent(item.modelId)}
     className={cn(
       CONTENT_PIECE_CARD,
-      'grid grid-cols-[128px_1fr] text-black no-underline sm:block',
+      'grid grid-cols-[112px_minmax(0,1fr)] text-black no-underline sm:block',
       item.badge ? 'border-2 border-[#e4102f]' : null,
       CONTENT_PIECE_FOCUS,
     )}

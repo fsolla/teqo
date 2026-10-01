@@ -241,7 +241,9 @@ export const ContentPieceHomeBoard = ({
         <div
           className={cn(
             'mt-6',
-            isSingle ? 'lg:mt-0' : 'grid gap-4 sm:grid-cols-2 sm:gap-6 lg:mt-9 lg:grid-cols-3',
+            isSingle
+              ? 'lg:mt-0'
+              : 'grid items-start gap-4 sm:grid-cols-2 sm:gap-6 lg:mt-9 lg:grid-cols-3',
           )}
         >
           {selection.map(({ item, match }) => (

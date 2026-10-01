@@ -1,6 +1,11 @@
 import Link from 'next/link'
 
-import { contentPieceMediaKind, type ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
+import {
+  CONTENT_PIECE_ASPECT_CLASS,
+  contentPieceBoardBucket,
+  contentPieceMediaKind,
+  type ContentPiecePublicItem,
+} from '@/lib/contentPieceCatalog'
 import { cn } from '@/lib/utils'
 
 import { ContentPieceDownloadLink, ContentPieceShareButton } from './ContentPieceActions'
@@ -84,8 +89,9 @@ const CardThemeEvidence = ({ item }: { item: ContentPiecePublicItem }) => {
 }
 
 /**
- * S27/S28 — one catalogue card (artefato: cenas 01/02/05–07): video/audio/card
- * and link pieces take the full card with the asset on top; a photo/text is the
+ * S27/S28 — one catalogue card (artefato: cenas 01/02/05–07): video takes the
+ * full card with the 9:16 frame on top, audio/link take the wide row (the
+ * media column at the left, no framing to preserve), and a photo/text is the
  * compact horizontal row. Actions work from the card itself — download never
  * needs the piece page.
  */
@@ -97,23 +103,25 @@ export const ContentPieceCard = ({
   onShare,
   themeMode,
 }: ContentPieceCardProps) => {
-  const kind = contentPieceMediaKind(item)
-  const isCompact = kind === 'image' || kind === 'text' || kind === 'other'
+  const bucket = contentPieceBoardBucket(contentPieceMediaKind(item))
 
-  if (isCompact) {
+  if (bucket === 'compact') {
     return (
       <article
         data-content-piece={item.slug}
         data-state={playing ? 'playing' : 'stopped'}
         className={cn(CONTENT_PIECE_CARD, 'flex items-center gap-4 p-3')}
       >
+        {/* S45 — a fixed 96×120 (4:5) box: the compact row is a flex child, and
+            `aspect-ratio` on a flex item is the WebKit #265243 trap; the fixed
+            box keeps the whole photo, never a crop. */}
         <ContentPieceMedia
           item={item}
           playing={playing}
           onToggle={onToggle}
           onEnded={onEnded}
           variant="thumb"
-          className="h-24 w-32 shrink-0 rounded-lg"
+          className="h-[120px] w-24 shrink-0 rounded-lg"
         />
         <div className="min-w-0 flex-1">
           <CardTag item={item} themeMode={themeMode} />
@@ -121,10 +129,45 @@ export const ContentPieceCard = ({
           <ContentPieceCardMeta item={item} />
           <CardThemeEvidence item={item} />
           <div className="mt-3 flex flex-wrap gap-2">
-            <ContentPieceDownloadLink item={item} className="min-h-9 px-3" />
-            <ContentPieceShareButton item={item} onShare={onShare} className="min-h-9 px-3" />
+            <ContentPieceDownloadLink item={item} className="min-h-11 px-3" />
+            <ContentPieceShareButton item={item} onShare={onShare} className="min-h-11 px-3" />
           </div>
         </div>
+      </article>
+    )
+  }
+
+  const body = (
+    <div className="min-w-0 p-4">
+      <CardTag item={item} themeMode={themeMode} />
+      <ContentPieceCardTitle item={item} className="text-base" />
+      <ContentPieceCardMeta item={item} />
+      <CardThemeEvidence item={item} />
+      <div className={cn('mt-4 grid gap-2', item.file ? 'grid-cols-2' : 'grid-cols-1')}>
+        <ContentPieceDownloadLink item={item} />
+        <ContentPieceShareButton item={item} onShare={onShare} />
+      </div>
+      <Link
+        href={item.publicPath}
+        className="mt-3 block rounded-sm text-center text-xs font-bold text-(--pt-red) underline-offset-4 hover:underline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-yellow) focus-visible:shadow-[0_0_0_6px_rgb(24_78_146/72%)] sm:hidden"
+      >
+        Ver detalhes da peça →
+      </Link>
+    </div>
+  )
+
+  if (bucket === 'wide') {
+    return (
+      <article
+        data-content-piece={item.slug}
+        data-state={playing ? 'playing' : 'stopped'}
+        className={cn(
+          CONTENT_PIECE_CARD,
+          'grid min-h-[156px] grid-cols-[112px_minmax(0,1fr)] sm:min-h-[170px] sm:grid-cols-[190px_minmax(0,1fr)]',
+        )}
+      >
+        <ContentPieceMedia item={item} playing={playing} onToggle={onToggle} onEnded={onEnded} />
+        {body}
       </article>
     )
   }
@@ -140,24 +183,9 @@ export const ContentPieceCard = ({
         playing={playing}
         onToggle={onToggle}
         onEnded={onEnded}
-        className="aspect-video"
+        className={CONTENT_PIECE_ASPECT_CLASS.video}
       />
-      <div className="p-4">
-        <CardTag item={item} themeMode={themeMode} />
-        <ContentPieceCardTitle item={item} className="text-base" />
-        <ContentPieceCardMeta item={item} />
-        <CardThemeEvidence item={item} />
-        <div className={cn('mt-4 grid gap-2', item.file ? 'grid-cols-2' : 'grid-cols-1')}>
-          <ContentPieceDownloadLink item={item} />
-          <ContentPieceShareButton item={item} onShare={onShare} />
-        </div>
-        <Link
-          href={item.publicPath}
-          className="mt-3 block rounded-sm text-center text-xs font-bold text-(--pt-red) underline-offset-4 hover:underline focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-(--pt-red) sm:hidden"
-        >
-          Ver detalhes da peça →
-        </Link>
-      </div>
+      {body}
     </article>
   )
 }
