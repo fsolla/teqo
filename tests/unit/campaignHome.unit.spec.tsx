@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import HomePage from '@/app/(frontend)/(home)/page'
 import { toContentPiecePublicItem, type ContentPiecePublicItem } from '@/lib/contentPieceCatalog'
+import type { ShareLinkHomeSectionData } from '@/utilities/shareLinkReads'
 
 const pieceItem = toContentPiecePublicItem({
   id: 1,
@@ -85,6 +86,17 @@ vi.mock('@/utilities/globalReads', () => ({
   }),
 }))
 
+// S44 — the Plenária section reads the fixed share link through the Payload DB
+// (cached under the shareLinks tag); the unit env has no database, and the real
+// window gate/swap behavior is e2e-covered (frontendShareLink.e2e.spec.ts).
+const homeShareLink = vi.hoisted(() => ({
+  section: null as ShareLinkHomeSectionData | null,
+}))
+
+vi.mock('@/utilities/shareLinkReads', () => ({
+  loadShareLinkHomeSection: async () => homeShareLink.section,
+}))
+
 // S14 — the card section renders the client studio island (next/font local
 // face + matchMedia + canvas); its behavior is e2e-covered, so the unit
 // skeleton mocks both the face module and the island.
@@ -101,6 +113,7 @@ afterEach(() => {
   homePhotoAlbum.hasPhotos = false
   homePhotoAlbum.selfieSearchEnabled = false
   homePhotoAlbum.published = true
+  homeShareLink.section = null
   cleanup()
 })
 
@@ -185,5 +198,39 @@ describe('Campaign home', () => {
     homePhotoAlbum.hasPhotos = false
     render(await HomePage())
     expect(screen.queryByRole('heading', { name: 'Encontre você nas fotos' })).toBeNull()
+  })
+
+  it('mostra a seção da Plenária só com o link publicado na janela (S44, fail-closed)', async () => {
+    const startsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    homeShareLink.section = {
+      view: {
+        slug: 'plenaria-vitoria',
+        title: 'Plenária da Vitória',
+        description: 'O time de Jorge Solla se encontra antes da vitória.',
+        imageUrl: null,
+        imageAlt: 'Plenária da Vitória',
+        eventLabel: 'Sexta-feira, 2 de outubro · 18h',
+        location: 'Online',
+        startsAt,
+        endsAt: null,
+        canonicalUrl: 'https://jorgesolla1313.com.br/plenaria-vitoria',
+        expiresAt: Date.parse(startsAt) + 2 * 60 * 60 * 1000,
+        youtubeVideoId: null,
+      },
+      initialLive: null,
+    }
+    render(await HomePage())
+
+    expect(screen.getByRole('heading', { name: 'Plenária da Vitória' })).toBeTruthy()
+    // Pré-live: the S29 agenda is the only action — never an entry button.
+    expect(screen.getByRole('button', { name: 'Adicionar à agenda' })).toBeTruthy()
+    expect(
+      screen.queryByRole('link', { name: /Entrar na plenária|Assistir no YouTube/ }),
+    ).toBeNull()
+
+    cleanup()
+    homeShareLink.section = null
+    render(await HomePage())
+    expect(screen.queryByRole('heading', { name: 'Plenária da Vitória' })).toBeNull()
   })
 })

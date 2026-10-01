@@ -49,6 +49,7 @@ import config from '@/payload.config'
 import {
   getCachedPublishedShareLinkBySlug,
   loadPublishedShareLinkLiveTarget,
+  loadShareLinkHomeSection,
   resolveShareLinkCanonicalUrl,
   resolveShareLinkOgImageUrl,
 } from '@/utilities/shareLinkReads'
@@ -449,5 +450,87 @@ describe('shareLink', () => {
     expect(await resolveShareLinkOgImageUrl(withoutImage)).toBe(
       'https://site.test/api/media/file/site-default.png',
     )
+  })
+
+  describe('loadShareLinkHomeSection (S44)', () => {
+    const startsInAnHour = () => new Date(Date.now() + 60 * 60 * 1000).toISOString()
+
+    beforeEach(() => {
+      getCachedGlobalMock.mockReturnValue(async () => ({ URL: 'https://canonical.example/' }))
+    })
+
+    it('builds the home view with the on-air destination and the YouTube player id', async () => {
+      const startsAt = startsInAnHour()
+      await createShareLink({
+        title: 'Plenária da Vitória',
+        slug: 'home-section-s44',
+        description: 'Encontro online.',
+        mode: 'announcement',
+        published: true,
+        startsAt,
+        location: 'Online',
+        destinations: [
+          { label: 'Google Meet', url: 'https://meet.google.com/abc-defg-hij', live: true },
+          { label: 'Youtube', url: 'https://www.youtube.com/live/77bUgl7cvQ8' },
+        ],
+      })
+
+      const section = await loadShareLinkHomeSection('home-section-s44')
+      expect(section?.initialLive).toEqual({
+        href: 'https://meet.google.com/abc-defg-hij',
+        label: 'Google Meet',
+      })
+      expect(section?.view.youtubeVideoId).toBe('77bUgl7cvQ8')
+      expect(section?.view.canonicalUrl).toBe('https://canonical.example/home-section-s44')
+      expect(section?.view.expiresAt).toBe(Date.parse(startsAt) + 2 * 60 * 60 * 1000)
+      expect(section?.view.location).toBe('Online')
+    })
+
+    it('fails closed for an expired window, a missing start or an unpublished link', async () => {
+      await createShareLink({
+        title: 'Expirada',
+        slug: 'home-section-expirada-s44',
+        description: 'x',
+        mode: 'announcement',
+        published: true,
+        startsAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+      })
+      await createShareLink({
+        title: 'Sem data',
+        slug: 'home-section-sem-data-s44',
+        description: 'x',
+        mode: 'announcement',
+        published: true,
+      })
+      await createShareLink({
+        title: 'Rascunho',
+        slug: 'home-section-rascunho-s44',
+        description: 'x',
+        mode: 'announcement',
+        published: false,
+        startsAt: startsInAnHour(),
+      })
+
+      expect(await loadShareLinkHomeSection('home-section-expirada-s44')).toBeNull()
+      expect(await loadShareLinkHomeSection('home-section-sem-data-s44')).toBeNull()
+      expect(await loadShareLinkHomeSection('home-section-rascunho-s44')).toBeNull()
+      expect(await loadShareLinkHomeSection('home-section-inexistente-s44')).toBeNull()
+    })
+
+    it('keeps the section pre-live while no destination is on air', async () => {
+      await createShareLink({
+        title: 'Pré-live',
+        slug: 'home-section-pre-s44',
+        description: 'x',
+        mode: 'announcement',
+        published: true,
+        startsAt: startsInAnHour(),
+        destinations: [{ label: 'Google Meet', url: 'https://meet.google.com/abc-defg-hij' }],
+      })
+
+      const section = await loadShareLinkHomeSection('home-section-pre-s44')
+      expect(section?.initialLive).toBeNull()
+      expect(section?.view.youtubeVideoId).toBeNull()
+    })
   })
 })

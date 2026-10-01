@@ -10,7 +10,9 @@ import {
   formatBahiaEventDateLabel,
   parseBahiaDateTimeInput,
 } from '../../src/lib/campaignTime.js'
+import { SHARE_LINK_HOME_SECTION_SLUG } from '../../src/lib/shareLinkHomeSection.js'
 import { adminHeaders } from '../helpers/adminApi'
+import { waitForHomeHTML, waitForHomeSection } from '../helpers/homeIsr'
 import { metaContent } from '../helpers/metaContent'
 import { seedTestUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
@@ -483,5 +485,198 @@ test.describe('Frontend share-link announcement (S29)', () => {
     } finally {
       await anonymous.dispose()
     }
+  })
+})
+
+test.describe('Frontend home Plenária section (S44)', () => {
+  // The home section reads one FIXED slug (`plenaria-vitoria`), so this
+  // describe is the only owner of those rows and runs serially — the other
+  // specs keep their unique-slug fixtures untouched.
+  test.describe.configure({ mode: 'serial' })
+
+  const HOME_SECTION_SLUG = SHARE_LINK_HOME_SECTION_SLUG
+  const YOUTUBE_VIDEO_ID = '77bUgl7cvQ8'
+
+  test.beforeAll(async () => {
+    await seedTestUser()
+  })
+
+  const shareLinkIdsBySlug = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+    slug: string,
+  ): Promise<number[]> => {
+    const response = await request.get(
+      `${BASE_URL}/api/shareLink?where[slug][equals]=${encodeURIComponent(slug)}&limit=10&depth=0`,
+      { headers },
+    )
+    expect(response.ok(), await response.text()).toBeTruthy()
+    const { docs } = (await response.json()) as { docs: Array<{ id: number }> }
+    return docs.map((doc) => doc.id)
+  }
+
+  /** Deletes any residue of the fixed slug (aborted runs) before each flow. */
+  const resetHomeSectionLink = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+  ) => {
+    for (const id of await shareLinkIdsBySlug(request, headers, HOME_SECTION_SLUG)) {
+      await request.delete(`${BASE_URL}/api/shareLink/${id}`, { headers })
+      const index = createdShareLinkIds.indexOf(id)
+      if (index >= 0) createdShareLinkIds.splice(index, 1)
+    }
+  }
+
+  const createHomeSectionLink = async (
+    request: APIRequestContext,
+    headers: Record<string, string>,
+    overrides: Partial<ShareLinkInput> = {},
+  ): Promise<number> => {
+    const image =
+      overrides.image ?? (await createMedia(request, headers, 'Plenária da Vitória 1313'))
+    return createShareLink(request, headers, {
+      title: 'Plenária da Vitória',
+      slug: HOME_SECTION_SLUG,
+      destinations: [
+        { label: 'Google Meet', url: 'https://meet.google.com/fyz-rurx-biv' },
+        { label: 'Youtube', url: `https://www.youtube.com/live/${YOUTUBE_VIDEO_ID}` },
+      ],
+      description: 'O time de Jorge Solla se encontra antes da vitória.',
+      published: true,
+      mode: 'announcement',
+      startsAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      location: 'Online',
+      image,
+      ...overrides,
+    })
+  }
+
+  test('announces the plenária after the hero, swaps to the live player and hides on unpublish', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await resetHomeSectionLink(request, headers)
+    const id = await createHomeSectionLink(request, headers)
+
+    // Warm the poll route before the browser mounts it (the S29 dev-mode Fast
+    // Refresh caveat: the first compile of the route reloads the open page).
+    await request.get(`${BASE_URL}/api/share-link/${HOME_SECTION_SLUG}/live`)
+    await waitForHomeSection(request, BASE_URL, 'plenaria', 'present')
+
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto(`/?e2e=${Date.now()}`)
+
+    const section = page.locator('[data-home-section="plenaria"]')
+    await expect(section).toBeVisible()
+
+    // S44 — immediately after the hero, before the proof strip.
+    const order = await page
+      .locator('[data-home-section]')
+      .evaluateAll((sections) => sections.map((s) => s.getAttribute('data-home-section')))
+    expect(order.indexOf('plenaria')).toBe(order.indexOf('hero') + 1)
+    expect(order.indexOf('plenaria')).toBeLessThan(order.indexOf('proof'))
+
+    // Pré-live: the invitation with the S29 agenda and no entry button.
+    await expect(section.getByRole('heading', { name: 'Plenária da Vitória' })).toBeVisible()
+    await expect(section.getByText('Encontro online')).toBeVisible()
+    await expect(
+      section.getByText('O time de Jorge Solla se encontra antes da vitória.'),
+    ).toBeVisible()
+    // Mobile inlines the timezone next to the time (the desktop keeps the small).
+    await expect(section.getByText('(horário da Bahia)')).toBeVisible()
+    await expect(section.getByText('Online', { exact: true })).toBeVisible()
+    await expect(section.getByRole('link', { name: 'Assistir no YouTube' })).toHaveCount(0)
+    await expect(section.getByRole('link', { name: 'Entrar na plenária' })).toHaveCount(0)
+
+    await section.getByRole('button', { name: 'Adicionar à agenda' }).click()
+    // The popover is portaled to the body, outside the section subtree.
+    await expect(page.getByRole('link', { name: /Google Agenda/ })).toHaveAttribute(
+      'href',
+      /calendar\.google\.com/,
+    )
+    await expect(page.getByRole('link', { name: /Baixar arquivo \.ics/ })).toHaveAttribute(
+      'href',
+      `/${HOME_SECTION_SLUG}/evento.ics`,
+    )
+    await page.keyboard.press('Escape')
+
+    const overflow = await page.evaluate(() => {
+      const container = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+      return container ? container.scrollWidth - container.clientWidth : 0
+    })
+    expect(overflow).toBeLessThanOrEqual(1)
+
+    // The team flags the Meet on air through the test database (the poll
+    // contract; the REST path would revalidate and race the open page).
+    await flagLiveDestination(id, 'Google Meet')
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+
+    await expect(section.getByText('Ao vivo agora')).toBeVisible({ timeout: 20_000 })
+    await expect(section.getByRole('link', { name: 'Entrar na plenária' })).toHaveAttribute(
+      'href',
+      `/${HOME_SECTION_SLUG}`,
+    )
+    await expect(
+      section.locator(`iframe[src*="youtube-nocookie.com/embed/${YOUTUBE_VIDEO_ID}"]`),
+    ).toBeAttached()
+    await expect(section.getByRole('button', { name: 'Adicionar à agenda' })).toHaveCount(0)
+
+    // The YouTube takes over: only the label changes; the href stays canonical.
+    await flagLiveDestination(id, 'Youtube')
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
+    await expect(section.getByRole('link', { name: 'Assistir no YouTube' })).toHaveAttribute(
+      'href',
+      `/${HOME_SECTION_SLUG}`,
+    )
+
+    // The same state written through the admin REST API (the collection hook
+    // path) lands in the server HTML: whoever arrives now gets the live state
+    // on first paint, without waiting for the poll.
+    await setShareLinkDestinations(request, headers, id, [
+      { label: 'Google Meet', url: 'https://meet.google.com/fyz-rurx-biv' },
+      { label: 'Youtube', url: `https://www.youtube.com/live/${YOUTUBE_VIDEO_ID}`, live: true },
+    ])
+    await waitForHomeHTML(request, BASE_URL, [
+      'data-home-section="plenaria"',
+      'Assistir no YouTube',
+    ])
+    await page.goto(`/?e2e=${Date.now()}`)
+    await expect(
+      page
+        .locator('[data-home-section="plenaria"]')
+        .getByRole('link', { name: 'Assistir no YouTube' }),
+    ).toBeVisible()
+
+    // Kill switch: unpublishing the link pulls the section without a deploy.
+    await setShareLinkPublished(request, headers, id, false)
+    await waitForHomeSection(request, BASE_URL, 'plenaria', 'absent')
+    await page.goto(`/?e2e=${Date.now()}`)
+    await expect(page.locator('[data-home-section="plenaria"]')).toHaveCount(0)
+  })
+
+  test('hides the section when the event window is closed and brings it back when it opens', async ({
+    page,
+    request,
+  }) => {
+    const headers = await adminHeaders(request, BASE_URL)
+    await resetHomeSectionLink(request, headers)
+    const id = await createHomeSectionLink(request, headers, {
+      startsAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+    })
+
+    // startsAt + 2h already passed: the section is absent from the HTML.
+    await waitForHomeSection(request, BASE_URL, 'plenaria', 'absent')
+    await page.goto(`/?e2e=${Date.now()}`)
+    await expect(page.locator('[data-home-section="plenaria"]')).toHaveCount(0)
+
+    // Reopening the window (an end in the future) brings the section back.
+    const endsAt = new Date(Date.now() + 60 * 60 * 1000).toISOString()
+    const response = await request.patch(`${BASE_URL}/api/shareLink/${id}`, {
+      headers,
+      data: { endsAt },
+    })
+    expect(response.ok(), await response.text()).toBeTruthy()
+    await waitForHomeSection(request, BASE_URL, 'plenaria', 'present')
   })
 })

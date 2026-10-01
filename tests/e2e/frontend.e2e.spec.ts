@@ -5,6 +5,7 @@ import { COLINHA_ROW_LAYOUT } from '@/lib/cardColinha'
 import { TEAM_CARD_NAME_BANNER } from '@/lib/cardModels'
 
 import { adminHeaders } from '../helpers/adminApi'
+import { waitForHomeHTML, waitForHomeSection } from '../helpers/homeIsr'
 import { seedTestUser } from '../helpers/seedUser'
 import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
 import { expect, test } from './fixtures/e2eTest'
@@ -768,43 +769,14 @@ test.describe('Campaign home content section', () => {
     return doc
   }
 
-  // ISR serves the stale page while it regenerates after a revalidateTag
-  // (slower under the parallel suite), and a navigation that lands on it never
-  // refreshes its DOM. Poll the server HTML positively until it converges to
-  // the expected substring state (section presence or actual content, e.g.
-  // video titles); the navigation that follows then always lands on the fresh
-  // page. 12 attempts preserves the S1 convergence budget.
-  const waitForHomeHTML = async (
-    request: APIRequestContext,
-    includes: string[],
-    excludes: string[] = [],
-    attempts = 12,
-  ) => {
-    for (let attempt = 0; attempt < attempts; attempt += 1) {
-      const response = await request.get(`${baseURL}/`).catch(() => undefined)
-      if (response?.ok()) {
-        const html = await response.text()
-        const allIncluded = includes.every((needle) => html.includes(needle))
-        const anyExcluded = excludes.some((needle) => html.includes(needle))
-        if (allIncluded && !anyExcluded) return
-      }
-      await new Promise((resolve) => setTimeout(resolve, 1_000))
-    }
-    throw new Error(
-      `A home não convergiu após ${attempts}s (includes: ${includes.join(', ')}, excludes: ${excludes.join(', ')}).`,
-    )
-  }
-
+  // S39/S44 — the ISR poll lives in `tests/helpers/homeIsr.ts` (shared by the
+  // specs that own home sections); this spec keeps the `contents` specialization.
   const waitForHomeSectionState = async (
     request: APIRequestContext,
     expected: 'present' | 'absent',
     attempts = 12,
   ) => {
-    if (expected === 'present') {
-      await waitForHomeHTML(request, ['data-home-section="contents"'], [], attempts)
-    } else {
-      await waitForHomeHTML(request, [], ['data-home-section="contents"'], attempts)
-    }
+    await waitForHomeSection(request, baseURL, 'contents', expected, attempts)
   }
 
   /**
@@ -1159,6 +1131,7 @@ test.describe('Campaign home content section', () => {
     try {
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Vídeo em destaque', 'E2e Artigo no mix'],
         ['E2e Vídeo excluído'],
       )
@@ -1242,6 +1215,7 @@ test.describe('Campaign home content section', () => {
       // section (page never breaks, no error shown).
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Artigo fallback', 'YouTube →'],
         ['E2e Vídeo em destaque'],
       )
@@ -1278,7 +1252,7 @@ test.describe('Campaign home content section', () => {
 
     try {
       // Live fetch succeeds and persists the raw snapshot.
-      await waitForHomeHTML(request, ['E2e Vídeo em destaque'], ['E2e Vídeo excluído'])
+      await waitForHomeHTML(request, baseURL, ['E2e Vídeo em destaque'], ['E2e Vídeo excluído'])
       await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Vídeo em destaque/ }).first()).toBeVisible()
       await page.goto('about:blank')
@@ -1298,6 +1272,7 @@ test.describe('Campaign home content section', () => {
       })
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Vídeo em destaque', 'E2e Vídeo de caravana'],
         ['E2e Vídeo de entrevista'],
       )
@@ -1311,7 +1286,7 @@ test.describe('Campaign home content section', () => {
       // API back: the live feed returns with the original cap.
       await setYouTubeStubState(request, 'ok')
       await updateSocialFeedSettings(request, headers, baseSettings)
-      await waitForHomeHTML(request, ['E2e Vídeo de entrevista'], ['E2e Vídeo excluído'])
+      await waitForHomeHTML(request, baseURL, ['E2e Vídeo de entrevista'], ['E2e Vídeo excluído'])
       await gotoHomeFresh(page)
       await expect(page.getByText('E2e Vídeo de entrevista').first()).toBeVisible()
       await page.goto('about:blank')
@@ -1364,6 +1339,7 @@ test.describe('Campaign home content section', () => {
     try {
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Post do muro', 'E2e Artigo no mix IG'],
         ['E2e Post de grade', 'YouTube →'],
       )
@@ -1464,6 +1440,7 @@ test.describe('Campaign home content section', () => {
       // breaks, no error shown).
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Artigo fallback IG'],
         ['E2e Post do muro', 'Seguir no Instagram'],
       )
@@ -1506,7 +1483,7 @@ test.describe('Campaign home content section', () => {
 
     try {
       // Live fetch succeeds and persists the raw snapshot (with the username).
-      await waitForHomeHTML(request, ['E2e Post do muro'], ['E2e Post de grade'])
+      await waitForHomeHTML(request, baseURL, ['E2e Post do muro'], ['E2e Post de grade'])
       await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Post do muro/ }).first()).toBeVisible()
       await page.goto('about:blank')
@@ -1527,6 +1504,7 @@ test.describe('Campaign home content section', () => {
       })
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Post do muro', 'E2e Reel da caravana', 'Seguir no Instagram'],
         ['Publicação no Instagram'],
       )
@@ -1541,7 +1519,7 @@ test.describe('Campaign home content section', () => {
       // API back: the live feed returns with the original cap.
       await setInstagramStubState(request, 'ok')
       await updateSocialFeedSettings(request, headers, baseSettings)
-      await waitForHomeHTML(request, ['Publicação no Instagram'], ['E2e Post de grade'])
+      await waitForHomeHTML(request, baseURL, ['Publicação no Instagram'], ['E2e Post de grade'])
       await gotoHomeFresh(page)
       await expect(page.getByText('Publicação no Instagram').first()).toBeVisible()
       await page.goto('about:blank')
@@ -1595,6 +1573,7 @@ test.describe('Campaign home content section', () => {
       // section lives on.
       await waitForHomeHTML(
         request,
+        baseURL,
         ['E2e Artigo kill switch'],
         ['E2e Vídeo em destaque', 'YouTube →', 'E2e Post do muro', 'Seguir no Instagram'],
       )
@@ -1658,7 +1637,11 @@ test.describe('Campaign home content section', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'])
 
     try {
-      await waitForHomeHTML(request, [articleTitle, 'E2e Vídeo em destaque', 'E2e Post do muro'])
+      await waitForHomeHTML(request, baseURL, [
+        articleTitle,
+        'E2e Vídeo em destaque',
+        'E2e Post do muro',
+      ])
       await page.setViewportSize({ width: 1280, height: 900 })
       await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')

@@ -2,18 +2,15 @@
 
 import { CalendarIcon, ExternalLinkIcon, MapPinIcon, VideoIcon } from 'lucide-react'
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
 
 import { CampaignFooter } from '@/components/CampaignFooter'
 import { CampaignPageHeader } from '@/components/CampaignPageHeader'
 import { SAFE_FOCUS } from '@/components/shareLink/menuControls'
 import { ShareLinkAgendaMenu } from '@/components/shareLink/ShareLinkAgendaMenu'
 import { ShareLinkShareMenu } from '@/components/shareLink/ShareLinkShareMenu'
-import type { ShareLinkLiveTarget } from '@/lib/shareLink'
+import { useShareLinkLiveTarget } from '@/components/shareLink/useShareLinkLiveTarget'
 import type { ShareLinkAnnouncementView } from '@/lib/shareLinkAnnouncement'
 import { cn } from '@/lib/utils'
-
-const POLL_INTERVAL_MS = 30_000
 
 const PRIMARY_ACTION = cn(
   'inline-flex min-h-14 w-full items-center justify-center gap-2.5 rounded-[10px] bg-(--pt-yellow) px-4',
@@ -44,48 +41,9 @@ export const ShareLinkAnnouncement = ({
   showJingles?: boolean
   showFotos?: boolean
 }) => {
-  const [live, setLive] = useState<ShareLinkLiveTarget | null>(null)
+  const live = useShareLinkLiveTarget(view.slug)
   const isLive = live !== null
   const hasEventDetails = Boolean(view.eventLabel || view.location)
-
-  useEffect(() => {
-    let cancelled = false
-
-    const refetch = async () => {
-      try {
-        const response = await fetch(`/api/share-link/${encodeURIComponent(view.slug)}/live`, {
-          cache: 'no-store',
-        })
-        if (!response.ok) return
-        const { target } = (await response.json()) as { target: ShareLinkLiveTarget | null }
-        if (cancelled || !target) return
-        setLive((current) =>
-          current?.href === target.href && current?.label === target.label ? current : target,
-        )
-      } catch {
-        // A transient failure is a lost tick: the next poll retries.
-      }
-    }
-
-    // Read immediately: the server render may be a cached pre-broadcast page
-    // that is already out of date.
-    void refetch()
-
-    const interval = setInterval(() => {
-      if (document.visibilityState === 'visible') void refetch()
-    }, POLL_INTERVAL_MS)
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') void refetch()
-    }
-    document.addEventListener('visibilitychange', handleVisibility)
-
-    return () => {
-      cancelled = true
-      clearInterval(interval)
-      document.removeEventListener('visibilitychange', handleVisibility)
-    }
-  }, [view.slug])
 
   return (
     <div data-theme="campaign-site" className="flex min-h-full flex-col bg-(--campaign-cream)">

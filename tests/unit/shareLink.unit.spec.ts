@@ -10,6 +10,7 @@ import {
   normalizeShareLinkDescription,
   resolveLiveShareLinkDestination,
   resolveShareLinkMode,
+  resolveShareLinkYoutubeVideoId,
   SHARE_LINK_MODES,
   SHARE_LINK_RESERVED_SLUGS,
   SHARE_LINK_SLUG_PATTERN,
@@ -134,6 +135,48 @@ describe('resolveLiveShareLinkDestination (S29)', () => {
       href: 'https://x.com/a',
       label: '',
     })
+  })
+})
+
+describe('resolveShareLinkYoutubeVideoId (S44)', () => {
+  it.each([
+    'https://www.youtube.com/live/77bUgl7cvQ8',
+    'https://youtube.com/live/77bUgl7cvQ8?feature=share',
+    'https://youtu.be/77bUgl7cvQ8',
+    'https://www.youtube.com/watch?v=77bUgl7cvQ8',
+    'https://m.youtube.com/watch?v=77bUgl7cvQ8&t=10s',
+    'https://www.youtube.com/embed/77bUgl7cvQ8',
+    'https://www.youtube-nocookie.com/embed/77bUgl7cvQ8',
+    'https://www.youtube.com/shorts/77bUgl7cvQ8',
+  ])('extracts the id from %s', (url) => {
+    expect(resolveShareLinkYoutubeVideoId([{ label: 'YouTube', url }])).toBe('77bUgl7cvQ8')
+  })
+
+  it('skips invalid rows and picks the first valid YouTube destination', () => {
+    expect(
+      resolveShareLinkYoutubeVideoId([
+        { label: 'Meet', url: 'https://meet.google.com/abc-defg-hij' },
+        { label: 'YouTube', url: 'https://www.youtube.com/live/77bUgl7cvQ8' },
+        { label: 'Outro', url: 'https://youtu.be/AAAAAAAAAAA' },
+      ]),
+    ).toBe('77bUgl7cvQ8')
+  })
+
+  it('fails closed without a valid YouTube id', () => {
+    expect(resolveShareLinkYoutubeVideoId(null)).toBeNull()
+    expect(resolveShareLinkYoutubeVideoId([])).toBeNull()
+    expect(
+      resolveShareLinkYoutubeVideoId([{ label: 'Meet', url: 'https://meet.google.com/x' }]),
+    ).toBeNull()
+    expect(
+      resolveShareLinkYoutubeVideoId([{ label: 'Y', url: 'https://youtu.be/curto' }]),
+    ).toBeNull()
+    expect(resolveShareLinkYoutubeVideoId([{ label: 'Y', url: 'javascript:alert(1)' }])).toBeNull()
+    expect(
+      resolveShareLinkYoutubeVideoId([
+        { label: 'Y', url: 'https://notyoutube.com/live/77bUgl7cvQ8' },
+      ]),
+    ).toBeNull()
   })
 })
 

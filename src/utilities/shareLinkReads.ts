@@ -6,6 +6,10 @@ import {
   shareLinkPath,
   type ShareLinkLiveTarget,
 } from '@/lib/shareLink'
+import {
+  buildShareLinkHomeSectionView,
+  type ShareLinkHomeSectionView,
+} from '@/lib/shareLinkHomeSection'
 import { getCollectionListingTag } from '@/utilities/documents'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { resolveOgImage } from '@/utilities/ogImageReads'
@@ -49,6 +53,38 @@ export const getCachedPublishedShareLinkBySlug = (slug: string, depth = 1) =>
       tags: [getCollectionListingTag('shareLink')],
     },
   )
+
+export type ShareLinkHomeSectionData = {
+  view: ShareLinkHomeSectionView
+  initialLive: ShareLinkLiveTarget | null
+}
+
+/**
+ * S44 — the home section read: the same cached listing read as the announcement
+ * page (tag `shareLinks`, so unpublishing pulls the section without a deploy),
+ * plus the canonical URL the agenda needs and the destination already on air
+ * (so a visitor arriving during the live gets the embed/CTA in the HTML). The
+ * event window decides visibility here — a closed window (or a missing start)
+ * returns `null` and the home never renders the section.
+ */
+export const loadShareLinkHomeSection = async (
+  slug: string,
+): Promise<ShareLinkHomeSectionData | null> => {
+  const link = await getCachedPublishedShareLinkBySlug(slug, 1)()
+  if (!link) return null
+
+  const image = typeof link.image === 'object' ? link.image : null
+  const canonicalUrl = await resolveShareLinkCanonicalUrl(slug)
+  const view = buildShareLinkHomeSectionView({
+    link,
+    imageUrl: image?.url ?? null,
+    canonicalUrl: canonicalUrl ?? null,
+    nowMs: Date.now(),
+  })
+  if (!view) return null
+
+  return { view, initialLive: resolveLiveShareLinkDestination(link.destinations) }
+}
 
 export const resolveShareLinkCanonicalUrl = async (slug: string): Promise<string | undefined> => {
   const globalMetadata = await getCachedGlobal('metadata')()
