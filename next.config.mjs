@@ -7,6 +7,7 @@ const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   ...(process.env.NEXT_OUTPUT_STANDALONE === '1' ? { output: 'standalone' } : {}),
   images: {
+    minimumCacheTTL: 14400,
     remotePatterns: [
       new URL(`${allowedImageHost}/**`),
       // YouTube video thumbnails (campaign home content board, S2) come from
