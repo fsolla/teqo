@@ -109,7 +109,7 @@ describe('buildContentPieceFallbackMetadata', () => {
       cityLabel: null,
       topics: [],
     })
-    expect(fallback.title).toBe('Peça de vídeo')
+    expect(fallback.title).toBe('Vídeo da campanha')
     expect(fallback.description).toContain('Vídeo da campanha de Jorge Solla 1313')
     expect(fallback.source).toBe('fallback')
   })
@@ -124,6 +124,19 @@ describe('buildContentPieceFallbackMetadata', () => {
     expect(fallback.title).toBe('Mensagem para lideranças')
     expect(fallback.description).toBe(
       'Áudio da campanha de Jorge Solla 1313 em Feira de Santana sobre Saúde, Economia e Trabalho.',
+    )
+  })
+
+  it('replaces the provisional link placeholder with the semantic title', () => {
+    const fallback = buildContentPieceFallbackMetadata({
+      type: 'video',
+      currentTitle: 'Instagram · Dd6mTjAqzc9',
+      cityLabel: 'Santa Inês',
+      topics: ['saude'],
+    })
+    expect(fallback.title).toBe('Vídeo da campanha em Santa Inês sobre Saúde')
+    expect(fallback.description).toBe(
+      'Vídeo da campanha de Jorge Solla 1313 em Santa Inês sobre Saúde.',
     )
   })
 })
@@ -142,6 +155,27 @@ describe('catalogContentPiece', () => {
     })
 
     expect(result).toEqual({ source: 'none' })
+    expect(classify).not.toHaveBeenCalled()
+    expect(suggest).not.toHaveBeenCalled()
+  })
+
+  it('still replaces a link placeholder when there is no text', async () => {
+    const classify = classifierOf([])
+    const suggest = suggesterOf('t', 'd')
+    const result = await catalogContentPiece({
+      payload: fakePayload(),
+      type: 'video',
+      title: 'Instagram · DdsAC82NXsC',
+      transcript: null,
+      classify,
+      suggest,
+    })
+
+    expect(result).toEqual({
+      title: 'Vídeo da campanha',
+      description: 'Vídeo da campanha de Jorge Solla 1313.',
+      source: 'fallback',
+    })
     expect(classify).not.toHaveBeenCalled()
     expect(suggest).not.toHaveBeenCalled()
   })
@@ -206,6 +240,24 @@ describe('catalogContentPiece', () => {
 
     expect(result.source).toBe('ai')
     expect(result.topics).toBeUndefined()
+  })
+
+  it('falls back when the model echoes the provisional placeholder', async () => {
+    generateObjectMock.mockReset()
+    generateObjectMock.mockResolvedValue({
+      object: { title: 'Instagram · ABC', description: 'Descrição qualquer.' },
+    })
+
+    const result = await catalogContentPiece({
+      payload: fakePayload(),
+      type: 'video',
+      title: 'Instagram · ABC',
+      transcript: 'Uma fala sobre saúde em Salvador.',
+      classify: classifierOf([]),
+    })
+
+    expect(result.source).toBe('fallback')
+    expect(result.title).toBe('Vídeo da campanha')
   })
 
   it('desliga o thinking e mantém teto de saída acima do orçamento de raciocínio', async () => {
