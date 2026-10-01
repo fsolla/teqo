@@ -10,7 +10,7 @@
 | Severidade          | alta (bloqueou o deploy do main; CI vermelho, sem impacto em produção — o `verify` roda antes de publicar) |
 | Ambiente            | CI (job `verify` do Deploy no GitHub Actions)                                                              |
 | Issue(s)            | #1413 (auto-unblock; não fechar — o wrapper cuida)                                                         |
-| PR do fix           | a preencher (este PR; número registrado por commit de follow-up)                                           |
+| PR do fix           | #1415                                                                                                      |
 | Detectado por       | CI (deploy run vermelho) / wrapper auto-unblock                                                            |
 
 ## Timeline
@@ -21,7 +21,7 @@
 | Detecção              | 2026-10-01 21:19Z | run `36924161319` (push em `main`, commit `0a8b0774`), job `verify`, step "E2E tests (full suite, single job, 4 workers)": 1 failed, 4 flaky, 329 passed (8.8m); o failed é `campaignNewsletter` (hash `#novidades` ausente nas 3 tentativas); Issue #1413 às 21:21:50Z (auto-unblock). |
 | Bloqueio do deploy    | 2026-10-01        | `deploy-staging` e `deploy-production` ficaram skipped no run vermelho — deploy do main bloqueado.                                                                                                                                                                                      |
 | Correção implementada | 2026-10-01        | worktree `fix/falha-do-job-verify-do-deploy-github-actions-desbloque-2`.                                                                                                                                                                                                                |
-| Correção mergeada     | a preencher       | a preencher.                                                                                                                                                                                                                                                                            |
+| Correção mergeada     | a preencher       | PR #1415 aberto (Ready; auto-merge armado pelo safety net).                                                                                                                                                                                                                             |
 | Deploy                | a preencher       | a preencher.                                                                                                                                                                                                                                                                            |
 | Verificado em prod    | não se aplica     | bug de CI/teste; a confirmação é o `verify` verde no deploy pós-merge; produção depende do approve humano (não aprovado por esta sessão).                                                                                                                                               |
 
