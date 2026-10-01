@@ -8,14 +8,17 @@ import {
 } from '@/lib/contentPieceProfileWindow'
 
 import {
+  formatInstagramContentPruneReport,
   formatInstagramContentReport,
   formatInstagramContentWithdrawReport,
   instagramContentFeedIdentityUrls,
   instagramContentPostDates,
   instagramContentReportStamp,
   parseInstagramContentCliArgs,
+  parseInstagramContentPruneCliArgs,
   parseInstagramContentWithdrawCliArgs,
   planInstagramContentDraftsToPublish,
+  planInstagramContentPrune,
   planInstagramContentWindow,
   planInstagramContentWithdraw,
   shouldPublishImportedPiece,
@@ -252,6 +255,120 @@ describe('pre-campaign withdrawal (C230-followup)', () => {
     expect(text).toContain('? sem data: #4 SEM-DATA')
     expect(text).toContain('retiradas: 1 · falhas: 0 · revalidação: ok')
     expect(text).toContain('recibo: data/content-instagram/x-withdraw.json')
+  })
+})
+
+describe('pre-campaign pruning (C230-followup)', () => {
+  const cataloguePosts = [
+    post('KEEP', { timestamp: '2026-08-16T00:00:00-03:00' }),
+    post('DROP-LATE', { timestamp: '2026-08-15T23:59:59-03:00' }),
+    post('DROP-EARLY', { timestamp: '2026-07-31T09:00:00-03:00' }),
+  ]
+  const catalogue = [
+    { id: 1, title: 'KEEP', sourceUrl: 'https://www.instagram.com/reel/KEEP/', status: 'rascunho' },
+    {
+      id: 2,
+      title: 'DROP-LATE',
+      sourceUrl: 'https://www.instagram.com/p/DROP-LATE/',
+      status: 'publicado',
+    },
+    {
+      id: 3,
+      title: 'DROP-EARLY',
+      sourceUrl: 'https://www.instagram.com/reel/DROP-EARLY/',
+      status: 'rascunho',
+    },
+    {
+      id: 4,
+      title: 'SEM-DATA',
+      sourceUrl: 'https://www.instagram.com/reel/FORA-DO-FEED/',
+      status: 'rascunho',
+    },
+    { id: 5, title: 'SEM-URL', sourceUrl: null, status: 'rascunho' },
+  ]
+
+  it('matches every piece before the cutoff, drafts included, sharing the withdraw split', () => {
+    const plan = planInstagramContentPrune({
+      pieces: catalogue,
+      posts: cataloguePosts,
+      before: '2026-08-16',
+    })
+    const withdrawn = planInstagramContentWithdraw({
+      pieces: catalogue,
+      posts: cataloguePosts,
+      before: '2026-08-16',
+    })
+
+    // 16/08 00:00 na Bahia = 03:00Z: a noite do dia 15 e tudo antes sai; peça
+    // sem data no feed nunca entra no conjunto (fail-closed).
+    expect(plan.cutoffIso).toBe('2026-08-16T03:00:00.000Z')
+    expect(plan.toDelete.map((piece) => piece.id)).toEqual([3, 2])
+    expect(plan.toDelete.map((piece) => piece.postDate.slice(0, 10))).toEqual([
+      '2026-07-31',
+      '2026-08-16',
+    ])
+    expect(plan.undateable.map((piece) => piece.id)).toEqual([4, 5])
+    expect(plan.toDelete.map((piece) => piece.id)).toEqual(
+      withdrawn.toWithdraw.map((piece) => piece.id),
+    )
+  })
+
+  it('parses the prune arguments with the deep default scan', () => {
+    expect(parseInstagramContentPruneCliArgs(['--before', '2026-08-16'])).toEqual({
+      apply: false,
+      before: '2026-08-16',
+      scanDays: 365,
+      out: 'data/content-instagram',
+      help: false,
+    })
+    expect(
+      parseInstagramContentPruneCliArgs(['--before', '2026-08-16', '--apply', '--scan-days', '90']),
+    ).toMatchObject({ apply: true, before: '2026-08-16', scanDays: 90 })
+    expect(() => parseInstagramContentPruneCliArgs([])).toThrow(/--before é obrigatório/)
+    expect(() => parseInstagramContentPruneCliArgs(['--before', '16/08/2026'])).toThrow(
+      /YYYY-MM-DD/,
+    )
+    expect(() => parseInstagramContentPruneCliArgs(['--before', '2026-02-30'])).toThrow(
+      /data civil válida/,
+    )
+    expect(() =>
+      parseInstagramContentPruneCliArgs(['--before', '2026-08-16', '--scan-days']),
+    ).toThrow(/faltou valor/)
+    expect(() =>
+      parseInstagramContentPruneCliArgs(['--before', '2026-08-16', '--scan-days', '0']),
+    ).toThrow(/--scan-days/)
+    expect(() => parseInstagramContentPruneCliArgs(['--force'])).toThrow(/argumento desconhecido/)
+    expect(parseInstagramContentPruneCliArgs(['--help'])).toMatchObject({ help: true })
+  })
+
+  it('reports the cutoff, the period, the catalogue size and the undateable rows', () => {
+    const plan = planInstagramContentPrune({
+      pieces: catalogue,
+      posts: cataloguePosts,
+      before: '2026-08-16',
+    })
+    const lines = formatInstagramContentPruneReport({
+      target: '127.0.0.1/teqo_1313',
+      mode: 'apply',
+      before: '2026-08-16',
+      scanDays: 365,
+      feedCount: 3,
+      piecesCount: 5,
+      plan,
+      deleted: 2,
+      failures: [],
+      revalidation: { attempted: true, ok: true, reason: null },
+      reportPath: 'data/content-instagram/x-prune.json',
+    })
+
+    const text = lines.join('\n')
+    expect(text).toContain('alvo: 127.0.0.1/teqo_1313 | modo: apply')
+    expect(text).toContain('corte: 2026-08-16 (Bahia; posts anteriores)')
+    expect(text).toContain('no catálogo: 5 · anteriores ao corte: 2 · sem data no feed: 2')
+    expect(text).toContain('DROP-EARLY (2026-07-31)')
+    expect(text).toContain('? sem data: #4 SEM-DATA')
+    expect(text).toContain('apagadas: 2 · falhas: 0 · revalidação: ok')
+    expect(text).toContain('recibo: data/content-instagram/x-prune.json')
   })
 })
 

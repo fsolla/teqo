@@ -36,6 +36,9 @@ const INSTAGRAM_CONTENT_USAGE =
 const INSTAGRAM_CONTENT_WITHDRAW_USAGE =
   'pnpm content:instagram:withdraw --before YYYY-MM-DD [--scan-days 90] [--apply] [--out data/content-instagram]'
 
+const INSTAGRAM_CONTENT_PRUNE_USAGE =
+  'pnpm content:instagram:prune --before YYYY-MM-DD [--scan-days 365] [--apply] [--out data/content-instagram]'
+
 /** Report file stamp: the run's ISO instant with `:`/`.` swapped, like C215. */
 export const instagramContentReportStamp = (runAt) => runAt.replace(/[:.]/g, '-')
 
@@ -154,6 +157,63 @@ export const parseInstagramContentWithdrawCliArgs = (argv = process.argv.slice(2
 }
 
 /**
+ * Parses the prune CLI arguments. `--before` is a REQUIRED Bahia civil date
+ * (the campaign cutoff is a legal boundary, never a hidden default) and the
+ * `--scan-days` walk depth only bounds how far back the feed is read to date
+ * the catalogue rows; the default is deeper than the withdraw's because a prune
+ * targets the oldest rows of the catalogue (the whole electoral era fits in a
+ * year).
+ *
+ * @param {string[]} [argv]
+ */
+export const parseInstagramContentPruneCliArgs = (argv = process.argv.slice(2)) => {
+  const options = {
+    apply: false,
+    before: null,
+    scanDays: 365,
+    out: INSTAGRAM_CONTENT_DEFAULT_OUT_DIR,
+    help: false,
+  }
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index]
+    const value = () => {
+      const next = argv[++index]
+      if (next === undefined || next.startsWith('--')) {
+        throw new Error(`faltou valor para ${arg} — ${INSTAGRAM_CONTENT_PRUNE_USAGE}.`)
+      }
+      return next
+    }
+    if (arg === '--help' || arg === '-h') options.help = true
+    else if (arg === '--apply') options.apply = true
+    else if (arg === '--before') options.before = value()
+    else if (arg === '--scan-days') options.scanDays = Number(value())
+    else if (arg === '--out') options.out = value()
+    else throw new Error(`argumento desconhecido: ${arg} — ${INSTAGRAM_CONTENT_PRUNE_USAGE}.`)
+  }
+
+  if (options.help) return options
+  if (options.before === null) {
+    throw new Error(`--before é obrigatório — ${INSTAGRAM_CONTENT_PRUNE_USAGE}.`)
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(options.before))) {
+    throw new Error('--before deve ser uma data civil YYYY-MM-DD.')
+  }
+  try {
+    contentPieceProfilePeriodBounds({ since: options.before })
+  } catch {
+    throw new Error('--before deve ser uma data civil válida.')
+  }
+  if (!Number.isInteger(options.scanDays) || options.scanDays < 1 || options.scanDays > 365) {
+    throw new Error('--scan-days deve ser um inteiro entre 1 e 365.')
+  }
+  if (options.out.split(/[\\/]/).includes('..')) {
+    throw new Error('--out não pode escapar do diretório do repo (sem "..").')
+  }
+  return options
+}
+
+/**
  * The publish rule of the import: only a piece the pipeline finished (`pronto`)
  * goes public, and only when the run asked for it. A `falhou` piece stays a
  * draft and the receipt names it.
@@ -218,11 +278,11 @@ export const planInstagramContentDraftsToPublish = ({ pieces, posts }) => {
 }
 
 /**
- * Splits the published set by the civil cutoff: a post strictly BEFORE the
- * `before` civil day (Bahia time, the electoral calendar's timezone) is
- * withdrawn; the boundary instant comes from the domain owner of the civil
- * dates, never a re-spelled offset. A piece whose post is not in the feed is
- * named and left untouched.
+ * The one cutoff split shared by the withdraw and prune plans: a post strictly
+ * BEFORE the `before` civil day (Bahia time, the electoral calendar's timezone)
+ * matches; the boundary instant comes from the domain owner of the civil dates,
+ * never a re-spelled offset. A piece whose post is not in the feed is named and
+ * left untouched (fail-closed on an unknown date).
  *
  * @param {{
  *   pieces: Array<{ id: number, title?: string | null, sourceUrl?: string | null }>,
@@ -230,11 +290,11 @@ export const planInstagramContentDraftsToPublish = ({ pieces, posts }) => {
  *   before: string,
  * }} input
  */
-export const planInstagramContentWithdraw = ({ pieces, posts, before }) => {
+const planContentPiecesBeforeCutoff = ({ pieces, posts, before }) => {
   const { fromIso } = contentPieceProfilePeriodBounds({ since: before })
   const cutoffMs = Date.parse(fromIso)
   const dates = instagramContentPostDates(posts)
-  const toWithdraw = []
+  const matched = []
   const undateable = []
 
   for (const piece of pieces) {
@@ -245,7 +305,7 @@ export const planInstagramContentWithdraw = ({ pieces, posts, before }) => {
       continue
     }
     if (timestamp < cutoffMs) {
-      toWithdraw.push({
+      matched.push({
         ...piece,
         shortcode: link.shortcode,
         postTimestamp: timestamp,
@@ -253,9 +313,32 @@ export const planInstagramContentWithdraw = ({ pieces, posts, before }) => {
       })
     }
   }
-  toWithdraw.sort((left, right) => left.postTimestamp - right.postTimestamp)
+  matched.sort((left, right) => left.postTimestamp - right.postTimestamp)
 
-  return { cutoffIso: fromIso, toWithdraw, undateable }
+  return { cutoffIso: fromIso, matched, undateable }
+}
+
+/**
+ * Splits the published set by the civil cutoff (the withdraw plan): posts before
+ * the day leave the public listing.
+ *
+ * @param {Parameters<typeof planContentPiecesBeforeCutoff>[0]} input
+ */
+export const planInstagramContentWithdraw = (input) => {
+  const { cutoffIso, matched, undateable } = planContentPiecesBeforeCutoff(input)
+  return { cutoffIso, toWithdraw: matched, undateable }
+}
+
+/**
+ * Splits the catalogue set by the civil cutoff (the prune plan): every piece
+ * before the day — draft or published — is matched for deletion. Same dating
+ * authority and same fail-closed on undateable rows as the withdraw plan.
+ *
+ * @param {Parameters<typeof planContentPiecesBeforeCutoff>[0]} input
+ */
+export const planInstagramContentPrune = (input) => {
+  const { cutoffIso, matched, undateable } = planContentPiecesBeforeCutoff(input)
+  return { cutoffIso, toDelete: matched, undateable }
 }
 
 /**
@@ -349,7 +432,7 @@ export const formatInstagramContentReport = (report) => {
   return lines
 }
 
-const WITHDRAW_SAMPLE_LIMIT = 10
+const CUTOFF_SAMPLE_LIMIT = 10
 
 /**
  * The withdraw receipt lines the operator reads (and the JSON mirrors): the
@@ -386,13 +469,13 @@ export const formatInstagramContentWithdrawReport = (report) => {
     lines.push(
       `período das retiradas: ${new Date(Math.min(...dates)).toISOString()} → ${new Date(Math.max(...dates)).toISOString()}`,
     )
-    for (const entry of toWithdraw.slice(0, WITHDRAW_SAMPLE_LIMIT)) {
+    for (const entry of toWithdraw.slice(0, CUTOFF_SAMPLE_LIMIT)) {
       lines.push(
         `  - ${entry.shortcode} (${entry.postDate.slice(0, 10)}) ${entry.title ?? ''}`.trim(),
       )
     }
-    if (toWithdraw.length > WITHDRAW_SAMPLE_LIMIT) {
-      lines.push(`  … +${toWithdraw.length - WITHDRAW_SAMPLE_LIMIT}`)
+    if (toWithdraw.length > CUTOFF_SAMPLE_LIMIT) {
+      lines.push(`  … +${toWithdraw.length - CUTOFF_SAMPLE_LIMIT}`)
     }
   }
   for (const entry of undateable) {
@@ -403,6 +486,71 @@ export const formatInstagramContentWithdrawReport = (report) => {
   if (report.mode === 'apply') {
     lines.push(
       `retiradas: ${report.withdrawn ?? 0} · falhas: ${report.failures?.length ?? 0} · revalidação: ${
+        report.revalidation?.ok ? 'ok' : (report.revalidation?.reason ?? 'não tentada')
+      }`,
+    )
+    for (const failure of report.failures ?? []) {
+      lines.push(`  - falha #${failure.id}: ${failure.reason}`)
+    }
+  }
+  if (report.reportPath) lines.push(`recibo: ${report.reportPath}`)
+  return lines
+}
+
+/**
+ * The prune receipt lines the operator reads (and the JSON mirrors): the
+ * cutoff, what the feed could date, the set matched for deletion with its
+ * period and the pieces the feed could not date (never touched, always named).
+ * The apply line names the hard delete — the row and its private media leave
+ * the catalogue, unlike the withdraw's reversible kill switch.
+ *
+ * @param {{
+ *   target: string,
+ *   mode: 'plan' | 'apply',
+ *   before: string,
+ *   scanDays: number,
+ *   feedCount: number,
+ *   piecesCount: number,
+ *   plan: ReturnType<typeof planInstagramContentPrune>,
+ *   deleted?: number,
+ *   failures?: Array<{ id: number, reason: string }>,
+ *   revalidation?: { attempted: boolean, ok: boolean, reason: string | null },
+ *   reportPath?: string | null,
+ * }} report
+ */
+export const formatInstagramContentPruneReport = (report) => {
+  const lines = []
+  const { toDelete, undateable } = report.plan
+  const dates = toDelete.map((entry) => entry.postTimestamp)
+
+  lines.push(`[content:instagram:prune] alvo: ${report.target} | modo: ${report.mode}`)
+  lines.push(
+    `corte: ${report.before} (Bahia; posts anteriores) · varredura: ${report.scanDays} dias · feed: ${report.feedCount} mídias`,
+  )
+  lines.push(
+    `no catálogo: ${report.piecesCount} · anteriores ao corte: ${toDelete.length} · sem data no feed: ${undateable.length}`,
+  )
+  if (toDelete.length > 0) {
+    lines.push(
+      `período das peças: ${new Date(Math.min(...dates)).toISOString()} → ${new Date(Math.max(...dates)).toISOString()}`,
+    )
+    for (const entry of toDelete.slice(0, CUTOFF_SAMPLE_LIMIT)) {
+      lines.push(
+        `  - #${entry.id} ${entry.shortcode} (${entry.postDate.slice(0, 10)}) ${entry.title ?? ''}`.trim(),
+      )
+    }
+    if (toDelete.length > CUTOFF_SAMPLE_LIMIT) {
+      lines.push(`  … +${toDelete.length - CUTOFF_SAMPLE_LIMIT}`)
+    }
+  }
+  for (const entry of undateable) {
+    lines.push(
+      `  ? sem data: #${entry.id} ${entry.title ?? ''} — ${entry.sourceUrl ?? 'sem URL'}`.trim(),
+    )
+  }
+  if (report.mode === 'apply') {
+    lines.push(
+      `apagadas: ${report.deleted ?? 0} · falhas: ${report.failures?.length ?? 0} · revalidação: ${
         report.revalidation?.ok ? 'ok' : (report.revalidation?.reason ?? 'não tentada')
       }`,
     )
