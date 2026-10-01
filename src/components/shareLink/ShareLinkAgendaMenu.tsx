@@ -16,6 +16,12 @@ type ShareLinkAgendaMenuProps = {
   canonicalUrl: string | null
   startsAt: string | null
   endsAt: string | null
+  /**
+   * S44 — the home section's agenda is the primary action (yellow CTA), while
+   * the announcement page keeps the secondary outline. Default preserves the
+   * S29 look.
+   */
+  triggerClassName?: string
 }
 
 /**
@@ -31,6 +37,7 @@ export const ShareLinkAgendaMenu = ({
   canonicalUrl,
   startsAt,
   endsAt,
+  triggerClassName = SECONDARY_ACTION,
 }: ShareLinkAgendaMenuProps) => {
   const [open, setOpen] = useState(false)
 
@@ -49,13 +56,20 @@ export const ShareLinkAgendaMenu = ({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button type="button" className={SECONDARY_ACTION}>
+        <button type="button" className={triggerClassName}>
           <CalendarPlusIcon className="size-4" aria-hidden="true" />
           Adicionar à agenda
           {open ? <ChevronDownIcon className="size-4" aria-hidden="true" /> : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="center" className={MENU_POPOVER} aria-label="Opções de agenda">
+      <PopoverContent
+        align="center"
+        side="bottom"
+        sideOffset={8}
+        collisionPadding={12}
+        className={MENU_POPOVER}
+        aria-label="Opções de agenda"
+      >
         <a
           href={googleUrl}
           target="_blank"
@@ -71,7 +85,9 @@ export const ShareLinkAgendaMenu = ({
           </span>
           <span>
             Google Agenda
-            <small className="block font-normal text-black/45">Abrir evento preenchido</small>
+            <small className="mt-0.5 block text-[11px] font-normal text-black/45">
+              Abrir evento preenchido
+            </small>
           </span>
         </a>
         <a
@@ -83,7 +99,9 @@ export const ShareLinkAgendaMenu = ({
           <CalendarPlusIcon className="size-5 flex-none text-(--pt-red)" aria-hidden="true" />
           <span>
             Baixar arquivo .ics
-            <small className="block font-normal text-black/45">Apple, Outlook e desktop</small>
+            <small className="mt-0.5 block text-[11px] font-normal text-black/45">
+              Apple, Outlook e desktop
+            </small>
           </span>
         </a>
       </PopoverContent>

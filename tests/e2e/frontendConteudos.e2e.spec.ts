@@ -9,6 +9,7 @@ import { getMunicipalityCatalogEntry } from '../../src/lib/municipalityCatalog.j
 import { slugify } from '../../src/lib/slug.js'
 import { adminHeaders } from '../helpers/adminApi'
 import { interiorPointOf } from '../helpers/featureBounds'
+import { waitForHomeSection } from '../helpers/homeIsr'
 import { seedTestUser } from '../helpers/seedUser'
 import { expect, test } from './fixtures/e2eTest'
 
@@ -232,28 +233,6 @@ const stubContentPieceFrames = async (page: Page): Promise<void> => {
  */
 const waitForSettledPage = async (page: Page) => {
   await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
-}
-
-/**
- * S39 — the home is ISR and the section is gated by the same listing tag as the
- * catalogue; poll the server HTML until the kill switch converged (the
- * navigation that follows always lands on the fresh page).
- */
-const waitForHomeSection = async (
-  request: APIRequestContext,
-  expected: 'present' | 'absent',
-  attempts = 12,
-) => {
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    const response = await request.get(`${BASE_URL}/`).catch(() => undefined)
-    if (response?.ok()) {
-      const html = await response.text()
-      const present = html.includes('data-home-section="content-pieces"')
-      if ((expected === 'present') === present) return
-    }
-    await new Promise((resolve) => setTimeout(resolve, 1_000))
-  }
-  throw new Error(`A seção da Central não convergiu para "${expected}" em ${attempts}s.`)
 }
 
 test.describe.configure({ mode: 'serial' })
@@ -740,7 +719,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await createPiece(request, headers, { title: photoTitle, type: 'foto' })
     await createPiece(request, headers, { title: videoTitle, type: 'video' })
 
-    await waitForHomeSection(request, 'present')
+    await waitForHomeSection(request, BASE_URL, 'content-pieces', 'present')
 
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto(`/?e2e=${Date.now()}`)
@@ -805,7 +784,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     expect(overflow).toBeLessThanOrEqual(1)
 
     await unpublishEveryPiece(request, headers)
-    await waitForHomeSection(request, 'absent')
+    await waitForHomeSection(request, BASE_URL, 'content-pieces', 'absent')
     await page.goto(`/?e2e=${Date.now()}`)
     await expect(page.locator('[data-home-section="content-pieces"]')).toHaveCount(0)
   })
@@ -838,7 +817,7 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     const title = `Peça de Feira de Santana ${uniqueMarker()}`
     await createPiece(request, headers, { title, type: 'foto', municipality: municipality.id })
-    await waitForHomeSection(request, 'present')
+    await waitForHomeSection(request, BASE_URL, 'content-pieces', 'present')
 
     await context.grantPermissions(['geolocation'])
     await context.setGeolocation({ latitude: point.lat, longitude: point.lng })

@@ -1,7 +1,5 @@
-import {
-  validateExcludedItemId,
-  YOUTUBE_VIDEO_ID_PATTERN,
-} from '@/utilities/socialFeed/excludedItems'
+import { YOUTUBE_VIDEO_ID_PATTERN } from '@/lib/shareLink'
+import { validateExcludedItemId } from '@/utilities/socialFeed/excludedItems'
 import { describe, expect, it } from 'vitest'
 
 describe('validateExcludedItemId', () => {

@@ -8,11 +8,14 @@ import { CampaignStorySection } from '@/components/CampaignStorySection'
 import { ContentPieceHomeSection } from '@/components/conteudos/ContentPieceHomeSection'
 import { SelfieSearchHomeSection } from '@/components/fotos/SelfieSearchHomeSection'
 import { JingleHomeSection } from '@/components/jingles/JingleHomeSection'
+import { ShareLinkHomeSection } from '@/components/shareLink/ShareLinkHomeSection'
+import { SHARE_LINK_HOME_SECTION_SLUG } from '@/lib/shareLinkHomeSection'
 import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
 import { getCampaignHomeMetaPixelId } from '@/utilities/campaignHomeTracking'
 import { getPublishedContentPieceItems } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { getPublishedJingleItems } from '@/utilities/jingleReads'
+import { loadShareLinkHomeSection } from '@/utilities/shareLinkReads'
 import type { ReactNode } from 'react'
 import { CampaignCardsSection } from './CampaignCardsSection'
 import { CampaignNewsletterSection } from './CampaignNewsletterSection'
@@ -125,12 +128,16 @@ export default async function HomePage() {
   // S27/S39 — one cached listing (tag `contentPieces`) feeds both the discovery
   // flag of the footer and the home sample; zero pieces hides both (fail-closed).
   // C233 — the same contract for the "Fotos" discovery flag (tag `archivePhotos`).
-  const [pixelId, jingles, contentPieces, showFotos, album] = await Promise.all([
+  // S44 — the Plenária section reads one published share link under the
+  // `shareLinks` tag; unpublished or past the event window, the section is
+  // absent from the HTML (fail-closed, kill switch without a deploy).
+  const [pixelId, jingles, contentPieces, showFotos, album, plenaria] = await Promise.all([
     getCampaignHomeMetaPixelId(),
     getPublishedJingleItems(),
     getPublishedContentPieceItems(),
     hasPublishedArchivePhotos(),
     getCachedGlobal('photoAlbum')(),
+    loadShareLinkHomeSection(SHARE_LINK_HOME_SECTION_SLUG),
   ])
   const homeJingles = jingles.slice(0, 3)
   // C243 — the discovery section only exists while the selfie search is open
@@ -142,6 +149,10 @@ export default async function HomePage() {
     <>
       <main className="w-full bg-white text-black">
         <CampaignHero />
+
+        {plenaria ? (
+          <ShareLinkHomeSection view={plenaria.view} initialLive={plenaria.initialLive} />
+        ) : null}
 
         <section
           aria-label="Experiência e atuação parlamentar"

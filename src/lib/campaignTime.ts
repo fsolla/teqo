@@ -136,18 +136,40 @@ const bahiaEventTimeFormatter = new Intl.DateTimeFormat('pt-BR', {
 })
 
 /**
- * S29 — the announcement headline date, e.g. `Sábado, 3 de outubro · 19h`.
- * Minutes only when they are not `00`; the timezone is always Bahia, never
- * the visitor's. Empty string for an unparsable instant (callers fall back to
- * hiding the date).
+ * S29/S44 — the event day in Bahia civil time, e.g. `sexta-feira, 2 de
+ * outubro`. Lowercase on purpose: the callers decide the capitalization
+ * (the announcement headline capitalizes; the home meta row does not). Empty
+ * string for an unparsable instant (callers fall back to hiding the date).
  */
-export const formatBahiaEventDateLabel = (iso: string): string => {
+export const formatBahiaEventDayLabel = (iso: string): string => {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ''
 
-  const day = bahiaEventDayFormatter.format(date)
+  return bahiaEventDayFormatter.format(date)
+}
+
+/**
+ * S29/S44 — the event time in Bahia civil time, e.g. `18h` (minutes only when
+ * they are not `00`; `18h30`). Empty string for an unparsable instant.
+ */
+export const formatBahiaEventTimeLabel = (iso: string): string => {
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return ''
+
   const [hour, minute] = bahiaEventTimeFormatter.format(date).split(':')
-  const time = minute === '00' ? `${hour}h` : `${hour}h${minute}`
+  return minute === '00' ? `${hour}h` : `${hour}h${minute}`
+}
+
+/**
+ * S29 — the announcement headline date, e.g. `Sábado, 3 de outubro · 19h`.
+ * The timezone is always Bahia, never the visitor's. Empty string for an
+ * unparsable instant (callers fall back to hiding the date).
+ */
+export const formatBahiaEventDateLabel = (iso: string): string => {
+  const day = formatBahiaEventDayLabel(iso)
+  const time = formatBahiaEventTimeLabel(iso)
+  if (!day || !time) return ''
+
   const capitalizedDay = day.charAt(0).toUpperCase() + day.slice(1)
 
   return `${capitalizedDay} · ${time}`

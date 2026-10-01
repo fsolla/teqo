@@ -113,6 +113,9 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/components/ShareLinkRedirect.tsx',
       'src/components/shareLink',
       'src/app/(frontend)/api/share-link',
+      // S44 — the home page is the only wiring of the Plenária section; a diff
+      // there alone must still wake the spec that owns the section.
+      'src/app/(frontend)/(home)',
     ],
     specs: ['frontendShareLink'],
   },

@@ -87,6 +87,61 @@ export const resolveLiveShareLinkDestination = (
   return null
 }
 
+/**
+ * The single owner of the YouTube id contract (11 chars), shared with the
+ * campaign social-feed exclusion validator (`utilities/socialFeed/excludedItems`).
+ */
+export const YOUTUBE_VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/
+
+/** Hosts that serve YouTube videos (embed/watch), `www.` stripped by the caller. */
+export const YOUTUBE_HOSTS = ['youtube.com', 'm.youtube.com', 'youtube-nocookie.com'] as const
+
+const resolveYoutubeVideoIdFromUrl = (value: string): string | null => {
+  const url = normalizeAbsoluteHttpUrl(value)
+  if (!url) return null
+
+  const parsed = new URL(url)
+  const host = parsed.hostname.replace(/^www\./, '')
+
+  if (host === 'youtu.be') {
+    const [id] = parsed.pathname.slice(1).split('/')
+    return id && YOUTUBE_VIDEO_ID_PATTERN.test(id) ? id : null
+  }
+
+  if (!(YOUTUBE_HOSTS as readonly string[]).includes(host)) return null
+
+  if (parsed.pathname === '/watch') {
+    const id = parsed.searchParams.get('v')
+    return id && YOUTUBE_VIDEO_ID_PATTERN.test(id) ? id : null
+  }
+
+  const match = parsed.pathname.match(/^\/(?:live|embed|shorts)\/([^/?#]+)/)
+  const id = match?.[1]
+  return id && YOUTUBE_VIDEO_ID_PATTERN.test(id) ? id : null
+}
+
+/**
+ * S44 — the official player of the home section embeds the link's
+ * pre-registered YouTube destination (the campaign's own live), independent of
+ * which destination is on air. Accepts the usual public shapes
+ * (`youtu.be/<id>`, `watch?v=`, `/live/`, `/embed/`, `/shorts/`); the id must
+ * look like a real one (11 chars) — anything else fails closed to `null` and
+ * the section renders without the player.
+ */
+export const resolveShareLinkYoutubeVideoId = (
+  destinations: ShareLinkDestinationLike[] | null | undefined,
+): string | null => {
+  if (!destinations?.length) return null
+
+  for (const destination of destinations) {
+    const url = typeof destination?.url === 'string' ? destination.url : ''
+    const id = resolveYoutubeVideoIdFromUrl(url)
+    if (id) return id
+  }
+
+  return null
+}
+
 /** Public path contract: a single root segment (`jorgesolla1313.com.br/<slug>`). */
 export const shareLinkPath = (slug: string): string => `/${slug}`
 
