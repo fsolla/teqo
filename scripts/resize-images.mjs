@@ -53,6 +53,10 @@ Opções:
   --out <dir>        pasta de saída (default public/)
   -h, --help         mostra esta ajuda
 
+Recortes exibidos pequenos (ex.: hero) pedem --max-width ≈ 2x a maior
+exibição: um master 3840px faz o /_next/image decodificar dezenas de MP
+por derivado — a causa clássica de imagem lenta na home.
+
 Caminhos podem ser arquivos de imagem ou pastas (varridas recursivamente).
 O nome do arquivo é mantido; só a extensão muda (foto.jpg -> foto.avif + foto.webp).`
 
@@ -242,6 +246,13 @@ export const runResizeImages = async (options) => {
   console.log(
     `\n${results.length} arquivo(s) em ${join(outDir, '')} (${formats.join(', ')}, ${quality ? `qualidade ${quality}, ` : ''}${widthSummary}${removeBg ? ', fundo removido' : ''})\n`,
   )
+
+  const oversized = results.filter(({ dimensions }) => Number(dimensions.split('×')[0]) >= 2000)
+  if (oversized.length > 0) {
+    console.warn(
+      `\naviso: ${oversized.length} saída(s) com 2000px ou mais de largura — o default AVIF (3840) é 2x um desktop de 1920px. Se o destino exibe menor (ex.: recorte de hero), repita com --max-width <2x a maior exibição>.`,
+    )
+  }
 
   if (failures.length > 0) {
     console.error(`\n${failures.length} falha(s):`)
