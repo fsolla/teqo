@@ -1,6 +1,10 @@
 import Link from 'next/link'
 
-import { buildContentPieceCatalogHref } from '@/lib/contentPieceCatalog'
+import {
+  buildContentPieceCatalogHref,
+  contentPieceAspectClass,
+  contentPieceMediaKind,
+} from '@/lib/contentPieceCatalog'
 import type { ContentPieceHomeItem, ContentPieceHomeMatch } from '@/lib/contentPieceHomeSelection'
 import { slugify } from '@/lib/slug'
 import { cn } from '@/lib/utils'
@@ -67,6 +71,10 @@ export const ContentPieceHomeCard = ({
 }) => {
   const typeHref = item.isLink ? null : buildContentPieceCatalogHref({ tipo: item.type })
   const matchFacetHref = matchHref(item, match)
+  // S45 — the thumb keeps the form of the type (photo 4:5, Reel 9:16); the
+  // wide kinds (audio/link/text) keep a short fixed column on the phone and the
+  // wide block from `sm` up, where the card becomes a full block.
+  const aspectClass = contentPieceAspectClass(contentPieceMediaKind(item))
 
   return (
     <article
@@ -83,7 +91,7 @@ export const ContentPieceHomeCard = ({
         // the card becomes a full block and the media slot goes back to the
         // catalogue treatment.
         variant="home-thumb"
-        className="aspect-video self-start"
+        className={cn('self-start', aspectClass ?? 'max-sm:h-[156px] sm:aspect-video')}
       />
       <div className="min-w-0 p-4">
         <div className="flex flex-wrap gap-1.5">

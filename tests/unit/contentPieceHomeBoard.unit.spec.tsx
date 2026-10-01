@@ -256,6 +256,47 @@ describe('ContentPieceHomeBoard', () => {
     await waitFor(() => expect(document.querySelector('video')).toBeNull())
   })
 
+  it('keeps the frame of the type on the sample card (S45)', async () => {
+    readPermission.mockResolvedValue('denied')
+    const photo = item(1)
+    const video = item(2, {
+      title: 'Vídeo da home',
+      type: 'video',
+      typeLabel: 'Vídeo',
+      file: {
+        id: 102,
+        path: '/conteudos/peca-2/midia',
+        mimeType: 'video/mp4',
+        downloadFilename: 'peca-2.mp4',
+      },
+    })
+    const audio = item(3, {
+      title: 'Áudio da home',
+      type: 'audio',
+      typeLabel: 'Áudio',
+      file: {
+        id: 103,
+        path: '/conteudos/peca-3/midia',
+        mimeType: 'audio/mpeg',
+        downloadFilename: 'peca-3.mp3',
+      },
+    })
+
+    renderBoard([photo, video, audio])
+    await waitFor(() => expect(readPermission).toHaveBeenCalled())
+
+    const slot = (slug: string) =>
+      document.querySelector<HTMLElement>(
+        `article[data-content-piece="${slug}"] [data-content-piece-media]`,
+      )
+
+    // Photo keeps 4:5 and the Reel keeps 9:16; the wide kinds stay short on the
+    // phone and take the wide block from `sm` up.
+    expect(slot('peca-1')?.className).toContain('aspect-[4/5]')
+    expect(slot('peca-2')?.className).toContain('aspect-[9/16]')
+    expect(slot('peca-3')?.className).toContain('max-sm:h-[156px]')
+  })
+
   it('keeps the recent selection when the position fails, without an error or a retry', async () => {
     readPermission.mockResolvedValue('granted')
     readPosition.mockResolvedValue({ ok: false, reason: 'timeout' })

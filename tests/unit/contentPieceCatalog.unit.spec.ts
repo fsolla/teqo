@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest'
 import {
   buildContentPieceCatalogHref,
   cardCatalogItems,
+  CONTENT_PIECE_ASPECT_CLASS,
   contentCatalogItems,
+  contentPieceAspectClass,
+  contentPieceBoardBucket,
   contentPieceCatalogActiveFilters,
   contentPieceCatalogFacets,
   contentPieceDownloadFilename,
@@ -523,6 +526,26 @@ describe('content piece public view model', () => {
     expect(contentPieceMediaKind(item({ media: { id: 7 } }))).toBe('video')
     expect(contentPieceMediaKind(item({ type: 'card', media: { id: 7 } }))).toBe('image')
     expect(contentPieceMediaKind(item({ media: null, sourceUrl: 'https://youtu.be/X' }))).toBeNull()
+  })
+
+  it('maps the frame of the type, leaving the wide kinds without a class (S45)', () => {
+    expect(contentPieceAspectClass('video')).toBe('aspect-[9/16]')
+    expect(contentPieceAspectClass('image')).toBe('aspect-[4/5]')
+    // The S38 model art is not a media kind: its host reads the table directly.
+    expect(CONTENT_PIECE_ASPECT_CLASS.model).toBe('aspect-[3/4]')
+    // Audio, link, text and other have no framing to preserve.
+    for (const kind of ['audio', 'text', 'other', null] as const) {
+      expect(contentPieceAspectClass(kind)).toBeUndefined()
+    }
+  })
+
+  it('buckets the board by type: vertical, wide or compact (S45)', () => {
+    expect(contentPieceBoardBucket('video')).toBe('vertical')
+    expect(contentPieceBoardBucket('audio')).toBe('wide')
+    expect(contentPieceBoardBucket(null)).toBe('wide')
+    for (const kind of ['image', 'text', 'other'] as const) {
+      expect(contentPieceBoardBucket(kind)).toBe('compact')
+    }
   })
 
   it('leads the metadata line with who appears in the piece (S37)', () => {

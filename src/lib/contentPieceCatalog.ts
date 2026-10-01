@@ -560,6 +560,44 @@ export const contentPieceMediaKind = (
   return 'other'
 }
 
+/**
+ * S45 — the frame each form breathes in (artefato cena 07): a Reel keeps 9:16,
+ * a feed photo keeps 4:5 and the S38 model art keeps 3:4. The media itself
+ * never crops (`object-contain`), so a genuinely horizontal piece lands whole
+ * in the neutral letterbox of its slot; audio, link, text and other have no
+ * framing to preserve and stay wide (no class).
+ */
+export const CONTENT_PIECE_ASPECT_CLASS = {
+  video: 'aspect-[9/16]',
+  image: 'aspect-[4/5]',
+  model: 'aspect-[3/4]',
+} as const
+
+/**
+ * The slot class of a piece by its media kind; `undefined` means the host keeps
+ * its wide form (audio, link, text, other, unknown).
+ */
+export const contentPieceAspectClass = (kind: ContentPieceMediaKind | null): string | undefined => {
+  if (kind === 'video' || kind === 'image') return CONTENT_PIECE_ASPECT_CLASS[kind]
+  return undefined
+}
+
+export type ContentPieceBoardBucket = 'vertical' | 'wide' | 'compact'
+
+/**
+ * S45 — the bucket of a piece on the board (artefato cena 01): video and the
+ * S38 models share the vertical board, audio/link keep the wide row and
+ * image/text/other keep the compact scan row. One rule for the card and the
+ * catalogue grids.
+ */
+export const contentPieceBoardBucket = (
+  kind: ContentPieceMediaKind | null,
+): ContentPieceBoardBucket => {
+  if (kind === 'video') return 'vertical'
+  if (kind === 'audio' || kind === null) return 'wide'
+  return 'compact'
+}
+
 const DOWNLOAD_PREFIX = 'jorge-solla-1313'
 const DOWNLOAD_FALLBACK_EXTENSION = 'bin'
 

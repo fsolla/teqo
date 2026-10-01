@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import type { APIRequestContext, Page } from '@playwright/test'
@@ -46,9 +47,15 @@ const createdLeadershipIds: number[] = []
 
 const uniqueMarker = () => randomUUID().slice(0, 8)
 
-const mediaFor = (type: 'video' | 'foto' | 'texto') => {
+const mediaFor = (type: 'video' | 'foto' | 'audio' | 'texto') => {
   if (type === 'video') return { mimetype: 'video/mp4', buffer: TEST_MP4, extension: 'mp4' }
   if (type === 'foto') return { mimetype: 'image/png', buffer: TEST_PNG, extension: 'png' }
+  if (type === 'audio')
+    return {
+      mimetype: 'audio/mpeg',
+      buffer: readFileSync(join(process.cwd(), 'tests/fixtures/jingle-tone.mp3')),
+      extension: 'mp3',
+    }
   return {
     mimetype: 'text/plain',
     buffer: Buffer.from('Peça voto pra Solla 1313.'),
@@ -92,7 +99,8 @@ const createPiece = async (
     publicFigures?: string[]
   },
 ): Promise<{ id: number; slug: string }> => {
-  const mediaKind = data.type === 'video' || data.type === 'foto' ? data.type : 'texto'
+  const mediaKind =
+    data.type === 'video' || data.type === 'foto' || data.type === 'audio' ? data.type : 'texto'
   const mediaSpec = mediaFor(mediaKind)
   const media =
     data.withMedia === false
@@ -279,8 +287,10 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     const headers = await adminHeaders(request, BASE_URL)
     const videoTitle = `Fim da escala ${uniqueMarker()}`
     const photoTitle = `Solla no SUS ${uniqueMarker()}`
+    const audioTitle = `Áudio da Central ${uniqueMarker()}`
     const video = await createPiece(request, headers, { title: videoTitle, type: 'video' })
     const photo = await createPiece(request, headers, { title: photoTitle, type: 'foto' })
+    const audio = await createPiece(request, headers, { title: audioTitle, type: 'audio' })
 
     const media = mediaRequests(page)
     const frames = frameRequests(page)
@@ -293,12 +303,13 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
       page.getByRole('heading', { name: 'Uma mensagem sua pode conquistar mais um voto.' }),
     ).toBeVisible()
     await expect(page.getByText('Central de Conteúdos').first()).toBeVisible()
-    await expect(page.locator('article[data-content-piece]')).toHaveCount(2)
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(3)
     // S38 — the six models are items of the same board: the card item and the
     // pieces share one grid (no section of their own, no invite tile).
     await expect(page.locator('[data-card-model]')).toHaveCount(6)
-    // The video piece shares the full-card grid with the models (the photo is a
-    // compact row below): the models are items of the board, not a section.
+    // S45 — the video shares the vertical board with the models (the photo is a
+    // compact row below and the audio keeps the wide row): the models are items
+    // of the board, not a section.
     const board = page.locator('[data-card-model]').first().locator('xpath=..')
     await expect(board.locator('article[data-content-piece]')).toHaveCount(1)
     await expect(board.locator('[data-card-model]')).toHaveCount(6)
@@ -331,8 +342,29 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
       .toBeGreaterThan(0)
     await expect(page.getByRole('button', { name: `Reproduzir ${videoTitle}` })).toBeVisible()
 
+    // S45 — every piece appears in the form of its type: the Reel keeps the
+    // 9:16 slot (the still whole, `contain`), the photo keeps the 96×120 (4:5)
+    // compact thumb, the audio keeps the wide row and the model art keeps 3:4.
+    const mediaSlot = (slug: string) =>
+      page.locator(`article[data-content-piece="${slug}"] [data-content-piece-media]`)
+    const videoSlot = await mediaSlot(video.slug).boundingBox()
+    expect(videoSlot!.height / videoSlot!.width).toBeCloseTo(16 / 9, 2)
+    await expect(still).toHaveCSS('object-fit', 'contain')
+    const photoSlot = await mediaSlot(photo.slug).boundingBox()
+    expect(photoSlot!.width).toBeCloseTo(96, 0)
+    expect(photoSlot!.height).toBeCloseTo(120, 0)
+    await expect(mediaSlot(photo.slug).locator('img')).toHaveCSS('object-fit', 'contain')
+    const audioSlot = await mediaSlot(audio.slug).boundingBox()
+    expect(audioSlot!.width).toBeCloseTo(190, 0)
+    expect(audioSlot!.height).toBeGreaterThanOrEqual(156)
+    const modelSlot = await page
+      .locator('[data-card-model="time-de-voce"] > span')
+      .first()
+      .boundingBox()
+    expect(modelSlot!.height / modelSlot!.width).toBeCloseTo(4 / 3, 2)
+
     // Play mounts only the tapped piece and fetches only its media. The still
-    // leaves the slot: the player takes the same 16:9 box (cena 03).
+    // leaves the slot: the player takes the same 9:16 box (cena 06).
     await page.getByRole('button', { name: `Reproduzir ${videoTitle}` }).click()
     await expect(page.locator('video')).toHaveCount(1)
     await expect.poll(() => media.filter((url) => url.includes(video.slug)).length).toBe(1)
@@ -368,6 +400,17 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
 
     await sheet.getByRole('button', { name: 'Fechar', exact: true }).click()
     await expect(sheet).toHaveCount(0)
+
+    // S45 — the vertical board never overflows the phone (cena 02).
+    await page.setViewportSize({ width: 390, height: 844 })
+    await page.goto('/conteudos')
+    await waitForSettledPage(page)
+    await expect(page.locator('article[data-content-piece]')).toHaveCount(3)
+    const overflow = await page.evaluate(() => {
+      const container = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
+      return container ? container.scrollWidth - container.clientWidth : 0
+    })
+    expect(overflow).toBeLessThanOrEqual(1)
   })
 
   test('filters by facet and term and shows the honest no-results state', async ({
@@ -378,8 +421,9 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await unpublishEveryPiece(request, headers)
     const marker = uniqueMarker()
     const videoTitle = `Debate na rádio ${marker}`
+    const photoTitle = `Card do giro ${marker}`
     const video = await createPiece(request, headers, { title: videoTitle, type: 'video' })
-    await createPiece(request, headers, { title: `Card do giro ${marker}`, type: 'foto' })
+    const photo = await createPiece(request, headers, { title: photoTitle, type: 'foto' })
 
     await page.goto(`/conteudos?tipo=video`)
     await waitForSettledPage(page)
@@ -410,6 +454,19 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     await expect(page).toHaveURL(new RegExp(`/conteudos/${video.slug}$`))
     await expect(page.getByRole('heading', { name: videoTitle })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Voltar à Central' })).toBeVisible()
+
+    // S45 — the piece page keeps the card's promise: the 9:16 stage in the
+    // 360px media column (cena 05), never wider than the text.
+    const stage = await page.locator('[data-content-piece-media]').boundingBox()
+    expect(stage!.width).toBeCloseTo(360, 0)
+    expect(stage!.height / stage!.width).toBeCloseTo(16 / 9, 2)
+
+    // The photo keeps the 4:5 stage on its own page.
+    await page.goto(`/conteudos/${photo.slug}`)
+    await expect(page.getByRole('heading', { name: photoTitle })).toBeVisible()
+    const photoStage = await page.locator('[data-content-piece-media]').boundingBox()
+    expect(photoStage!.width).toBeCloseTo(360, 0)
+    expect(photoStage!.height / photoStage!.width).toBeCloseTo(5 / 4, 2)
   })
 
   test('lists the card models by nickname, filters by Tipo Card and routes to the studio (S38)', async ({
@@ -755,6 +812,13 @@ test.describe('Frontend Central de Conteúdos (S27)', () => {
     )
     await expect(section.getByText('Mais recente', { exact: true })).toHaveCount(2)
     await expect(section.getByRole('link', { name: 'Mais recente' })).toHaveCount(0)
+
+    // S45 — the 124px phone thumb keeps the form of the type: photo 4:5, Reel 9:16.
+    const photoBox = await photoCard.locator('[data-content-piece-media]').boundingBox()
+    expect(photoBox!.width).toBeCloseTo(124, 0)
+    expect(photoBox!.height / photoBox!.width).toBeCloseTo(5 / 4, 2)
+    const videoBox = await videoCard.locator('[data-content-piece-media]').boundingBox()
+    expect(videoBox!.height / videoBox!.width).toBeCloseTo(16 / 9, 2)
 
     // S42 — the card shares through the same S27 sheet, without leaving the home.
     await section.getByRole('button', { name: `Compartilhar ${photoTitle}` }).click()

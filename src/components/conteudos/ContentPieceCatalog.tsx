@@ -3,6 +3,7 @@
 import { useState } from 'react'
 
 import {
+  contentPieceBoardBucket,
   contentPieceMediaKind,
   interleaveCatalogItems,
   isCardCatalogItem,
@@ -16,14 +17,15 @@ import { ContentPieceCard } from './ContentPieceCard'
 import { ContentPieceShareSheet } from './ContentPieceShareSheet'
 
 /**
- * S27 — the catalogue board (artefato: cena 01): full cards for video, audio
- * and link pieces, compact rows for photo/text, one piece plays at a time
- * (switching unmounts the previous element) and the share sheet is owned here,
- * so every card opens the same vote message.
+ * S27 — the catalogue board (artefato: cena 01): the vertical board (video and
+ * the S38 models) runs four columns from `lg`, audio/link keep a wide two-column
+ * grid (no framing to preserve) and photo/text keep the compact scan row. One
+ * piece plays at a time (switching unmounts the previous element) and the share
+ * sheet is owned here, so every card opens the same vote message.
  *
- * S38 — the six card models are items of the same board: they take the full-card
- * bucket and the whole item is one link to the studio (`/cards?model=<id>`); the
- * old single invite tile is gone and no section groups them.
+ * S38 — the six card models are items of the same board: they take the vertical
+ * board bucket and the whole item is one link to the studio (`/cards?model=<id>`);
+ * the old single invite tile is gone and no section groups them.
  */
 export const ContentPieceCatalog = ({
   items,
@@ -36,7 +38,8 @@ export const ContentPieceCatalog = ({
   const [playingId, setPlayingId] = useState<number | null>(null)
   const [sharingItem, setSharingItem] = useState<ContentPiecePublicItem | null>(null)
 
-  const largePieces: ContentPiecePublicItem[] = []
+  const videoPieces: ContentPiecePublicItem[] = []
+  const widePieces: ContentPiecePublicItem[] = []
   const compactItems: ContentPiecePublicItem[] = []
   const cards: CardCatalogItem[] = []
   for (const item of items) {
@@ -44,13 +47,14 @@ export const ContentPieceCatalog = ({
       cards.push(item)
       continue
     }
-    const kind = contentPieceMediaKind(item)
-    if (kind === null || kind === 'video' || kind === 'audio') largePieces.push(item)
+    const bucket = contentPieceBoardBucket(contentPieceMediaKind(item))
+    if (bucket === 'vertical') videoPieces.push(item)
+    else if (bucket === 'wide') widePieces.push(item)
     else compactItems.push(item)
   }
-  // S38 — the models alternate with the full-card pieces (never a block of
-  // their own); the compact rows keep the S27 board below.
-  const largeItems = interleaveCatalogItems(largePieces, cards)
+  // S38 — the models alternate with the video pieces (never a block of their
+  // own); the wide and compact rows keep the S27 board below.
+  const verticalItems = interleaveCatalogItems(videoPieces, cards)
 
   const cardProps = (item: ContentPiecePublicItem) => ({
     item,
@@ -63,9 +67,9 @@ export const ContentPieceCatalog = ({
 
   return (
     <>
-      {largeItems.length > 0 ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {largeItems.map((item) =>
+      {verticalItems.length > 0 ? (
+        <div className="grid items-start gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {verticalItems.map((item) =>
             isCardCatalogItem(item) ? (
               <ContentCatalogCardItem key={`card:${item.modelId}`} item={item} />
             ) : (
@@ -75,8 +79,16 @@ export const ContentPieceCatalog = ({
         </div>
       ) : null}
 
+      {widePieces.length > 0 ? (
+        <div className="mt-6 grid items-start gap-5 lg:grid-cols-2">
+          {widePieces.map((item) => (
+            <ContentPieceCard key={item.id} {...cardProps(item)} />
+          ))}
+        </div>
+      ) : null}
+
       {compactItems.length > 0 ? (
-        <div className="mt-6 grid gap-6 sm:grid-cols-2">
+        <div className="mt-6 grid items-start gap-5 sm:grid-cols-2">
           {compactItems.map((item) => (
             <ContentPieceCard key={item.id} {...cardProps(item)} />
           ))}

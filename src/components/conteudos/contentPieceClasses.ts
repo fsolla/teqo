@@ -72,6 +72,6 @@ export const CONTENT_PIECE_LOCAL_TAG_LINK = cn(
 
 /** S42 — the card's `Ver esta peça →` under the share button (artefato `.piece-link`). */
 export const CONTENT_PIECE_PIECE_LINK = cn(
-  'mt-2 flex min-h-9 w-full items-center justify-center rounded-sm text-xs font-extrabold text-(--pt-red) underline-offset-4 hover:underline',
+  'mt-2 flex min-h-11 w-full items-center justify-center rounded-sm text-xs font-extrabold text-(--pt-red) underline-offset-4 hover:underline sm:min-h-9',
   CONTENT_PIECE_FOCUS,
 )
