@@ -5,31 +5,32 @@ const SUPPORT_URL = 'https://apoiar.me/jorgesolla'
 const allyImages = [
   {
     id: 'rui',
-    src: '/RUI%20-%202-2.avif',
+    src: '/RUI - 2-2.avif',
     width: 177,
     height: 265,
-    sizes: '(min-width: 1366px) calc(6.14vw + 93px), 177px',
+    sizes: '(min-width: 1920px) 211px, (min-width: 1366px) calc(6.14vw + 93px), 177px',
   },
   {
     id: 'wagner',
-    src: '/WAGNER%20-%202-9%20final.avif',
+    src: '/WAGNER - 2-9 final.avif',
     width: 177,
     height: 265,
-    sizes: '(min-width: 1366px) calc(6.14vw + 93px), 177px',
+    sizes: '(min-width: 1920px) 211px, (min-width: 1366px) calc(6.14vw + 93px), 177px',
   },
   {
     id: 'jeronimo',
     src: '/Jeronimo.avif',
     width: 177,
     height: 265,
-    sizes: '(min-width: 1366px) calc(6.14vw + 93px), 177px',
+    sizes: '(min-width: 1920px) 211px, (min-width: 1366px) calc(6.14vw + 93px), 177px',
   },
   {
     id: 'lula',
     src: '/Lula.avif',
     width: 216,
     height: 213,
-    sizes: '(min-width: 1366px) calc(8.3vw + 125px), (min-width: 1024px) 238px, 216px',
+    sizes:
+      '(min-width: 1920px) 284px, (min-width: 1366px) calc(8.3vw + 124.6px), (min-width: 1024px) 238px, 216px',
   },
 ]
 
@@ -71,7 +72,7 @@ export const CampaignHero = () => (
           alt="Jorge Solla, candidato a deputado federal pela Bahia"
           width={495}
           height={742}
-          sizes="(min-width: 1720px) 747px, (min-width: 1280px) 595px, (min-width: 1024px) 495px, 449px"
+          sizes="(min-width: 1920px) 747px, (min-width: 1024px) calc(28.16vw + 206.7px), 449px"
           priority
           className="campaign-hero-portrait-image absolute h-auto max-w-none object-contain"
         />

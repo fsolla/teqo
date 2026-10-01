@@ -31,6 +31,19 @@ describe('CampaignHero', () => {
     expect(novidadesLink.getAttribute('data-cta')).toBe('secondary')
   })
 
+  it('não percent-encoda os caminhos das imagens', () => {
+    const { container } = render(<CampaignHero />)
+
+    const sources = Array.from(container.querySelectorAll('img')).map((image) =>
+      image.getAttribute('src'),
+    )
+    expect(sources.length).toBeGreaterThan(0)
+
+    for (const source of sources) {
+      expect(source).not.toContain('%')
+    }
+  })
+
   it('expõe as provas e as fotos com nomes acessíveis', () => {
     render(<CampaignHero />)
 
