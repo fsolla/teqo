@@ -36,6 +36,18 @@ const ptBrWeekdays = [
 export const dayLabelFor = (civilDate: string): string =>
   `${Number(civilDate.slice(8, 10))} ${ptBrMonthNames[Number(civilDate.slice(5, 7)) - 1]}`
 
+/**
+ * "[data-day=\"DD/MM/YYYY\"]" — the Calendar day cell's stable contract
+ * (`Calendar.tsx` DayButton formats the civil date with the pt-BR locale).
+ * Click day cells through this selector, never through the accessible name:
+ * "2 de outubro de 2026" is a substring of "12…"/"22 de outubro de 2026",
+ * so name matching resolves to several cells (strict mode violation).
+ */
+export const calendarDaySelector = (civilDate: string): string => {
+  const [year, month, day] = civilDate.split('-')
+  return `[data-day="${day}/${month}/${year}"]`
+}
+
 export const civilDatePlusDays = (civilDate: string, days: number): string => {
   const [year, month, day] = civilDate.split('-').map(Number)
   const date = new Date(Date.UTC(year, month - 1, day + days))

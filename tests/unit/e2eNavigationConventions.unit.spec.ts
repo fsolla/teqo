@@ -2,6 +2,8 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { relative, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+import { calendarDaySelector } from '../e2e/helpers/agendaPeriodLabels.js'
+
 // Miss #54 (2026-07-30): a `page.goto` fired while the previous heavy RSC
 // navigation was still in flight aborted with `net::ERR_ABORTED`
 // (campaignSavedFilters, prod build). `goto` stays legal for cold loads and
@@ -82,5 +84,39 @@ describe('e2e WebAuthn virtual authenticator (miss #53)', () => {
       offenders,
       'call expectCampaignBiometricsReady(page) before the surface whose island probes the authenticator',
     ).toEqual([])
+  })
+})
+
+// Miss #55 (2026-10-01): the C104 e2e clicked the calendar's end-day cell with
+// `getByRole('button', { name: '2 de Outubro de 2026' })`. The accessible name
+// ("sexta-feira, 2 de outubro de 2026") is a longer string and Playwright's
+// name matcher is substring + case-insensitive by default, so days 12 and 22
+// in the same grid matched too — a strict mode violation that only fired when
+// "today + 1" landed on a single-digit day of the month (2026-10-02).
+const AMBIGUOUS_DAY_NAME =
+  /getByRole\('button',\s*\{\s*name:\s*(?:[A-Za-z_]*DayLabel\b|`[^`]*\bde\b[^`]*\$\{|"[^"]*\bde\b[^"]*20\d\d[^"]*"|'[^']*\bde\b[^']*20\d\d[^']*')/
+
+describe('e2e calendar day-cell locator (miss #55)', () => {
+  it('clicks calendar days through the data-day contract, never the date name', () => {
+    const offenders: string[] = []
+
+    for (const file of specFiles) {
+      const lines = readFileSync(file, 'utf8').split('\n')
+      for (const [index, line] of lines.entries()) {
+        if (AMBIGUOUS_DAY_NAME.test(line)) {
+          offenders.push(`${relative(process.cwd(), file)}:${index + 1}`)
+        }
+      }
+    }
+
+    expect(
+      offenders,
+      "click the day cell via calendarDaySelector ('[data-day=\"DD/MM/YYYY\"]') — the accessible name 'd de mês de ano' also matches 1d/2d (miss #55)",
+    ).toEqual([])
+  })
+
+  it('builds the pt-BR data-day selector with a zero-padded day and month', () => {
+    expect(calendarDaySelector('2026-10-02')).toBe('[data-day="02/10/2026"]')
+    expect(calendarDaySelector('2026-01-31')).toBe('[data-day="31/01/2026"]')
   })
 })
