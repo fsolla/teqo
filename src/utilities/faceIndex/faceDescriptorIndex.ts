@@ -37,7 +37,7 @@ import {
 /** Long edge sent to the engine; the original never leaves the archive. */
 const IMAGE_MAX_EDGE = 1024
 
-type ArchivePhotoFaceImage = {
+export type ArchivePhotoFaceImage = {
   pixels: Buffer
   width: number
   height: number
@@ -48,10 +48,10 @@ export type ArchivePhotoFaceAnalyzer = (image: ArchivePhotoFaceImage) => Promise
 
 /**
  * Decodes any stored image (EXIF-rotated, alpha flattened, ≤1024px raw RGB) —
- * the exact input both the batch and the browser compute descriptors over, so
- * the selfie and the archive enter the same space.
+ * the exact input both the batch, the C244 figure enrollment and the browser
+ * compute descriptors over, so every vector enters the same space.
  */
-const prepareFaceImage = async (filePath: string): Promise<ArchivePhotoFaceImage> => {
+export const prepareFaceImage = async (filePath: string): Promise<ArchivePhotoFaceImage> => {
   const prepared = await sharp(filePath)
     .rotate()
     .resize({ width: IMAGE_MAX_EDGE, height: IMAGE_MAX_EDGE, fit: 'inside' })

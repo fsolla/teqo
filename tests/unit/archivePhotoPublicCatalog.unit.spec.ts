@@ -41,6 +41,7 @@ const source = (
     scene: 'plenaria',
     people: ['Jorge Solla'],
   },
+  figures: [{ slug: 'jorge-solla', name: 'Jorge Solla' }],
   ...overrides,
 })
 
@@ -143,7 +144,11 @@ describe('toArchivePhotoPublicItem', () => {
 
   it('builds the card/dialog view: title, meta line and people label', () => {
     const photo = item(1, {
-      catalog: { caption: null, scene: 'reuniao', people: ['Jorge Solla', 'Rui Costa'] },
+      catalog: { caption: null, scene: 'reuniao', people: [] },
+      figures: [
+        { slug: 'jorge-solla', name: 'Jorge Solla' },
+        { slug: 'rui-costa', name: 'Rui Costa' },
+      ],
     })
 
     expect(photo.title).toBe('Descrição da foto 1')
@@ -161,12 +166,21 @@ describe('toArchivePhotoPublicItem', () => {
     expect(photo.downloadFilename).toBe('jorge-solla-1313-foto-9.jpg')
   })
 
-  it('canonicalizes a catalog spelling on the people facet and collapses duplicates', () => {
-    const photo = item(1, {
-      catalog: { caption: null, scene: 'plenaria', people: ['rui costa', 'Rui Costa'] },
+  it('derives people only from the curated figures (never the text catalog) and dedupes by slug', () => {
+    const textOnly = item(1, {
+      catalog: { caption: null, scene: 'plenaria', people: ['Rui Costa'] },
+      figures: [],
+    })
+    const duplicated = item(2, {
+      figures: [
+        { slug: 'rui-costa', name: 'Rui Costa' },
+        { slug: 'rui-costa', name: 'rui costa' },
+        { slug: '', name: 'Sem slug' },
+      ],
     })
 
-    expect(photo.people).toEqual(['Rui Costa'])
+    expect(textOnly.people).toEqual([])
+    expect(duplicated.people).toEqual([{ slug: 'rui-costa', name: 'Rui Costa' }])
   })
 })
 
@@ -179,6 +193,7 @@ describe('archivePhotoAlbumFacets / filter / heading', () => {
       municipalitySlug: 'salvador',
       searchText: 'visita posto salvador rui costa',
       catalog: { caption: 'Visita', scene: 'visita', people: ['Rui Costa'] },
+      figures: [{ slug: 'rui-costa', name: 'Rui Costa' }],
     }),
     item(3, {
       takenOn: null,
@@ -186,6 +201,7 @@ describe('archivePhotoAlbumFacets / filter / heading', () => {
       municipalitySlug: null,
       searchText: 'retrato gabinete',
       catalog: { caption: 'Retrato', scene: 'retrato', people: [] },
+      figures: [],
     }),
   ]
 

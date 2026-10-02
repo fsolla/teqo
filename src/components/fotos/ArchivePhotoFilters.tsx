@@ -25,7 +25,7 @@ const FACET_MENU_HEADINGS: Record<ArchivePhotoAlbumFacet, string> = {
   data: 'Dias com fotos publicadas',
   municipio: 'Municípios com fotos',
   atividade: 'Atividades',
-  pessoa: 'Pessoas que aparecem',
+  pessoa: 'Figuras reconhecidas com curadoria',
 }
 
 const FIELD_CLASS =

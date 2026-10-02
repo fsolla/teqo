@@ -98,7 +98,10 @@ describe('toFaceSearchPhotoView', () => {
     municipalitySlug: 'feira-de-santana',
     scene: 'plenaria',
     sceneLabel: 'Plenária',
-    people: ['Jorge Solla', 'Outra Pessoa'],
+    people: [
+      { slug: 'jorge-solla', name: 'Jorge Solla' },
+      { slug: 'outra-pessoa', name: 'Outra Pessoa' },
+    ],
     peopleLabel: 'Jorge Solla e Outra Pessoa',
     metaLabel: '12 set 2026 · Feira de Santana · Plenária',
     searchText: 'plenaria feira de santana',

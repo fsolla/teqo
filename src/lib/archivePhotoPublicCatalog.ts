@@ -10,6 +10,11 @@
  * the headings are derived from the items the caller already gated through
  * `archivePhotoIsPublic`, so a filter that cannot match anything never renders
  * and the empty states stay honest.
+ *
+ * C244 — `people` is no longer the text `catalog.people` of the ficha: it is
+ * the curated public figures the facial layer recognized in the photo
+ * (`record.figures`, merged by the album read). The URL key `?pessoa=<slug>`
+ * and the facet rendering stay exactly the C233 contract.
  */
 import {
   ARCHIVE_PHOTO_SCENES,
@@ -19,8 +24,7 @@ import {
   resolveArchivePhotoScene,
   type ArchivePhotoScene,
 } from '@/lib/archivePhotoCatalog'
-import { resolvePublicFigureName } from '@/lib/publicFigureCatalog'
-import { SLUG_PATTERN, slugify } from '@/lib/slug'
+import { SLUG_PATTERN } from '@/lib/slug'
 import { normalizeForSearch } from '@/lib/speechSearch'
 
 export const ARCHIVE_PHOTO_ALBUM_PATH = '/fotos'
@@ -180,18 +184,23 @@ export const archivePhotoShortDateLabel = (value: string | null | undefined): st
 const archivePhotoDayOf = (value: string | null | undefined): string | null =>
   dayPartsOf(value)?.join('-') ?? null
 
-type ArchivePhotoPublicPerson = { slug: string; name: string }
+/**
+ * C244 — one curated public figure recognized in a photo: the `faceFigure`
+ * slug (the `?pessoa` URL value) and its display name. The album's "Quem
+ * aparece" and the `pessoa` facet come from the facial layer, never from the
+ * text `catalog.people` of the ficha.
+ */
+export type ArchivePhotoPublicPerson = { slug: string; name: string }
 
-/** One appearance: canonical catalog spelling (when it resolves), slug-keyed. */
-const archivePhotoPublicPeople = (names: readonly string[]): ArchivePhotoPublicPerson[] => {
+/** Dedupes by slug and drops blank entries; the read already sorts by slug. */
+const archivePhotoPublicFigures = (
+  figures: readonly ArchivePhotoPublicPerson[],
+): ArchivePhotoPublicPerson[] => {
   const people = new Map<string, string>()
-  for (const raw of names) {
-    const trimmed = raw.trim()
-    if (!trimmed) continue
-    const name = resolvePublicFigureName(trimmed) ?? trimmed
-    const slug = slugify(name)
-    if (!slug) continue
-    people.set(slug, name)
+  for (const figure of figures) {
+    const name = figure.name?.trim()
+    if (!figure.slug || !name) continue
+    if (!people.has(figure.slug)) people.set(figure.slug, name)
   }
   return [...people.entries()].map(([slug, name]) => ({ slug, name }))
 }
@@ -210,6 +219,12 @@ export type ArchivePhotoPublicSource = {
     scene?: string | null
     people?: string[] | null
   } | null
+  /**
+   * Curated figures recognized in this photo (C244), merged by the album read.
+   * Absent in the plain read: the text `catalog.people` remains ficha content
+   * and never feeds this field.
+   */
+  figures?: readonly ArchivePhotoPublicPerson[] | null
 }
 
 export type ArchivePhotoPublicItem = {
@@ -225,7 +240,8 @@ export type ArchivePhotoPublicItem = {
   municipalitySlug: string | null
   scene: ArchivePhotoScene | null
   sceneLabel: string | null
-  people: string[]
+  /** Curated figures recognized by the facial layer (C244), slug-keyed. */
+  people: ArchivePhotoPublicPerson[]
   peopleLabel: string | null
   /** "12 set 2026 · Município · Plenária" — the card's metadata line. */
   metaLabel: string
@@ -270,7 +286,7 @@ export const toArchivePhotoPublicItem = (
   const caption = record.catalog?.caption?.trim() || null
   const scene = resolveArchivePhotoScene(record.catalog?.scene)
   const sceneText = scene ? archivePhotoSceneLabel(scene) : null
-  const people = archivePhotoPublicPeople(record.catalog?.people ?? [])
+  const people = archivePhotoPublicFigures(record.figures ?? [])
   const takenOn = record.takenOn ?? null
   const shortDateLabel = archivePhotoShortDateLabel(takenOn)
   const municipalityName = record.municipalityName?.trim() || null
@@ -288,7 +304,7 @@ export const toArchivePhotoPublicItem = (
     municipalitySlug,
     scene,
     sceneLabel: sceneText,
-    people: peopleNames,
+    people,
     peopleLabel: archivePhotoPeopleLabel(peopleNames),
     metaLabel: [shortDateLabel, municipalityName, sceneText].filter(Boolean).join(' · '),
     searchText: record.searchText ?? '',
@@ -350,7 +366,7 @@ export const archivePhotoAlbumFacets = (
       municipalities.set(item.municipalitySlug, item.municipalityName)
     }
     if (item.scene) scenes.add(item.scene)
-    for (const person of archivePhotoPublicPeople(item.people)) {
+    for (const person of item.people) {
       people.set(person.slug, person.name)
     }
   }
@@ -422,10 +438,7 @@ export const filterArchivePhotoAlbumItems = (
     if (params.data && archivePhotoDayOf(item.takenOn) !== params.data) return false
     if (params.municipio && item.municipalitySlug !== params.municipio) return false
     if (params.atividade && item.scene !== params.atividade) return false
-    if (
-      params.pessoa &&
-      !archivePhotoPublicPeople(item.people).some((person) => person.slug === params.pessoa)
-    ) {
+    if (params.pessoa && !item.people.some((person) => person.slug === params.pessoa)) {
       return false
     }
     if (!term) return true

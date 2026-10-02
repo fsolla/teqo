@@ -23,7 +23,7 @@ import {
   type ArchivePhotoAlbumSearchParams,
 } from '@/lib/archivePhotoPublicCatalog'
 import {
-  getApprovedArchivePhotoItems,
+  getApprovedArchivePhotoAlbumItems,
   hasPublishedArchivePhotos,
 } from '@/utilities/archivePhotos/archivePhotoReads'
 import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
@@ -101,7 +101,7 @@ export default async function FotosPage({
   if (album.published === false) notFound()
 
   const params = parseArchivePhotoAlbumParams(rawSearchParams)
-  const approved = await getApprovedArchivePhotoItems()
+  const approved = await getApprovedArchivePhotoAlbumItems()
   const removalChannelUrl = isArchivePhotoRemovalChannelUrl(album.removalChannelUrl)
     ? album.removalChannelUrl.trim()
     : null

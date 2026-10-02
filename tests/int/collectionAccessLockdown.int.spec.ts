@@ -194,7 +194,7 @@ describe('CMS/PII collection access lockdown', () => {
     expect(authed && 'roles' in authed ? authed.roles : undefined).toEqual(['editor'])
   })
 
-  it.each(['signature', 'subscription', 'consent'] as const)(
+  it.each(['signature', 'subscription', 'consent', 'faceFigure'] as const)(
     'denies campaign users and anonymous requests access to %s (PII/legal)',
     async (collection) => {
       const coordinator = await campaignFixtures().createCampaignUser('coordinator')
