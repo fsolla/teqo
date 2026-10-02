@@ -1,7 +1,8 @@
 /**
  * C242 — pure planning/reporting of `pnpm archive:publish`: the argv parser,
  * the run summary and the human lines + JSON receipt. No I/O of its own, so the
- * unit spec drives it with fakes.
+ * unit spec drives it with fakes. C249 — the summary/receipt also carry the
+ * integrity preflight verdicts (`skippedBroken`).
  */
 
 const USAGE = 'uso: `pnpm archive:publish [--apply] [--limit <n>] [--out <dir>]`'
@@ -45,33 +46,66 @@ export const parseArchivePublishCliArgs = (argv = process.argv.slice(2)) => {
 }
 
 /**
- * @param {Array<{ photoId: number, status: string, error?: string | null }>} results
+ * C249 — the preflight verdict never counts as an update failure: a draft whose
+ * object is missing/corrupt is `skippedBroken` (stage + reason), kept in its own
+ * list so the receipt names it without pretending an approval was attempted.
+ * `eligible` is the plan-mode census (inspected clean, no write) and is
+ * deliberately not a failure — plan and apply receive the same results, so the
+ * summary composes for both modes.
+ *
+ * @param {Array<{ photoId: number, status: string, stage?: string | null, reason?: string | null, error?: string | null }>} results
  */
 export const summarizeArchivePublishResults = (results) => {
   const failures = []
+  const skippedBroken = []
   let approved = 0
   let failed = 0
 
   for (const result of results) {
-    if (result.status === 'approved') approved += 1
-    else {
+    if (result.status === 'approved') {
+      approved += 1
+    } else if (result.status === 'skippedBroken') {
+      skippedBroken.push({
+        photoId: result.photoId,
+        stage: result.stage ?? null,
+        reason: result.reason ?? null,
+      })
+    } else if (result.status === 'eligible') {
+      continue
+    } else {
       failed += 1
       failures.push({ photoId: result.photoId, error: result.error ?? null })
     }
   }
 
-  return { approved, failed, failures }
+  return {
+    approved,
+    failed,
+    failures,
+    skippedBroken,
+    skippedBrokenCount: skippedBroken.length,
+  }
 }
 
 export const formatArchivePublishReport = (report) => {
   const lines = [
     `[archive:publish] modo: ${report.mode} | alvo: ${report.target}`,
-    `[archive:publish] drafts elegíveis: ${report.queue.totalDrafts}`,
+    `[archive:publish] fila: ${report.queue.items} de ${report.queue.totalDrafts} draft(s)`,
   ]
 
-  if (report.mode !== 'plan') {
+  if (report.mode === 'plan') {
     lines.push(
-      `[archive:publish] aprovadas: ${report.summary.approved} | falharam: ${report.summary.failed}`,
+      `[archive:publish] drafts quebrados (fora do lote): ${report.summary?.skippedBrokenCount ?? 0}`,
+    )
+  } else {
+    lines.push(
+      `[archive:publish] aprovadas: ${report.summary?.approved ?? 0} | falharam: ${report.summary?.failed ?? 0} | puladas (quebradas): ${report.summary?.skippedBrokenCount ?? 0}`,
+    )
+  }
+
+  for (const skipped of report.summary?.skippedBroken ?? []) {
+    lines.push(
+      `[archive:publish]   ! foto ${skipped.photoId} fora do lote (${skipped.stage ?? 'missing'}): ${skipped.reason ?? 'objeto ausente'}`,
     )
   }
 

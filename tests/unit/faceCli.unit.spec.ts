@@ -100,6 +100,7 @@ describe('archive:publish write guards (C242)', () => {
     expect(result.status).toBe(0)
     expect(result.stdout).toContain('ARCHIVE_PUBLISH_CONFIRM')
     expect(result.stdout).toContain('--limit')
+    expect(result.stdout).toContain('preflight de integridade')
   })
 
   it('refuses --apply on a production target without the intent flag', () => {

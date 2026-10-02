@@ -1528,12 +1528,20 @@ aparelho do visitante (o navegador envia só o vetor). A flag
    ```
    (dry-run sem `--apply` mostra o estado; o guard exige `TEQO_ENV` casando o
    banco exato.)
-3. **Aprovar o acervo** (drafts → approved; `removed` nunca é tocado):
+3. **Aprovar o acervo** (drafts → approved; `removed` nunca é tocado). Desde o
+   C249 cada draft passa pelo **preflight de integridade** do C246 antes de
+   aprovar: o objeto é baixado e decodificado pelo mesmo caminho da rota
+   pública; objeto ausente/corrompido fica **fora do lote**, é nomeado no recibo
+   (`skippedBroken` com stage + motivo) e o comando sai **1**. O modo plano
+   (sem `--apply`) também inspeciona (read-only) e sai 1 se houver quebrados; o
+   custo do lote é download+decode de toda a fila, então comece pelo canário:
    ```bash
    docker compose --profile maintenance run --rm \
      -e TEQO_ENV=production -e ARCHIVE_PUBLISH_CONFIRM=1 \
+     teqo-1313-migrate pnpm archive:publish --apply --limit 20   # canário
+   docker compose --profile maintenance run --rm \
+     -e TEQO_ENV=production -e ARCHIVE_PUBLISH_CONFIRM=1 \
      teqo-1313-migrate pnpm archive:publish --apply
-   # canário: --limit 20
    ```
    Ao fim, buste a tag pública em um processo que a possui (o write do CLI não
    revalida o servidor Next):
@@ -1734,13 +1742,17 @@ curl -X POST "https://jorgesolla1313.com.br/api/revalidate?tag=archivePhotos" \
 
 Fotos reparadas que continuam `approved` voltam a servir sozinhas (mesma chave,
 rota `force-dynamic`) — e o índice facial reprocessa sozinho o que tiver
-marcador stale (`pnpm faces:index`). Uma foto rebaixada a `draft` **não** deve
-voltar em lote: o `pnpm archive:publish` aprova todo draft sem checar o objeto,
-então só rode o publish depois de uma varredura limpa (a foto rebaixada só sai
-de draft quando a fonte for recuperada e o operador decidir publicá-la).
+marcador stale (`pnpm faces:index`). Uma foto rebaixada a `draft` **não volta
+por engano** no lote: desde o C249 o `pnpm archive:publish` inspeciona cada
+draft pelo mesmo `inspectPrivateMediaObject` desta varredura antes de aprovar —
+a quebrada fica fora do lote, sai nomeada no recibo (`skippedBroken`) e o
+comando termina 1. O aviso antigo ("só rode o publish depois de uma varredura
+limpa") deixou de ser a única proteção; ainda vale rodar a varredura limpa
+primeiro, porque ela é quem **repara** (o publish não repara, só pula e nomeia).
 Rollback: sem migration nesta entrega; o comando nunca apaga objeto nem linha —
 uma foto rebaixada por engano volta a `approved` pela ficha no admin (com o
-canal de remoção configurado).
+canal de remoção configurado) ou pelo publish depois de o objeto inspecionar
+limpo.
 
 ## C230-followup — importação do Instagram para a Central de Conteúdos
 
