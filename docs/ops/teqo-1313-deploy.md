@@ -1712,8 +1712,11 @@ docker compose --profile maintenance run --rm \
   -e TEQO_ENV=production -e ARCHIVE_INTEGRITY_CONFIRM=1 \
   -v ~/archive-reports:/app/data/archive \
   teqo-1313-migrate pnpm archive:integrity --apply --only 80,83
-# 3) conferir as duas URLs públicas respondendo 200 (antes do lote):
-#    https://jorgesolla1313.com.br/fotos/80/midia  e  /fotos/83/midia
+# 3) conferir as duas URLs públicas com GET completo (o HEAD não lê o corpo e
+#    não valida o checksum — dá 200 mesmo com objeto corrompido):
+#    curl -s -o /dev/null -w '%{http_code} %{size_download}\n' \
+#      https://jorgesolla1313.com.br/fotos/80/midia
+#    (idem para /fotos/83/midia)
 # 4) varredura completa (read-only; ~6,5k downloads no bucket local; sai 1 se achar):
 docker compose --profile maintenance run --rm \
   -v ~/archive-reports:/app/data/archive \
