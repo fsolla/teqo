@@ -149,6 +149,17 @@ const catalogGroup: Field = {
         description: 'Chave de idempotência: foto com data preenchida não é reprocessada.',
       },
     },
+    {
+      name: 'metadataCheckedAt',
+      type: 'date',
+      label: 'Metadados verificados em',
+      index: true,
+      admin: {
+        readOnly: true,
+        description:
+          'Chave de idempotência da camada sem IA (município/temas do texto): preenchida não reprocessa o puro — e não bloqueia a IA.',
+      },
+    },
   ],
 }
 

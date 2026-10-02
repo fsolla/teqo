@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest'
 
 // C232 — the cataloguing CLI's fail-closed write guards, exercised as a
 // subprocess: each refusal must happen before any engine call or DB connection.
+// C245 adds the metadata-only lane, whose guards stop at the intent flag and
+// the declared target — no S3 and no vision engine on that path.
 
 const repoRoot = process.cwd()
 const scriptPath = join(repoRoot, 'scripts', 'catalog-archive-photos.mjs')
@@ -122,4 +124,31 @@ describe('archive:catalog write guards (C232)', () => {
     expect(result.status).toBe(1)
     expect(output(result)).toContain('argumento desconhecido')
   })
+
+  it('refuses the metadata-only --apply without the intent flag', () => {
+    const result = run(['--metadata-only', '--apply'])
+
+    expect(result.status).toBe(1)
+    expect(output(result)).toContain('ARCHIVE_CATALOG_CONFIRM=1')
+  })
+
+  it('metadata-only --apply skips the S3 and vision guards entirely', () => {
+    const result = run(['--metadata-only', '--apply'], {
+      ARCHIVE_CATALOG_CONFIRM: '1',
+      TEQO_ENV: 'production',
+      // A closed port: the guards pass and the boot fails on the DB, proving
+      // the run got past them without demanding S3 or the engine.
+      DATABASE_URL: 'postgresql://teqo:teqo@127.0.0.1:1/teqo_1313',
+      ARCHIVE_VISION_BASE_URL: 'https://api.example.com/v1',
+    })
+
+    expect(result.status).toBe(1)
+    const text = output(result)
+    // Positive proof the run got PAST the guards and died on the database:
+    expect(text).toMatch(/ECONNREFUSED|cannot connect to Postgres/)
+    expect(text).not.toContain('S3_BUCKET')
+    expect(text).not.toContain('host público')
+    expect(text).not.toContain('ARCHIVE_VISION_MODEL')
+  }, // the DB refusal; a busy full-suite run can push it past the default 5s. // This is the one case that gets past the guards and boots Payload before
+  60_000)
 })

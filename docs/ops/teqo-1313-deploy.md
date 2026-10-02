@@ -1452,6 +1452,59 @@ Rollback: a migration `add_archive_photo_catalog` é aditiva; o rollback funcion
 é limpar o grupo `catalog`/`curatedFields` no admin. Reexecutar nunca duplica nem
 sobrescreve curadoria.
 
+## C245 — catalogação em produção: camada de metadados primeiro
+
+O mesmo comando roda em **duas camadas independentes** (migration aditiva
+`add_archive_photo_metadata_checked`, coluna `catalog.metadataCheckedAt`):
+
+- **metadados** (`--metadata-only`): sem engine e sem mídia — lê o texto já
+  ingerido (título, descrição, álbuns, tags) e deriva **município** (gazetteer)
+  e **temas**. Grava `catalog.metadataCheckedAt` e **não** preenche
+  `catalogedAt`, então a foto continua na fila da IA. Nunca escreve
+  `catalog.people` (a faceta de pessoa é da C244, por facial).
+- **IA** (padrão, seção acima): legenda/descrição/atividade/texto visível;
+  quando roda, marca `catalogedAt` **e** `metadataCheckedAt` (a derivação de
+  texto roda nessa passada).
+
+Ordem em produção (staging primeiro):
+
+```bash
+# 1) canário de metadados no staging (sem engine, sem S3):
+ssh homeserver && cd ~/stack
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=staging -e ARCHIVE_CATALOG_CONFIRM=1 \
+  teqo-staging-migrate pnpm archive:catalog --metadata-only --apply --limit 5
+# 2) lote de metadados no staging e, validado, em produção (serviço/banco do alvo):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e ARCHIVE_CATALOG_CONFIRM=1 \
+  teqo-1313-migrate pnpm archive:catalog --metadata-only --apply
+# 3) depois de cada lote, buste o cache do álbum: o write roda no container de
+#    manutenção e o ISR do app não é revalidado por ele.
+curl -X POST "https://jorgesolla1313.com.br/api/revalidate?tag=archivePhotos" \
+  -H "x-revalidate-secret: $REVALIDATE_SECRET"
+# 4) inventário das DUAS camadas (read-only; sai 1 se a camada selecionada
+#    tiver pendentes):
+docker compose --profile maintenance run --rm teqo-1313-migrate pnpm archive:catalog --verify
+docker compose --profile maintenance run --rm teqo-1313-migrate pnpm archive:catalog --metadata-only --verify
+```
+
+A camada de IA não muda os comandos da seção C232: com o engine no ar, o
+`--apply` padrão processa toda foto sem `catalogedAt` (as já marcadas pelos
+metadados inclusive) e preserva o município/temas gravados; depois do lote,
+repita o passo 3.
+
+Guardas: `--metadata-only --apply` exige `ARCHIVE_CATALOG_CONFIRM=1` fora de
+dev local e `TEQO_ENV` casando o nome exato do banco (`teqo_staging`/
+`teqo_1313`) — **não** exige `S3_*` nem engine (não há mídia no caminho). O
+recibo JSON registra `layer` e o `--verify` sempre imprime as duas camadas; o
+exit 1 segue a camada selecionada.
+
+Rollback: a migration `add_archive_photo_metadata_checked` é aditiva
+(`catalog.metadataCheckedAt` + índice); o rollback funcional é anular o marker
+via API/DB (o campo é `readOnly` no admin) e reexecutar. Reexecutar converge:
+foto com `metadataCheckedAt` não é reprocessada pela camada pura, a IA continua
+pegando quem não tem `catalogedAt` e a curadoria nunca é sobrescrita.
+
 ## C242 — busca por selfie aberta (índice anônimo do acervo)
 
 A busca por selfie (`/fotos/encontre` + `POST /api/fotos/selfie`) cobre **qualquer

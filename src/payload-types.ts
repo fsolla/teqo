@@ -1488,6 +1488,10 @@ export interface ArchivePhoto {
      * Chave de idempotência: foto com data preenchida não é reprocessada.
      */
     catalogedAt?: string | null;
+    /**
+     * Chave de idempotência da camada sem IA (município/temas do texto): preenchida não reprocessa o puro — e não bloqueia a IA.
+     */
+    metadataCheckedAt?: string | null;
   };
   /**
    * Só "Aprovada" aparece no álbum público (/fotos). "Removida" é o estado de remoção a pedido — a catalogação automática nunca o altera e a foto não volta ao público sem uma nova edição humana.
@@ -3268,6 +3272,7 @@ export interface ArchivePhotoSelect<T extends boolean = true> {
         municipality?: T;
         source?: T;
         catalogedAt?: T;
+        metadataCheckedAt?: T;
       };
   publicationStatus?: T;
   curatedFields?: T;
