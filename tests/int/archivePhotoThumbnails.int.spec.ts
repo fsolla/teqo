@@ -102,22 +102,22 @@ const setChannel = async (removalChannelUrl: string): Promise<void> => {
   )
 }
 
-const closeAlbumAndClearChannel = async (): Promise<void> => {
-  await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
-    payload.updateGlobal({
-      slug: 'photoAlbum',
-      data: { published: false, removalChannelUrl: null },
-      overrideAccess: true,
-    }),
-  )
-}
-
 const approve = async (id: number): Promise<void> => {
-  await payload.update({
-    collection: ARCHIVE_PHOTO_SLUG,
-    id,
-    data: { publicationStatus: 'approved' },
-    overrideAccess: true,
+  // The approval guard reads the shared global; set the channel and approve
+  // under the global's exclusive lease, so a parallel spec's teardown cannot
+  // flip the channel between the two writes.
+  await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, async () => {
+    await payload.updateGlobal({
+      slug: 'photoAlbum',
+      data: { published: true, removalChannelUrl: CHANNEL },
+      overrideAccess: true,
+    })
+    await payload.update({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      data: { publicationStatus: 'approved' },
+      overrideAccess: true,
+    })
   })
 }
 
@@ -167,7 +167,8 @@ describe('archive photo grade thumbnails (C248)', () => {
         overrideAccess: true,
       })
     }
-    await closeAlbumAndClearChannel()
+    // The channel is left open on purpose: tearing it down here would race the
+    // approvals of the sibling album specs (the shared global).
     await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })))
   })
 
