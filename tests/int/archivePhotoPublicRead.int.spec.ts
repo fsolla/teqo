@@ -161,7 +161,10 @@ describe('public photo album reads (C233)', () => {
         overrideAccess: true,
       })
     }
-    await closeAlbumAndClearChannel()
+    // The channel is left configured on purpose (the face specs' pattern):
+    // tearing it down here would race the approvals of every sibling album
+    // spec sharing the global; the tests that exercise the closed/absent
+    // states restore the open state themselves.
     await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })))
   })
 
