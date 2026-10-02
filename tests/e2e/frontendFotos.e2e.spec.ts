@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto'
 import type { APIRequestContext, Page } from '@playwright/test'
 import sharp from 'sharp'
 
+import { FACE_INDEX_CONSENT_KEY } from '../../src/lib/campaignConsentKeys.js'
+import { FACE_SEARCH_MODEL } from '../../src/lib/faceSearch.js'
 import { getMunicipalityCatalogEntry } from '../../src/lib/municipalityCatalog.js'
 import { adminHeaders } from '../helpers/adminApi'
 import { seedTestUser } from '../helpers/seedUser'
@@ -15,6 +17,13 @@ import { expect, test } from './fixtures/e2eTest'
  * `approved→removed` edit pulls the photo down immediately and the
  * `photoAlbum.published` kill switch closes the route without a deploy.
  *
+ * C244 — the `pessoa` facet and "Quem aparece" come from the curated
+ * `faceFigure` catalog matched against the anonymous `archivePhotoFace` index:
+ * the spec seeds one figure + the descriptor of the Feira photo through the
+ * deployed REST API (the server process runs the real hooks), proves that a
+ * text-only `catalog.people` name no longer creates the facet, and that the
+ * public-notice Consent gates the whole layer.
+ *
  * Photos and the global are seeded through the deployed REST API (admin
  * session) so the server process runs the real cache hooks; a Local API call
  * from the runner would throw on `revalidateTag` (same reason as the S21/S27
@@ -25,6 +34,10 @@ import { expect, test } from './fixtures/e2eTest'
 
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000'
 const REMOVAL_CHANNEL = 'https://example.org/acervo/remocao'
+
+const FACE_FIGURE_SLUG = 'jorge-solla'
+const FACE_FIGURE_NAME = 'Jorge Solla'
+const FACE_VECTOR = Array.from({ length: 128 }, () => 0.25)
 
 // Read-only catalog lookups (never pinned/written rows — see the allocator
 // guard): the spec only mutates its own archive photos. A missing catalog entry
@@ -44,6 +57,8 @@ const feiraName = getMunicipalityCatalogEntry('feira-de-santana')?.name ?? ''
 type Headers = Record<string, string>
 
 const createdPhotoIds: number[] = []
+const createdFigureIds: number[] = []
+const createdConsentKeys = new Set<string>()
 
 const uniqueMarker = () => randomUUID().slice(0, 8)
 
@@ -130,6 +145,88 @@ const municipalityId = async (
   return id
 }
 
+/** C244 — the public-notice Consent that gates the curated figure layer. */
+const ensureFaceIndexConsent = async (
+  request: APIRequestContext,
+  headers: Headers,
+): Promise<void> => {
+  const existing = await request.get(
+    `${BASE_URL}/api/consent?limit=1&depth=0&where[key][equals]=${encodeURIComponent(FACE_INDEX_CONSENT_KEY)}`,
+    { headers },
+  )
+  expect(existing.ok(), await existing.text()).toBeTruthy()
+  const found = ((await existing.json()) as { docs: { id: number }[] }).docs[0]
+  if (found) return
+
+  const text = {
+    root: {
+      type: 'root',
+      children: [
+        {
+          type: 'paragraph',
+          children: [{ type: 'text', text: 'Aviso de teste C244 do índice facial.', version: 1 }],
+          direction: null,
+          format: '',
+          indent: 0,
+          version: 1,
+        },
+      ],
+      direction: null,
+      format: '',
+      indent: 0,
+      version: 1,
+    },
+  }
+  const created = await request.post(`${BASE_URL}/api/consent`, {
+    headers,
+    data: { key: FACE_INDEX_CONSENT_KEY, text },
+  })
+  expect(created.ok(), await created.text()).toBeTruthy()
+  createdConsentKeys.add(FACE_INDEX_CONSENT_KEY)
+}
+
+/** One curated figure with a single reference descriptor (C244). */
+const createFigure = async (request: APIRequestContext, headers: Headers): Promise<number> => {
+  const response = await request.post(`${BASE_URL}/api/faceFigure`, {
+    headers,
+    data: {
+      name: FACE_FIGURE_NAME,
+      slug: FACE_FIGURE_SLUG,
+      active: true,
+      references: [
+        {
+          model: FACE_SEARCH_MODEL,
+          vector: FACE_VECTOR,
+          source: 'retrato de teste (C244)',
+          addedAt: new Date().toISOString(),
+        },
+      ],
+    },
+  })
+  expect(response.ok(), await response.text()).toBeTruthy()
+  const id = ((await response.json()) as { doc: { id: number } }).doc.id
+  createdFigureIds.push(id)
+  return id
+}
+
+/** One indexed face row, exactly like the batch writes it. */
+const createFaceRow = async (
+  request: APIRequestContext,
+  headers: Headers,
+  data: { photo: number; vector: number[] },
+): Promise<void> => {
+  const response = await request.post(`${BASE_URL}/api/archivePhotoFace`, {
+    headers,
+    data: {
+      photo: data.photo,
+      model: FACE_SEARCH_MODEL,
+      detectedAt: new Date().toISOString(),
+      vector: data.vector,
+    },
+  })
+  expect(response.ok(), await response.text()).toBeTruthy()
+}
+
 /** Dynamic pages stream a transient hidden `S:` copy of the shell; wait it out. */
 const waitForSettledPage = async (page: Page) => {
   await page.waitForFunction(() => document.querySelectorAll('div[id^="S:"]').length === 0)
@@ -187,11 +284,39 @@ test.describe('Frontend Álbum de Fotos (C233)', () => {
       status: 'approved',
     })
     await setPhotoStatus(request, headers, removedPhoto, 'removed')
+
+    // C244 — the curated layer: the notice Consent, one figure and the indexed
+    // face of the Feira photo (the Camacarí photo keeps only the text name, the
+    // negative case of the facet).
+    await ensureFaceIndexConsent(request, headers)
+    await createFaceRow(request, headers, { photo: approvedFeira, vector: FACE_VECTOR })
+    // The figure write busts the album cache last, so the first visit already
+    // computes the match over the seeded face row.
+    await createFigure(request, headers)
   })
 
   test.afterAll(async ({ request }) => {
     const cleanupHeaders = await adminHeaders(request, BASE_URL).catch(() => null)
     if (cleanupHeaders) {
+      for (const id of createdFigureIds.splice(0)) {
+        await request
+          .delete(`${BASE_URL}/api/faceFigure/${id}`, { headers: cleanupHeaders })
+          .catch(() => undefined)
+      }
+      for (const key of createdConsentKeys) {
+        const lookup = await request
+          .get(
+            `${BASE_URL}/api/consent?limit=1&depth=0&where[key][equals]=${encodeURIComponent(key)}`,
+            { headers: cleanupHeaders },
+          )
+          .catch(() => null)
+        const doc = lookup ? ((await lookup.json()) as { docs: { id: number }[] }).docs[0] : null
+        if (doc) {
+          await request
+            .delete(`${BASE_URL}/api/consent/${doc.id}`, { headers: cleanupHeaders })
+            .catch(() => undefined)
+        }
+      }
       for (const id of createdPhotoIds.splice(0)) {
         await request
           .delete(`${BASE_URL}/api/archivePhoto/${id}`, { headers: cleanupHeaders })
@@ -216,7 +341,9 @@ test.describe('Frontend Álbum de Fotos (C233)', () => {
     await expect(camacariCard).toBeVisible()
     await expect(feiraCard.getByText(`Plenária da saúde ${marker}`)).toBeVisible()
     await expect(feiraCard.getByText(`12 set 2026 · ${feiraName} · Plenária`)).toBeVisible()
+    // C244 — "Quem aparece" comes from the recognized figure, not the text.
     await expect(feiraCard.getByText('Jorge Solla')).toBeVisible()
+    await expect(camacariCard.getByText('Rui Costa')).toHaveCount(0)
     await expect(page.locator(`a[data-photo-id="${draftPhoto}"]`)).toHaveCount(0)
     await expect(page.locator(`a[data-photo-id="${removedPhoto}"]`)).toHaveCount(0)
 
@@ -255,10 +382,21 @@ test.describe('Frontend Álbum de Fotos (C233)', () => {
     await expect(page.locator(`a[data-photo-id="${approvedFeira}"]`)).toBeVisible()
     await expect(page.locator(`a[data-photo-id="${approvedCamacari}"]`)).toHaveCount(0)
 
+    // C244 — the facet follows the curated facial layer: Jorge Solla was
+    // recognized in the Feira photo (seeded figure + indexed face)…
+    await page.goto(`/fotos?pessoa=${FACE_FIGURE_SLUG}`)
+    await waitForSettledPage(page)
+    await expect(page.getByRole('heading', { name: `Fotos com ${FACE_FIGURE_NAME}` })).toBeVisible()
+    await expect(page.locator(`a[data-photo-id="${approvedFeira}"]`)).toBeVisible()
+    await expect(page.locator(`a[data-photo-id="${approvedCamacari}"]`)).toHaveCount(0)
+
+    // …while the Camacarí photo names Rui Costa only in the ficha text: text
+    // no longer creates the facet, and the empty state explains the curation.
     await page.goto('/fotos?pessoa=rui-costa')
     await waitForSettledPage(page)
-    await expect(page.getByRole('heading', { name: 'Fotos com Rui Costa' })).toBeVisible()
-    await expect(page.locator(`a[data-photo-id="${approvedCamacari}"]`)).toBeVisible()
+    const textOnly = page.locator('[data-album-no-results]')
+    await expect(textOnly.getByText('Nada encontrado com esses filtros')).toBeVisible()
+    await expect(textOnly.getByText(/figuras reconhecidas com curadoria/)).toBeVisible()
 
     await page.goto(`/fotos?q=${encodeURIComponent(marker)}`)
     await waitForSettledPage(page)
