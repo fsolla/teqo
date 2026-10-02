@@ -108,7 +108,7 @@ async function verticalMark(height) {
 
 /** Foto oficial do candidato (cutout com alfa). */
 async function candidatePhoto(height) {
-  const trim = await sharp(`${REPO}public/JOA00162.avif`)
+  const trim = await sharp(`${REPO}public/JOA00162.webp`)
     .trim({ threshold: 5 })
     .png()
     .toBuffer({ resolveWithObject: true })

@@ -52,14 +52,14 @@ const problemItems: CampaignCarouselItem[] = [
     id: 'escala-6x1',
     title: 'Pelo fim da escala 6x1!',
     body: 'Jornadas longas aumentam o risco de AVC e infarto. Descanso é saúde pública. A bancada de Lula derrotou a direita na Câmara: o fim da 6×1 avançou. Mas a briga continua no Senado, onde a direita tenta barrar o avanço. No dia 4 de outubro, o 1313 é o seu sim ao descanso.',
-    image: '/fundo.avif',
+    image: '/fundo.webp',
     imageAlt: 'Jorge Solla defendendo direitos dos trabalhadores na Câmara dos Deputados',
   },
   {
     id: 'sus',
     title: 'Pra valorizar o SUS',
     body: 'O SUS é o sistema de saúde de todo brasileiro. Com Lula, a saúde voltou a receber recursos: Nova PAC de R$ 30,5 bilhões e Mais Médicos retomado. Mas o teto de gastos da direita ainda trava o orçamento. O 1313 é seu voto em defesa do SUS no Congresso!',
-    image: '/53569851134_02afc18fb4_o.avif',
+    image: '/53569851134_02afc18fb4_o.webp',
     imageAlt: 'Jorge Solla em agenda pública de defesa do SUS',
     imageFrame: {
       width: 1024,
@@ -71,7 +71,7 @@ const problemItems: CampaignCarouselItem[] = [
     id: 'mataripe',
     title: 'Pra defender os baianos',
     body: 'A Refinaria de Mataripe foi vendida no governo Bolsonaro e segue nas mãos de estrangeiros. Com Lula e Jerônimo, a Bahia voltou a andar pra frente; mas recomprar Mataripe exige bancada forte no Congresso. Votar 1313 é devolver à Bahia o que é seu.',
-    image: '/52396285023_561ffc0ff6_o.avif',
+    image: '/52396285023_561ffc0ff6_o.webp',
     imageAlt: 'Vista da Bahia durante mobilização popular',
   },
 ]
