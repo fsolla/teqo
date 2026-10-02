@@ -5,28 +5,28 @@ const SUPPORT_URL = 'https://apoiar.me/jorgesolla'
 const allyImages = [
   {
     id: 'rui',
-    src: '/RUI - 2-2.avif',
+    src: '/RUI - 2-2.webp',
     width: 177,
     height: 265,
     sizes: '(min-width: 1920px) 211px, (min-width: 1366px) calc(6.14vw + 93px), 177px',
   },
   {
     id: 'wagner',
-    src: '/WAGNER - 2-9 final.avif',
+    src: '/WAGNER - 2-9 final.webp',
     width: 177,
     height: 265,
     sizes: '(min-width: 1920px) 211px, (min-width: 1366px) calc(6.14vw + 93px), 177px',
   },
   {
     id: 'jeronimo',
-    src: '/Jeronimo.avif',
+    src: '/Jeronimo.webp',
     width: 177,
     height: 265,
     sizes: '(min-width: 1920px) 211px, (min-width: 1366px) calc(6.14vw + 93px), 177px',
   },
   {
     id: 'lula',
-    src: '/Lula.avif',
+    src: '/Lula.webp',
     width: 216,
     height: 213,
     sizes:
@@ -68,7 +68,7 @@ export const CampaignHero = () => (
 
       <div className="campaign-hero-portrait absolute z-20 overflow-hidden">
         <Image
-          src="/JOA00162.avif"
+          src="/JOA00162.webp"
           alt="Jorge Solla, candidato a deputado federal pela Bahia"
           width={495}
           height={742}

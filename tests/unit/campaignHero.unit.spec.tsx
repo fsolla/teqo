@@ -44,6 +44,19 @@ describe('CampaignHero', () => {
     }
   })
 
+  it('serve masters WebP — AVIF fica fora do otimizador (libheif)', () => {
+    const { container } = render(<CampaignHero />)
+
+    const sources = Array.from(container.querySelectorAll('img')).map(
+      (image) => image.getAttribute('src') ?? '',
+    )
+    expect(sources.length).toBeGreaterThan(0)
+
+    for (const source of sources) {
+      expect(source.endsWith('.webp'), source).toBe(true)
+    }
+  })
+
   it('expõe as provas e as fotos com nomes acessíveis', () => {
     render(<CampaignHero />)
 
