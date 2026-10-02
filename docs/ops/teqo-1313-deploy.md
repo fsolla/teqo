@@ -1502,7 +1502,10 @@ aparelho do visitante (o navegador envia só o vetor). A flag
      -v /srv/face-reports:/app/data/face/reports \
      teqo-1313-migrate pnpm faces:index --verify            # read-only; sai 1 com pendências
    ```
-   O resultado no site aparece em até ~60 s (cache em memória do índice).
+   A busca por selfie reflete a indexação em até ~60 s (cache em memória do
+   índice). A faceta "Pessoa pública" do C244 lê um mapa cacheado pela tag
+   `archivePhotos`, que o lote não busta sozinho: buste a tag também depois da
+   indexação (mesmo `curl` do fim do passo 3).
 5. **Ligar** `Busca por selfie` no global Álbum de fotos (admin). Sem deploy;
    desligar fecha a página (404), a API e a seção da home imediatamente.
 
@@ -1522,6 +1525,84 @@ aparelho do visitante (o navegador envia só o vetor). A flag
 comando (`FACE_INDEX_CONFIRM`/`ARCHIVE_PUBLISH_CONFIRM`/`FACE_CONSENT_SEED_CONFIRM`),
 mais as quatro `S3_*` quando a mídia for remota (indexação). Recibos JSON em
 `data/face/reports/` e `data/archive/reports/` (nunca levam vetor nem bytes).
+
+## C244 — filtro "Pessoa pública" por reconhecimento facial no álbum
+
+A faceta `pessoa` do álbum (`/fotos?pessoa=<slug>`) e a linha "Quem aparece"
+deixam de sair do texto `catalog.people` da ficha: passam a listar **apenas as
+figuras públicas do catálogo curado** reconhecidas nas fotos pelo índice facial
+do C242. A identificação biométrica é permitida só para esse catálogo (aval
+jurídico registrado na decisão do dono de 2026-10-01); qualquer rosto fora dele
+continua anônimo e nunca é nomeado. Não há score em nenhuma superfície.
+
+A curadoria vive na collection `faceFigure` (admin-only, grupo Comunicação):
+uma linha por figura (nome público, slug = `?pessoa=<slug>`, `active`) com 1–8
+descritores de referência (retratos oficiais/arquivo, `source` de proveniência).
+O match é **derivado em leitura** contra o índice existente (nada é
+reprocessado: o vínculo não pode divergir do índice) e cacheado sob a tag
+`archivePhotos`. Sem a linha do aviso (`busca-selfie-indice`) o filtro fica
+**fechado** (fail-closed).
+
+### Abertura (ordem obrigatória)
+
+1. **Re-seed do aviso PRIMEIRO** — o texto do C242 foi atualizado para declarar
+   o filtro de figuras curadas; um enrollment antes disso deixaria o aviso
+   público em produção desatualizado:
+   ```bash
+   cd ~/stack
+   docker compose --profile maintenance run --rm \
+     -e TEQO_ENV=production -e FACE_CONSENT_SEED_CONFIRM=1 \
+     teqo-1313-migrate pnpm seed:face-consents --apply
+   ```
+   Confira o texto novo em `/fotos/encontre` (o parágrafo do catálogo curado).
+2. **Catálogo inicial** (58 figuras: as 6 nomeadas + o roster S30), sem
+   referências — figura sem referência nunca aparece:
+   ```bash
+   docker compose --profile maintenance run --rm \
+     -e TEQO_ENV=production -e FACE_FIGURE_SEED_CONFIRM=1 \
+     teqo-1313-migrate pnpm seed:face-figures --apply
+   ```
+3. **Enrolar as referências** de cada figura (1–3 retratos oficiais/arquivo por
+   pessoa; exatamente 1 rosto por imagem, senão o comando recusa):
+   ```bash
+   docker compose --profile maintenance run --rm \
+     -e TEQO_ENV=production -e FACE_FIGURE_CONFIRM=1 \
+     -v /srv/figuras:/app/figuras \
+     teqo-1313-migrate pnpm faces:enroll-figure \
+       --figure lula --name "Lula" --full-name "Luiz Inácio Lula da Silva" \
+       --source "retrato oficial 2023" --image /app/figuras/lula-1.jpg --apply
+   ```
+   `--replace` substitui as referências existentes; rodar de novo com a mesma
+   imagem não duplica (dedupe por vetor). Plan/dry-run é o default (sem engine).
+4. **Bust da tag** (o CLI roda fora do Next):
+   ```bash
+   curl -X POST "https://jorgesolla1313.com.br/api/revalidate?tag=archivePhotos" \
+     -H "x-revalidate-secret: $REVALIDATE_SECRET"
+   ```
+5. **Conferir** no site: a faceta lista só figuras com foto reconhecida; a
+   grade de `?pessoa=<slug>` e "Quem aparece" mostram só figuras curadas.
+   Nenhum terceiro é nomeado em nenhum estado.
+
+### Revisão de falsos positivos (por exceção)
+
+O limiar é o mesmo do C240 (0,45, conservador). Ao encontrar um falso positivo
+na revisão por exceção: **desative a figura** ou **remova a referência ruim** no
+admin (`Comunicação → Figuras públicas`; o hook revalida o álbum na hora) e
+registre o caso. Falso positivo é débito de curadoria, nunca dado.
+
+### Rollback
+
+Sem deploy: desative as figuras (checkbox `Ativa`) ou remova as referências no
+admin — o filtro esvazia imediatamente. A migration `add_face_figure` é
+aditiva; o rollback de código pode deixar a tabela (inofensiva). Desligar o
+álbum (`photoAlbum.published = false`) fecha tudo.
+
+### Guardas e recibos
+
+`--apply` do seed/enrollment exige `TEQO_ENV` casando o banco exato e a flag do
+comando (`FACE_FIGURE_SEED_CONFIRM`/`FACE_FIGURE_CONFIRM`). As imagens de
+referência são locais (nunca entram no repo nem no S3); recibos JSON em
+`data/face/reports/` sem vetor nem bytes.
 
 ## C230-followup — importação do Instagram para a Central de Conteúdos
 
