@@ -43,7 +43,8 @@ export const FACE_SEARCH_CONSENT_PARAGRAPHS = [
 
 export const FACE_INDEX_CONSENT_PARAGRAPHS = [
   'Aviso público sobre o índice de fotos: as fotos públicas aprovadas do acervo podem conter rostos de várias pessoas. Para que cada pessoa encontre as próprias fotos pela busca por selfie, o sistema mantém um índice biométrico anônimo — vetores matemáticos extraídos dos rostos presentes nessas fotos, sem nome, sem vínculo com cadastro de pessoas e sem qualquer identificação de quem aparece.',
-  'O índice serve apenas para localizar as fotos da própria pessoa que faz a busca. Ele nunca é usado para identificar, nomear ou listar terceiros, e nunca cruza os dados biométricos com contatos, lideranças ou apoiadores.',
+  'O índice serve para localizar fotos: encontrar as fotos da própria pessoa que faz a busca e alimentar o filtro “Pessoa pública” do álbum. Esse filtro identifica exclusivamente as figuras públicas do catálogo curado e aprovado do mandato, com aval jurídico registrado; qualquer rosto fora desse catálogo continua anônimo no índice, sem nome e sem vínculo com cadastro, e nunca é usado para identificar, nomear ou listar terceiros, nem cruza os dados biométricos com contatos, lideranças ou apoiadores.',
+  'O catálogo de figuras é curado e auditável: cada figura tem descritores de referência de retratos oficiais ou do arquivo do mandato, revisados por curadoria humana, e pode ser desativada a qualquer momento, deixando de aparecer no filtro.',
   'Qualquer pessoa pode retirar seu rosto do índice a qualquer momento, sem custo: use a opção “Minha presença” na página da busca e siga as instruções. A retirada apaga do índice as referências biométricas correspondentes, e o rosto deixa de ser encontrado.',
   'Para pedir a remoção de uma foto específica, use o canal indicado no álbum público. Fotos que não estejam aprovadas para o público não fazem parte do índice.',
 ]

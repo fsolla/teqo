@@ -57,4 +57,12 @@ describe('face consent texts', () => {
     expect(text).toMatch(/Minha presença/)
     expect(text).toMatch(/remoção de uma foto/i)
   })
+
+  it('declares the curated public-figure filter and its limits (C244)', () => {
+    const text = flatten(FACE_INDEX_CONSENT_TEXT)
+    expect(text).toMatch(/catálogo curado/i)
+    expect(text).toMatch(/aval jurídico/i)
+    expect(text).toMatch(/fora desse catálogo continua anônimo/i)
+    expect(text).toMatch(/nunca é usado para identificar, nomear ou listar terceiros/i)
+  })
 })
