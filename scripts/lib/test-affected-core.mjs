@@ -80,6 +80,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/dossieUnit.mjs',
   'scripts/lib/e2e-affected-manifest.mjs',
   'scripts/lib/faceConsentTexts.mjs',
+  'scripts/lib/faceFigureCatalogSeed.mjs',
+  'scripts/lib/faceFigurePlan.mjs',
   'scripts/lib/faceIndexPlan.mjs',
   'scripts/lib/flickrApi.mjs',
   'scripts/lib/flickrPlan.mjs',
