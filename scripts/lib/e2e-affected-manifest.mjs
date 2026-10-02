@@ -243,6 +243,8 @@ export const E2E_AFFECTED_MANIFEST = [
     // the C233 prefix above), the anonymous descriptor endpoint, the anonymous
     // photo-face index and the bounded-body/rate-limit owners it shares. The
     // migration makes every PR of this delivery high-risk (curated only).
+    // C244 — `faceIndex` now also feeds the album's curated-figure facet
+    // (`/fotos`), so a diff there wakes both specs.
     prefixes: [
       'src/app/(frontend)/api/fotos',
       'src/lib/faceSearch.ts',
@@ -252,7 +254,15 @@ export const E2E_AFFECTED_MANIFEST = [
       'src/utilities/campaignConsent.ts',
       'src/lib/campaignConsentKeys.ts',
     ],
-    specs: ['frontendFotosSelfie'],
+    specs: ['frontendFotos', 'frontendFotosSelfie'],
+  },
+  {
+    // C244 — the curated public figures of the album's `pessoa` facet: the
+    // figure catalog, the pure matcher and the collection that stores the
+    // curated references (the C233 entry above already maps
+    // `archivePhotoPublicCatalog`/`archivePhotoReads`).
+    prefixes: ['src/lib/faceFigureCatalog.ts', 'src/collections/FaceFigure.ts'],
+    specs: ['frontendFotos'],
   },
   {
     // C234 — the bounded streaming body reader extracted from the beacon: both
