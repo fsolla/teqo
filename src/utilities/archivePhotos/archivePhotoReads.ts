@@ -3,9 +3,11 @@ import 'server-only'
 import {
   toArchivePhotoPublicItem,
   type ArchivePhotoPublicItem,
+  type ArchivePhotoPublicPerson,
   type ArchivePhotoPublicSource,
 } from '@/lib/archivePhotoPublicCatalog'
 import { getCollectionListingTag } from '@/utilities/documents'
+import { loadApprovedPhotoFigureMap } from '@/utilities/faceIndex/faceFigureReads'
 import configPromise from '@payload-config'
 import { unstable_cache } from 'next/cache'
 import { getPayload } from 'payload'
@@ -54,11 +56,43 @@ const getCachedApprovedArchivePhotos = () =>
     tags: [getCollectionListingTag('archivePhoto')],
   })
 
+const toApprovedItems = (
+  docs: readonly ArchivePhotoPublicSource[],
+  figuresByPhoto?: ReadonlyMap<number, readonly ArchivePhotoPublicPerson[]>,
+): ArchivePhotoPublicItem[] =>
+  docs
+    .map((source) => {
+      if (!figuresByPhoto) return toArchivePhotoPublicItem(source)
+      return toArchivePhotoPublicItem({
+        ...source,
+        figures: figuresByPhoto.get(source.id) ?? [],
+      })
+    })
+    .filter((item): item is ArchivePhotoPublicItem => item !== null)
+
 /** Approved photos as serializable public view models, newest first. */
 export const getApprovedArchivePhotoItems = async (): Promise<ArchivePhotoPublicItem[]> =>
-  (await getCachedApprovedArchivePhotos()()).docs
-    .map((record) => toArchivePhotoPublicItem(record as ArchivePhotoPublicSource))
-    .filter((item): item is ArchivePhotoPublicItem => item !== null)
+  toApprovedItems((await getCachedApprovedArchivePhotos()()).docs)
+
+/**
+ * C244 — the same approved list, enriched with the curated public figures
+ * recognized in each photo by the facial layer (`loadApprovedPhotoFigureMap`).
+ * Only the album route uses this: the selfie endpoint and the media route stay
+ * on the plain read and never pay for the matching.
+ */
+export const getApprovedArchivePhotoAlbumItems = async (): Promise<ArchivePhotoPublicItem[]> => {
+  const [result, photoFigureMatches] = await Promise.all([
+    getCachedApprovedArchivePhotos()(),
+    loadApprovedPhotoFigureMap(),
+  ])
+
+  const figuresByPhoto = new Map<number, readonly ArchivePhotoPublicPerson[]>()
+  for (const match of photoFigureMatches) {
+    figuresByPhoto.set(match.photoId, match.figures)
+  }
+
+  return toApprovedItems(result.docs, figuresByPhoto)
+}
 
 /**
  * One approved photo by id (the overlay and the media gate). A draft, a

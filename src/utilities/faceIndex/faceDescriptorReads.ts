@@ -10,6 +10,7 @@ import {
   readFaceVector,
   type FaceDescriptorEntry,
 } from '@/lib/faceSearch'
+import { revalidateArchivePhotosListing } from '@/utilities/documents'
 
 /**
  * C242 — reads of the anonymous face index. The collection is admin-only and
@@ -154,5 +155,9 @@ export const deleteFaceDescriptorMatches = async ({
     overrideAccess: true,
   })
   invalidateFaceDescriptorIndex()
+  // C244 — the curated-figure map of the public album is derived from these
+  // rows and cached under the album tag: without this bust the person would
+  // keep being named in the facet after leaving the index.
+  revalidateArchivePhotosListing()
   return matchedIds.length
 }
