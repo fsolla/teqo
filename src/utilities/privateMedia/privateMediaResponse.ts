@@ -336,7 +336,7 @@ export const encodePrivateImageFile = async ({
  * constructor takes no stream, so the documented path is piping into the
  * instance and draining its output.
  */
-export const encodePrivateMediaImage = async ({
+const encodePrivateMediaImage = async ({
   media,
   staticDir,
   width,
