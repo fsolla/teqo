@@ -1667,6 +1667,79 @@ aditiva; o rollback de código pode deixar a tabela (inofensiva). Desligar o
 comando (`FACE_FIGURE_SEED_CONFIRM`/`FACE_FIGURE_CONFIRM`). As imagens de
 referência são locais (nunca entram no repo nem no S3); recibos JSON em
 `data/face/reports/` sem vetor nem bytes.
+## C246 — integridade do acervo no Garage (fotos quebradas)
+
+O comando `pnpm archive:integrity` varre os originais do acervo (`archivePhoto`):
+baixa **cada** objeto pelo mesmo caminho da rota pública e do índice facial (o SDK
+S3 valida o checksum na resposta) e força o decode com sharp. Objeto ausente é
+`ausente`; falha de leitura (checksum) ou arquivo que não decodifica é
+`corrompida` — o recibo nomeia cada uma com o motivo. A varredura é **read-only**,
+sai **1** enquanto houver mídia quebrada **pública** (linha `approved` quebrada —
+o critério de convergência; uma `draft` quebrada é registrada no recibo mas não
+bloqueia, senão o rebaixamento do `--apply` nunca convergiria) e sempre grava o
+recibo em `data/archive/reports/`.
+
+Com `--apply`, cada foto quebrada é recuperada do Flickr pelo `flickrId` (mesmo
+fallback `getSizes` da ingestão C231): o original baixado é decodificado para
+provar que serve, o objeto é substituído **na mesma chave** pelo caminho de
+escrita da própria collection (`payload.update` + `filePath`) — curadoria,
+metadados e `publicationStatus` intocados — e o recibo guarda a URL-fonte, os
+bytes e o sha256. Foto cuja fonte sumiu (ou não decodifica) **sai do público**
+(`approved → draft`) com registro; `removed` nunca é tocado. Rodar `--only` no
+canário primeiro:
+
+```bash
+# no homeserver:
+ssh homeserver
+cd ~/stack
+# 1) canário read-only nas fotos do achado (80/83) — não escreve:
+docker compose --profile maintenance run --rm \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:integrity --only 80,83
+# 2) reparo do canário (exige TEQO_ENV + confirmação; as 4 S3_* e FLICKR_API_KEY):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e ARCHIVE_INTEGRITY_CONFIRM=1 \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:integrity --apply --only 80,83
+# 3) conferir as duas URLs públicas respondendo 200 (antes do lote):
+#    https://jorgesolla1313.com.br/fotos/80/midia  e  /fotos/83/midia
+# 4) varredura completa (read-only; ~6,5k downloads no bucket local; sai 1 se achar):
+docker compose --profile maintenance run --rm \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:integrity
+# 5) reparo do que a varredura acusou (mesma linha com --apply):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e ARCHIVE_INTEGRITY_CONFIRM=1 \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:integrity --apply
+# 6) convergência: re-rodar a varredura; 0 pendências = aceite
+```
+
+Guardas: fora de teste o `--apply` exige `TEQO_ENV` casando o **nome exato** do
+banco (`teqo_staging`/`teqo_1313`), `ARCHIVE_INTEGRITY_CONFIRM=1` e
+`FLICKR_API_KEY`; alvo não-local exige as 4 `S3_*` **em qualquer modo** (sem S3 a
+varredura mediria o disco efêmero do container); `ALLOW_REMOTE_DB` é recusado.
+`--concurrency` (default 3) e `--limit`/`--only` são os canários; o recibo traz
+varridas/ok/ausentes/corrompidas/removidas, e no reparo recuperadas/
+irrecuperáveis/falhas. A varredura **não** conserta nada: só o `--apply` escreve.
+
+Depois de um `--apply` que rebaixou alguma foto, buste a tag pública em um
+processo que a possui (o write do CLI não revalida o servidor Next):
+
+```bash
+curl -X POST "https://jorgesolla1313.com.br/api/revalidate?tag=archivePhotos" \
+  -H "x-revalidate-secret: $REVALIDATE_SECRET"
+```
+
+Fotos reparadas que continuam `approved` voltam a servir sozinhas (mesma chave,
+rota `force-dynamic`) — e o índice facial reprocessa sozinho o que tiver
+marcador stale (`pnpm faces:index`). Uma foto rebaixada a `draft` **não** deve
+voltar em lote: o `pnpm archive:publish` aprova todo draft sem checar o objeto,
+então só rode o publish depois de uma varredura limpa (a foto rebaixada só sai
+de draft quando a fonte for recuperada e o operador decidir publicá-la).
+Rollback: sem migration nesta entrega; o comando nunca apaga objeto nem linha —
+uma foto rebaixada por engano volta a `approved` pela ficha no admin (com o
+canal de remoção configurado).
 
 ## C230-followup — importação do Instagram para a Central de Conteúdos
 

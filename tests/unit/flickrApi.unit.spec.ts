@@ -2,7 +2,12 @@
 
 import { describe, expect, it, vi } from 'vitest'
 
-import { FLICKR_PHOTO_EXTRAS, createFlickrClient } from '../../scripts/lib/flickrApi.mjs'
+import {
+  FLICKR_PHOTO_EXTRAS,
+  FlickrApiError,
+  createFlickrClient,
+  isFlickrSourceGone,
+} from '../../scripts/lib/flickrApi.mjs'
 
 // C231 — the Flickr client contract: request shape, pacing, transient retry,
 // named `stat=fail` refusals, the exif tolerance and the largest-size
@@ -170,5 +175,33 @@ describe('createFlickrClient (C231)', () => {
       }),
     )
     expect(await clientWith(onlyUndimensioned).getLargestSize('1')).toBeNull()
+  })
+})
+
+describe('isFlickrSourceGone (C246)', () => {
+  it('treats a photo-not-found refusal and an HTTP 404 as a gone source', () => {
+    expect(isFlickrSourceGone(new FlickrApiError('Flickr 1: Photo not found', { code: 1 }))).toBe(
+      true,
+    )
+    expect(isFlickrSourceGone(new FlickrApiError('Flickr 2: Photo not found', { code: 2 }))).toBe(
+      true,
+    )
+    expect(isFlickrSourceGone(new FlickrApiError('HTTP 404', { status: 404 }))).toBe(true)
+  })
+
+  it('never withdraws a photo for auth, outage, transient or unrelated errors', () => {
+    expect(
+      isFlickrSourceGone(new FlickrApiError('Flickr 100: Invalid API Key', { code: 100 })),
+    ).toBe(false)
+    expect(
+      isFlickrSourceGone(
+        new FlickrApiError('Flickr 105: Service currently unavailable', { code: 105 }),
+      ),
+    ).toBe(false)
+    expect(isFlickrSourceGone(new FlickrApiError('HTTP 403', { status: 403 }))).toBe(false)
+    expect(isFlickrSourceGone(new FlickrApiError('HTTP 429', { status: 429 }))).toBe(false)
+    expect(isFlickrSourceGone(new FlickrApiError('HTTP 500', { status: 500 }))).toBe(false)
+    expect(isFlickrSourceGone(new Error('getaddrinfo ENOTFOUND'))).toBe(false)
+    expect(isFlickrSourceGone(null)).toBe(false)
   })
 })

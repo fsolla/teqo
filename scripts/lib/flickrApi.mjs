@@ -24,7 +24,7 @@ const FLICKR_TIMEOUT_MS = 30_000
 const FLICKR_RETRY_ATTEMPTS = 4
 const FLICKR_RETRY_BASE_DELAY_MS = 1_000
 
-class FlickrApiError extends Error {
+export class FlickrApiError extends Error {
   /**
    * @param {string} message
    * @param {{ code?: string | number | null, status?: number | null }} [options]
@@ -44,6 +44,21 @@ const isRetryable = (error) => {
   }
   return true
 }
+
+/**
+ * C246 — a terminal refusal that says the SOURCE is gone: the Flickr
+ * "photo not found" `stat=fail` codes (1/2) or an HTTP 404. Auth/service
+ * failures (`stat=fail` 100/105, HTTP 401/403) and transient errors (429/5xx,
+ * network) are NOT a source verdict — the integrity repair keeps them as
+ * retryable instead of withdrawing photos because of a bad API key or an
+ * outage.
+ */
+const FLICKR_SOURCE_GONE_CODES = new Set([1, 2])
+
+export const isFlickrSourceGone = (error) =>
+  error instanceof FlickrApiError &&
+  (error.status === 404 ||
+    (error.status === null && FLICKR_SOURCE_GONE_CODES.has(Number(error.code))))
 
 /**
  * @param {{

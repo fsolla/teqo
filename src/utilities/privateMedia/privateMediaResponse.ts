@@ -13,10 +13,12 @@ import { Readable } from 'stream'
 import { pipeline } from 'stream/promises'
 
 import {
+  isPrivateMediaMissingError,
   PRIVATE_MEDIA_CACHE_CONTROL,
   privateMediaHeaders,
   type PrivateMediaRange,
 } from '@/lib/privateMedia'
+import { messageOf } from '@/utilities/media/ffmpeg'
 import { resolveS3StorageEnv } from '@/utilities/mediaStorage'
 
 /**
@@ -77,21 +79,8 @@ const privateMediaStorage = (): PrivateMediaStorage | null => {
   return cachedStorage
 }
 
-const isMissingObject = (error: unknown): boolean => {
-  if (!error || typeof error !== 'object') return false
-  const name = 'name' in error ? String(error.name) : ''
-  const code = 'Code' in error ? String(error.Code) : ''
-  const metadata =
-    '$metadata' in error && error.$metadata && typeof error.$metadata === 'object'
-      ? (error.$metadata as { httpStatusCode?: number })
-      : null
-  return (
-    name === 'NoSuchKey' ||
-    name === 'NotFound' ||
-    code === 'NoSuchKey' ||
-    metadata?.httpStatusCode === 404
-  )
-}
+/** Long edge of the decode probe — the same size the face index feeds the engine. */
+const INSPECTION_DECODE_MAX_EDGE = 1024
 
 /** Resolves the on-disk path of an artifact, refusing any traversal attempt. */
 const resolveLocalPath = (staticDir: string, filename: string): string => {
@@ -223,7 +212,7 @@ export const buildPrivateMediaResponse = async ({
       }),
     })
   } catch (error) {
-    if (isMissingObject(error) || (error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+    if (isPrivateMediaMissingError(error)) {
       return notFound()
     }
     throw error
@@ -299,7 +288,7 @@ export const buildPrivateMediaImageResponse = async ({
       }),
     })
   } catch (error) {
-    if (isMissingObject(error) || (error as NodeJS.ErrnoException)?.code === 'ENOENT') {
+    if (isPrivateMediaMissingError(error)) {
       return notFound()
     }
     throw error
@@ -341,4 +330,69 @@ export const downloadPrivateMediaToFile = async ({
     object.Body as unknown as NodeJS.ReadableStream,
     createWriteStream(destinationPath),
   )
+}
+
+export type PrivateMediaObjectInspection =
+  | { status: 'ok'; bytes: number }
+  | { status: 'missing' }
+  | { status: 'corrupt'; stage: 'download' | 'decode'; reason: string; bytes: number }
+
+/**
+ * C246 — read-only integrity probe of one stored object: it downloads the
+ * artifact through the SAME path the serving routes and the face index use
+ * (checksum validation of the S3 SDK included) and then forces a real decode of
+ * the image with sharp (the same `failOn: 'error'` decode the public grid runs).
+ * A missing object is classified as `missing`; every other read failure (a
+ * checksum mismatch, for one) is `corrupt` at the `download` stage; a file that
+ * downloads but does not decode is `corrupt` at the `decode` stage. Never
+ * throws: the caller owns the receipt.
+ *
+ * `destinationPath` is a caller-owned temp path (the sweep removes it per
+ * photo) — nothing here writes to the archive.
+ */
+export const inspectPrivateMediaObject = async ({
+  media,
+  staticDir,
+  destinationPath,
+}: {
+  media: PrivateMediaFile
+  staticDir: string
+  destinationPath: string
+}): Promise<PrivateMediaObjectInspection> => {
+  if (!media.filename) return { status: 'missing' }
+
+  try {
+    await downloadPrivateMediaToFile({ media, staticDir, destinationPath })
+  } catch (error) {
+    if (isPrivateMediaMissingError(error)) return { status: 'missing' }
+    return {
+      status: 'corrupt',
+      stage: 'download',
+      reason: messageOf(error, 'erro desconhecido'),
+      bytes: 0,
+    }
+  }
+
+  let bytes = 0
+  try {
+    bytes = (await stat(destinationPath)).size
+  } catch {
+    // The decode below still classifies the failure; bytes stay 0.
+  }
+
+  try {
+    await sharp(destinationPath, { failOn: 'error' })
+      .rotate()
+      .resize({ width: INSPECTION_DECODE_MAX_EDGE, withoutEnlargement: true })
+      .toBuffer()
+  } catch (error) {
+    return {
+      status: 'corrupt',
+      stage: 'decode',
+      reason: messageOf(error, 'erro desconhecido'),
+      bytes,
+    }
+  }
+
+  return { status: 'ok', bytes }
 }
