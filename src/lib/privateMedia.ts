@@ -71,6 +71,33 @@ export const isPrivateMediaMissingError = (error: unknown): boolean => {
   )
 }
 
+/**
+ * C248 — AVIF negotiation for the stored grade thumbnail. The token must be
+ * EXPLICIT (`image/avif`) with a positive quality: a missing header, a
+ * wildcard or `image/jpeg` stays on the JPEG fallback, so every client that
+ * never opted in (curl, the e2e API request context, a browser without the
+ * decoder) keeps the exact answer it has today. Pure, so the route and the
+ * unit spec share the classification.
+ */
+export const acceptsAvif = (acceptHeader: string | null | undefined): boolean => {
+  if (typeof acceptHeader !== 'string') return false
+  for (const part of acceptHeader.split(',')) {
+    const [rawType, ...params] = part.split(';')
+    if (rawType.trim().toLowerCase() !== 'image/avif') continue
+
+    let quality = 1
+    for (const param of params) {
+      const [rawKey, rawValue] = param.split('=')
+      if (rawKey?.trim().toLowerCase() !== 'q') continue
+      const parsed = Number(rawValue)
+      // A malformed weight must never arm AVIF: only a real positive q does.
+      quality = Number.isFinite(parsed) ? parsed : 0
+    }
+    return quality > 0
+  }
+  return false
+}
+
 const isInlineSafe = (mimeType: unknown): mimeType is string =>
   typeof mimeType === 'string' &&
   (PRIVATE_MEDIA_INLINE_MIME_TYPES as readonly string[]).includes(mimeType)

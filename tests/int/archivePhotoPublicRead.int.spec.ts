@@ -14,8 +14,16 @@ vi.mock('next/cache', () => ({
   unstable_cache: (fn: unknown) => fn,
 }))
 
+vi.mock('next/server', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('next/server')>()
+  // C248 — the route heals the grade with `after()`, which requires a request
+  // scope; the generation itself is exercised in its own spec.
+  return { ...actual, after: () => undefined }
+})
+
 import { GET as getArchivePhotoMedia } from '@/app/(frontend)/fotos/[id]/midia/route'
 import { ARCHIVE_PHOTO_SLUG, type ArchivePhotoImport } from '@/lib/archivePhoto'
+import { archivePhotoGradeFilename } from '@/lib/archivePhotoThumbnail'
 import config from '@/payload.config'
 import {
   getApprovedArchivePhotoById,
@@ -23,6 +31,7 @@ import {
   hasPublishedArchivePhotos,
 } from '@/utilities/archivePhotos/archivePhotoReads'
 import { ingestArchivePhoto } from '@/utilities/flickr/archivePhotoIngest'
+import { resolvePrivateMediaStaticDir } from '@/utilities/privateMedia/privateMediaResponse'
 
 import { ARCHIVE_PHOTO_JPEG_BYTES } from '../helpers/archivePhotoFixture'
 import { installCampaignFixtures } from '../helpers/campaignFixtures'
@@ -129,7 +138,23 @@ describe('public photo album reads (C233)', () => {
   })
 
   afterAll(async () => {
+    const staticDir = resolvePrivateMediaStaticDir(payload, ARCHIVE_PHOTO_SLUG)
     for (const flickrId of createdFlickrIds) {
+      // The approval hook warms the C248 grade as a sibling object; the delete
+      // below removes the original, so the derived file is cleaned here.
+      const photo = await payload.find({
+        collection: ARCHIVE_PHOTO_SLUG,
+        where: { flickrId: { equals: flickrId } },
+        depth: 0,
+        limit: 1,
+        overrideAccess: true,
+      })
+      const filename = photo.docs[0]?.filename
+      if (filename) {
+        await rm(join(staticDir, archivePhotoGradeFilename(filename)), { force: true }).catch(
+          () => undefined,
+        )
+      }
       await payload.delete({
         collection: ARCHIVE_PHOTO_SLUG,
         where: { flickrId: { equals: flickrId } },
@@ -302,6 +327,7 @@ describe('public photo album reads (C233)', () => {
     expect(thumbnail.status).toBe(200)
     expect(thumbnail.headers.get('Content-Type')).toBe('image/jpeg')
     expect(thumbnail.headers.get('X-Robots-Tag')).toBe('noindex')
+    expect(thumbnail.headers.get('Vary')).toBe('Accept')
 
     const download = await getArchivePhotoMedia(
       new Request(`http://localhost/fotos/${approved.id}/midia?download=1`),

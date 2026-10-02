@@ -1742,6 +1742,63 @@ Rollback: sem migration nesta entrega; o comando nunca apaga objeto nem linha �
 uma foto rebaixada por engano volta a `approved` pela ficha no admin (com o
 canal de remoção configurado).
 
+## C248 — miniaturas AVIF do álbum público (backfill das derivadas)
+
+O comando `pnpm archive:thumbnails` gera a miniatura AVIF 720px q60 de cada foto
+**aprovada** do acervo como um objeto-irmão determinístico no mesmo store
+privado do original (`flickr-<id>.<ext>` → `flickr-<id>-grade.avif`); nada de
+banco, nada de original alterado. A rota `/fotos/<id>/midia?tamanho=grade`
+serve a derivada direto quando o cliente manda `Accept: image/avif`; sem o
+token, ou com a derivada ausente/ilegível, ela responde o JPEG on-the-fly de
+sempre e regenera a derivada em background (`after()`). A aprovação de uma foto
+no admin também aquece a derivada (best-effort; falha nunca bloqueia). O lote
+cobre o que foi aprovado antes disso e o que o hook perder (CLI em lote,
+restart).
+
+```bash
+# no homeserver:
+ssh homeserver
+cd ~/stack
+# 1) plano read-only: elegíveis do álbum aprovado e quantas derivadas faltam
+docker compose --profile maintenance run --rm \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:thumbnails
+# 2) canário (exige TEQO_ENV + confirmação; as 4 S3_* no alvo):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e ARCHIVE_THUMBNAILS_CONFIRM=1 \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:thumbnails --apply --limit 20
+# 3) lote completo (encode AVIF local; ~6,5k fotos):
+docker compose --profile maintenance run --rm \
+  -e TEQO_ENV=production -e ARCHIVE_THUMBNAILS_CONFIRM=1 \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:thumbnails --apply
+# 4) aceite: cobertura 100% (read-only; sai 1 se faltar alguma):
+docker compose --profile maintenance run --rm \
+  -v /srv/archive-reports:/app/data/archive \
+  teqo-1313-migrate pnpm archive:thumbnails --verify
+# 5) conferir uma resposta real negociada (espera content-type image/avif):
+curl -sD - -o /dev/null -H 'Accept: image/avif' \
+  "https://jorgesolla1313.com.br/fotos/<id>/midia?tamanho=grade"
+```
+
+Guardas: fora de teste o `--apply` exige `TEQO_ENV` casando o **nome exato** do
+banco (`teqo_staging`/`teqo_1313`), `ARCHIVE_THUMBNAILS_CONFIRM=1` e — em alvo
+não-local — as 4 `S3_*` (o original vive no bucket); `ALLOW_REMOTE_DB` é
+recusado. O plano e o `--verify` são read-only. Reexecutar converge: derivada
+existente é pulada por HEAD; original ausente/ilegível vira "pulada" com o
+motivo no recibo (a C246 recupera o original e um novo `--apply` regenera);
+falha de rede/upload fica registrada como falha e retenta na próxima execução.
+**Serialize com `archive:catalog` e `archive:integrity`** (C245/C246 tocam os
+mesmos originais) e rode em janela própria. `--concurrency` default 2 (o mesmo
+teto do processo web), `--only`/`--limit` são os canários; recibos em
+`data/archive/reports/`.
+
+Nada a revalidar depois do lote: a rota descobre a derivada por chave
+determinística a cada request (`force-dynamic`, `no-store`). Rollback: sem
+migration nesta entrega; basta remover os objetos `flickr-<id>-grade.avif` do
+bucket (a rota volta ao resize on-the-fly sozinha) — o original nunca é tocado.
+
 ## C230-followup — importação do Instagram para a Central de Conteúdos
 
 O comando `pnpm content:instagram:import` traz as mídias recentes do perfil

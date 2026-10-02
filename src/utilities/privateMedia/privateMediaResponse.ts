@@ -2,9 +2,9 @@ import 'server-only'
 
 import type { Config } from '@/payload-types'
 
-import { GetObjectCommand, HeadObjectCommand, S3Client } from '@aws-sdk/client-s3'
+import { GetObjectCommand, HeadObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3'
 import { createReadStream, createWriteStream } from 'fs'
-import { stat } from 'fs/promises'
+import { mkdir, rename, rm, stat, writeFile } from 'fs/promises'
 import path from 'path'
 import type { Payload } from 'payload'
 import { getRangeRequestInfo } from 'payload/internal'
@@ -170,6 +170,77 @@ const openPrivateObject = async ({
     : openLocalObject({ staticDir, filename, rangeHeader })
 }
 
+/**
+ * C248 — existence probe of one private object in whichever store is
+ * configured (S3 HEAD or local `stat`). Never throws: an unreachable store
+ * reads as "not there", so the caller falls back to the on-the-fly path and
+ * the generation is retried later; the worst case is redundant, idempotent
+ * work, never a broken response.
+ */
+export const privateMediaObjectExists = async ({
+  filename,
+  staticDir,
+}: {
+  filename: string
+  staticDir: string
+}): Promise<boolean> => {
+  try {
+    const storage = privateMediaStorage()
+    if (storage) {
+      await storage.client.send(new HeadObjectCommand({ Bucket: storage.bucket, Key: filename }))
+      return true
+    }
+
+    await stat(resolveLocalPath(staticDir, filename))
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * C248 — writes one derived object to whichever store is configured. On the
+ * local disk the bytes land through a same-directory temp file + rename, so a
+ * crash never leaves a half-written artifact at the canonical key; on S3 the
+ * PUT is atomic by contract. The key and the MIME ride explicitly — there is
+ * no upload row behind a derived object.
+ */
+export const writePrivateObject = async ({
+  filename,
+  staticDir,
+  data,
+  mimeType,
+}: {
+  filename: string
+  staticDir: string
+  data: Buffer
+  mimeType: string
+}): Promise<void> => {
+  const storage = privateMediaStorage()
+  if (storage) {
+    await storage.client.send(
+      new PutObjectCommand({
+        Bucket: storage.bucket,
+        Key: filename,
+        Body: data,
+        ContentType: mimeType,
+      }),
+    )
+    return
+  }
+
+  const filePath = resolveLocalPath(staticDir, filename)
+  await mkdir(path.dirname(filePath), { recursive: true })
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`
+  try {
+    await writeFile(tempPath, data)
+    await rename(tempPath, filePath)
+  } catch (error) {
+    await rm(tempPath, { force: true }).catch(() => undefined)
+    throw error
+  }
+}
+
 const notFound = (): Response =>
   new Response(null, { status: 404, headers: { 'Cache-Control': PRIVATE_MEDIA_CACHE_CONTROL } })
 
@@ -219,6 +290,86 @@ export const buildPrivateMediaResponse = async ({
   }
 }
 
+export type PrivateMediaImageFormat = 'jpeg' | 'avif'
+
+/** The resize the public grid has always served on the fly (C233). */
+const FALLBACK_JPEG_QUALITY = 80
+
+/**
+ * The shared sharp chain: `failOn: 'error'` keeps a truncated source from
+ * becoming a half-decoded image and `rotate()` honors the EXIF orientation the
+ * grid always did. `source` is the local input path, or `undefined` for the
+ * stream path (the caller pipes into the returned transformer).
+ */
+const imageEncoder = (
+  source: string | undefined,
+  { width, format, quality }: { width: number; format: PrivateMediaImageFormat; quality: number },
+): sharp.Sharp => {
+  // sharp rejects `sharp(undefined, options)`; the stream path omits the input
+  // entirely (the caller pipes into the returned transformer).
+  const transformer = (source ? sharp(source, { failOn: 'error' }) : sharp({ failOn: 'error' }))
+    .rotate()
+    .resize({ width, withoutEnlargement: true })
+  return format === 'avif' ? transformer.avif({ quality }) : transformer.jpeg({ quality })
+}
+
+/**
+ * C248 — encodes one already-downloaded local image (the stored grade
+ * generation). The temp file the caller owns is what tells a missing object
+ * from a corrupt one, so this side is only the decode+encode.
+ */
+export const encodePrivateImageFile = async ({
+  inputPath,
+  width,
+  format,
+  quality,
+}: {
+  inputPath: string
+  width: number
+  format: PrivateMediaImageFormat
+  quality: number
+}): Promise<Buffer> => imageEncoder(inputPath, { width, format, quality }).toBuffer()
+
+/**
+ * C233/C248 — encodes one image straight from the private store (the public
+ * grid's on-the-fly path). The stream never becomes a temp file: sharp's
+ * constructor takes no stream, so the documented path is piping into the
+ * instance and draining its output.
+ */
+export const encodePrivateMediaImage = async ({
+  media,
+  staticDir,
+  width,
+  format,
+  quality,
+}: {
+  media: PrivateMediaFile
+  staticDir: string
+  width: number
+  format: PrivateMediaImageFormat
+  quality: number
+}): Promise<Buffer> => {
+  const filename = media.filename
+  if (!filename) throw new Error('Mídia privada sem nome de arquivo.')
+
+  const opened = await openPrivateObject({ filename, staticDir, rangeHeader: null })
+  if (!(opened.body instanceof Readable)) {
+    throw new Error(`Objeto privado sem stream: ${filename}`)
+  }
+
+  const encoded = imageEncoder(undefined, { width, format, quality })
+  const source = opened.body
+  const resized = new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = []
+    encoded.on('data', (chunk: Buffer) => chunks.push(chunk))
+    encoded.on('end', () => resolve(Buffer.concat(chunks)))
+    encoded.on('error', reject)
+    source.on('error', reject)
+  })
+  source.pipe(encoded)
+  return resized
+}
+
 /**
  * C233 — one image artifact, optionally resized for a public grid. With no
  * `width` it delegates to `buildPrivateMediaResponse` (range, stored MIME,
@@ -256,27 +407,13 @@ export const buildPrivateMediaImageResponse = async ({
   if (!filename) return notFound()
 
   try {
-    const opened = await openPrivateObject({ filename, staticDir, rangeHeader: null })
-    if (!(opened.body instanceof Readable)) {
-      throw new Error(`Objeto privado sem stream: ${filename}`)
-    }
-
-    // sharp's constructor takes no stream; the documented stream path is
-    // piping into the instance and draining its output.
-    const transformer = sharp({ failOn: 'error' })
-      .rotate()
-      .resize({ width, withoutEnlargement: true })
-      .jpeg({ quality: 80 })
-    const source = opened.body
-    const resized = new Promise<Buffer>((resolve, reject) => {
-      const chunks: Buffer[] = []
-      transformer.on('data', (chunk: Buffer) => chunks.push(chunk))
-      transformer.on('end', () => resolve(Buffer.concat(chunks)))
-      transformer.on('error', reject)
-      source.on('error', reject)
+    const image = await encodePrivateMediaImage({
+      media,
+      staticDir,
+      width,
+      format: 'jpeg',
+      quality: FALLBACK_JPEG_QUALITY,
     })
-    source.pipe(transformer)
-    const image = await resized
 
     return new Response(new Uint8Array(image), {
       status: 200,

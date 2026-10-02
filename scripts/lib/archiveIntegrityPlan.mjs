@@ -1,10 +1,13 @@
 /**
  * C246 — pure planning/reporting of the photo-archive integrity sweep: the argv
- * parser, the bounded-concurrency map, the scan/repair summaries and the human
- * lines + JSON receipt. No I/O of its own: the inspector, the Flickr client and
- * the Payload writes are injected, so the unit spec drives everything with fakes.
+ * parser, the scan/repair summaries and the human lines + JSON receipt. No I/O
+ * of its own: the inspector, the Flickr client and the Payload writes are
+ * injected, so the unit spec drives everything with fakes. The bounded map that
+ * used to live here moved to `cli.mjs` when the C248 backfill became its second
+ * consumer.
  */
 
+import { parseIdList } from './cli.mjs'
 import { formatArchiveBytes } from './flickrPlan.mjs'
 
 const USAGE =
@@ -22,26 +25,7 @@ export const archiveIntegrityReportStamp = (runAt) => String(runAt).replace(/[:.
  * @param {string} value
  * @returns {number[]}
  */
-export const parseArchiveIntegrityOnly = (value) => {
-  const text = String(value ?? '').trim()
-  if (text === '')
-    throw new Error(`--only vazio — informe ao menos um id (ex.: --only 80,83) — ${USAGE}.`)
-  const ids = []
-  for (const part of text.split(',')) {
-    const item = part.trim()
-    if (!/^\d+$/.test(item)) {
-      throw new Error(
-        `--only espera ids numéricos separados por vírgula (recebi "${value}") — ${USAGE}.`,
-      )
-    }
-    const id = Number(item)
-    if (!Number.isSafeInteger(id) || id < 1) {
-      throw new Error(`--only recebeu um id fora do intervalo: "${item}" — ${USAGE}.`)
-    }
-    if (!ids.includes(id)) ids.push(id)
-  }
-  return ids
-}
+export const parseArchiveIntegrityOnly = (value) => parseIdList({ value, usage: USAGE })
 
 /**
  * `pnpm archive:integrity` argv parser — pure, so the unit spec pins it (the
@@ -90,36 +74,6 @@ export const parseArchiveIntegrityCliArgs = (argv = process.argv.slice(2)) => {
     throw new Error('--out não pode escapar do diretório do repo (sem "..").')
   }
   return options
-}
-
-/**
- * Bounded-concurrency map that preserves input order. The sweep downloads and
- * decodes 6k+ photos, so unbounded `Promise.all` would be reckless; the pool
- * keeps at most `concurrency` workers alive and returns the results in the
- * same order as the input (receipts stay deterministic).
- *
- * @template T, R
- * @param {readonly T[]} items
- * @param {number} concurrency
- * @param {(item: T, index: number) => Promise<R>} worker
- * @returns {Promise<R[]>}
- */
-export const mapWithConcurrency = async (items, concurrency, worker) => {
-  const results = new Array(items.length)
-  const size = Math.max(1, Math.min(Math.trunc(Number(concurrency)) || 1, items.length))
-  let next = 0
-
-  const runner = async () => {
-    for (;;) {
-      const index = next
-      next += 1
-      if (index >= items.length) return
-      results[index] = await worker(items[index], index)
-    }
-  }
-
-  await Promise.all(Array.from({ length: size }, runner))
-  return results
 }
 
 /**

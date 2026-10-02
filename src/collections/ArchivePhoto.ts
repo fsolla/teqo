@@ -25,6 +25,7 @@ import {
   isArchivePhotoRemovalChannelUrl,
 } from '@/lib/archivePhotoCatalog'
 import { SPEECH_TOPICS } from '@/lib/speechFacets'
+import { ensureArchivePhotoGrade } from '@/utilities/archivePhotos/archivePhotoThumbnails'
 import { canReadArchivePhoto, payloadAdminOnly } from '@/utilities/campaignAccess'
 import { revalidateArchivePhotosListing } from '@/utilities/documents'
 import { purgeFaceDescriptorsForPhoto } from '@/utilities/faceIndex/faceDescriptorIndex'
@@ -295,6 +296,26 @@ const revalidateArchivePhotosListingAfterDelete: CollectionAfterDeleteHook = ({ 
 }
 
 /**
+ * C248 — the approval seam: a photo that ENTERS `approved` gets its stored
+ * grade warmed best-effort. Fire-and-forget by design — the encode is not part
+ * of the publication (a failure never blocks the approval) and the route's
+ * lazy heal covers whatever this loses (a CLI approving in batch exits before
+ * the promise settles, a restart, a transient store error). Every other write
+ * (cataloguing, face index, C246 repair) keeps the status, so it never
+ * triggers a regeneration.
+ */
+const warmArchivePhotoGradeAfterChange: CollectionAfterChangeHook = ({ doc, previousDoc, req }) => {
+  if (
+    doc.publicationStatus === 'approved' &&
+    previousDoc?.publicationStatus !== 'approved' &&
+    doc.filename
+  ) {
+    void ensureArchivePhotoGrade(req.payload, { filename: doc.filename }).catch(() => undefined)
+  }
+  return doc
+}
+
+/**
  * C242 — a photo that stops being `approved` cannot keep answering the selfie
  * search: the anonymous descriptor rows die with the public status (and on
  * deletion), the same fail-closed spirit of the C233 read. The FK cascade
@@ -376,7 +397,11 @@ export const ArchivePhoto: CollectionConfig = {
   },
   hooks: {
     beforeValidate: [deriveArchivePhotoCatalogIndex, requireRemovalChannelForApproval],
-    afterChange: [revalidateArchivePhotosListingAfterChange, purgeFaceDescriptorsAfterChange],
+    afterChange: [
+      revalidateArchivePhotosListingAfterChange,
+      purgeFaceDescriptorsAfterChange,
+      warmArchivePhotoGradeAfterChange,
+    ],
     afterDelete: [revalidateArchivePhotosListingAfterDelete, purgeFaceDescriptorsAfterDelete],
   },
   fields: [

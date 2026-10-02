@@ -356,7 +356,12 @@ test.describe('Frontend Álbum de Fotos (C233)', () => {
       `${BASE_URL}/fotos/${approvedFeira}/midia?tamanho=grade`,
     )
     expect(thumbnailResponse.status()).toBe(200)
+    // The API request context sends `Accept: */*` — never an explicit
+    // `image/avif` — so the JPEG fallback is the deterministic answer here
+    // (C248); `Vary: Accept` is the negotiation contract pinned.
     expect(thumbnailResponse.headers()['content-type']).toBe('image/jpeg')
+    // Next merges its own RSC/router tokens into `Vary`; ours must be there.
+    expect(thumbnailResponse.headers()['vary']).toContain('Accept')
     expect(thumbnailResponse.headers()['x-robots-tag']).toBe('noindex')
     expect(thumbnailResponse.headers()['cache-control']).toContain('no-store')
 
