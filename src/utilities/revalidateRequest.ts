@@ -8,6 +8,15 @@ export const REVALIDATE_POSTS_TAG = 'posts' as const
 export const REVALIDATE_PRIVACY_POLICY_CACHE_TAG = getGlobalCacheTag('privacy-policy')
 
 /**
+ * C247 — the `photoAlbum` global's tag (`/fotos`, `/fotos/encontre` and the
+ * home section cache under it). The ops CLI (`pnpm ops:global`) writes the
+ * global outside the deployed runtime, where the `afterChange` hook's
+ * `revalidateTag` cannot reach the live cache: it busts the tag through this
+ * endpoint. Derived from the same owner the global hook busts.
+ */
+export const REVALIDATE_PHOTO_ALBUM_CACHE_TAG = getGlobalCacheTag('photoAlbum')
+
+/**
  * C233 — the archive photos listing tag the public album (`/fotos`) caches
  * under. Derived from the same owner the collection hook busts, so the runbook
  * tag and the code can never drift.
@@ -32,6 +41,7 @@ export const REVALIDATE_SOCIAL_FEED_TAG = 'social-feed' as const
 const ALLOWED_REVALIDATE_TAGS = [
   REVALIDATE_POSTS_TAG,
   REVALIDATE_PRIVACY_POLICY_CACHE_TAG,
+  REVALIDATE_PHOTO_ALBUM_CACHE_TAG,
   ELECTION_TSE_CACHE_TAG,
   MUNICIPALITY_CATALOG_CACHE_TAG,
   REVALIDATE_SOCIAL_FEED_TAG,

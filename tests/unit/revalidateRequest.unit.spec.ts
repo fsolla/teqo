@@ -6,6 +6,7 @@ import { getGlobalCacheTag } from '@/utilities/globals'
 import { MUNICIPALITY_CATALOG_CACHE_TAG } from '@/utilities/municipality/municipalityCatalogCache'
 import {
   REVALIDATE_CONTENT_PIECES_TAG,
+  REVALIDATE_PHOTO_ALBUM_CACHE_TAG,
   REVALIDATE_POSTS_TAG,
   REVALIDATE_PRIVACY_POLICY_CACHE_TAG,
   resolveRevalidateTag,
@@ -37,6 +38,11 @@ describe('resolveRevalidateTag', () => {
       ok: true,
       tag: REVALIDATE_CONTENT_PIECES_TAG,
     })
+    // C247 — the ops CLI busts the photo album global it wrote outside Next.
+    expect(resolveRevalidateTag(REVALIDATE_PHOTO_ALBUM_CACHE_TAG, null)).toEqual({
+      ok: true,
+      tag: REVALIDATE_PHOTO_ALBUM_CACHE_TAG,
+    })
   })
 
   it('prefers query tag over body tag', () => {
@@ -58,5 +64,9 @@ describe('resolveRevalidateTag', () => {
 
   it('maps privacy-policy global slug to the shared cache tag helper', () => {
     expect(REVALIDATE_PRIVACY_POLICY_CACHE_TAG).toBe(getGlobalCacheTag('privacy-policy'))
+  })
+
+  it('maps the photo album global slug to the shared cache tag helper (C247)', () => {
+    expect(REVALIDATE_PHOTO_ALBUM_CACHE_TAG).toBe(getGlobalCacheTag('photoAlbum'))
   })
 })

@@ -96,6 +96,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/markdown-ansi.mjs',
   'scripts/lib/mediaBinaries.mjs',
   'scripts/lib/mediaEndpoint.mjs',
+  'scripts/lib/opsGlobal.mjs',
   'scripts/lib/plansOnlyClosesGuard.mjs',
   'scripts/lib/playwright-e2e-args.mjs',
   'scripts/lib/portalTransparenciaEmendas.mjs',

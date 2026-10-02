@@ -91,6 +91,8 @@ next-env.d.ts
 # C232 — photo-archive cataloguing receipts (pnpm archive:catalog)
 /data/archive/
 /data/face/
+# C247 — public-global ops receipts (pnpm ops:global)
+/data/ops-global/
 # Solla × Ceuci report HTML cache (scripts/build-solla-ceuci-salvador-report.mjs)
 /data/solla-ceuci-salvador/
 
