@@ -50,6 +50,39 @@ describe('summarizeArchivePublishResults', () => {
     expect(summary.failed).toBe(1)
     expect(summary.failures).toEqual([{ photoId: 3, error: 'canal ausente' }])
   })
+
+  it('keeps a preflight skip out of the failures and names its stage', () => {
+    const summary = summarizeArchivePublishResults([
+      { photoId: 1, status: 'approved' },
+      { photoId: 4, status: 'skippedBroken', stage: 'missing', reason: 'objeto ausente' },
+      { photoId: 5, status: 'skippedBroken', stage: 'decode', reason: 'Input buffer contains' },
+      { photoId: 6, status: 'failed', error: 'canal ausente' },
+    ])
+
+    expect(summary.approved).toBe(1)
+    expect(summary.failed).toBe(1)
+    expect(summary.failures).toEqual([{ photoId: 6, error: 'canal ausente' }])
+    expect(summary.skippedBroken).toEqual([
+      { photoId: 4, stage: 'missing', reason: 'objeto ausente' },
+      { photoId: 5, stage: 'decode', reason: 'Input buffer contains' },
+    ])
+    expect(summary.skippedBrokenCount).toBe(2)
+  })
+
+  it('treats the plan-mode eligible census and the download stage honestly', () => {
+    const summary = summarizeArchivePublishResults([
+      { photoId: 1, status: 'eligible' },
+      { photoId: 2, status: 'skippedBroken', stage: 'download', reason: 'checksum divergente' },
+    ])
+
+    expect(summary.approved).toBe(0)
+    expect(summary.failed).toBe(0)
+    expect(summary.failures).toEqual([])
+    expect(summary.skippedBroken).toEqual([
+      { photoId: 2, stage: 'download', reason: 'checksum divergente' },
+    ])
+    expect(summary.skippedBrokenCount).toBe(1)
+  })
 })
 
 describe('formatting', () => {
@@ -63,7 +96,7 @@ describe('formatting', () => {
       summary: { approved: 0, failed: 0, failures: [] },
     }).join('\n')
     expect(plan).toContain('modo: plan')
-    expect(plan).toContain('drafts elegíveis: 6492')
+    expect(plan).toContain('fila: 6492 de 6492 draft(s)')
 
     const apply = formatArchivePublishReport({
       mode: 'apply',
@@ -73,5 +106,39 @@ describe('formatting', () => {
     }).join('\n')
     expect(apply).toContain('aprovadas: 2 | falharam: 1')
     expect(apply).toContain('✗ foto 7: sem arquivo')
+  })
+
+  it('names every skipped broken draft in the receipt lines (C249)', () => {
+    const apply = formatArchivePublishReport({
+      mode: 'apply',
+      target: 'host/db',
+      queue: { totalDrafts: 10, items: 4 },
+      summary: {
+        approved: 2,
+        failed: 0,
+        failures: [],
+        skippedBroken: [
+          { photoId: 8, stage: 'missing', reason: 'objeto ausente' },
+          { photoId: 9, stage: 'decode', reason: 'Input buffer contains unsupported image format' },
+        ],
+        skippedBrokenCount: 2,
+      },
+    }).join('\n')
+    expect(apply).toContain('aprovadas: 2 | falharam: 0 | puladas (quebradas): 2')
+    expect(apply).toContain('! foto 8 fora do lote (missing): objeto ausente')
+    expect(apply).toContain('! foto 9 fora do lote (decode): Input buffer contains')
+
+    const plan = formatArchivePublishReport({
+      mode: 'plan',
+      target: 'host/db',
+      queue: { totalDrafts: 10, items: 4 },
+      summary: {
+        skippedBroken: [{ photoId: 8, stage: 'missing', reason: 'objeto ausente' }],
+        skippedBrokenCount: 1,
+      },
+    }).join('\n')
+    expect(plan).toContain('drafts quebrados (fora do lote): 1')
+    expect(plan).toContain('! foto 8 fora do lote (missing): objeto ausente')
+    expect(plan).not.toContain('aprovadas:')
   })
 })
