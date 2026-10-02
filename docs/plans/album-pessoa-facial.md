@@ -1,8 +1,9 @@
 # C244 — Filtro "Pessoa pública" por reconhecimento facial no álbum
 
 Status: rascunho
-Atualizado em: 2026-10-01
+Atualizado em: 2026-10-02
 Issue: #1416
+Implementação: docs/plans/album-pessoa-facial-impl.md
 Priority: P1
 Impeccable: B — muda a origem da faceta/card que já existem em `/fotos` (sem tela nova)
 Design UI: N/A — a faceta e a linha "Quem aparece" já foram desenhadas no C233; muda a origem do dado
