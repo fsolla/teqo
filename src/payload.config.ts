@@ -223,6 +223,15 @@ export default buildConfig({
               region: mediaStorage.region,
               endpoint: mediaStorage.endpoint,
               forcePathStyle: true,
+              // C246-ops (2026-10-02): Garage stores a WRONG
+              // `x-amz-checksum-crc32` for multipart uploads (the storage-s3
+              // adapter switches to multipart above 50 MB), so every GET of a
+              // >50 MB object failed the SDK's response validation — the two
+              // archive originals affected were 54 MB panoramas. WHEN_REQUIRED
+              // stops the SDK from attaching upload checksums; reads still
+              // validate whatever checksum an object has and the integrity
+              // sweep is the honest corruption check (decode included).
+              requestChecksumCalculation: 'WHEN_REQUIRED',
             },
           }),
         ]

@@ -1740,6 +1740,17 @@ O download do original no reparo tem teto de **15 min** — um original grande
 (~50 MB, ex. panorâmica 7952px) leva minutos no link lento da casa; falha de
 download é `failed` retentável, nunca rebaixamento.
 
+**Originais >50 MB e o checksum do Garage (incidente 2026-10-02):** o adapter
+`storage-s3` sobe arquivos grandes via multipart e o Garage gravava um
+`x-amz-checksum-crc32` que não bate com o corpo — todo GET do objeto falhava na
+validação do SDK (500 no proxy público), mesmo com o conteúdo correto. O client
+do plugin ficou com `requestChecksumCalculation: 'WHEN_REQUIRED'` (não anexa
+checksum de upload; a leitura segue validando o que o objeto tiver). Se um
+objeto legado aparecer com esse sintoma (`checksum mismatch` no recibo e no
+GET), a correção pontual é reescrever os mesmos bytes com **PUT único** pelo
+client S3 (o PUT único grava o checksum certo) — ver changelog
+`2026-10-02-c246-garage-checksum-multipart.md`.
+
 Depois de um `--apply` que rebaixou alguma foto, buste a tag pública em um
 processo que a possui (o write do CLI não revalida o servidor Next):
 
