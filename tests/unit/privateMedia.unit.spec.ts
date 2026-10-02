@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  isPrivateMediaMissingError,
   PRIVATE_MEDIA_FALLBACK_MIME_TYPE,
   privateMediaContentDisposition,
   privateMediaContentType,
@@ -116,5 +117,29 @@ describe('private media response rules (C193/C199)', () => {
     })
     expect(headers.get('Content-Range')).toBe('bytes */100')
     expect(headers.get('Content-Type')).toBe('video/mp4')
+  })
+})
+
+describe('private media missing-object classification (C246)', () => {
+  it('recognizes the S3 and local-disk absence shapes', () => {
+    expect(isPrivateMediaMissingError({ name: 'NoSuchKey' })).toBe(true)
+    expect(isPrivateMediaMissingError({ name: 'NotFound' })).toBe(true)
+    expect(isPrivateMediaMissingError({ Code: 'NoSuchKey' })).toBe(true)
+    expect(isPrivateMediaMissingError({ $metadata: { httpStatusCode: 404 } })).toBe(true)
+    expect(isPrivateMediaMissingError(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }))).toBe(
+      true,
+    )
+  })
+
+  it('never classifies a read failure of an existing object as missing', () => {
+    expect(isPrivateMediaMissingError(new Error('checksum mismatch'))).toBe(false)
+    expect(isPrivateMediaMissingError({ name: 'BadDigest' })).toBe(false)
+    expect(
+      isPrivateMediaMissingError(
+        Object.assign(new Error('socket hang up'), { $metadata: { httpStatusCode: 500 } }),
+      ),
+    ).toBe(false)
+    expect(isPrivateMediaMissingError(null)).toBe(false)
+    expect(isPrivateMediaMissingError('erro')).toBe(false)
   })
 })

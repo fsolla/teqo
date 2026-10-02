@@ -1,7 +1,8 @@
 /**
  * C193/C199 — pure response rules of a private media artifact: the safe content
- * type, the content disposition and the range/private headers. No I/O and no
- * `server-only`: the streaming utility and the unit tests share this module.
+ * type, the content disposition, the range/private headers and the classification
+ * of an absent object. No I/O and no `server-only`: the streaming utility and the
+ * unit tests share this module.
  *
  * The owner serves every private upload collection (`reelMedia`, `recordingMedia`)
  * through the authenticated `/campanha` routes; the public `media` contract
@@ -43,6 +44,31 @@ export const PRIVATE_MEDIA_CACHE_CONTROL = 'private, no-store'
 export type PrivateMediaRange = {
   status: number
   headers: Record<string, string>
+}
+
+/**
+ * True when the read error means the OBJECT is absent in whichever store served
+ * it: S3 `NoSuchKey`/`NotFound` (or a 404 in the SDK metadata) or the local disk
+ * `ENOENT`. Everything else — a checksum mismatch included — is a real read
+ * failure of an object that exists (C246 classifies it as corrupt, never as
+ * missing). Pure so the response paths, the integrity sweep and the unit spec
+ * share one classification.
+ */
+export const isPrivateMediaMissingError = (error: unknown): boolean => {
+  if ((error as { code?: unknown } | null)?.code === 'ENOENT') return true
+  if (!error || typeof error !== 'object') return false
+  const name = 'name' in error ? String(error.name) : ''
+  const errorCode = 'Code' in error ? String(error.Code) : ''
+  const metadata =
+    '$metadata' in error && error.$metadata && typeof error.$metadata === 'object'
+      ? (error.$metadata as { httpStatusCode?: number })
+      : null
+  return (
+    name === 'NoSuchKey' ||
+    name === 'NotFound' ||
+    errorCode === 'NoSuchKey' ||
+    metadata?.httpStatusCode === 404
+  )
 }
 
 const isInlineSafe = (mimeType: unknown): mimeType is string =>

@@ -16,7 +16,13 @@ import { withPayloadTransaction } from '@/utilities/payloadTransaction'
  * `flickrId`, the transactional upload of the original and the row, and the
  * honest result the CLI turns into the receipt. The network side (listing,
  * metadata, download) belongs to `pnpm flickr:import`; nothing here touches
- * the Flickr API, publishes or curates.
+ * the Flickr API or curates.
+ *
+ * C246 adds the maintenance writes of the integrity sweep: the object replace
+ * of one existing row (`repairArchivePhotoObject` — same key, no field edits)
+ * and the unrecoverable exit from the public (`withdrawArchivePhotoFromPublic`
+ * — `approved → draft`; `removed` stays untouched). Both are trusted-actor
+ * writes with no session, like the ingestion.
  */
 
 export type ArchivePhotoExisting = {
@@ -177,6 +183,95 @@ export const updateArchivePhotoExif = async (
   } catch (error) {
     return {
       status: 'failed',
+      flickrId,
+      error: error instanceof Error ? error.message : String(error),
+    }
+  }
+}
+
+export type ArchivePhotoRepairResult =
+  | { status: 'repaired'; id: number; filename: string | null; filesize: number | null }
+  | { status: 'failed'; id: number; error: string }
+
+/**
+ * C246 — replaces the STORED OBJECT of one existing row with the file at
+ * `filePath`, through the collection's own upload write path (`payload.update` +
+ * `filePath` + `overwriteExistingFiles`). The update carries NO data fields: the
+ * curation, the metadata and the `publicationStatus` are never touched; with the
+ * caller naming the temp file after `row.filename`, the stored key does not
+ * change and an `approved` photo returns to serving on the next request. Every
+ * failure is returned, never thrown — the caller owns the receipt.
+ * Same documented CLI bypass as the ingestion (trusted actor, no session).
+ */
+export const repairArchivePhotoObject = async (
+  payload: Payload,
+  { id, filePath }: { id: number; filePath: string },
+): Promise<ArchivePhotoRepairResult> => {
+  try {
+    const doc = await payload.update({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      data: {},
+      filePath,
+      overwriteExistingFiles: true,
+      // Intentional bypass: the integrity CLI is a trusted actor with no session.
+      overrideAccess: true,
+    })
+    return {
+      status: 'repaired',
+      id,
+      filename: doc.filename ?? null,
+      filesize: doc.filesize ?? null,
+    }
+  } catch (error) {
+    return { status: 'failed', id, error: error instanceof Error ? error.message : String(error) }
+  }
+}
+
+export type ArchivePhotoWithdrawalResult =
+  | { status: 'withdrawn'; id: number; flickrId: string; previousStatus: string }
+  | { status: 'skipped'; id: number; flickrId: string; reason: 'removed' | 'already-draft' }
+  | { status: 'failed'; id: number; flickrId: string; error: string }
+
+/**
+ * C246 — takes one unrecoverable photo out of the public: `approved → draft`
+ * (the intent recommendation; `removed` is a takedown request from a person and
+ * stays untouched). The removal-channel guard only covers the transition INTO
+ * `approved`, so the downgrade never needs the channel; the collection hooks
+ * purge the face descriptors and revalidate the public listing on the way out.
+ * Every failure is returned, never thrown — the caller owns the receipt.
+ */
+export const withdrawArchivePhotoFromPublic = async (
+  payload: Payload,
+  { id, flickrId }: { id: number; flickrId: string },
+): Promise<ArchivePhotoWithdrawalResult> => {
+  try {
+    const row = await payload.findByID({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      depth: 0,
+      // Intentional bypass: the integrity CLI is a trusted actor with no session.
+      overrideAccess: true,
+    })
+    const previousStatus = row.publicationStatus
+    if (previousStatus === 'removed') {
+      return { status: 'skipped', id, flickrId, reason: 'removed' }
+    }
+    if (previousStatus === 'draft') {
+      return { status: 'skipped', id, flickrId, reason: 'already-draft' }
+    }
+    await payload.update({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      data: { publicationStatus: 'draft' },
+      // Intentional bypass: same trusted actor.
+      overrideAccess: true,
+    })
+    return { status: 'withdrawn', id, flickrId, previousStatus }
+  } catch (error) {
+    return {
+      status: 'failed',
+      id,
       flickrId,
       error: error instanceof Error ? error.message : String(error),
     }
