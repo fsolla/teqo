@@ -132,6 +132,8 @@ describe('archive:catalog write guards (C232)', () => {
     expect(output(result)).toContain('ARCHIVE_CATALOG_CONFIRM=1')
   })
 
+  // This is the one CLI case that gets past the guards and boots Payload before
+  // the DB refusal; a busy full-suite run can push it past the default 5s.
   it('metadata-only --apply skips the S3 and vision guards entirely', () => {
     const result = run(['--metadata-only', '--apply'], {
       ARCHIVE_CATALOG_CONFIRM: '1',
@@ -149,6 +151,5 @@ describe('archive:catalog write guards (C232)', () => {
     expect(text).not.toContain('S3_BUCKET')
     expect(text).not.toContain('host público')
     expect(text).not.toContain('ARCHIVE_VISION_MODEL')
-  }, // the DB refusal; a busy full-suite run can push it past the default 5s. // This is the one case that gets past the guards and boots Payload before
-  60_000)
+  }, 60_000)
 })
