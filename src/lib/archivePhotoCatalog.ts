@@ -374,6 +374,148 @@ export const changedArchivePhotoCuratedFields = ({
   return changed
 }
 
+/**
+ * C245 — the shared base text of the ficha: what the deterministic rules read
+ * (gazetteer municipality, gazetteer themes, curated-catalog name mentions).
+ * The AI layer appends its own caption/visibleText; the metadata layer passes
+ * nothing — both derive from the SAME join, so the two layers cannot drift.
+ */
+export const archivePhotoCatalogText = (
+  input: {
+    alt?: string | null
+    title?: string | null
+    description?: string | null
+    albumTitles?: readonly (string | null | undefined)[] | null
+    tagNames?: readonly (string | null | undefined)[] | null
+  },
+  extras: readonly (string | null | undefined)[] = [],
+): string =>
+  [
+    input.alt,
+    input.title,
+    input.description,
+    ...(input.albumTitles ?? []),
+    ...(input.tagNames ?? []),
+    ...extras,
+  ]
+    .filter((value): value is string => typeof value === 'string' && value.trim() !== '')
+    .join(' ')
+
+type ArchivePhotoCatalogCurrent = {
+  caption?: string | null
+  description?: string | null
+  scene?: ArchivePhotoScene | null
+  visibleText?: string | null
+  hasPeople?: boolean | null
+  themes?: SpeechTopic[] | null
+  people?: string[] | null
+  municipality?: number | null
+}
+
+/**
+ * The curated-wins merge both layers share: `writes` says whether a proposal
+ * is non-empty and unfrozen; `pick` keeps the curated value verbatim and
+ * normalizes the proposal otherwise (blank strings/empty arrays are "nothing
+ * to propose", never a written value). `undefined` never reaches the DB —
+ * Payload leaves the stored value untouched — so omitted keys are the "do not
+ * touch" signal.
+ */
+const createArchivePhotoCatalogMerge = ({
+  curatedFields,
+  currentCatalog,
+}: {
+  curatedFields: readonly ArchivePhotoCuratedField[]
+  currentCatalog?: ArchivePhotoCatalogCurrent | null
+}) => {
+  const curated = new Set<ArchivePhotoCuratedField>(curatedFields)
+  const current: ArchivePhotoCatalogCurrent = currentCatalog ?? {}
+
+  const writes = (field: ArchivePhotoCuratedField, value: unknown): boolean =>
+    !curated.has(field) &&
+    value !== null &&
+    value !== undefined &&
+    !(typeof value === 'string' && value.trim() === '') &&
+    !(Array.isArray(value) && value.length === 0)
+
+  const pick = <Key extends keyof ArchivePhotoCatalogCurrent>(
+    field: Key,
+    proposed: NonNullable<ArchivePhotoCatalogCurrent[Key]> | null | undefined,
+  ): NonNullable<ArchivePhotoCatalogCurrent[Key]> | undefined => {
+    if (curated.has(field)) {
+      const kept = current[field]
+      return kept === null || kept === undefined
+        ? undefined
+        : (kept as NonNullable<ArchivePhotoCatalogCurrent[Key]>)
+    }
+    if (proposed === null || proposed === undefined) return undefined
+    if (Array.isArray(proposed)) {
+      return proposed.length === 0
+        ? undefined
+        : (proposed as NonNullable<ArchivePhotoCatalogCurrent[Key]>)
+    }
+    if (typeof proposed === 'string') {
+      const text = proposed.trim()
+      return text === '' ? undefined : (text as NonNullable<ArchivePhotoCatalogCurrent[Key]>)
+    }
+    return proposed as NonNullable<ArchivePhotoCatalogCurrent[Key]>
+  }
+
+  return { writes, pick, curated }
+}
+
+export type ArchivePhotoMetadataCatalogWrite = {
+  data: {
+    catalog: {
+      municipality?: number
+      themes?: SpeechTopic[]
+      source: Exclude<ArchivePhotoCatalogSource, 'ai'>
+      metadataCheckedAt: string
+    }
+  }
+  source: Exclude<ArchivePhotoCatalogSource, 'ai'>
+}
+
+/**
+ * C245 — the deterministic metadata-only write: municipality (gazetteer) and
+ * themes (gazetteer) derived from the text already ingested. People are NEVER
+ * proposed here (C244 owns the facial facet) and the AI layer is not marked as
+ * done — `catalogedAt` is untouched, so the photo stays in the AI queue;
+ * `metadataCheckedAt` is this layer's own idempotency key.
+ */
+export const buildArchivePhotoMetadataCatalogWrite = ({
+  municipalityId,
+  gazetteerThemes,
+  curatedFields,
+  currentCatalog,
+  metadataCheckedAt,
+}: {
+  municipalityId: number | null
+  gazetteerThemes: readonly SpeechTopic[]
+  curatedFields: readonly ArchivePhotoCuratedField[]
+  currentCatalog?: ArchivePhotoCatalogCurrent | null
+  metadataCheckedAt: string
+}): ArchivePhotoMetadataCatalogWrite => {
+  const { writes, pick } = createArchivePhotoCatalogMerge({ curatedFields, currentCatalog })
+  const themes = [...new Set<SpeechTopic>(gazetteerThemes)]
+  const written = {
+    municipality: pick('municipality', municipalityId),
+    themes: pick('themes', themes),
+  }
+  const source: Exclude<ArchivePhotoCatalogSource, 'ai'> =
+    writes('municipality', municipalityId) || writes('themes', themes) ? 'metadata' : 'none'
+
+  return {
+    data: {
+      catalog: {
+        ...written,
+        source,
+        metadataCheckedAt,
+      },
+    },
+    source,
+  }
+}
+
 type ArchivePhotoCatalogValues = {
   caption?: string
   description?: string
@@ -385,6 +527,7 @@ type ArchivePhotoCatalogValues = {
   municipality?: number
   source: ArchivePhotoCatalogSource
   catalogedAt: string
+  metadataCheckedAt: string
 }
 
 export type ArchivePhotoCatalogWrite = {
@@ -401,7 +544,8 @@ export type ArchivePhotoCatalogWrite = {
  * states what actually landed — `ai` when a model field was written,
  * `metadata` when only the text-derived ones were, `none` when there was
  * nothing to propose. `catalogedAt` is set on every outcome, so "nada a
- * propor" is a final honest state instead of a silent retry loop.
+ * propor" is a final honest state instead of a silent retry loop; the same
+ * pass derives the metadata layer, so `metadataCheckedAt` is stamped here too.
  */
 export const buildArchivePhotoCatalogWrite = ({
   suggestion,
@@ -412,61 +556,22 @@ export const buildArchivePhotoCatalogWrite = ({
   currentCatalog,
   currentAlt,
   catalogedAt,
+  metadataCheckedAt,
 }: {
   suggestion: ArchivePhotoSuggestion | null
   municipalityId: number | null
   mentionedPeople: readonly string[]
   gazetteerThemes: readonly SpeechTopic[]
-  curatedFields: readonly string[]
-  currentCatalog?: {
-    caption?: string | null
-    description?: string | null
-    scene?: ArchivePhotoScene | null
-    visibleText?: string | null
-    hasPeople?: boolean | null
-    themes?: SpeechTopic[] | null
-    people?: string[] | null
-    municipality?: number | null
-  } | null
+  curatedFields: readonly ArchivePhotoCuratedField[]
+  currentCatalog?: ArchivePhotoCatalogCurrent | null
   currentAlt?: string | null
   catalogedAt: string
+  metadataCheckedAt: string
 }): ArchivePhotoCatalogWrite => {
-  const curated = new Set<string>(curatedFields)
-  const current: NonNullable<typeof currentCatalog> = currentCatalog ?? {}
-
-  /** A proposed value that will be written: not curated, not blank/empty. */
-  const writes = (field: ArchivePhotoCuratedField, value: unknown): boolean =>
-    !curated.has(field) &&
-    value !== null &&
-    value !== undefined &&
-    !(typeof value === 'string' && value.trim() === '') &&
-    !(Array.isArray(value) && value.length === 0)
-
-  /**
-   * Kept curated value when the field is frozen (verbatim), otherwise the
-   * proposal normalized: blank strings and empty arrays are "nothing to
-   * propose", never a written value.
-   */
-  const pick = <Key extends keyof typeof current>(
-    field: Key,
-    proposed: NonNullable<(typeof current)[Key]> | null | undefined,
-  ): NonNullable<(typeof current)[Key]> | undefined => {
-    if (curated.has(field)) {
-      const kept = current[field]
-      return kept === null || kept === undefined
-        ? undefined
-        : (kept as NonNullable<(typeof current)[Key]>)
-    }
-    if (proposed === null || proposed === undefined) return undefined
-    if (Array.isArray(proposed)) {
-      return proposed.length === 0 ? undefined : (proposed as NonNullable<(typeof current)[Key]>)
-    }
-    if (typeof proposed === 'string') {
-      const text = proposed.trim()
-      return text === '' ? undefined : (text as NonNullable<(typeof current)[Key]>)
-    }
-    return proposed as NonNullable<(typeof current)[Key]>
-  }
+  const { writes, pick, curated } = createArchivePhotoCatalogMerge({
+    curatedFields,
+    currentCatalog,
+  })
 
   const aiThemes = suggestion?.themes ?? []
   const themes = [...new Set<SpeechTopic>([...aiThemes, ...gazetteerThemes])]
@@ -513,6 +618,7 @@ export const buildArchivePhotoCatalogWrite = ({
         ...written,
         source,
         catalogedAt,
+        metadataCheckedAt,
       },
     },
     source,

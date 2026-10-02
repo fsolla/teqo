@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   ARCHIVE_CATALOG_DEFAULT_OUT_DIR,
+  archiveCatalogLayerLabel,
+  archiveCatalogPendingForLayer,
   formatArchiveCatalogInventory,
   formatArchiveCatalogReport,
   parseArchiveCatalogCliArgs,
@@ -11,13 +13,15 @@ import {
 
 // C232 — the pure CLI planning/reporting of the archive cataloguing: the argv
 // contract, the run summaries and the `--verify` inventory the receipt and the
-// stdout lines are built from.
+// stdout lines are built from. C245 adds the layer selector and the two-layer
+// inventory.
 
 describe('parseArchiveCatalogCliArgs (C232)', () => {
-  it('defaults to the plan mode and the canonical receipt dir', () => {
+  it('defaults to the plan mode, the AI layer and the canonical receipt dir', () => {
     expect(parseArchiveCatalogCliArgs([])).toEqual({
       apply: false,
       verify: false,
+      metadataOnly: false,
       limit: null,
       out: ARCHIVE_CATALOG_DEFAULT_OUT_DIR,
       help: false,
@@ -34,6 +38,22 @@ describe('parseArchiveCatalogCliArgs (C232)', () => {
     })
     expect(parseArchiveCatalogCliArgs(['--verify'])).toMatchObject({ verify: true })
     expect(parseArchiveCatalogCliArgs(['--help'])).toMatchObject({ help: true })
+  })
+
+  it('parses the metadata-only layer selector in every mode', () => {
+    expect(parseArchiveCatalogCliArgs(['--metadata-only'])).toMatchObject({
+      metadataOnly: true,
+      apply: false,
+      verify: false,
+    })
+    expect(parseArchiveCatalogCliArgs(['--metadata-only', '--apply'])).toMatchObject({
+      metadataOnly: true,
+      apply: true,
+    })
+    expect(parseArchiveCatalogCliArgs(['--metadata-only', '--verify'])).toMatchObject({
+      metadataOnly: true,
+      verify: true,
+    })
   })
 
   it('refuses conflicting, unknown and unsafe input', () => {
@@ -64,8 +84,8 @@ describe('summarizeArchiveCatalogResults (C232)', () => {
   })
 })
 
-describe('summarizeArchiveCatalogInventory (C232)', () => {
-  it('separates catalogued from pending and flags the missing file', () => {
+describe('summarizeArchiveCatalogInventory (C232/C245)', () => {
+  it('separates both layers, counts the provenance and flags the missing file', () => {
     const inventory = summarizeArchiveCatalogInventory([
       {
         flickrId: '1',
@@ -75,13 +95,18 @@ describe('summarizeArchiveCatalogInventory (C232)', () => {
       { flickrId: '2', filename: 'b.jpg', catalog: { catalogedAt: 'x', source: 'metadata' } },
       { flickrId: '3', filename: 'c.jpg', catalog: {} },
       { flickrId: '4', filename: null, catalog: { catalogedAt: 'x', source: 'none' } },
+      {
+        flickrId: '5',
+        filename: 'e.jpg',
+        catalog: { metadataCheckedAt: 'x', source: 'metadata', municipality: 9 },
+      },
     ])
 
-    expect(inventory).toMatchObject({
-      total: 4,
-      cataloged: 3,
-      pending: 1,
-      bySource: { ai: 1, metadata: 1, none: 1 },
+    expect(inventory).toEqual({
+      total: 5,
+      ai: { cataloged: 3, pending: 2 },
+      metadata: { checked: 4, pending: 1 },
+      bySource: { ai: 1, metadata: 2, none: 1 },
       withoutScene: 2,
       withoutMunicipality: 2,
       missingFilename: ['4'],
@@ -89,10 +114,27 @@ describe('summarizeArchiveCatalogInventory (C232)', () => {
   })
 })
 
-describe('report lines (C232)', () => {
-  it('renders the plan line with the pending count', () => {
+describe('archiveCatalogLayerLabel (C245)', () => {
+  it('labels the two layers in pt-BR', () => {
+    expect(archiveCatalogLayerLabel('ai')).toBe('IA')
+    expect(archiveCatalogLayerLabel('metadata')).toBe('metadados')
+  })
+
+  it('reads the pending gap of the selected layer only', () => {
+    const inventory = {
+      ai: { cataloged: 3, pending: 7 },
+      metadata: { checked: 6, pending: 4 },
+    }
+    expect(archiveCatalogPendingForLayer(inventory, 'metadata')).toBe(4)
+    expect(archiveCatalogPendingForLayer(inventory, 'ai')).toBe(7)
+  })
+})
+
+describe('report lines (C232/C245)', () => {
+  it('renders the plan line with the layer and the pending count', () => {
     const lines = formatArchiveCatalogReport({
       mode: 'plan',
+      layer: 'ai',
       target: '127.0.0.1/teqo_staging',
       engine: { host: '100.94.122.26', model: 'qwen2.5vl:7b', scope: 'local' },
       pending: 12,
@@ -100,12 +142,29 @@ describe('report lines (C232)', () => {
     })
 
     expect(lines[0]).toContain('100.94.122.26 (qwen2.5vl:7b, local)')
-    expect(lines.join('\n')).toContain('pendentes na fila: 12')
+    const text = lines.join('\n')
+    expect(text).toContain('camada: IA')
+    expect(text).toContain('pendentes na fila: 12')
+  })
+
+  it('renders the metadata-only plan without an engine line', () => {
+    const lines = formatArchiveCatalogReport({
+      mode: 'plan',
+      layer: 'metadata',
+      engine: null,
+      pending: 3,
+      durationMs: 10,
+    })
+
+    const text = lines.join('\n')
+    expect(text).toContain('camada: metadados')
+    expect(text).not.toContain('engine:')
   })
 
   it('renders the apply summary and every failure', () => {
     const lines = formatArchiveCatalogReport({
       mode: 'apply',
+      layer: 'metadata',
       target: '127.0.0.1/teqo_staging',
       durationMs: 2000,
       summary: summarizeArchiveCatalogResults([
@@ -115,27 +174,28 @@ describe('report lines (C232)', () => {
     })
 
     const text = lines.join('\n')
+    expect(text).toContain('camada: metadados')
     expect(text).toContain('processadas: 1')
     expect(text).toContain('falharam: 1')
     expect(text).toContain('IA: 1')
     expect(text).toContain('2 (analyze): timeout')
   })
 
-  it('renders the verify inventory with the pending gap', () => {
+  it('renders the verify inventory with the pending gap of each layer', () => {
     const lines = formatArchiveCatalogInventory({
-      total: 3,
-      cataloged: 2,
-      pending: 1,
-      bySource: { ai: 1, metadata: 1, none: 0 },
-      withoutScene: 1,
-      withoutMunicipality: 1,
+      total: 5,
+      ai: { cataloged: 3, pending: 2 },
+      metadata: { checked: 4, pending: 1 },
+      bySource: { ai: 1, metadata: 2, none: 1 },
+      withoutScene: 2,
+      withoutMunicipality: 2,
       missingFilename: [],
     })
 
     const text = lines.join('\n')
-    expect(text).toContain('catalogadas: 2')
-    expect(text).toContain('pendentes: 1')
-    expect(text).toContain('IA: 1')
-    expect(text).toContain('ainda pendentes de catalogação: 1')
+    expect(text).toContain('camada IA: catalogadas 3 · pendentes 2')
+    expect(text).toContain('camada metadados: verificadas 4 · pendentes 1')
+    expect(text).toContain('pendentes de metadados: 1')
+    expect(text).toContain('pendentes de IA: 2')
   })
 })

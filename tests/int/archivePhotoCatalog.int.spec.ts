@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import type { Payload } from 'payload'
 import { getPayload } from 'payload'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 
 import { ARCHIVE_PHOTO_SLUG, type ArchivePhotoImport } from '@/lib/archivePhoto'
 import type { ArchivePhotoSuggestion } from '@/lib/archivePhotoCatalog'
@@ -13,7 +13,9 @@ import { publicFigureCatalog } from '@/lib/publicFigureCatalog'
 import config from '@/payload.config'
 import {
   catalogArchivePhoto,
+  catalogArchivePhotoMetadata,
   listArchivePhotoCatalogQueue,
+  listArchivePhotoMetadataCatalogQueue,
   type ArchivePhotoAnalyzer,
   type ArchivePhotoCatalogItem,
 } from '@/utilities/flickr/archivePhotoCatalog'
@@ -333,5 +335,133 @@ describe('catalogArchivePhoto (C232)', () => {
       overrideAccess: true,
     })
     expect((await findByFlickrId('53900000008'))?.curatedFields).toEqual(['scene'])
+  })
+})
+
+describe('catalogArchivePhotoMetadata (C245)', () => {
+  beforeAll(async () => {
+    payload = await getPayload({ config: await config })
+  })
+
+  afterAll(async () => {
+    for (const flickrId of createdFlickrIds) {
+      await payload.delete({
+        collection: ARCHIVE_PHOTO_SLUG,
+        where: { flickrId: { equals: flickrId } },
+        overrideAccess: true,
+      })
+    }
+    await Promise.all(tempDirs.map((dir) => rm(dir, { recursive: true, force: true })))
+  })
+
+  it('derives municipality and themes without the model, keeps the AI queue open and never writes people', async () => {
+    const feira = await municipalityId('feira-de-santana')
+    const { item } = await createPhoto('53900002001', {
+      title: 'Plenária em Feira de Santana',
+      tags: ['saude'],
+    })
+
+    const result = await catalogArchivePhotoMetadata({ payload, item })
+
+    expect(result).toEqual({ status: 'cataloged', source: 'metadata' })
+    const doc = await findByFlickrId('53900002001')
+    expect(doc?.catalog?.municipality).toBe(feira)
+    expect(doc?.catalog?.themes).toEqual(['saude'])
+    expect(doc?.catalog?.metadataCheckedAt).toBeTruthy()
+    expect(doc?.catalog?.catalogedAt ?? null).toBeNull()
+    expect(doc?.catalog?.people ?? []).toEqual([])
+    expect(doc?.catalog?.caption ?? null).toBeNull()
+
+    expect(
+      (await listArchivePhotoMetadataCatalogQueue({ payload })).map((entry) => entry.flickrId),
+    ).not.toContain('53900002001')
+    expect(
+      (await listArchivePhotoCatalogQueue({ payload })).map((entry) => entry.flickrId),
+    ).toContain('53900002001')
+  })
+
+  it('keeps both layers consistent: the AI after the metadata preserves the fields and stamps both markers', async () => {
+    const feira = await municipalityId('feira-de-santana')
+    const { item } = await createPhoto('53900002002', { title: 'Plenária em Feira de Santana' })
+    await catalogArchivePhotoMetadata({ payload, item })
+
+    const result = await catalogArchivePhoto({
+      payload,
+      item,
+      analyze: analyzeWith(suggestion({ caption: 'Plenária lotada', scene: 'plenaria' })),
+    })
+
+    expect(result).toEqual({ status: 'cataloged', source: 'ai' })
+    const doc = await findByFlickrId('53900002002')
+    expect(doc?.catalog?.caption).toBe('Plenária lotada')
+    expect(doc?.catalog?.scene).toBe('plenaria')
+    expect(doc?.catalog?.municipality).toBe(feira)
+    expect(doc?.catalog?.catalogedAt).toBeTruthy()
+    expect(doc?.catalog?.metadataCheckedAt).toBeTruthy()
+  })
+
+  it('never reopens a row already catalogued by the AI (legacy without the metadata marker)', async () => {
+    const { id, item } = await createPhoto('53900002003', { title: 'Plenária em Feira de Santana' })
+    await payload.update({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      data: {
+        catalog: { caption: 'Legado', source: 'ai', catalogedAt: new Date().toISOString() },
+      },
+      context: { archivePhotoCatalog: true },
+      overrideAccess: true,
+    })
+    expect((await findByFlickrId('53900002003'))?.catalog?.metadataCheckedAt ?? null).toBeNull()
+
+    expect(
+      (await listArchivePhotoMetadataCatalogQueue({ payload })).map((entry) => entry.flickrId),
+    ).not.toContain('53900002003')
+    expect(await catalogArchivePhotoMetadata({ payload, item })).toEqual({ status: 'skipped' })
+    expect((await findByFlickrId('53900002003'))?.catalog?.source).toBe('ai')
+  })
+
+  it('never overwrites a curated municipality or themes', async () => {
+    const feira = await municipalityId('feira-de-santana')
+    const { id, item } = await createPhoto('53900002004', {
+      title: 'Plenária em Feira de Santana',
+      tags: ['saude'],
+    })
+    const admin = await campaignFixtures().createAdminUser()
+    await payload.update({
+      collection: ARCHIVE_PHOTO_SLUG,
+      id,
+      data: { catalog: { municipality: feira, themes: ['esporte'] } },
+      user: admin,
+      overrideAccess: false,
+    })
+
+    const result = await catalogArchivePhotoMetadata({ payload, item })
+
+    expect(result).toEqual({ status: 'cataloged', source: 'none' })
+    const doc = await findByFlickrId('53900002004')
+    expect(doc?.catalog?.municipality).toBe(feira)
+    expect(doc?.catalog?.themes).toEqual(['esporte'])
+    expect(doc?.catalog?.metadataCheckedAt).toBeTruthy()
+    expect(doc?.curatedFields).toEqual(expect.arrayContaining(['municipality', 'themes']))
+  })
+
+  it('reports a failed municipality resolution, writes nothing and lets the next run retry', async () => {
+    const { item } = await createPhoto('53900002005', { title: 'Plenária em Feira de Santana' })
+    const findSpy = vi
+      .spyOn(payload, 'find')
+      .mockRejectedValueOnce(new Error('catálogo de municípios indisponível'))
+
+    const failed = await catalogArchivePhotoMetadata({ payload, item })
+    findSpy.mockRestore()
+
+    expect(failed).toEqual({
+      status: 'failed',
+      stage: 'resolve',
+      error: 'catálogo de municípios indisponível',
+    })
+    expect((await findByFlickrId('53900002005'))?.catalog?.metadataCheckedAt ?? null).toBeNull()
+    expect(
+      (await listArchivePhotoMetadataCatalogQueue({ payload })).map((entry) => entry.flickrId),
+    ).toContain('53900002005')
   })
 })

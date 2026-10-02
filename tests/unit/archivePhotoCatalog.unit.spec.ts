@@ -3,12 +3,14 @@ import { describe, expect, it } from 'vitest'
 import {
   ARCHIVE_PHOTO_CAPTION_MAX_LENGTH,
   ARCHIVE_PHOTO_PUBLICATION_STATUSES,
+  archivePhotoCatalogText,
   archivePhotoIsPublic,
   archivePhotoPublicationStatusLabels,
   archivePhotoSearchText,
   archivePhotoTakenOn,
   archivePhotoThemesFrom,
   buildArchivePhotoCatalogWrite,
+  buildArchivePhotoMetadataCatalogWrite,
   changedArchivePhotoCuratedFields,
   isArchivePhotoPublicationStatus,
   isArchivePhotoRemovalChannelUrl,
@@ -46,6 +48,18 @@ const writeInput = (
   currentCatalog: null,
   currentAlt: null,
   catalogedAt: '2026-09-26T12:00:00.000Z',
+  metadataCheckedAt: '2026-09-26T12:00:00.000Z',
+  ...overrides,
+})
+
+const metadataWriteInput = (
+  overrides: Partial<Parameters<typeof buildArchivePhotoMetadataCatalogWrite>[0]> = {},
+): Parameters<typeof buildArchivePhotoMetadataCatalogWrite>[0] => ({
+  municipalityId: null,
+  gazetteerThemes: [],
+  curatedFields: [],
+  currentCatalog: null,
+  metadataCheckedAt: '2026-10-01T12:00:00.000Z',
   ...overrides,
 })
 
@@ -218,6 +232,7 @@ describe('buildArchivePhotoCatalogWrite (C232)', () => {
       themes: ['politica-instituicoes'],
       source: 'ai',
       catalogedAt: '2026-09-26T12:00:00.000Z',
+      metadataCheckedAt: '2026-09-26T12:00:00.000Z',
     })
   })
 
@@ -238,6 +253,7 @@ describe('buildArchivePhotoCatalogWrite (C232)', () => {
       municipality: 7,
       source: 'metadata',
       catalogedAt: '2026-09-26T12:00:00.000Z',
+      metadataCheckedAt: '2026-09-26T12:00:00.000Z',
     })
   })
 
@@ -248,6 +264,7 @@ describe('buildArchivePhotoCatalogWrite (C232)', () => {
     expect(data.catalog).toEqual({
       source: 'none',
       catalogedAt: '2026-09-26T12:00:00.000Z',
+      metadataCheckedAt: '2026-09-26T12:00:00.000Z',
     })
   })
 
@@ -268,6 +285,7 @@ describe('buildArchivePhotoCatalogWrite (C232)', () => {
       municipality: 3,
       source: 'none',
       catalogedAt: '2026-09-26T12:00:00.000Z',
+      metadataCheckedAt: '2026-09-26T12:00:00.000Z',
     })
     expect(data.alt).toBeUndefined()
   })
@@ -327,6 +345,98 @@ describe('buildArchivePhotoCatalogWrite (C232)', () => {
 
     expect(source).toBe('ai')
     expect(data.catalog.themes).toEqual(['saude', 'educacao'])
+  })
+})
+
+describe('archivePhotoCatalogText (C245)', () => {
+  it('joins the base text fields and drops blanks', () => {
+    expect(
+      archivePhotoCatalogText({
+        alt: 'Alt',
+        title: 'Título',
+        description: '  ',
+        albumTitles: ['Álbum', null, ''],
+        tagNames: ['saude'],
+      }),
+    ).toBe('Alt Título Álbum saude')
+  })
+
+  it('appends the extras — the AI layer adds its own caption/visible text', () => {
+    expect(archivePhotoCatalogText({ title: 'Título' }, ['Legenda', null, 'Faixa'])).toBe(
+      'Título Legenda Faixa',
+    )
+    expect(archivePhotoCatalogText({})).toBe('')
+  })
+})
+
+describe('buildArchivePhotoMetadataCatalogWrite (C245)', () => {
+  it('writes municipality and themes from the gazetteer, never catalogedAt or people', () => {
+    const { data, source } = buildArchivePhotoMetadataCatalogWrite(
+      metadataWriteInput({ municipalityId: 7, gazetteerThemes: ['saude', 'saude', 'educacao'] }),
+    )
+
+    expect(source).toBe('metadata')
+    expect(data.catalog).toEqual({
+      municipality: 7,
+      themes: ['saude', 'educacao'],
+      source: 'metadata',
+      metadataCheckedAt: '2026-10-01T12:00:00.000Z',
+    })
+    expect(data.catalog).not.toHaveProperty('catalogedAt')
+    expect(data.catalog).not.toHaveProperty('people')
+    expect(data.catalog).not.toHaveProperty('caption')
+  })
+
+  it('states none when the text sustains nothing, still stamping the marker', () => {
+    const { data, source } = buildArchivePhotoMetadataCatalogWrite(metadataWriteInput())
+
+    expect(source).toBe('none')
+    expect(data.catalog).toEqual({
+      source: 'none',
+      metadataCheckedAt: '2026-10-01T12:00:00.000Z',
+    })
+  })
+
+  it('never overwrites a curated field and reports what actually landed', () => {
+    const curated = buildArchivePhotoMetadataCatalogWrite(
+      metadataWriteInput({
+        municipalityId: 9,
+        gazetteerThemes: ['saude'],
+        curatedFields: ['municipality', 'themes'],
+        currentCatalog: { municipality: 3, themes: ['esporte'] },
+      }),
+    )
+    expect(curated.source).toBe('none')
+    expect(curated.data.catalog).toEqual({
+      municipality: 3,
+      themes: ['esporte'],
+      source: 'none',
+      metadataCheckedAt: '2026-10-01T12:00:00.000Z',
+    })
+
+    const partial = buildArchivePhotoMetadataCatalogWrite(
+      metadataWriteInput({
+        municipalityId: 9,
+        gazetteerThemes: ['saude'],
+        curatedFields: ['municipality'],
+        currentCatalog: { municipality: 3 },
+      }),
+    )
+    expect(partial.source).toBe('metadata')
+    expect(partial.data.catalog.municipality).toBe(3)
+    expect(partial.data.catalog.themes).toEqual(['saude'])
+  })
+
+  it('omits a curated municipality that was never stored (nothing to keep)', () => {
+    const { data } = buildArchivePhotoMetadataCatalogWrite(
+      metadataWriteInput({
+        municipalityId: 9,
+        curatedFields: ['municipality'],
+        currentCatalog: { municipality: null },
+      }),
+    )
+    expect(data.catalog.municipality).toBeUndefined()
+    expect(data.catalog.source).toBe('none')
   })
 })
 
