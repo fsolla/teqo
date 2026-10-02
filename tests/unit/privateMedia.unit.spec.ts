@@ -3,6 +3,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  acceptsAvif,
   isPrivateMediaMissingError,
   PRIVATE_MEDIA_FALLBACK_MIME_TYPE,
   privateMediaContentDisposition,
@@ -117,6 +118,28 @@ describe('private media response rules (C193/C199)', () => {
     })
     expect(headers.get('Content-Range')).toBe('bytes */100')
     expect(headers.get('Content-Type')).toBe('video/mp4')
+  })
+})
+
+describe('private media AVIF negotiation (C248)', () => {
+  it('accepts only an explicit image/avif token with a positive quality', () => {
+    expect(acceptsAvif('image/avif')).toBe(true)
+    expect(acceptsAvif('IMAGE/AVIF')).toBe(true)
+    expect(acceptsAvif('text/html, image/avif')).toBe(true)
+    expect(acceptsAvif('image/avif;q=0.5')).toBe(true)
+    expect(acceptsAvif('image/avif; q=0.5, image/webp')).toBe(true)
+    expect(acceptsAvif('image/avif;q=0')).toBe(false)
+    expect(acceptsAvif('image/avif;q=0.000')).toBe(false)
+  })
+
+  it('keeps the JPEG fallback for headers that never opted in', () => {
+    expect(acceptsAvif(null)).toBe(false)
+    expect(acceptsAvif(undefined)).toBe(false)
+    expect(acceptsAvif('')).toBe(false)
+    expect(acceptsAvif('*/*')).toBe(false)
+    expect(acceptsAvif('image/*')).toBe(false)
+    expect(acceptsAvif('image/jpeg, image/webp')).toBe(false)
+    expect(acceptsAvif('image/avifjunk')).toBe(false)
   })
 })
 

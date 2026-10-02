@@ -8,12 +8,12 @@ import {
   archiveIntegrityReportStamp,
   formatArchiveIntegrityRepairReport,
   formatArchiveIntegrityScanReport,
-  mapWithConcurrency,
   parseArchiveIntegrityCliArgs,
   parseArchiveIntegrityOnly,
   summarizeArchiveIntegrityRepair,
   summarizeArchiveIntegrityScan,
 } from '../../scripts/lib/archiveIntegrityPlan.mjs'
+import { mapWithConcurrency } from '../../scripts/lib/cli.mjs'
 
 // C246 — the pure parser/summary of `pnpm archive:integrity`: the read-only
 // default, the bounded-concurrency map and the honest accounting of the sweep

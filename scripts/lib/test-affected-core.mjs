@@ -48,6 +48,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/archiveIntegrityPlan.mjs',
   'scripts/lib/archiveIntegrityRepair.mjs',
   'scripts/lib/archivePublishPlan.mjs',
+  'scripts/lib/archiveThumbnailPlan.mjs',
   'scripts/lib/archiveVisionApi.mjs',
   'scripts/lib/auto-unblock.mjs',
   'scripts/lib/briefingContent.mjs',

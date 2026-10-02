@@ -49,7 +49,6 @@ import {
   archiveIntegrityReportStamp,
   formatArchiveIntegrityRepairReport,
   formatArchiveIntegrityScanReport,
-  mapWithConcurrency,
   parseArchiveIntegrityCliArgs,
   summarizeArchiveIntegrityRepair,
   summarizeArchiveIntegrityScan,
@@ -62,6 +61,7 @@ import {
   databaseTarget,
   dieWithLabel,
   loadCliEnv,
+  mapWithConcurrency,
   mirroredMediaRequired,
   writeRepoFile,
 } from './lib/cli.mjs'

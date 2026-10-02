@@ -486,3 +486,68 @@ export const writeRepoFile = async ({ label, root, relativePath, body }) => {
   await writeFile(path, body)
   console.log(`[${label}] wrote ${relativePath} (${Buffer.byteLength(body)} bytes)`)
 }
+
+/**
+ * `--only 80,83` → `[80, 83]` (numeric row ids). Exact digits only: a typo
+ * must refuse the run, never silently widen or empty the selection. The two
+ * archive plan-libs (C246/C248) share this one copy; the caller passes its
+ * flag and usage line so the error message stays domain-specific.
+ *
+ * @param {{ value: string, flag?: string, usage?: string }} options
+ * @returns {number[]}
+ */
+export const parseIdList = ({ value, flag = '--only', usage = '' }) => {
+  const text = String(value ?? '').trim()
+  const suffix = usage ? ` — ${usage}` : ''
+  if (text === '') {
+    throw new Error(`${flag} vazio — informe ao menos um id (ex.: ${flag} 80,83)${suffix}.`)
+  }
+  const ids = []
+  for (const part of text.split(',')) {
+    const item = part.trim()
+    if (!/^\d+$/.test(item)) {
+      throw new Error(
+        `${flag} espera ids numéricos separados por vírgula (recebi "${value}")${suffix}.`,
+      )
+    }
+    const id = Number(item)
+    if (!Number.isSafeInteger(id) || id < 1) {
+      throw new Error(`${flag} recebeu um id fora do intervalo: "${item}"${suffix}.`)
+    }
+    if (!ids.includes(id)) ids.push(id)
+  }
+  return ids
+}
+
+/**
+ * Bounded-concurrency map that preserves input order (C248 — moved here from
+ * `archiveIntegrityPlan.mjs` on the debt's trigger: the second consumer landed;
+ * the C246 sweep and the C248 thumbnail backfill share this one copy). The
+ * sweeps download and decode thousands of photos, so unbounded `Promise.all`
+ * would be reckless; the pool keeps at most `concurrency` workers alive and
+ * returns the results in the same order as the input (receipts stay
+ * deterministic).
+ *
+ * @template T, R
+ * @param {readonly T[]} items
+ * @param {number} concurrency
+ * @param {(item: T, index: number) => Promise<R>} worker
+ * @returns {Promise<R[]>}
+ */
+export const mapWithConcurrency = async (items, concurrency, worker) => {
+  const results = new Array(items.length)
+  const size = Math.max(1, Math.min(Math.trunc(Number(concurrency)) || 1, items.length))
+  let next = 0
+
+  const runner = async () => {
+    for (;;) {
+      const index = next
+      next += 1
+      if (index >= items.length) return
+      results[index] = await worker(items[index], index)
+    }
+  }
+
+  await Promise.all(Array.from({ length: size }, runner))
+  return results
+}
