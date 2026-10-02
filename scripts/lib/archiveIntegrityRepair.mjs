@@ -23,7 +23,13 @@ import { FLICKR_USER_AGENT, isFlickrSourceGone } from './flickrApi.mjs'
 
 /** A photo original is MBs; the guard only catches a stalled/runaway server. */
 const PHOTO_DOWNLOAD_MAX_BYTES = 512 * 1024 * 1024
-const PHOTO_DOWNLOAD_TIMEOUT_MS = 2 * 60_000
+/**
+ * Flickr originals can pass 50 MB (a 7952px panorama was 54 MB) and the
+ * homeserver's direct egress runs ~260 KB/s — ~3,5 min for that file — so a
+ * 2 min ceiling aborted a legitimate repair (C246 ops, 2026-10-02). 15 min
+ * still catches a stall without capping a slow-but-working link.
+ */
+export const ARCHIVE_INTEGRITY_DOWNLOAD_TIMEOUT_MS = 15 * 60_000
 /** Long edge of the decode proof; the same size the face index feeds the engine. */
 const DECODE_MAX_EDGE = 1024
 
@@ -92,7 +98,7 @@ export const repairArchivePhotoFromSource = async ({
         url: source.url,
         destinationPath: filePath,
         headers: { 'User-Agent': FLICKR_USER_AGENT },
-        timeoutMs: PHOTO_DOWNLOAD_TIMEOUT_MS,
+        timeoutMs: ARCHIVE_INTEGRITY_DOWNLOAD_TIMEOUT_MS,
         maxBytes: PHOTO_DOWNLOAD_MAX_BYTES,
       })
     } catch (error) {

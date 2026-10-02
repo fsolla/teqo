@@ -5,7 +5,10 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { afterAll, describe, expect, it, vi } from 'vitest'
 
-import { repairArchivePhotoFromSource } from '../../scripts/lib/archiveIntegrityRepair.mjs'
+import {
+  ARCHIVE_INTEGRITY_DOWNLOAD_TIMEOUT_MS,
+  repairArchivePhotoFromSource,
+} from '../../scripts/lib/archiveIntegrityRepair.mjs'
 import { FlickrApiError } from '../../scripts/lib/flickrApi.mjs'
 
 import { ARCHIVE_PHOTO_JPEG_BYTES } from '../helpers/archivePhotoFixture'
@@ -112,6 +115,10 @@ describe('repairArchivePhotoFromSource (C246)', () => {
     expect(result.sha256).toMatch(/^[0-9a-f]{64}$/)
     expect(callOrder).toEqual(['source', 'download', 'repair', 'inspect'])
     expect(basename(vi.mocked(deps.repair).mock.calls[0][1].filePath)).toBe('flickr-123.jpg')
+    // A >50MB Flickr original does not fit the old 2 min ceiling on a slow link.
+    expect(vi.mocked(deps.download).mock.calls[0][0].timeoutMs).toBe(
+      ARCHIVE_INTEGRITY_DOWNLOAD_TIMEOUT_MS,
+    )
   })
 
   it('withdraws when Flickr refuses the source (photo gone)', async () => {
