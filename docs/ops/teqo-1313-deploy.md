@@ -1667,6 +1667,7 @@ aditiva; o rollback de código pode deixar a tabela (inofensiva). Desligar o
 comando (`FACE_FIGURE_SEED_CONFIRM`/`FACE_FIGURE_CONFIRM`). As imagens de
 referência são locais (nunca entram no repo nem no S3); recibos JSON em
 `data/face/reports/` sem vetor nem bytes.
+
 ## C246 — integridade do acervo no Garage (fotos quebradas)
 
 O comando `pnpm archive:integrity` varre os originais do acervo (`archivePhoto`):
