@@ -1506,8 +1506,19 @@ aparelho do visitante (o navegador envia só o vetor). A flag
    índice). A faceta "Pessoa pública" do C244 lê um mapa cacheado pela tag
    `archivePhotos`, que o lote não busta sozinho: buste a tag também depois da
    indexação (mesmo `curl` do fim do passo 3).
-5. **Ligar** `Busca por selfie` no global Álbum de fotos (admin). Sem deploy;
-   desligar fecha a página (404), a API e a seção da home imediatamente.
+5. **Ligar** `Busca por selfie` no global Álbum de fotos. Caminho principal pela
+   CLI (C247; grava pelo Local API e busta a tag `global_photoAlbum` no servidor
+   vivo na mesma execução — o write fora do Next não revalidaria sozinho):
+   ```bash
+   docker compose --profile maintenance run --rm \
+     -e TEQO_ENV=production -e OPS_GLOBAL_CONFIRM=1 \
+     -v /srv/ops-global-reports:/app/data/ops-global \
+     teqo-1313-migrate pnpm ops:global photoAlbum --selfie-search on --apply
+   # rollback: --selfie-search off --apply (o recibo em data/ops-global/reports/
+   # carrega o valor anterior e o comando de rollback)
+   ```
+   O admin continua valendo (`/admin` → Configurações → Álbum de fotos). Sem
+   deploy; desligar fecha a página (404), a API e a seção da home imediatamente.
 
 ### Remoção e privacidade
 
