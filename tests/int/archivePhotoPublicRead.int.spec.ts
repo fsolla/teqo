@@ -216,6 +216,53 @@ describe('public photo album reads (C233)', () => {
     expect(await getApprovedArchivePhotoById(photo.id)).toBeNull()
   })
 
+  it('keeps the single-field global update safe — the ops CLI path (C247)', async () => {
+    // `pnpm ops:global` writes ONE field at a time. Payload merges the
+    // original doc into the global `beforeValidate`, so the fail-closed channel
+    // guard still sees the stored value and the sibling fields survive.
+    await setChannel(CHANNEL)
+
+    const updated = await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
+      payload.updateGlobal({
+        slug: 'photoAlbum',
+        data: { selfieSearchEnabled: true },
+        overrideAccess: true,
+      }),
+    )
+    expect(updated.selfieSearchEnabled).toBe(true)
+    expect(updated.published).toBe(true)
+    expect(updated.removalChannelUrl).toBe(CHANNEL)
+
+    // The partial write alone cannot open the album without a stored channel:
+    // the same fail-closed guard refuses it.
+    await closeAlbumAndClearChannel()
+    await expect(
+      withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
+        payload.updateGlobal({
+          slug: 'photoAlbum',
+          data: { published: true },
+          overrideAccess: true,
+        }),
+      ),
+    ).rejects.toThrow()
+    const closed = await payload.findGlobal({
+      slug: 'photoAlbum',
+      depth: 0,
+      overrideAccess: true,
+    })
+    expect(closed.published).toBe(false)
+
+    await withExclusiveTestDatabaseLease(payload, PHOTO_ALBUM_LEASE_KEY, () =>
+      payload.updateGlobal({
+        slug: 'photoAlbum',
+        data: { selfieSearchEnabled: false },
+        overrideAccess: true,
+      }),
+    )
+    // Restore the beforeAll state the sibling specs rely on.
+    await setChannel(CHANNEL)
+  })
+
   it('snapshots the município name/slug on the row so the public read never touches the campaign-only collection', async () => {
     const photo = await createPhoto()
     const municipality = await payload.find({
