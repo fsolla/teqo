@@ -97,6 +97,7 @@ export interface Config {
     contentMedia: ContentMedia;
     archivePhoto: ArchivePhoto;
     archivePhotoFace: ArchivePhotoFace;
+    faceFigure: FaceFigure;
     contentEvent: ContentEvent;
     recording: Recording;
     recordingMedia: RecordingMedia;
@@ -155,6 +156,7 @@ export interface Config {
     contentMedia: ContentMediaSelect<false> | ContentMediaSelect<true>;
     archivePhoto: ArchivePhotoSelect<false> | ArchivePhotoSelect<true>;
     archivePhotoFace: ArchivePhotoFaceSelect<false> | ArchivePhotoFaceSelect<true>;
+    faceFigure: FaceFigureSelect<false> | FaceFigureSelect<true>;
     contentEvent: ContentEventSelect<false> | ContentEventSelect<true>;
     recording: RecordingSelect<false> | RecordingSelect<true>;
     recordingMedia: RecordingMediaSelect<false> | RecordingMediaSelect<true>;
@@ -1614,6 +1616,59 @@ export interface ArchivePhotoFace {
   createdAt: string;
 }
 /**
+ * Catálogo curado de figuras públicas do filtro "Pessoa pública" do álbum (C244). Só entram nomes com aval jurídico registrado; a referência biométrica é curada e auditável, e nunca inclui terceiros. Descritores são gravados pela CLI faces:enroll-figure.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faceFigure".
+ */
+export interface FaceFigure {
+  id: number;
+  /**
+   * Nome exibido na faceta (ex.: "Lula", "Jerônimo").
+   */
+  name: string;
+  /**
+   * Valor de ?pessoa=<slug> no álbum; gerado do nome quando vazio. Mudar o slug quebra a URL pública do filtro.
+   */
+  slug: string;
+  /**
+   * Proveniência da curadoria; não aparece no site.
+   */
+  fullName?: string | null;
+  /**
+   * Desmarcar tira a figura do filtro imediatamente.
+   */
+  active?: boolean | null;
+  /**
+   * Retratos oficiais/arquivo, 1–3 por figura, gravados pela CLI faces:enroll-figure. Remover uma linha corrige a curadoria; adicionar só pela CLI (o vetor não é editável à mão).
+   */
+  references?:
+    | {
+        vector?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        /**
+         * Modelo do descriptor (atual: face-api@1.7.15/faceRecognitionNet).
+         */
+        model?: string | null;
+        /**
+         * Retrato/arquivo de origem da referência (proveniência da curadoria).
+         */
+        source: string;
+        addedAt?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Eventos anônimos de circulação (abertura, download, compartilhamento).
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -2452,6 +2507,10 @@ export interface PayloadLockedDocument {
         value: number | ArchivePhotoFace;
       } | null)
     | ({
+        relationTo: 'faceFigure';
+        value: number | FaceFigure;
+      } | null)
+    | ({
         relationTo: 'contentEvent';
         value: number | ContentEvent;
       } | null)
@@ -3270,6 +3329,27 @@ export interface ArchivePhotoFaceSelect<T extends boolean = true> {
   model?: T;
   detectedAt?: T;
   vector?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "faceFigure_select".
+ */
+export interface FaceFigureSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  fullName?: T;
+  active?: T;
+  references?:
+    | T
+    | {
+        vector?: T;
+        model?: T;
+        source?: T;
+        addedAt?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }
@@ -4164,6 +4244,7 @@ export interface TaskCreateCollectionExport {
       | 'contentMedia'
       | 'archivePhoto'
       | 'archivePhotoFace'
+      | 'faceFigure'
       | 'contentEvent'
       | 'recording'
       | 'recordingMedia'
