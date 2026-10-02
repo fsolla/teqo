@@ -10707,6 +10707,240 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.face_figure_references": {
+      "name": "face_figure_references",
+      "schema": "",
+      "columns": {
+        "_order": {
+          "name": "_order",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "_parent_id": {
+          "name": "_parent_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "id": {
+          "name": "id",
+          "type": "varchar",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "vector": {
+          "name": "vector",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "model": {
+          "name": "model",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_at": {
+          "name": "added_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "face_figure_references_order_idx": {
+          "name": "face_figure_references_order_idx",
+          "columns": [
+            {
+              "expression": "_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "face_figure_references_parent_id_idx": {
+          "name": "face_figure_references_parent_id_idx",
+          "columns": [
+            {
+              "expression": "_parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "face_figure_references_parent_id_fk": {
+          "name": "face_figure_references_parent_id_fk",
+          "tableFrom": "face_figure_references",
+          "tableTo": "face_figure",
+          "columnsFrom": [
+            "_parent_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.face_figure": {
+      "name": "face_figure",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "full_name": {
+          "name": "full_name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": false,
+          "default": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "face_figure_name_idx": {
+          "name": "face_figure_name_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "face_figure_slug_idx": {
+          "name": "face_figure_slug_idx",
+          "columns": [
+            {
+              "expression": "slug",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "face_figure_active_idx": {
+          "name": "face_figure_active_idx",
+          "columns": [
+            {
+              "expression": "active",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "face_figure_updated_at_idx": {
+          "name": "face_figure_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "face_figure_created_at_idx": {
+          "name": "face_figure_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.content_event": {
       "name": "content_event",
       "schema": "",
@@ -16861,6 +17095,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "face_figure_id": {
+          "name": "face_figure_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "content_event_id": {
           "name": "content_event_id",
           "type": "integer",
@@ -17447,6 +17687,21 @@
           "columns": [
             {
               "expression": "archive_photo_face_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_face_figure_id_idx": {
+          "name": "payload_locked_documents_rels_face_figure_id_idx",
+          "columns": [
+            {
+              "expression": "face_figure_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -18127,6 +18382,19 @@
           "tableTo": "archive_photo_face",
           "columnsFrom": [
             "archive_photo_face_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_face_figure_fk": {
+          "name": "payload_locked_documents_rels_face_figure_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "face_figure",
+          "columnsFrom": [
+            "face_figure_id"
           ],
           "columnsTo": [
             "id"
@@ -20641,6 +20909,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "259081ef-c28c-45ad-a0e8-3beebedb3863",
+  "id": "68630991-3b35-408a-a524-0e57d9e898cc",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }
