@@ -1438,7 +1438,7 @@ docker compose --profile maintenance run --rm \
 ```
 
 Os recibos JSON ficam em `data/archive/reports/` do container — monte um volume
-(`-v /srv/archive-reports:/app/data/archive`) para preservá-los. Guardas: fora de
+(`-v ~/archive-reports:/app/data/archive`) para preservá-los. Guardas: fora de
 teste o `TEQO_ENV=staging|production` é obrigatório com o **nome exato** do banco
 (`teqo_staging`/`teqo_1313`); `ALLOW_REMOTE_DB` é recusado; sem as 4 `S3_*` o
 `--apply` recusa (o acervo não estaria acessível no alvo); `ARCHIVE_CATALOG_CONFIRM=1`
@@ -1694,24 +1694,26 @@ canário primeiro:
 ssh homeserver
 cd ~/stack
 # 1) canário read-only nas fotos do achado (80/83) — não escreve:
+#    (a limpeza pós-deploy remove a tag local do migrator; o registry a preserva)
+docker pull "$(docker inspect -f '{{.Config.Image}}' teqo-1313 | sed 's/teqo-1313:/teqo-1313-migrator:/')"
 docker compose --profile maintenance run --rm \
-  -v /srv/archive-reports:/app/data/archive \
+  -v ~/archive-reports:/app/data/archive \
   teqo-1313-migrate pnpm archive:integrity --only 80,83
 # 2) reparo do canário (exige TEQO_ENV + confirmação; as 4 S3_* e FLICKR_API_KEY):
 docker compose --profile maintenance run --rm \
   -e TEQO_ENV=production -e ARCHIVE_INTEGRITY_CONFIRM=1 \
-  -v /srv/archive-reports:/app/data/archive \
+  -v ~/archive-reports:/app/data/archive \
   teqo-1313-migrate pnpm archive:integrity --apply --only 80,83
 # 3) conferir as duas URLs públicas respondendo 200 (antes do lote):
 #    https://jorgesolla1313.com.br/fotos/80/midia  e  /fotos/83/midia
 # 4) varredura completa (read-only; ~6,5k downloads no bucket local; sai 1 se achar):
 docker compose --profile maintenance run --rm \
-  -v /srv/archive-reports:/app/data/archive \
+  -v ~/archive-reports:/app/data/archive \
   teqo-1313-migrate pnpm archive:integrity
 # 5) reparo do que a varredura acusou (mesma linha com --apply):
 docker compose --profile maintenance run --rm \
   -e TEQO_ENV=production -e ARCHIVE_INTEGRITY_CONFIRM=1 \
-  -v /srv/archive-reports:/app/data/archive \
+  -v ~/archive-reports:/app/data/archive \
   teqo-1313-migrate pnpm archive:integrity --apply
 # 6) convergência: re-rodar a varredura; 0 pendências = aceite
 ```
@@ -1723,6 +1725,9 @@ varredura mediria o disco efêmero do container); `ALLOW_REMOTE_DB` é recusado.
 `--concurrency` (default 3) e `--limit`/`--only` são os canários; o recibo traz
 varridas/ok/ausentes/corrompidas/removidas, e no reparo recuperadas/
 irrecuperáveis/falhas. A varredura **não** conserta nada: só o `--apply` escreve.
+O download do original no reparo tem teto de **15 min** — um original grande
+(~50 MB, ex. panorâmica 7952px) leva minutos no link lento da casa; falha de
+download é `failed` retentável, nunca rebaixamento.
 
 Depois de um `--apply` que rebaixou alguma foto, buste a tag pública em um
 processo que a possui (o write do CLI não revalida o servidor Next):
