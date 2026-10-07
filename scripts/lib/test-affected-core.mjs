@@ -69,6 +69,8 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/cityReportResearch.mjs',
   'scripts/lib/cityReportTerritory.mjs',
   'scripts/lib/cli.mjs',
+  'scripts/lib/colinhaReel.mjs',
+  'scripts/lib/colinhaReelTemplate.mjs',
   'scripts/lib/conflictMarkers.mjs',
   'scripts/lib/db-start.mjs',
   'scripts/lib/deploy-trigger.mjs',
