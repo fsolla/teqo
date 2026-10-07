@@ -1,0 +1,258 @@
+{
+  "source": "Produção (state_deputy × contact) em 2026-10-01: as dobradinhas cujo nome NÃO contém \"(apagar)\" (marcador temporário da assessoria para as que saíram). 46 registros ativos; 4 sem par no catálogo do site (Gildo Baleia, Juvenilson, Rafael Meireles) e 1 duplicata (Geane Vasconcelo ACS) ficam fora — o reel-card exige o card do site e a foto oficial. As fotos vêm de DOBRADINHAS-ORGANIZADAS/<pasta>/foto.png (as mesmas dos cards da Plenária da Vitória).",
+  "photosDir": "/home/fsolla/Downloads/DOBRADINHAS-ORGANIZADAS",
+  "dobradinhas": [
+    {
+      "slug": "enfermagem",
+      "catalog": "Coletivo de Enfermagem",
+      "number": "13763",
+      "folder": "Coletivo de Enfermagem da Bahia"
+    },
+    {
+      "slug": "andrea",
+      "catalog": "Andréa Castro",
+      "number": "55670",
+      "folder": "Andréa Castro"
+    },
+    {
+      "slug": "andre",
+      "catalog": "André Fidalgo",
+      "number": "13131",
+      "folder": "André Fidalgo"
+    },
+    {
+      "slug": "arthur",
+      "catalog": "Artur Barachisio Lisbôa",
+      "number": "55255",
+      "folder": "Arthur Lisboa"
+    },
+    {
+      "slug": "bobo",
+      "catalog": "Bobô",
+      "number": "65888",
+      "folder": "Bobô"
+    },
+    {
+      "slug": "carol",
+      "catalog": "Carol da Pitanguinha",
+      "number": "13110",
+      "folder": "Carol Pitanguinha"
+    },
+    {
+      "slug": "cicero",
+      "catalog": "Cícero Monteiro",
+      "number": "70133",
+      "folder": "Cicero Monteiro"
+    },
+    {
+      "slug": "denise",
+      "catalog": "Denise Menezes",
+      "number": "55111",
+      "folder": "Denise Menezes"
+    },
+    {
+      "slug": "euclides",
+      "catalog": "Euclides Fernandes",
+      "number": "13123",
+      "folder": "Euclides Fernandes"
+    },
+    {
+      "slug": "fabiola",
+      "catalog": "Dra. Fabíola Mansur",
+      "number": "43123",
+      "folder": "Fabíola Mansur"
+    },
+    {
+      "slug": "fatima",
+      "catalog": "Fátima Nunes",
+      "number": "13567",
+      "folder": "Fátima Nunes"
+    },
+    {
+      "slug": "geane",
+      "catalog": "Geane Vasconcelos",
+      "number": "12120",
+      "folder": "Geane"
+    },
+    {
+      "slug": "hilton",
+      "catalog": "Hilton",
+      "number": "50150",
+      "folder": "Hilton"
+    },
+    {
+      "slug": "ivana",
+      "catalog": "Ivana Bastos",
+      "number": "55555",
+      "folder": "Ivana Bastos"
+    },
+    {
+      "slug": "jamille",
+      "catalog": "Jamile da Saúde",
+      "number": "45456",
+      "folder": "Jamille"
+    },
+    {
+      "slug": "josafa",
+      "catalog": "Josafá Marinho",
+      "number": "12222",
+      "folder": "Josafá"
+    },
+    {
+      "slug": "juliete",
+      "catalog": "Juliete Barreto",
+      "number": "65100",
+      "folder": "Juliete"
+    },
+    {
+      "slug": "julio",
+      "catalog": "Julio Pinheiro",
+      "number": "13999",
+      "folder": "Júlio Pinheiro"
+    },
+    {
+      "slug": "junior",
+      "catalog": "Júnior Muniz",
+      "number": "13000",
+      "folder": "Junior Muniz"
+    },
+    {
+      "slug": "kleber",
+      "catalog": "Kleber Rosa",
+      "number": "50500",
+      "folder": "Kleber"
+    },
+    {
+      "slug": "leninha",
+      "catalog": "Lenínha Valente",
+      "number": "13111",
+      "folder": "Leninha"
+    },
+    {
+      "slug": "leo",
+      "catalog": "Leo de Neco",
+      "number": "70700",
+      "folder": "Leo de Neco"
+    },
+    {
+      "slug": "magno",
+      "catalog": "Magno",
+      "number": "18000",
+      "folder": "Magno"
+    },
+    {
+      "slug": "mestre",
+      "catalog": "Mestre Reginaldo",
+      "number": "18273",
+      "folder": "Mestre Reginaldo"
+    },
+    {
+      "slug": "neusa",
+      "catalog": "Neusa Cadore",
+      "number": "13690",
+      "folder": "Neusa"
+    },
+    {
+      "slug": "niltinho",
+      "catalog": "Niltinho",
+      "number": "55999",
+      "folder": "Niltinho"
+    },
+    {
+      "slug": "osni",
+      "catalog": "Osni",
+      "number": "13013",
+      "folder": "Osni"
+    },
+    {
+      "slug": "patrick",
+      "catalog": "Patrick Lopes",
+      "number": "70123",
+      "folder": "Patrick Lopes"
+    },
+    {
+      "slug": "pinheiro",
+      "catalog": "Pinheiro",
+      "number": "13700",
+      "folder": "Pinheiro"
+    },
+    {
+      "slug": "radiovaldo",
+      "catalog": "Radiovaldo",
+      "number": "13050",
+      "folder": "Radiovaldo Costa"
+    },
+    {
+      "slug": "robinson",
+      "catalog": "Robinson",
+      "number": "13500",
+      "folder": "Robinson"
+    },
+    {
+      "slug": "rogerio",
+      "catalog": "Rogério Andrade",
+      "number": "15444",
+      "folder": "Rogério Andrade"
+    },
+    {
+      "slug": "rosemberg",
+      "catalog": "Rosemberg",
+      "number": "13444",
+      "folder": "Rosemberg"
+    },
+    {
+      "slug": "rosival",
+      "catalog": "Rosival Leite",
+      "number": "13333",
+      "folder": "Rosival Leite"
+    },
+    {
+      "slug": "rowenna",
+      "catalog": "Rowenna",
+      "number": "13456",
+      "folder": "Rowenna"
+    },
+    {
+      "slug": "silva",
+      "catalog": "Silva Neto",
+      "number": "70444",
+      "folder": "Silva Neto"
+    },
+    {
+      "slug": "silvio",
+      "catalog": "Silvio Dias",
+      "number": "13113",
+      "folder": "Sílvio Dias"
+    },
+    {
+      "slug": "vilma",
+      "catalog": "Vilma Reis",
+      "number": "13033",
+      "folder": "Vilma Reis"
+    },
+    {
+      "slug": "wenceslau",
+      "catalog": "Wenceslau",
+      "number": "65111",
+      "folder": "Wenceslau"
+    },
+    {
+      "slug": "yulo",
+      "catalog": "Yulo",
+      "number": "13234",
+      "folder": "Yulo"
+    },
+    {
+      "slug": "ze-raimundo",
+      "catalog": "Zé Raimundo",
+      "number": "13222",
+      "folder": "Zé Raimundo"
+    },
+    {
+      "slug": "angelo",
+      "catalog": "Angelo Almeida",
+      "number": "13100",
+      "folder": "Angelo Almeida"
+    }
+  ]
+}
