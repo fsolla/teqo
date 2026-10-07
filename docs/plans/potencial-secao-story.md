@@ -11,7 +11,7 @@ Responsável: —
 
 ## Intenção
 
-O 2º turno é em 25/10/2026 e falta uma ferramenta de amplificação para o eleitor comum: quem tem o título de eleitor em mãos quer ver o que a *sua própria seção* pode render para Lula e sair compartilhando. Hoje o site público fala para o público geral, não para a seção de quem visita. A oportunidade é transformar um recorte que a pessoa reconhece (a seção onde vota) num story de Instagram pronto, com um número local e pessoal o bastante para circular sozinho no WhatsApp.
+O 2º turno é em 25/10/2026 e falta uma ferramenta de amplificação para o eleitor comum: quem tem o título de eleitor em mãos quer ver o que a _sua própria seção_ pode render para Lula e sair compartilhando. Hoje o site público fala para o público geral, não para a seção de quem visita. A oportunidade é transformar um recorte que a pessoa reconhece (a seção onde vota) num story de Instagram pronto, com um número local e pessoal o bastante para circular sozinho no WhatsApp.
 
 ## Persona e fluxo
 
@@ -47,7 +47,7 @@ O 2º turno é em 25/10/2026 e falta uma ferramenta de amplificação para o ele
 - **Decisões desbloqueadas:**
   - Visitante/apoiador: decide se aquele número local vale um story — e o publica.
   - Liderança local: decide usar o ganho da própria seção no material de mobilização.
-- **Forma:** *adiada ao plano de implementação* — restrições: pontos percentuais do recorte local, 1º → 2º turno lado a lado para X₁ e X₂, com carimbo de cenário hipotético.
+- **Forma:** _adiada ao plano de implementação_ — restrições: pontos percentuais do recorte local, 1º → 2º turno lado a lado para X₁ e X₂, com carimbo de cenário hipotético.
 
 ## Dados da decisão (literais)
 
