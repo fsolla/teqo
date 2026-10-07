@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "generatedAt": "2026-10-07T21:38:06.060Z",
+  "scope": "BR",
+  "sources": [
+    {
+      "key": "votacao_secao_2026_BR",
+      "url": "https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_2026_BR.zip",
+      "sha256": "2d42006d0f6c6e00bad83f5c23cd3d78cd3e3182dbc1ad6718222b6b132c23e1",
+      "bytes": 161616519
+    },
+    {
+      "key": "detalhe_votacao_secao_2026",
+      "url": "https://cdn.tse.jus.br/estatistica/sead/odsele/detalhe_votacao_secao/detalhe_votacao_secao_2026.zip",
+      "sha256": "0b1297dc7ae4a46b6ee0428d0f60b9ab9da6b53419ef7580d9ca20662a192cb1",
+      "bytes": 176923590
+    }
+  ],
+  "candidates": {
+    "lula": 13,
+    "flavio": 22,
+    "count": 13,
+    "votesByNumber": {
+      "13": 53722151,
+      "14": 2667307,
+      "16": 42730,
+      "21": 22272,
+      "22": 55960603,
+      "27": 39218,
+      "28": 5123,
+      "29": 14825,
+      "30": 323159,
+      "35": 16508,
+      "55": 2600440,
+      "70": 3438835,
+      "80": 121858
+    }
+  },
+  "totals": {
+    "sections": 497897,
+    "aptos": 157828968,
+    "comparecimento": 124934069,
+    "nominais": 118975029,
+    "brancos": 2294982,
+    "nulos": 3664058,
+    "lula": 53722151,
+    "flavio": 55960603,
+    "candidateVotes": 118975029,
+    "candidates": 13
+  },
+  "ufs": {
+    "AC": {
+      "file": "AC.json",
+      "sha256": "960365d6a2be892f2bbe4fd0c15e0608da6de52401abf5d7f2f09a87e63935ff",
+      "bytes": 61295,
+      "municipalities": 22,
+      "sections": 2270
+    },
+    "AL": {
+      "file": "AL.json",
+      "sha256": "14a549e2dd5771101ca0e17fbffff22fd9102486691bbffd56fed1edda44b07a",
+      "bytes": 201778,
+      "municipalities": 102,
+      "sections": 7101
+    },
+    "AP": {
+      "file": "AP.json",
+      "sha256": "d94c4021e15b80e7a13c2969bdfcfca6cb1a3a3455198061884abebc42f7465b",
+      "bytes": 52935,
+      "municipalities": 16,
+      "sections": 1914
+    },
+    "AM": {
+      "file": "AM.json",
+      "sha256": "3737ff633e331c24aaca95bc67ea3db1eaedb861e10d8fcb0898c74a3e0f5159",
+      "bytes": 229562,
+      "municipalities": 62,
+      "sections": 8157
+    },
+    "BA": {
+      "file": "BA.json",
+      "sha256": "cdd5e49e1eeede84c11c3585d15457b24639aecf7d654c4d5d60d748532310c1",
+      "bytes": 1015815,
+      "municipalities": 417,
+      "sections": 35476
+    },
+    "CE": {
+      "file": "CE.json",
+      "sha256": "d14b88aa6fe167fee17d00a1db999460df3773a71dceac68cd65e980bed8df74",
+      "bytes": 671614,
+      "municipalities": 184,
+      "sections": 23765
+    },
+    "DF": {
+      "file": "DF.json",
+      "sha256": "9a7a8c47b510be58549ae4b04d72692060e113de17fd423c77775aed8ef8545e",
+      "bytes": 192975,
+      "municipalities": 1,
+      "sections": 6969
+    },
+    "ES": {
+      "file": "ES.json",
+      "sha256": "3d19acea027d3b721016f36d912340b9850d41cc843b579a426716a14789eea8",
+      "bytes": 275027,
+      "municipalities": 78,
+      "sections": 9844
+    },
+    "GO": {
+      "file": "GO.json",
+      "sha256": "cf6996f0e31b99051e2f9a2e737a52ead53503b868019fe13118cae023fad31a",
+      "bytes": 446875,
+      "municipalities": 246,
+      "sections": 15686
+    },
+    "MA": {
+      "file": "MA.json",
+      "sha256": "7904d70d6c7d1526920ae20a359f0b8568e459c4e8fb24a65df5877b4bb8dcaa",
+      "bytes": 509087,
+      "municipalities": 217,
+      "sections": 18093
+    },
+    "MT": {
+      "file": "MT.json",
+      "sha256": "8db7fcd3905bfcdfa023e1ef752d242f80fe2f888fd2118d239df11196070678",
+      "bytes": 235688,
+      "municipalities": 142,
+      "sections": 8287
+    },
+    "MS": {
+      "file": "MS.json",
+      "sha256": "3ab6f988fdbd46771e945223f08ea953cf97f7b9a37b0eb1e49c690776c7f67a",
+      "bytes": 197048,
+      "municipalities": 79,
+      "sections": 7106
+    },
+    "MG": {
+      "file": "MG.json",
+      "sha256": "0edfd5996809d7fb42999105639e62a6e361da8b5acdceac0bb6d4f89547a2de",
+      "bytes": 1515937,
+      "municipalities": 853,
+      "sections": 52062
+    },
+    "PA": {
+      "file": "PA.json",
+      "sha256": "84b2acabf2041803cdb7da626f9e70eb495a5ca508d995d5edbd79fb4939ad37",
+      "bytes": 585090,
+      "municipalities": 144,
+      "sections": 20827
+    },
+    "PB": {
+      "file": "PB.json",
+      "sha256": "b8b73cdf1655e12cb27ab9ac14b0d7c57688c253703bb126fe7bd261fec55d36",
+      "bytes": 306198,
+      "municipalities": 223,
+      "sections": 10712
+    },
+    "PR": {
+      "file": "PR.json",
+      "sha256": "a5dc5796142b82293fd59af129c6cabac6829569f13f61fbeb6e53152ba32eac",
+      "bytes": 778534,
+      "municipalities": 399,
+      "sections": 27142
+    },
+    "PE": {
+      "file": "PE.json",
+      "sha256": "b884c02765060e098c87e395e76b6ef65709ff14c3c466020633a792eb6e8d1e",
+      "bytes": 608913,
+      "municipalities": 185,
+      "sections": 21418
+    },
+    "PI": {
+      "file": "PI.json",
+      "sha256": "05acc7852de832db1737bfa20dd0f301488dcd710020b6c15d538c6c54f6165f",
+      "bytes": 289635,
+      "municipalities": 224,
+      "sections": 10225
+    },
+    "RJ": {
+      "file": "RJ.json",
+      "sha256": "895b7c9df23101736538dcbb35a291c69dc67c04b2cb76e3e019abb4ab879ccf",
+      "bytes": 1076255,
+      "municipalities": 92,
+      "sections": 37675
+    },
+    "RN": {
+      "file": "RN.json",
+      "sha256": "3417841406d73af230bd941cc299375db34982792b565d0b8ea8cdc741c1d3e4",
+      "bytes": 231337,
+      "municipalities": 167,
+      "sections": 8115
+    },
+    "RS": {
+      "file": "RS.json",
+      "sha256": "323c83a03191ca438357d45f1e776119a1ba9fa49750a8baed0f3c602e8a39e9",
+      "bytes": 792050,
+      "municipalities": 497,
+      "sections": 27547
+    },
+    "RO": {
+      "file": "RO.json",
+      "sha256": "e6ab63b463e161b4a843678226580767a4c0853da2aabaa05e29bff1e27a45f1",
+      "bytes": 129953,
+      "municipalities": 52,
+      "sections": 4698
+    },
+    "RR": {
+      "file": "RR.json",
+      "sha256": "4fc426fb2afa7b036145f9613f18539825e3bf3d31360aa334edbfc907a1d637",
+      "bytes": 40985,
+      "municipalities": 15,
+      "sections": 1519
+    },
+    "SC": {
+      "file": "SC.json",
+      "sha256": "599a4de71abb85aa9669f4107114080d3cd12a32726a7283ffa1b62d3c00e9bd",
+      "bytes": 492499,
+      "municipalities": 295,
+      "sections": 17326
+    },
+    "SP": {
+      "file": "SP.json",
+      "sha256": "16a706be4f791425afd73736b00b197ee422d95a16460aa3e77fa90d649cf9a3",
+      "bytes": 2991786,
+      "municipalities": 645,
+      "sections": 103656
+    },
+    "SE": {
+      "file": "SE.json",
+      "sha256": "5df9b985e4a2a9c6171e0843d73504ab954eecc4a2bcbed27c1272487dc32a60",
+      "bytes": 165772,
+      "municipalities": 75,
+      "sections": 5923
+    },
+    "TO": {
+      "file": "TO.json",
+      "sha256": "715fc87b236caf73ab8e25bb2db4ce9b0268b6360769d9e25bce43078a636400",
+      "bytes": 125305,
+      "municipalities": 139,
+      "sections": 4384
+    }
+  },
+  "validation": [
+    "estruturais: comparecimento = nominais + brancos + nulos; soma das 13 candidaturas = nominais; nenhuma seção sem aferição; Lula+Flávio ≤ comparecimento.",
+    "auditoria nacional pinada confere (seções, aptos, comparecimento, nominais, brancos, nulos, Lula, Flávio, candidaturas)."
+  ]
+}
