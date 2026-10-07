@@ -16,6 +16,7 @@ export const SHARE_LINK_RESERVED_SLUGS = [
   'jingles',
   'conteudos',
   'fotos',
+  'potencial',
   'api',
   'admin',
   'noticia',

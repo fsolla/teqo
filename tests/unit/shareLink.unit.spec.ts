@@ -57,6 +57,7 @@ describe('shareLink slug', () => {
         'jingles',
         'mandato-no-whatsapp',
         'noticia',
+        'potencial',
         'privacidade',
       ].sort(),
     )
