@@ -79,8 +79,7 @@ describe('GET /api/potencial/secao', () => {
       (await getSecao(request('/api/potencial/secao?uf=BA&codigo=1&zona=150&secao=50'))).status,
     ).toBe(404)
     expect(
-      (await getSecao(request('/api/potencial/secao?uf=BA&codigo=39098&zona=0&secao=50')))
-        .status,
+      (await getSecao(request('/api/potencial/secao?uf=BA&codigo=39098&zona=0&secao=50'))).status,
     ).toBe(400)
     expect(
       (await getSecao(request('/api/potencial/secao?uf=BA&codigo=39098&zona=150'))).status,
