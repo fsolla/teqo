@@ -102,6 +102,23 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontend', 'campaignNewsletter'],
   },
   {
+    // S46 — the public `/potencial` surface: the section query endpoints over
+    // the committed TSE shards, the pure calculator and the story canvas
+    // export. The artifact itself (`public/dados/…`) and its build script are
+    // outside `src/` — the manifest only maps src diffs; a data-only rebuild
+    // rides the deploy verify's full suite.
+    prefixes: [
+      'src/app/(frontend)/(home)/potencial',
+      'src/app/(frontend)/api/potencial',
+      'src/app/(frontend)/fonts.ts',
+      'src/components/potencial',
+      'src/lib/sectionPotential',
+      'src/lib/sectionStoryRender',
+      'src/utilities/potencialSections',
+    ],
+    specs: ['frontendPotencial'],
+  },
+  {
     // S19/S29 — the share-link surface: the `[type]` branch serves the OG card,
     // the instant handoff and the announcement page (`.ics` included), and the
     // pure module/collection/cached read own the slug, mode, destination pool,
@@ -510,6 +527,7 @@ export const E2E_AFFECTED_MANIFEST = [
       'campaignSpeechCut',
       'campaignReel',
       'frontendFotosSelfie',
+      'frontendPotencial',
     ],
   },
   {
