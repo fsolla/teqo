@@ -148,6 +148,11 @@ next-env.d.ts
 # commits; every real jingle lives in the media collection.
 !tests/fixtures/*.mp3
 
+# C-reel — derivativos dos reels commitados em scripts/reels/assets/<slug>/
+# (proveniência e receitas no README da pasta): o efeito "confirma" do TSE e a
+# cama do jingle são derivados reprodutíveis e acompanham os demais ativos.
+!/scripts/reels/assets/**/*.mp3
+
 # opencode secrets (Penpot MCP token, etc.)
 .opencode/secrets/
 
