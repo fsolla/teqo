@@ -553,6 +553,10 @@ describe('src/utilities top-level is pinned', () => {
     'payloadTransaction.ts',
     'postgresTransactionLocks.ts',
     'posts.ts',
+    // S46 — server-side reader of the committed TSE section shards under
+    // `public/dados/potencial-secao-2026` (fs + parse cache, fail-closed);
+    // the sibling of `electionCache.ts` for the `/potencial` public route.
+    'potencialSections.ts',
     'recentVisits.ts',
     'revalidateRequest.ts',
     'sameOriginRequest.ts',
