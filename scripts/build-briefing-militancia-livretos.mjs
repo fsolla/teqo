@@ -41,6 +41,8 @@ import { fileURLToPath } from 'node:url'
 
 import { chromium } from '@playwright/test'
 
+import { dieWithLabel } from './lib/cli.mjs'
+
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DATA_DIR = 'data/briefing-geral-militancia'
 const OUT_DIR = 'docs/research/briefing-geral-militancia/livretos-1folha'
@@ -271,10 +273,7 @@ const PRINT_CSS = `
   .slot .sheet { break-after: auto; }
 `
 
-const die = (message) => {
-  console.error(`[${LABEL}] ERRO: ${message}`)
-  process.exit(1)
-}
+const die = dieWithLabel(LABEL)
 
 const readJson = async (path) => {
   try {
