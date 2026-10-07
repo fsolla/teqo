@@ -62,6 +62,10 @@ test('prewarms shared Next route bundles sequentially', async ({ request }) => {
     '/campanha/convite/e2e-prewarm',
     '/',
     '/cards',
+    // S46 — the public story page (form + the two anonymous JSON reads).
+    '/potencial',
+    '/api/potencial/municipios?uf=BA',
+    '/api/potencial/secao?uf=BA&codigo=39098&zona=150&secao=50',
   ]) {
     await prewarmGet(path)
   }
