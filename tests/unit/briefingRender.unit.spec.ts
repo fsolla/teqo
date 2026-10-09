@@ -111,6 +111,7 @@ describe('renderBriefingHtml', () => {
 
   it('renders the literal request with the vote number and the one-line plan', () => {
     expect(html).toContain('vote 1313, Jorge Solla')
+    expect(html).toContain('vote 13, Lula')
     expect(html).toContain('request-line')
     expect(html).toContain('request-block')
     expect(html).toContain('compromisso nomeado')
@@ -178,6 +179,7 @@ describe('renderBriefingMd (companion superset)', () => {
     expect(md).toContain(droppedQuestion.question)
     expect(md).toContain('Insumo interno de capacitação — não publicar')
     expect(md).toContain('vote 1313, Jorge Solla')
+    expect(md).toContain('vote 13, Lula')
     expect(md).toContain('**Plano:** Combine onde, quando e como votar')
     expect(md).toContain('[fonte](https://saude.test/ambulancia)')
     expect(md).toContain('## O que Solla defende')

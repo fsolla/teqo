@@ -27,11 +27,13 @@ dossiê daquele recorte estar pesquisado.
    - `essential` (≥3) — fatos-âncora que sustentam a conversa (sem trajetória de
      formação), com a fase junto ao valor;
    - `plan` — **uma linha** (≤220 chars) de plano de voto/compromisso nomeado
-     (o pedido literal é do renderer, não o reescreva);
+     (o pedido literal — 1313 e Lula 13 no 2º turno — é do renderer, não o
+     reescreva; você pode usar o `plan` para dizer como combinar os dois);
    - `qa` (≥4; mire **8–10**) — perguntas prováveis com `side`
      (`direita|esquerda|entrega`), `question`, `acknowledge`, `answer` (ancorada
      em `factId` real ou declarada como lacuna) e `close`, cobrindo os dois
-     lados.
+     lados; inclua **ao menos uma pergunta de 2º turno** (por que votar em Lula;
+     o que está em jogo para a cidade), sem cenário nem número de pesquisa.
 3. Devolver **apenas o recibo curto** (seção "Recibo do autor" da skill).
 
 ## Limites
@@ -51,7 +53,8 @@ dossiê daquele recorte estar pesquisado.
   (`estimatedVotes`, `scenario`, `projection`, `polls`, …): o briefing é
   capacitação, não leitura eleitoral.
 - Copy pt-BR, sem PII (telefone/e-mail nunca), sem CTA público, sem promessa de
-  entrega; o pedido literal do voto 1313 é do renderer.
+  entrega; o pedido literal do voto (1313 e, no 2º turno, Lula 13) é do
+  renderer.
 - Reuse a voz do `solla-comunicacao` (rebates e fórmula de resposta a crítica),
   sem inventar tom novo.
 - **Não** faça pesquisa web nova, **não** edite os `research.json`, **não** rode

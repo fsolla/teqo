@@ -16,7 +16,7 @@ import { resolveDossierUnit } from './dossieUnit.mjs'
 import { htmlEscape, moreItemsLabel } from './reportText.mjs'
 
 const BRIEFING_REQUEST_LINE =
-  'Posso contar com você? Para deputado federal, <em>vote 1313, Jorge Solla.</em>'
+  'Posso contar com você? Para deputado federal, <em>vote 1313, Jorge Solla.</em> E no 2º turno, <em>vote 13, Lula.</em>'
 
 const BRIEFING_PRINT_CSS = `
   :root {
@@ -263,7 +263,7 @@ export const renderBriefingMd = (content, { unit, report }) => {
     '',
     '## O pedido',
     '',
-    '> “Posso contar com você? Para deputado federal, vote 1313, Jorge Solla.”',
+    '> “Posso contar com você? Para deputado federal, vote 1313, Jorge Solla. E no 2º turno, vote 13, Lula.”',
     '',
     `**Plano:** ${content.plan}`,
     '',
