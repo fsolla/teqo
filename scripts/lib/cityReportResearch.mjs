@@ -17,6 +17,10 @@ const RESEARCH_CHECKLIST = [
   { id: 'relacao_campo', label: 'Relação com o campo (aliado, oposição, neutro)' },
   { id: 'vereadores', label: 'Vereadores e dobradas' },
   { id: 'disputa_local', label: 'Disputa local' },
+  {
+    id: 'segundo_turno',
+    label: '2º turno (Lula × Flávio) — atos, palanques e posições locais',
+  },
   { id: 'quem_investe', label: 'Quem mais investe na cidade (bancada e adversários)' },
   { id: 'noticias', label: 'Notícias da cidade/região (janela ≤90 dias)' },
   { id: 'imprensa_local', label: 'Imprensa e rádio local' },

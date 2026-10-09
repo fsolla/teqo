@@ -144,13 +144,15 @@ describe('renderReportMd', () => {
 
   it('carries the same sections as tables and headings', () => {
     expect(md).toContain('## 1. Conta eleitoral completa')
-    expect(md).toContain('## 2. Concorrentes no município (federal e estadual)')
-    expect(md).not.toContain('## 5. Sinais recentes')
+    expect(md).toContain('## 2. 2º turno no município (Lula × Flávio)')
+    expect(md).toContain('> **Papel no 2º turno: Defesa e comparecimento**')
+    expect(md).toContain('## 3. Concorrentes no município (federal e estadual)')
+    expect(md).not.toContain('## 6. Sinais recentes')
     expect(md).not.toContain('Demandas e visitas')
-    expect(md).toContain('## 6. Atividade econômica (pesquisa)')
-    expect(md).toContain('## 7. Transporte e conexões (pesquisa)')
-    expect(md).toContain('## 11. Abordagem sugerida (pesquisa)')
-    expect(md).toContain('## 12. Fontes e limites')
+    expect(md).toContain('## 7. Atividade econômica (pesquisa)')
+    expect(md).toContain('## 8. Transporte e conexões (pesquisa)')
+    expect(md).toContain('## 12. Abordagem sugerida (pesquisa)')
+    expect(md).toContain('## 13. Fontes e limites')
     expect(md).toContain('| Ano | Votos |')
   })
 

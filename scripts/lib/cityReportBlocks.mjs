@@ -10,6 +10,14 @@
  */
 
 import { getMunicipalityFederalBaseline } from '../../src/lib/bahiaElectionAggregates.ts'
+import {
+  BAHIA_SECOND_ROUND_GENERATED_AT,
+  getBahiaSecondRoundUnit,
+  secondRoundAdversaryCapturePct,
+  secondRoundLulaShares,
+  secondRoundPotentialOf,
+  secondRoundSollaShareOfLula,
+} from '../../src/lib/bahiaSecondRound.ts'
 import { formatEngagementLevelLabel } from '../../src/lib/engagementLevel.ts'
 import { getMunicipalityVoteRank } from '../../src/lib/municipalityVoteRank.ts'
 import { activityStatusLabels } from '../../src/lib/schemas/activity.ts'
@@ -18,6 +26,7 @@ import {
   campaignDemandStatusLabels,
 } from '../../src/lib/schemas/campaignDemand.ts'
 import { municipalityUpdatePolarityLabels } from '../../src/lib/schemas/municipalityUpdate.ts'
+import { secondRoundRoleGuidance, secondRoundRoleLabels } from '../../src/lib/secondRoundRole.ts'
 import { SPEECH_TOPICS } from '../../src/lib/speechFacets.ts'
 import {
   formatVoteEstimateEndpointsLabel,
@@ -133,6 +142,14 @@ const withInlineSources = (text, sources) => {
   if (INLINE_SOURCE_TOKEN.test(text)) return text
   return `${text} ${inlineSourceTokens(sources.length)}`
 }
+
+/** "+1.234" / "−208.310" — the 2º-turno deltas never lose the sign. */
+const signedInteger = (value) =>
+  `${value > 0 ? '+' : value < 0 ? '−' : ''}${formatInteger(Math.abs(value))}`
+
+/** "+3,2 p.p." / "−4,0 p.p." — pt-BR decimal, explicit sign. */
+const signedPoints = (value) =>
+  `${value > 0 ? '+' : value < 0 ? '−' : ''}${Math.abs(value).toFixed(1).replace('.', ',')} p.p.`
 
 /**
  * Página 1 = resumo de uma olhada: a fonte do item entra compacta (pesquisa web
@@ -470,6 +487,206 @@ const buildElectoralSection = ({ snapshot }) => {
     gap ? gapCallout([gap], 'Lacunas desta seção') : null,
   ].filter(Boolean)
 }
+
+/**
+ * Local movement of the 2º turno (web): acts, palanques and positioning of
+ * local leaders in the Lula × Flávio race. A missing item is the explicit gap.
+ */
+const buildSecondRoundResearchBlock = (research) => {
+  const item = researchItemById(research, 'segundo_turno')
+  if (!item) {
+    return gapCallout(
+      [
+        {
+          id: 'segundo_turno',
+          label: 'Movimento local do 2º turno',
+          reason: 'Não pesquisado.',
+        },
+      ],
+      'Lacuna desta seção',
+    )
+  }
+  const sources = sourcesOf(item)
+  return {
+    kind: 'table',
+    title: '2º turno — movimento local e palanque (pesquisa)',
+    columns: [
+      { key: 'detail', label: 'O que a fonte diz', width: 72 },
+      { key: 'source', label: 'Fonte', width: 28 },
+    ],
+    rows: [
+      {
+        detail: withInlineSources(item.details ?? item.answer, sources),
+        source: formatDateBr(item.sourceDate),
+        sources,
+      },
+    ],
+    note: 'Atos, palanques e posicionamentos locais na disputa Lula × Flávio — fato publicado com fonte datada.',
+    sources: sources.map((url) => ({
+      kind: 'web',
+      label: 'Movimento local do 2º turno',
+      url,
+      date: item.sourceDate,
+    })),
+  }
+}
+
+/**
+ * 2º turno section (Lula × Flávio): deterministic numbers from the committed
+ * artifact (official TSE 2026 president T1 per section, aggregated to the
+ * campaign unit) + the local web movement. The role copy directs the visit
+ * (mobilize/defend); it never promises vote transfer.
+ */
+const buildSecondRoundSection = ({ snapshot, research }) => {
+  const unit = getBahiaSecondRoundUnit(snapshot.municipality.slug)
+  if (!unit) {
+    return [
+      gapCallout(
+        [
+          {
+            id: 'segundo_turno',
+            label: 'Artefato do 2º turno',
+            reason: 'Unidade fora do artefato TSE 2026 — regenere com `pnpm build:second-round`.',
+          },
+        ],
+        'Lacunas desta seção',
+      ),
+      buildSecondRoundResearchBlock(research),
+    ].filter(Boolean)
+  }
+
+  const potential = secondRoundPotentialOf(unit)
+  const shares = secondRoundLulaShares(unit)
+  const capture = secondRoundAdversaryCapturePct(unit)
+  const sollaRatio = secondRoundSollaShareOfLula(unit)
+  const sources = [
+    sourceOfficial(
+      'TSE — 1º turno 2026 (presidente, por seção) e 2022; deputado federal 2026',
+      null,
+      null,
+    ),
+    sourceTeqo(
+      'base Teqo — artefato do 2º turno (pnpm build:second-round)',
+      BAHIA_SECOND_ROUND_GENERATED_AT,
+    ),
+  ]
+
+  const rows = [
+    {
+      label: 'Lula (PT)',
+      y22: formatInteger(unit.lula22),
+      y26: formatInteger(unit.lula26),
+      delta: signedInteger(unit.dLula),
+    },
+    {
+      label: 'Adversário (Bolsonaro→Flávio)',
+      y22: formatInteger(unit.adversary22),
+      y26: formatInteger(unit.adversary26),
+      delta: signedInteger(unit.dAdversary),
+    },
+    {
+      label: 'Solla — dep. federal 1313',
+      y22: formatInteger(unit.solla22),
+      y26: formatInteger(unit.solla26),
+      delta: signedInteger(unit.dSolla),
+    },
+    {
+      label: 'Comparecimento',
+      y22: formatInteger(unit.comparecimento22),
+      y26: formatInteger(unit.comparecimento26),
+      delta: signedInteger(unit.comparecimento26 - unit.comparecimento22),
+    },
+    {
+      label: 'Abstenção',
+      y22: formatInteger(unit.abstencao22),
+      y26: formatInteger(unit.abstencao26),
+      delta: signedInteger(unit.abstencao26 - unit.abstencao22),
+    },
+    {
+      label: 'Brancos + nulos',
+      y22: formatInteger(unit.brancosNulos22),
+      y26: formatInteger(unit.brancosNulos26),
+      delta: signedInteger(unit.brancosNulos26 - unit.brancosNulos22),
+    },
+  ]
+
+  const calloutBody = [secondRoundRoleGuidance[unit.role]]
+  if (capture !== null) {
+    calloutBody.push(
+      `Captura do adversário: ${formatPercent(capture / 100)} da perda de Lula em votos (pode passar de 100% quando o comparecimento cresce).`,
+    )
+  }
+  if (sollaRatio !== null) {
+    calloutBody.push(
+      `Solla 2026 = ${formatPercent(sollaRatio / 100)} dos votos de Lula no recorte — a base local disponível para organizar a mobilização.`,
+    )
+  }
+
+  const kpis = [
+    {
+      label: 'Lula em 2026',
+      value: formatPercent(shares.share26 / 100),
+      hint: `dos válidos · Δ ${signedPoints(shares.deltaPp)} vs 2022`,
+    },
+    {
+      label: 'Votos fora do 2º turno',
+      value: potential ? `X₂ = ${formatInteger(potential.x2)}` : '—',
+      hint: potential
+        ? `X₁ = ${formatInteger(potential.x1)} já no comparecimento; X₂ soma os ausentes`
+        : 'sem cenário para os números do recorte',
+    },
+    {
+      label: 'Solla 2026',
+      value: formatInteger(unit.solla26),
+      hint: `Δ ${signedInteger(unit.dSolla)} vs 2022${
+        sollaRatio !== null ? ` · ${formatPercent(sollaRatio / 100)} dos votos de Lula` : ''
+      }`,
+    },
+  ]
+
+  return [
+    {
+      kind: 'callout',
+      tone: unit.role === 'defesa' ? 'risk' : 'decision',
+      title: `Papel no 2º turno: ${secondRoundRoleLabels[unit.role]}`,
+      body: calloutBody,
+      sources,
+    },
+    { kind: 'kpis', items: kpis, sources: [sources[0]] },
+    {
+      kind: 'table',
+      title: 'A conta 2022 → 1º turno 2026 (presidente e Solla 1313)',
+      columns: [
+        { key: 'label', label: 'Indicador', width: 34 },
+        { key: 'y22', label: '2022', numeric: true, width: 22 },
+        { key: 'y26', label: '2026', numeric: true, width: 22 },
+        { key: 'delta', label: 'Δ', numeric: true, width: 22 },
+      ],
+      rows,
+      note:
+        unit.dLula < 0
+          ? `Captura do adversário = ΔFlávio ÷ |ΔLula| = ${
+              capture === null ? '—' : formatPercent(capture / 100)
+            }; pode passar de 100% porque a perda de Lula não é a única fonte do ganho (comparecimento e terceira via também mudam).`
+          : `Lula não perdeu votos no recorte (Δ ${signedInteger(unit.dLula)}).`,
+      sources,
+    },
+    {
+      kind: 'prose',
+      text: 'X₁ = votos já dentro do comparecimento de 2026 que não foram de Lula nem de Flávio (nulos, brancos e terceira via); X₂ = X₁ + ausentes. São votos em jogo, não transferência garantida: o cenário de 2º turno é hipotético. Persuasão em eleição geral tem efeito médio próximo de zero — o papel de Solla é mobilizar, proteger e dar voz, com contato na última semana.',
+      sources,
+    },
+    buildSecondRoundResearchBlock(research),
+  ].filter(Boolean)
+}
+
+/**
+ * Page-1 one-liner of the 2º turno was intentionally left out: page 1 is a
+ * measured, fail-closed surface that already sits at the budget for the
+ * heaviest cities, and deterministic content cannot be shrunk by the text
+ * fallback. The 2º turno lives in its own section (right after the electoral
+ * account), with the full artifact numbers.
+ */
 
 const COMPETITOR_SERIES_YEARS = ['2014', '2018', '2022']
 
@@ -1519,6 +1736,11 @@ export const buildCityReport = ({
       id: 'conta-eleitoral',
       title: 'Conta eleitoral completa (2014/2018/2022)',
       blocks: buildElectoralSection({ snapshot }),
+    },
+    {
+      id: 'segundo-turno',
+      title: '2º turno no município (Lula × Flávio)',
+      blocks: buildSecondRoundSection({ snapshot, research }),
     },
     {
       id: 'concorrentes',

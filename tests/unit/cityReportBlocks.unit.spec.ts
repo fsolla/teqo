@@ -403,14 +403,55 @@ const asReport = (value: unknown) => value as ReportShape
 describe('buildCityReport', () => {
   const report = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
 
-  it('builds the 14 deepening sections in the product order', () => {
-    expect(report.sections).toHaveLength(14)
+  it('builds the 15 deepening sections in the product order', () => {
+    expect(report.sections).toHaveLength(15)
     expect(report.sections[0].title).toMatch(/Conta eleitoral completa/)
-    expect(report.sections[1].title).toMatch(/Concorrentes no município/)
-    expect(report.sections[7].title).toMatch(/Atividade econômica/)
-    expect(report.sections[8].title).toMatch(/Transporte e conexões/)
-    expect(report.sections[12].title).toMatch(/Abordagem sugerida/)
-    expect(report.sections[13].title).toMatch(/Fontes e limites/)
+    expect(report.sections[1].title).toMatch(/2º turno no município/)
+    expect(report.sections[2].title).toMatch(/Concorrentes no município/)
+    expect(report.sections[8].title).toMatch(/Atividade econômica/)
+    expect(report.sections[9].title).toMatch(/Transporte e conexões/)
+    expect(report.sections[13].title).toMatch(/Abordagem sugerida/)
+    expect(report.sections[14].title).toMatch(/Fontes e limites/)
+  })
+
+  it('brings the 2º turno artifact to the dedicated section', () => {
+    const section = report.sections.find((entry) => entry.id === 'segundo-turno')!
+    expect(section.title).toBe('2. 2º turno no município (Lula × Flávio)')
+    const callout = section.blocks.find((block) => block.kind === 'callout')!
+    expect(callout.title).toContain('Defesa e comparecimento')
+    expect(callout.body!.join(' ')).toContain('Captura do adversário')
+    const table = section.blocks.find((block) => block.kind === 'table')!
+    const rows = table.rows as unknown as Array<Record<string, string>>
+    expect(rows[0]).toEqual(
+      expect.objectContaining({
+        label: 'Lula (PT)',
+        y22: '211.813',
+        y26: '194.272',
+        delta: '−17.541',
+      }),
+    )
+    // The local movement of the research feeds the section; sem fonte não entra.
+    expect(section.blocks.some((block) => block.title?.includes('movimento local'))).toBe(true)
+  })
+
+  it('gaps the 2º turno research when the researcher did not answer it', () => {
+    const researchWithout = normalizeResearchInput(
+      {
+        municipalitySlug: 'feira-de-santana',
+        researchedAt: '2026-09-14T10:00:00.000Z',
+        items: RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'segundo_turno').map((id) =>
+          validItem(id),
+        ),
+        gaps: [],
+      },
+      { now: generatedAt },
+    )
+    const withoutReport = asReport(
+      buildCityReport({ snapshot, research: researchWithout, emendas, generatedAt }),
+    )
+    const section = withoutReport.sections.find((entry) => entry.id === 'segundo-turno')!
+    const gap = section.blocks.find((block) => block.kind === 'callout' && block.tone === 'gap')!
+    expect(gap.body!.join(' ')).toContain('Não pesquisado.')
   })
 
   it('adds the researched demography, economy and transport data', () => {
@@ -504,7 +545,7 @@ describe('buildCityReport', () => {
       emptyReport.sections.every((section, index) => section.title.startsWith(`${index + 1}. `)),
     ).toBe(true)
     expect(emptyReport.sections.find((section) => section.id === 'demografia')!.title).toMatch(
-      /^5\. /,
+      /^6\. /,
     )
   })
 
