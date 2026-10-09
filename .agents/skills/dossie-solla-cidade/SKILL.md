@@ -15,6 +15,18 @@ eleitor, sem declaração de fontes) **e** o **Briefing de capacitação** (3º
 entregável: até 4 páginas para quem vai pedir o voto 1313, insumo interno). Os
 layouts vêm dos artefatos hi-fi aprovados pelo `designer`.
 
+## Missão do 2º turno (Lula × Flávio — 25/10/2026)
+
+O dossiê é a **prova material** do 2º turno: o que Solla e o campo PT/federal
+entregaram à cidade sustenta o pedido de voto para Lula em 25/10. O **boletim
+modelo** continua sem CTA (insumo de comunicação, não peça de rua); o **briefing
+de capacitação** (3º entregável) leva o pedido **dual** — 1313 e, no 2º turno,
+Lula 13 (ver `briefing-capacitacao-solla`). Nada muda no escopo da pesquisa por
+era (o dossiê é histórico e com fonte; ruído eleitoral de 2026 segue excluído das
+buscas). O recorte numérico do 2º turno por município/ZE **não vive aqui**: vive
+no relatório de cidade (`relatorio-cidade`, seção "2º turno no município",
+artefato de `pnpm build:second-round`) e não deve ser inventado no dossiê.
+
 ## Quando usar
 
 - A comunicação pede "o dossiê de <cidade>", o "boletim modelo de <cidade>"

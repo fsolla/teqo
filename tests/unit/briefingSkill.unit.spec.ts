@@ -37,6 +37,8 @@ describe('skill /briefing-capacitacao-solla documents the flow', () => {
   it('pins the hard product literals', () => {
     expect(skill).toContain('Insumo interno de capacitação — não publicar')
     expect(skill).toContain('vote 1313')
+    expect(skill, 'the 2º-turno mission is part of the ask').toContain('Missão do 2º turno')
+    expect(skill, 'the pedido is dual since 08/10/2026').toContain('vote 13, Lula')
     expect(skill).toMatch(/4 páginas/)
     expect(skill).toContain('insumo interno')
     expect(skill).toMatch(/sem CTA público/i)

@@ -1,6 +1,6 @@
 ---
 name: briefing-capacitacao-solla
-description: 'Gera o Briefing de capacitação Solla 1313 por recorte (cidade · instituição · tema): PDF A4 de até 4 páginas + companion .md, derivado do dossiê já pesquisado (sem segunda pesquisa factual), todo de recorte — princípios/crenças e defesas de Solla com fonte, fatos-âncora e o pedido literal do voto 1313, e perguntas prováveis × melhores respostas dos dois lados; aceita um recorte ou um lote separado por vírgula.'
+description: 'Gera o Briefing de capacitação Solla 1313 por recorte (cidade · instituição · tema): PDF A4 de até 4 páginas + companion .md, derivado do dossiê já pesquisado (sem segunda pesquisa factual), todo de recorte — princípios/crenças e defesas de Solla com fonte, fatos-âncora e o pedido literal do voto (1313 e, no 2º turno, Lula 13), e perguntas prováveis × melhores respostas dos dois lados; aceita um recorte ou um lote separado por vírgula.'
 ---
 
 # Briefing de capacitação Solla 1313 (C210)
@@ -13,7 +13,8 @@ capa, manual genérico, roteiro de passos, anti-padrões nem limites:
 1. **O que Solla defende** — princípios/crenças do recorte (abertura) + posições
    com lastro (fonte e data);
 2. **O essencial do recorte** — fatos-âncora com **fase junto ao valor** e o
-   **pedido literal** do voto + **uma linha** de plano;
+   **pedido literal** do voto (1313 e, no 2º turno, Lula 13) + **uma linha** de
+   plano;
 3. **Perguntas prováveis × melhores respostas (1/2 e 2/2)** — as perguntas reais
    do recorte, metade do documento, com os dois lados.
 
@@ -28,6 +29,16 @@ declarada, não preenchida. É o **3º entregável** da família
 invocação) e também roda sozinho. O layout vem do design hi-fi aprovado
 `docs/plans/briefing-capacitacao-solla-ui-design.html` — o port é
 classe-a-classe, sem improviso visual.
+
+## Missão do 2º turno (Lula × Flávio — 25/10/2026)
+
+O briefing é o insumo de quem pede voto na rua: desde 08/10/2026 o pedido é
+**dual** — o voto 1313 (Solla) e, no 2º turno, o voto 13 (Lula). O pedido é
+**literal do renderer** (não se reescreve no JSON); o `plan` é a única linha em
+que o autor diz como combinar os dois. Os números do 2º turno (Lula × Flávio,
+X₁/X₂) **não entram** neste contrato: vivem no relatório de cidade
+(`relatorio-cidade`, seção "2º turno no município"), e cenário/estimativa seguem
+proibidos aqui.
 
 ## Quando usar
 
@@ -131,7 +142,7 @@ Escrito pelo autor, validado pelo build (`scripts/lib/briefingContent.mjs`):
     { "factId": "era_b_equipamentos", "sourceUrl": "https://…", "title": "≤120", "note": "≤200" },
     { "gapReason": "sem fala própria localizada", "title": "…", "note": "…" }
   ],
-  "plan": "≤220 chars — uma linha de plano de voto/compromisso nomeado",  // obrigatório
+  "plan": "≤220 chars — uma linha de plano de voto/compromisso nomeado (pode dizer como combinar o 1313 com o voto 13 no 2º turno)",  // obrigatório
   "qa": [                                       // ≥4, com ≥1 "direita" e ≥1 "esquerda"
     { "side": "direita|esquerda|entrega", "question": "≤180",
       "acknowledge": "≤200", "answer": "≤520", "close": "≤200",
@@ -151,6 +162,9 @@ Regras duras:
   autor copia o `sourceUrl` do item do research no campo `sourceUrl` do âncora
   (o par `factId` + `sourceUrl` precisa bater — par errado falha fechado);
 - `qa` cobre os dois lados (≥1 `direita` e ≥1 `esquerda`); `entrega` é opcional;
+  desde 08/10/2026, inclua **ao menos uma pergunta de 2º turno** (por que votar
+  em Lula; o que está em jogo para a cidade) — ancorada no mesmo ledger, sem
+  cenário nem número de pesquisa;
 - **proibido** qualquer chave de cenário/estimativa/staff-only
   (`estimatedVotes`, `scenario`, `projection`, `polls`, …) — o briefing não tem
   campo numérico; valor/fase vêm do fato-âncora no render;
@@ -161,8 +175,8 @@ Regras duras:
   perguntas** (o build divide a lista ao meio).
 
 O pedido é **literal do renderer** (não reescreva no JSON): "Posso contar com
-você? Para deputado federal, **vote 1313, Jorge Solla**." — o `plan` é a única
-linha de orientação que o autor escreve.
+você? Para deputado federal, **vote 1313, Jorge Solla.** E no 2º turno, **vote 13, Lula.**" — o `plan` é a única linha de orientação que o autor escreve
+(ex.: onde/como combinar o pedido municipal com o voto em Lula).
 
 ## Recibo do autor
 
@@ -221,6 +235,9 @@ já carrega o aviso de insumo.
   fonte; lacuna explícita em vez de inferência.
 - **Sem cenário eleitoral/estimativa/staff-only** (nada de `estimatedVotes`,
   projeção, pesquisa); o briefing não promete efeito.
+- **Pedido dual literal**: a folha "O pedido" renderiza 1313 + Lula 13 (2º
+  turno) — não é campo do JSON; números de 2º turno continuam fora do briefing
+  (vivem no relatório de cidade).
 - **Empenho ≠ pagamento**; esfera explícita nunca somada; leitura relativa
   (nunca % estadual absoluto); PII mínima (telefone/e-mail nunca entram).
 - **Voz com dono único**: reusa `.opencode/skills/solla-comunicacao/SKILL.md` +
