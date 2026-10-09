@@ -20,6 +20,49 @@ URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Págin
   local). O PDF sai para leitura de bolso; o detalhe das etapas está em
   "Pipeline (etapas)".
 
+## Missão do 2º turno (Lula × Flávio — 25/10/2026)
+
+A partir de 08/10/2026 o relatório não é só pré-viagem de mandato: **cada visita
+também serve à eleição de Lula no 2º turno**. O produto carrega o recorte
+oficial do 1º turno de 2026 na seção **"2º turno no município (Lula × Flávio)"**
+(nº 2, logo depois da conta eleitoral), com:
+
+- **Números oficiais por unidade** (município ou ZE de Salvador, na mesma
+  geografia do catálogo): Lula 2022→2026, adversário (Bolsonaro→Flávio), Solla
+  1313, comparecimento, abstenção, brancos+nulos e o cenário **X₁/X₂** do
+  `/potencial` — a MESMA fórmula da página pública, nunca uma segunda conta.
+  Fonte: artefato commitado `src/lib/electionAggregates/bahia-second-round-2026.json`
+  (loader `src/lib/bahiaSecondRound.ts`), gerado por `pnpm build:second-round` a
+  partir do TSE 2026 por seção + da análise 2º turno
+  (`analise-eleicoes-2026/nota-solla-2turno`), com os totais da BA pinados.
+- **Papel da cidade** (determinístico, `src/lib/secondRoundRole.ts`):
+  `prioridade` (Lula caiu, Solla cresceu com base ≥200 votos — agenda conjunta e
+  contato pessoal), `mobilizacao` (mesmo quadro, base menor), `defesa` (os dois
+  caíram — comparecimento e contenção, sem vitrine), `expansao` (Lula não caiu —
+  presença).
+- **Movimento local (pesquisa):** o researcher preenche o item de checklist
+  `segundo_turno` (atos, palanques, posições de lideranças locais, o que o 2º
+  turno move na cidade), sempre com `sourceUrl` + `sourceDate`; sem fonte vira
+  lacuna explícita.
+
+Doutrina (de `PERSONA.md` e da nota): **interior = conversão (presença e
+proteção); Salvador = comparecimento (mobilização)**; persuasão em eleição geral
+tem efeito médio ~0 — o papel de Solla é **mobilizar, proteger e dar voz**, não
+converter. `X₁`/`X₂` são **votos em jogo, não transferência garantida**; o
+cenário de 2º turno é hipotético e a seção diz isso. Operação: redutos/vitrine
+(onde Solla é a marca), cinturão do PT local, ZE de Salvador 19/15/9/12
+(mobilização) e contenção em 16/4.
+
+Regras duras da seção:
+
+- os números oficiais (Lula, Flávio, Solla, X₁/X₂) vêm do **artefato** — o
+  researcher **não** os pesquisa; ele pesquisa só o movimento local.
+- não infira comportamento individual (falácia ecológica) nem prometa conversão;
+  a seção informa **onde mobilizar/proteger**, com a incerteza declarada.
+- a seção **não entra na página 1**: a página 1 é medida e falha fechada, e
+  conteúdo determinístico não encolhe no fallback de texto; o dado de 2º turno
+  vive na seção própria.
+
 ## Lote (várias cidades)
 
 A invocação aceita **um** município (caso de sempre) ou **vários**, separados por
@@ -223,7 +266,8 @@ de pesquisa que cruza para ele.
 ```
 
 Checklist (`id`s): `prefeito`, `vice`, `relacao_campo`, `vereadores`,
-`disputa_local`, `quem_investe`, `noticias`, `imprensa_local`, `emendas_web`.
+`disputa_local`, `segundo_turno`, `quem_investe`, `noticias`, `imprensa_local`,
+`emendas_web`.
 Item sem `sourceUrl`/`sourceDate` é convertido em lacuna pelo validador; item
 ausente também. `approach`, `preCandidates`, `leaders`, `leaderAgenda` e
 `emendasIndicators` são
@@ -235,6 +279,12 @@ não entra no PDF. Campos de texto livre (`detail`, `hook`, `suggestion`,
 `support`, `answer`) aceitam os **tokens de fonte inline** `{{fonte}}` /
 `{{fonte:N}}`, resolvidos para `(fonte)` no ponto exato da citação (ver "Links
 clicáveis / fonte inline" adiante).
+
+**`segundo_turno` — movimento local da disputa Lula × Flávio:** atos, palanques,
+posições de lideranças locais e o que o 2º turno move na cidade, com URL+data.
+Os números oficiais do bloco 2º turno (Lula/Flávio/Solla, X₁/X₂) vêm do
+**artefato** (`pnpm build:second-round`) — **não** os pesquise nem os estime; a
+pesquisa é só o movimento local. Sem fonte, vira lacuna explícita na seção.
 
 **`leaderAgenda` — pauta provável das lideranças (rede + mesmo campo):** para
 cada liderança que importa na visita, registre o que ela tende a priorizar
@@ -325,19 +375,24 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   `vereadores`, `disputa_local`, `quem_investe`, `emendas_web`): é a única forma
   de a página 1 manter o texto que você redigiu. As listas mostram `e mais N`; o
   texto integral
-  de cada item fica no aprofundamento (ver "respostas integrais" em `14. Fontes e
-  limites`).
-- **Seções 2+:** `1. Conta eleitoral` · `2. Concorrentes no município (federal
+  de cada item fica no aprofundamento (ver "respostas integrais" em "Fontes e
+  limites").
+- **Seções 2+:** `1. Conta eleitoral` · `2. 2º turno no município (Lula ×
+  Flávio)` — números oficiais do artefato (Lula/adversário/Solla,
+  comparecimento, abstenção, brancos+nulos e X₁/X₂), o papel da cidade
+  (`prioridade`/`mobilizacao`/`defesa`/`expansao`) e o **movimento local
+  pesquisado** (`segundo_turno`), com o cenário rotulado como hipotético ·
+  `3. Concorrentes no município (federal
   e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
   e os prováveis candidatos do campo do prefeito (pesquisa), além da **frente de
-  oposição** quando pesquisada (fatos com fonte) · `3. Rede e
+  oposição** quando pesquisada (fatos com fonte) · `4. Rede e
   lideranças` — inclui as lideranças locais pesquisadas (ex-prefeitos/vices,
   vereadores mais votados, com partido) e a **Pauta das lideranças (pesquisa)**:
   pauta provável + gancho recente por liderança da rede/mesmo campo, marcada
-  como hipótese · `4. Conjuntura` · `5. Sinais` · `6.
-  Demandas e visitas` · `7. Demografia` — IBGE Censo 2022 do artefato +
-  **complemento pesquisado** (cor/raça e poder aquisitivo) · `8. Atividade
-  econômica (pesquisa)` · `9. Transporte e conexões (pesquisa)` · `10. Acervo
+  como hipótese · `5. Conjuntura` · `6. Sinais` · `7.
+  Demandas e visitas` · `8. Demografia` — IBGE Censo 2022 do artefato +
+  **complemento pesquisado** (cor/raça e poder aquisitivo) · `9. Atividade
+  econômica (pesquisa)` · `10. Transporte e conexões (pesquisa)` · `11. Acervo
   de falas` — cada fala com "O que é" (sumário oficial) e "Menção ao município"
   (passagem que cita a cidade ou, se o nome não aparece nos trechos, a marcação
   do acervo com o nº de municípios), mais **Vídeo** (YouTube no trecho da fala
@@ -346,8 +401,8 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   depois do `eventStartAt`, então 645s viram `t=608s` (`YOUTUBE_VIDEO_OFFSET_SECONDS`);
   o `speechAt` da API é o horário do slot, não o início real; fallback para o
   VOD da Câmara, que é o clipe do próprio trecho) e **Transcrição** (PDF do
-  Diário) quando existirem · `11. Notícias e imprensa` ·
-  `12. Panorama regional` · `13. Abordagem sugerida (personas)` · `14. Fontes e
+  Diário) quando existirem · `12. Notícias e imprensa` ·
+  `13. Panorama regional` · `14. Abordagem sugerida (personas)` · `15. Fontes e
   limites` — lista as fontes e, antes delas, a tabela **"Pesquisa — respostas
   integrais"** com o texto completo de cada item do checklist (o que a página 1
   capou).
@@ -410,6 +465,12 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   ataque pessoal. Prioriza o local (operadores na região) sobre o líder estadual e
   sinaliza temas de mão dupla; onde a marca do adversário domina, o insumo é para
   contraste, não para confronto frontal.
+- **2º turno é cenário, não promessa**: X₁/X₂ são votos em jogo (fórmula do
+  `/potencial`), nunca transferência garantida; a seção é determinística (TSE
+  oficial no artefato) — o researcher pesquisa só o movimento local e o PDF
+  declara a incerteza. Não se infere comportamento individual (falácia
+  ecológica) nem se propõe persuasão onde a evidência diz efeito ~0: o papel de
+  Solla é mobilizar, proteger e dar voz.
 - **Falha isolada no lote**: cidade que falha (token inválido/ambíguo, pesquisa
   sem fonte suficiente, snapshot×research mismatch) não cancela as demais; o
   summary final diz explicitamente o que saiu e o que falhou (sucesso parcial
@@ -419,11 +480,20 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
 
 ## Troubleshooting
 
+- **Seção 2º turno saiu como lacuna**: a unidade não está no artefato oficial —
+  rode `pnpm build:second-round -- --analysis-dir=<pasta da análise 2º turno>`
+  (o comando valida totais e versões) e verifique `municipalityCatalog` ×
+  artefato (o teste `tests/unit/bahiaSecondRound.unit.spec.ts` cobre o catálogo).
+- **Movimento local "Não pesquisado."**: o researcher não preencheu o item
+  `segundo_turno`; é lacuna de pesquisa, não falha do build — repita a pesquisa
+  com fonte datada.
 - **Página 1 estourou**: o builder aborta com `scrollHeight > útil` e o erro é
   açãoável. A página 1 já aplica tetos de conteúdo aos textos da pesquisa
   (`PAGE_ONE_*_MAX` em `scripts/lib/cityReportBlocks.mjs`) e preserva o texto
   integral no aprofundamento; se ainda estourar, **aperte o teto da pesquisa ou
-  corte copy do resumo — nunca mexa no layout para "espremer"**.
+  corte copy do resumo — nunca mexa no layout para "espremer"**. O bloco 2º turno
+  vive na seção própria (nunca na página 1) justamente porque é determinístico e
+  não encolhe no fallback.
 - **`tsx` ausente no homeserver**: `pnpm install --prod=false`.
 - **API de emendas 429/erro**: o builder degrada para lacuna com URL+motivo;
   reexecute depois (o cache só é escrito com resultado utilizável).

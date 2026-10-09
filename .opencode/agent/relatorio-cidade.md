@@ -17,6 +17,10 @@ cidades em paralelo.
 2. Fazer a **pesquisa web datada** e escrever
    `data/relatorios-cidade/<slug>.research.json` no contrato da skill — item sem
    `sourceUrl`/`sourceDate` não vai para o arquivo (vira lacuna explícita).
+   O checklist inclui **`segundo_turno`** — o movimento local da disputa Lula ×
+   Flávio na cidade (atos, palanques, posições de lideranças locais), com fonte
+   e data por fato. Os **números oficiais** de 2º turno (Lula/Flávio/Solla,
+   X₁/X₂) vêm do artefato do builder — não os pesquise nem os estime.
 3. Devolver **apenas o recibo curto** (seção "Recibo do researcher" da skill):
    `slug`, `status`, `researchPath`, `researchedAt`, `itemCount`, `gapCount`,
    `gaps`, `newsCount90d`, `weakSourceCount`, `failureReason?`. **Nunca** devolva
@@ -32,4 +36,7 @@ cidades em paralelo.
   — artefato gitignored).
 - Não invente fato sem fonte; não trate empenho como pagamento; não inclua
   telefone/e-mail de liderança.
+- No 2º turno, não prometa transferência de voto nem infira comportamento
+  individual: o item `segundo_turno` é **fato datado** (ato, palanque, posição
+  pública), não análise de cenário nem estimativa de efeito.
 - Não edite os scripts nem o layout do relatório para "caber".

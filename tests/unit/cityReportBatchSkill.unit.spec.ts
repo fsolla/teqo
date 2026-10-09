@@ -59,6 +59,28 @@ describe('finite researcher receipt (OPS118)', () => {
   })
 })
 
+describe('skill /relatorio-cidade carries the 2º turno mission', () => {
+  it('documents the mission, the artifact and the role vocabulary', () => {
+    expect(skill).toContain('## Missão do 2º turno (Lula × Flávio — 25/10/2026)')
+    expect(skill, 'the new checklist item must be declared').toContain('segundo_turno')
+    expect(skill, 'the artifact build command is pinned').toContain('pnpm build:second-round')
+    expect(skill, 'the committed artifact path is pinned').toContain('bahia-second-round-2026.json')
+    expect(skill, 'the scenario is never a promise').toMatch(
+      /votos em jogo, não transferência garantida/i,
+    )
+    for (const role of ['prioridade', 'mobilizacao', 'defesa', 'expansao']) {
+      expect(skill, `role vocabulary must include ${role}`).toContain(role)
+    }
+  })
+
+  it('makes the researcher research the local 2º turno movement, not the official numbers', () => {
+    expect(researcher).toContain('segundo_turno')
+    expect(researcher, 'official numbers come from the artifact').toMatch(
+      /números oficiais.*artefato/is,
+    )
+  })
+})
+
 describe('subagent .opencode/agent/relatorio-cidade.md is researcher-only', () => {
   it('stays a subagent that writes research.json and returns the receipt', () => {
     expect(researcher).toMatch(/^---\n[\s\S]*mode: subagent[\s\S]*\n---/)

@@ -25,6 +25,10 @@ const baseResearch = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe('normalizeResearchInput', () => {
+  it('includes the 2º turno local movement in the checklist', () => {
+    expect(RESEARCH_CHECKLIST_IDS).toContain('segundo_turno')
+  })
+
   it('keeps fully sourced items', () => {
     const research = normalizeResearchInput(baseResearch(), { now })
     expect(research.items).toHaveLength(RESEARCH_CHECKLIST_IDS.length)
