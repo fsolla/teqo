@@ -59,9 +59,9 @@ describe('finite researcher receipt (OPS118)', () => {
   })
 })
 
-describe('skill /relatorio-cidade carries the 2º turno mission', () => {
+describe('skill /relatorio-cidade carries the 2º turno mobilization mission', () => {
   it('documents the mission, the artifact and the role vocabulary', () => {
-    expect(skill).toContain('## Missão do 2º turno (Lula × Flávio — 25/10/2026)')
+    expect(skill).toContain('## Missão — 2º turno (Lula × Flávio — 25/10/2026)')
     expect(skill, 'the new checklist item must be declared').toContain('segundo_turno')
     expect(skill, 'the artifact build command is pinned').toContain('pnpm build:second-round')
     expect(skill, 'the committed artifact path is pinned').toContain('bahia-second-round-2026.json')
@@ -71,6 +71,16 @@ describe('skill /relatorio-cidade carries the 2º turno mission', () => {
     for (const role of ['prioridade', 'mobilizacao', 'defesa', 'expansao']) {
       expect(skill, `role vocabulary must include ${role}`).toContain(role)
     }
+  })
+
+  it('retires the mandate-era report blocks from the skill contract', () => {
+    for (const retired of ['emendas_web', 'quem_investe', 'preCandidates', 'emendasIndicators']) {
+      expect(skill, `skill must not reintroduce ${retired}`).not.toContain(retired)
+      expect(researcher, `researcher must not reintroduce ${retired}`).not.toContain(retired)
+    }
+    expect(skill, 'the refocus is explicit in the skill').toContain(
+      'fora de escopo desde o refactor',
+    )
   })
 
   it('makes the researcher research the local 2º turno movement, not the official numbers', () => {

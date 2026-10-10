@@ -14,28 +14,23 @@ const RESEARCH_NEWS_WINDOW_DAYS = 90
 const RESEARCH_CHECKLIST = [
   { id: 'prefeito', label: 'Prefeito(a) — nome, partido, federação, situação' },
   { id: 'vice', label: 'Vice-prefeito(a) — nome, partido' },
-  { id: 'relacao_campo', label: 'Relação com o campo (aliado, oposição, neutro)' },
+  {
+    id: 'relacao_campo',
+    label: 'Relação com o campo no 2º turno (Lula × Flávio) — palanque, apoio ou oposição',
+  },
   { id: 'vereadores', label: 'Vereadores e dobradas' },
-  { id: 'disputa_local', label: 'Disputa local' },
+  { id: 'disputa_local', label: 'Disputa local — força do campo adversário' },
   {
     id: 'segundo_turno',
     label: '2º turno (Lula × Flávio) — atos, palanques e posições locais',
   },
-  { id: 'quem_investe', label: 'Quem mais investe na cidade (bancada e adversários)' },
   { id: 'noticias', label: 'Notícias da cidade/região (janela ≤90 dias)' },
   { id: 'imprensa_local', label: 'Imprensa e rádio local' },
-  {
-    id: 'emendas_web',
-    label: 'Emendas — indícios web (município, região ou polo)',
-  },
 ]
 
 export const RESEARCH_CHECKLIST_IDS = RESEARCH_CHECKLIST.map((item) => item.id)
 
 const checklistById = new Map(RESEARCH_CHECKLIST.map((item) => [item.id, item]))
-
-/** Where an emenda indication points to: the município itself, its region or the regional pole. */
-const EMENDA_SPHERES = ['municipio', 'regiao', 'polo']
 
 export const isNonEmptyString = (value) => typeof value === 'string' && value.trim() !== ''
 
@@ -228,39 +223,6 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     })
   }
 
-  const preCandidates = []
-  for (const entry of Array.isArray(raw.preCandidates) ? raw.preCandidates : []) {
-    const name = isNonEmptyString(entry?.name) ? entry.name.trim() : null
-    const office = isNonEmptyString(entry?.office) ? entry.office.trim() : null
-    const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
-    const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
-    if (!name || !office) {
-      gaps.push({
-        id: 'precandidato_incompleto',
-        label: name,
-        reason: 'Pré-candidato sem nome ou cargo — descartado.',
-      })
-      continue
-    }
-    if (!sourceUrl || !sourceDate) {
-      gaps.push({
-        id: 'precandidato_sem_fonte',
-        label: name,
-        reason: 'Pré-candidato sem fonte: URL e data são obrigatórias.',
-      })
-      continue
-    }
-    preCandidates.push({
-      name,
-      office,
-      party: isNonEmptyString(entry.party) ? entry.party.trim() : null,
-      support: isNonEmptyString(entry.support) ? entry.support.trim() : null,
-      note: isNonEmptyString(entry.note) ? entry.note.trim() : null,
-      sourceUrl,
-      sourceDate,
-    })
-  }
-
   const leaders = []
   for (const entry of Array.isArray(raw.leaders) ? raw.leaders : []) {
     const name = isNonEmptyString(entry?.name) ? entry.name.trim() : null
@@ -341,7 +303,6 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     transport: [],
     opposition: [],
     alliances: [],
-    investments: [],
   }
   for (const key of Object.keys(sourcedLists)) {
     for (const entry of Array.isArray(raw[key]) ? raw[key] : []) {
@@ -376,61 +337,19 @@ export const normalizeResearchInput = (raw, { now = new Date() } = {}) => {
     }
   }
 
-  /**
-   * Structured emenda indications (município/região/polo). The page-1 block is
-   * "quem indica o quê, para onde e com que fonte" — the free-text `emendas_web`
-   * synthesis alone cannot show the value/esfera per author. Every row needs a
-   * source; without it the row is dropped into an explicit gap.
-   */
-  const emendasIndicators = []
-  for (const entry of Array.isArray(raw.emendasIndicators) ? raw.emendasIndicators : []) {
-    const author = isNonEmptyString(entry?.author) ? entry.author.trim() : null
-    const sphere = isNonEmptyString(entry?.sphere) ? entry.sphere.trim() : null
-    const sourceUrl = isNonEmptyString(entry?.sourceUrl) ? entry.sourceUrl.trim() : null
-    const sourceDate = isValidDate(entry?.sourceDate) ? entry.sourceDate : null
-    if (!author || !sphere || !EMENDA_SPHERES.includes(sphere)) {
-      gaps.push({
-        id: 'emenda_indicio_incompleto',
-        label: author,
-        reason: `Indício de emenda sem autor ou esfera (${EMENDA_SPHERES.join('/')}) — descartado.`,
-      })
-      continue
-    }
-    if (!sourceUrl || !sourceDate) {
-      gaps.push({
-        id: 'emenda_indicio_sem_fonte',
-        label: author,
-        reason: 'Indício de emenda sem fonte: URL e data são obrigatórias.',
-      })
-      continue
-    }
-    emendasIndicators.push({
-      author,
-      sphere,
-      value: isNonEmptyString(entry.value) ? entry.value.trim() : null,
-      purpose: isNonEmptyString(entry.purpose) ? entry.purpose.trim() : null,
-      year: isNonEmptyString(entry.year) ? entry.year.trim() : null,
-      sourceUrl,
-      sourceDate,
-    })
-  }
-
   return {
     municipalitySlug: raw.municipalitySlug.trim(),
     researchedAt: researchedAt.toISOString(),
     items,
     news,
     approach,
-    preCandidates,
     leaders,
     leaderAgenda,
-    emendasIndicators,
     demography: sourcedLists.demography,
     economy: sourcedLists.economy,
     transport: sourcedLists.transport,
     opposition: sourcedLists.opposition,
     alliances: sourcedLists.alliances,
-    investments: sourcedLists.investments,
     gaps,
   }
 }

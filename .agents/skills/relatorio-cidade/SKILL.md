@@ -1,31 +1,29 @@
----
-name: relatorio-cidade
-description: 'Gera o relatório de cidade pré-viagem (PDF A4 + .md) a partir da base Teqo read-only + pesquisa web datada + emendas oficiais; aceita um município ou um lote separado por vírgula.'
----
+# Skill: relatorio-cidade
 
-# Relatório de cidade pré-viagem (C163)
+# Relatório de cidade — mobilização do 2º turno (C163)
 
 Entrega um **PDF A4 datado + companion `.md`** por município, cruzando a base de
 produção do Teqo (**read-only**, snapshot do momento) com pesquisa web (data +
-URL por item) e emendas lidas da fonte oficial **em tempo de geração**. Página 1
-= resumo de uma olhada; páginas 2+ = aprofundamento; tudo sem fonte vira
-**lacuna explícita** — nunca inferência.
+URL por item) e os **números oficiais do 2º turno** do artefato TSE 2026
+commitado. Página 1 = resumo de uma olhada (**só mobilização**); páginas 2+ =
+aprofundamento; tudo sem fonte vira **lacuna explícita** — nunca inferência.
 
 ## Quando usar
 
-- O candidato/CG pede "o relatório de <cidade>" antes de uma viagem — ou de
-  várias numa invocação (`/relatorio-cidade Ilheus, Itacare, Una`).
+- O candidato/CG pede "o relatório de <cidade>" para uma visita — ou de várias
+  numa invocação (`/relatorio-cidade Ilheus, Itacare, Una`).
 - Quem executa são o **orquestrador** (agente principal) + um sub-agente
   **researcher** por cidade + os dois scripts (`extract` no homeserver, `build`
   local). O PDF sai para leitura de bolso; o detalhe das etapas está em
   "Pipeline (etapas)".
 
-## Missão do 2º turno (Lula × Flávio — 25/10/2026)
+## Missão — 2º turno (Lula × Flávio — 25/10/2026)
 
-A partir de 08/10/2026 o relatório não é só pré-viagem de mandato: **cada visita
-também serve à eleição de Lula no 2º turno**. O produto carrega o recorte
-oficial do 1º turno de 2026 na seção **"2º turno no município (Lula × Flávio)"**
-(nº 2, logo depois da conta eleitoral), com:
+A partir de 08/10/2026 o relatório **é uma ferramenta de mobilização do 2º
+turno**: cada visita serve à eleição de Lula. O produto carrega o recorte
+oficial do 1º turno de 2026 (TSE por seção, agregado à unidade) e organiza a
+leitura em torno de quatro perguntas: **onde Lula perdeu/ganhou, qual o papel
+da cidade, quem mobiliza e o que está quente agora**.
 
 - **Números oficiais por unidade** (município ou ZE de Salvador, na mesma
   geografia do catálogo): Lula 2022→2026, adversário (Bolsonaro→Flávio), Solla
@@ -49,19 +47,22 @@ Doutrina (de `PERSONA.md` e da nota): **interior = conversão (presença e
 proteção); Salvador = comparecimento (mobilização)**; persuasão em eleição geral
 tem efeito médio ~0 — o papel de Solla é **mobilizar, proteger e dar voz**, não
 converter. `X₁`/`X₂` são **votos em jogo, não transferência garantida**; o
-cenário de 2º turno é hipotético e a seção diz isso. Operação: redutos/vitrine
+cenário de 2º turno é hipotético e o PDF diz isso. Operação: redutos/vitrine
 (onde Solla é a marca), cinturão do PT local, ZE de Salvador 19/15/9/12
 (mobilização) e contenção em 16/4.
 
-Regras duras da seção:
+Regras duras da missão:
 
 - os números oficiais (Lula, Flávio, Solla, X₁/X₂) vêm do **artefato** — o
-  researcher **não** os pesquisa; ele pesquisa só o movimento local.
+  researcher **não** os pesquisa; ele pesquisa só o movimento local e o palanque.
 - não infira comportamento individual (falácia ecológica) nem prometa conversão;
-  a seção informa **onde mobilizar/proteger**, com a incerteza declarada.
-- a seção **não entra na página 1**: a página 1 é medida e falha fechada, e
-  conteúdo determinístico não encolhe no fallback de texto; o dado de 2º turno
-  vive na seção própria.
+  o relatório informa **onde mobilizar/proteger**, com a incerteza declarada.
+- **fora de escopo desde o refactor de 2026-10-10** (a federal foi decidida em
+  04/10): conta eleitoral/cadeira de Solla, concorrentes e pré-candidatos,
+  emendas e "o que Solla entregou", acervo de falas da Câmara, panorama
+  regional (TI) e sinais/demandas/visitas **não entram no relatório** — não
+  reintroduza sem decisão de produto. Demografia, economia e transporte seguem
+  como contexto da visita.
 
 ## Lote (várias cidades)
 
@@ -133,10 +134,9 @@ Uma cidade = um par PDF+MD (`<slug>-<YYYY-MM-DD>`); **sem** índice/PDF agregado
    ```
    Saídas: `docs/research/relatorios-cidade/<slug>-<YYYY-MM-DD>.pdf` + `.md`
    (companion revisável em diff). Intermediários gitignored em
-   `data/relatorios-cidade/` (HTML, JSONs de emendas, `logs/`). Também
-   redirecione a saída do builder para `logs/<slug>.build.log`.
-   Flags úteis: `--emendas=<json>` (replay sem rede), `--author=<nome>`
-   (default `JORGE SOLLA`), `--generated-at=<ISO>` (reprodutibilidade),
+   `data/relatorios-cidade/` (HTML, JSONs, `logs/`). Também redirecione a saída
+   do builder para `logs/<slug>.build.log`.
+   Flags úteis: `--generated-at=<ISO>` (reprodutibilidade);
    `CITY_REPORT_STRICT=1` (falha o run se houver lacuna de pesquisa — para
    conferência, não para entrega).
 5. **Summary final.** Uma linha por entrada, na ordem da lista: `entrada · status
@@ -208,13 +208,6 @@ de pesquisa que cruza para ele.
       "sourceUrl": "https://…", "sourceDate": "2026-04-07"
     }
   ],
-  "preCandidates": [               // prováveis candidatos do campo do prefeito em 2026
-    {
-      "name": "…", "office": "Deputado federal", "party": "PSDB",
-      "support": "Campo do prefeito …",
-      "sourceUrl": "https://…", "sourceDate": "2026-04-18"
-    }
-  ],
   "leaders": [                     // últimos prefeitos/vices, vereadores mais votados
     {
       "name": "…", "role": "Ex-prefeito", "party": "PSDB", "period": "2017–2024",
@@ -242,39 +235,22 @@ de pesquisa que cruza para ele.
   "transport": [                   // rodovias, aeroporto, portos, ferrovia
     { "topic": "Rodovia federal (BR-101)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
   ],
-  "opposition": [                  // o que a oposição fez de errado na região (fato com fonte)
+  "opposition": [                  // o que o campo adversário fez de errado na região (fato com fonte)
     { "topic": "Emenda sob investigação (PF)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
   ],
   "alliances": [                   // dobradinhas: com quem somar na cidade
     { "topic": "Dobradinha estadual (PT)", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
-  ],
-  "investments": [                 // investimentos/obras de Solla, do estado e do federal (município e região)
-    { "topic": "Obra federal — saúde", "detail": "…", "sourceUrl": "https://…", "sourceDate": "…" }
-  ],
-  "emendasIndicators": [           // indícios de emenda, um por autor (página 1; esfera explícita)
-    {
-      "author": "Zé Neto",         // obrigatório
-      "sphere": "municipio",       // obrigatório: municipio | regiao | polo
-      "value": "R$ 1 mi",          // opcional (como a fonte informa)
-      "purpose": "Ambulância do TFD", // opcional (o que beneficia)
-      "year": "2026",              // opcional
-      "sourceUrl": "https://…", "sourceDate": "2026-08-24"
-    }
   ],
   "gaps": [{ "id": "…", "label": "…", "reason": "…" }] // lacunas que o agente já sabe
 }
 ```
 
 Checklist (`id`s): `prefeito`, `vice`, `relacao_campo`, `vereadores`,
-`disputa_local`, `segundo_turno`, `quem_investe`, `noticias`, `imprensa_local`,
-`emendas_web`.
+`disputa_local`, `segundo_turno`, `noticias`, `imprensa_local`.
 Item sem `sourceUrl`/`sourceDate` é convertido em lacuna pelo validador; item
-ausente também. `approach`, `preCandidates`, `leaders`, `leaderAgenda` e
-`emendasIndicators` são
+ausente também. `approach`, `leaders`, `leaderAgenda` são
 listas de pesquisa: cada entrada sem fonte vira lacuna (`abordagem_sem_fonte`,
-`precandidato_sem_fonte`, `lideranca_sem_fonte`, `agenda_lideranca_sem_fonte`,
-`emenda_indicio_sem_fonte`; `emendasIndicators` ainda exige `author` e `sphere`
-— sem eles, `emenda_indicio_incompleto`) e
+`lideranca_sem_fonte`, `agenda_lideranca_sem_fonte`) e
 não entra no PDF. Campos de texto livre (`detail`, `hook`, `suggestion`,
 `support`, `answer`) aceitam os **tokens de fonte inline** `{{fonte}}` /
 `{{fonte:N}}`, resolvidos para `(fonte)` no ponto exato da citação (ver "Links
@@ -293,135 +269,80 @@ leitura, sempre com URL+data. `name` é obrigatório; exige `topics` **ou** `hoo
 sem fonte, não entra. Priorize (a) a **rede da campanha** (as lideranças na base
 Teqo, com `supportStatus`) e (b) o **mesmo campo** de Solla — é onde há margem
 de conversa. É **hipótese a validar na conversa, não declaração do líder**: o
-bloco "Pauta das lideranças (pesquisa)" (seção 3) sai com essa ressalva. Liderança
+bloco "Pauta das lideranças (pesquisa)" sai com essa ressalva. Liderança
 de rede **sem rastro público** não vira item: fica como tarefa de ativação
 (cadastrar/atualizar `supportStatus`), não como pauta inventada.
-
-**`emendas_web` — indícios de emenda (município, região ou polo):** quando a
-fonte oficial não atribui emenda ao município, pesquise artigos, falas e
-indicações de emenda para (a) o município, (b) a região/Território de
-Identidade e (c) a maior cidade próxima (polo regional — cidades pequenas usam
-serviços do polo). Registre a síntese em `emendas_web` (answer/details +
-`extraSources`) e, principalmente, **cada indício como uma linha de
-`emendasIndicators`** — `author`, `sphere` (`municipio`/`regiao`/`polo`), valor,
-finalidade, ano e fonte+data. É essa lista estruturada que a página 1 imprime
-(autor — o que beneficia · valor · esfera, com link); o texto corrido só entra
-quando não há lista (fallback). Sem uma das linhas com fonte, o indício vira
-lacuna (`emenda_indicio_sem_fonte`) — nunca some em silêncio. O PDF mostra o
-bloco como "Emendas — indícios web" na página 1 e as URLs na seção de fontes.
-**Nunca somar** indício de região/polo como emenda da cidade.
 
 **Demografia, economia e transporte (pesquisa):** `demography`, `economy` e
 `transport` são listas de `{topic, detail, sourceUrl, sourceDate}` (sem fonte →
 lacuna). Pesquise: **cor/raça e rendimento** (Censo 2022 — SIDRA 9605 e 10295;
 IBGE Cidades para salário médio); **economia** (PIB e PIB per capita — IBGE
-Cidades; composição setorial e emprego formal — RAIS/CAGED e perfis regionais;
-café, pecuária e comércio no caso do Extremo Sul); **transporte** (rodovias
-federais/estaduais que cortam o município e obras novas/reformadas — DNIT,
-Seinfra; aeroporto mais próximo em operação e o do polo, com situação; portos e
-ferrovia da região — FIOL/Porto Sul, deixando claro quando não serve
+Cidades; composição setorial e emprego formal — RAIS/CAGED e perfis regionais);
+**transporte** (rodovias federais/estaduais que cortam o município e obras
+novas/reformadas — DNIT, Seinfra; aeroporto mais próximo em operação e o do
+polo, com situação; portos e ferrovia da região, deixando claro quando não serve
 diretamente a cidade). O enquadramento é "onde falta × onde o estado e a União
 têm acertado" — o candidato é da base.
 
 **Frente de oposição (pesquisa):** `opposition` é uma lista de
 `{topic, detail, sourceUrl, sourceDate}` (sem fonte → lacuna) com **fatos
-publicados e datados sobre o que a oposição fez de errado na região** — PF/MP em
-emendas, obras paradas, anúncio sem entrega, escândalos do campo adversário.
-Regras: (1) cada linha é fato publicado, **nunca** inferência de culpa — atribua
-à fonte ("segundo a PF / o jornal") e diferencie acusação de condenação; (2)
-priorize o **local** (operadores da oposição no município/região, ex.: emendas
-investigadas) sobre o ataque frontal ao líder estadual; (3) marque temas de
-**mão dupla** (casos que também citam o campo da base) para a coordenação não
-entrar desprevenida; (4) **não** recomende ataque pessoal nem onde a marca do
-adversário domina — o relatório é insumo ancorado, não roteiro de ataque. O item
-entra na seção 2 (junto aos concorrentes) e a seção 14 lista as URLs.
+publicados e datados sobre o que o campo adversário fez de errado na região** —
+PF/MP, obras paradas, anúncio sem entrega, escândalos. Regras: (1) cada linha é
+fato publicado, **nunca** inferência de culpa — atribua à fonte ("segundo a PF /
+o jornal") e diferencie acusação de condenação; (2) priorize o **local**
+(operadores do campo adversário no município/região) sobre o ataque frontal ao
+líder estadual; (3) marque temas de **mão dupla** (casos que também citam o
+campo da base) para a coordenação não entrar desprevenida; (4) **não** recomende
+ataque pessoal nem onde a marca do adversário domina — o relatório é insumo
+ancorado, não roteiro de ataque. O item entra na seção de conjuntura e a seção
+de fontes lista as URLs.
 
-**Dobradinhas e investimentos (pesquisa):** `alliances` é a lista de
+**Dobradinhas (pesquisa):** `alliances` é a lista de
 `{topic, detail, sourceUrl, sourceDate}` com **com quem Solla soma na cidade**
 (estadual/federal, chapa e lideranças que transferem voto) — insumo direto da
-`approach`, exibido como bloco "Dobradinhas (pesquisa)" na seção 3 (rede).
-`investments` lista **investimentos e obras de Solla, do governo do estado e do
-federal no município e na região**, com fase/valor quando a fonte informar
-(**empenho ≠ pagamento**), exibido como bloco "Investimentos e obras (pesquisa)"
-na seção 4 (conjuntura). Sem fonte, cada item vira lacuna; nenhuma das duas
-listas é obrigatória.
-
-**Emendas oficiais:** sem `--emendas`, o builder consulta o Portal da
-Transparência (`PORTAL_TRANSPARENCIA_API_KEY` no ambiente; sem chave → lacuna).
-A API oficial **não filtra por município** (só UF/Nacional/Múltiplo na
-`localidadeDoGasto`); o builder casa pela localidade com o nome do município e,
-sem linha atribuível, degrada para lacuna (Issue #1025). O resultado fica
-cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
+`approach`, exibido como bloco "Dobradinhas (pesquisa)" na seção de rede. Sem
+fonte, cada item vira lacuna; a lista não é obrigatória.
 
 ## Conteúdo do relatório
 
-- **Página 1 (uma olhada):** identificação/prioridade/classe/nível, conta
-  eleitoral 2022 (votos, % do próprio voto, rank/435) **+ expectativa de votos
-  (cenário central com pessimista/otimista)** — a meta de cadeira e a cobertura
-  de pledges **saíram** da página 1; quem é quem (prefeito, vice, relação com o
-  campo, lideranças, dobradinhas, vereadores), o que Solla entregou (emendas
-  oficiais com fase, acervo de falas, notícias ≤90 dias), **emendas — indícios
-  web** quando a fonte oficial não atribui ao município (uma linha por autor:
-  o que beneficia · valor · **esfera explícita** `município`/`região`/`polo`, com
-  link), **O que anunciar agora** (a relação local com fonte + os compromissos
-  que a campanha cumpre) com a advertência de defeso, riscos e pontos sem
-  leitura. O painel fixo "O que NÃO anunciar" **saiu** da página 1 (copy
-  invariante; o guardrail de defeso permanece na nota do painel de anúncio). Os
-  textos livres da pesquisa **nunca são cortados no meio** (C188): a página 1
+- **Página 1 (uma olhada, só mobilização):** identificação (território,
+  prioridade, nível, responsável), o par de células **"2º turno — Lula ×
+  Flávio"** (KPIs oficiais: Lula em 2026 com Δ p.p., X₁/X₂ e Solla 2026 + o
+  **papel** da cidade com a orientação de um a dois parágrafos) e **"Quem
+  mobiliza"** (prefeito, vice, relação com o campo, lideranças na base,
+  dobradinhas, vereadores/dobradas — com a fonte da pesquisa por linha),
+  **Movimento local do 2º turno (pesquisa)** em callout, **Riscos —
+  oposição/disputa local** em cards, **O que pedir e falar** (o pedido Lula 13,
+  a relação local confirmada e o guardrail de que X₁/X₂ são votos em jogo), os
+  pontos sem leitura e a nota de rodapé. Sempre com a advertência de que o
+  cenário de 2º turno é hipotético.
+  Os textos livres da pesquisa **nunca são cortados no meio** (C188): a página 1
   imprime o `summary` do item quando existe; sem ele, imprime o `answer`
   integral e, se a página não couber, o builder re-renderiza apontando o
-  aprofundamento — **sem "…"**. Por isso, escreva `summary` curto e auto-contido
-  para os itens que aparecem na página 1 (`prefeito`, `vice`, `relacao_campo`,
-  `vereadores`, `disputa_local`, `quem_investe`, `emendas_web`): é a única forma
-  de a página 1 manter o texto que você redigiu. As listas mostram `e mais N`; o
-  texto integral
-  de cada item fica no aprofundamento (ver "respostas integrais" em "Fontes e
-  limites").
-- **Seções 2+:** `1. Conta eleitoral` · `2. 2º turno no município (Lula ×
-  Flávio)` — números oficiais do artefato (Lula/adversário/Solla,
-  comparecimento, abstenção, brancos+nulos e X₁/X₂), o papel da cidade
-  (`prioridade`/`mobilizacao`/`defesa`/`expansao`) e o **movimento local
-  pesquisado** (`segundo_turno`), com o cenário rotulado como hipotético ·
-  `3. Concorrentes no município (federal
-  e estadual)` — top 5 por votos de 2022 na base TSE, com série 2014/2018/2022
-  e os prováveis candidatos do campo do prefeito (pesquisa), além da **frente de
-  oposição** quando pesquisada (fatos com fonte) · `4. Rede e
-  lideranças` — inclui as lideranças locais pesquisadas (ex-prefeitos/vices,
-  vereadores mais votados, com partido) e a **Pauta das lideranças (pesquisa)**:
-  pauta provável + gancho recente por liderança da rede/mesmo campo, marcada
-  como hipótese · `5. Conjuntura` · `6. Sinais` · `7.
-  Demandas e visitas` · `8. Demografia` — IBGE Censo 2022 do artefato +
-  **complemento pesquisado** (cor/raça e poder aquisitivo) · `9. Atividade
-  econômica (pesquisa)` · `10. Transporte e conexões (pesquisa)` · `11. Acervo
-  de falas` — cada fala com "O que é" (sumário oficial) e "Menção ao município"
-  (passagem que cita a cidade ou, se o nome não aparece nos trechos, a marcação
-  do acervo com o nº de municípios), mais **Vídeo** (YouTube no trecho da fala
-  — `youtubeExcerptStartSeconds` = época do trecho (`excerptTMs`) − início da
-  sessão, calibrado contra o vídeo real: o da sessão de 13/03/2018 começa ~37s
-  depois do `eventStartAt`, então 645s viram `t=608s` (`YOUTUBE_VIDEO_OFFSET_SECONDS`);
-  o `speechAt` da API é o horário do slot, não o início real; fallback para o
-  VOD da Câmara, que é o clipe do próprio trecho) e **Transcrição** (PDF do
-  Diário) quando existirem · `12. Notícias e imprensa` ·
-  `13. Panorama regional` · `14. Abordagem sugerida (personas)` · `15. Fontes e
-  limites` — lista as fontes e, antes delas, a tabela **"Pesquisa — respostas
-  integrais"** com o texto completo de cada item do checklist (o que a página 1
-  capou).
-- **Acervo por região e tema:** como cidade pequena quase nunca tem fala
-  própria, a seção 10 mostra três recortes **não sobrepostos**: falas do
-  município (quando existem), **menções à região** (demais municípios do mesmo
-  Território de Identidade) e **falas por tema regional** (temas-chave do
-  interior). Região/polo **nunca** é somado como fala da cidade — o bloco diz
-  isso explicitamente. Fonte: `speeches.region` e `speeches.topics` do snapshot
-  (extraídos read-only no homeserver; ausentes nos snapshots antigos → seção
-  degrada para a busca por município sem quebrar). **Cada recorte diz por que a
-  fala entrou:** a tabela do município mostra "Menção a <cidade>"; a da região
-  mostra "Município da região citado"; a de tema mostra a coluna **"Tema"** —
-  porque essas falas foram selecionadas por tema, **não** por menção ao
-  município/região (não rotular como "marcada com o município" o que só foi
-  escolhido por tema).
+  aprofundamento — **sem "…"**. Por isso, escreva `summary` curto e
+  auto-contido para os itens que aparecem na página 1 (`prefeito`, `vice`,
+  `relacao_campo`, `vereadores`, `disputa_local`, `segundo_turno`): é a única
+  forma de a página 1 manter o texto que você redigiu.
+- **Seções 2+:** `1. 2º turno no município (Lula × Flávio)` — números oficiais
+  do artefato, papel da cidade, a conta 2022 → 2026 em tabela e o movimento
+  local pesquisado, com o cenário rotulado como hipotético · `2. Rede e
+  lideranças` — a rede da base, os responsáveis, os pledges, as lideranças
+  locais pesquisadas (ex-prefeitos/vices, vereadores mais votados, com partido)
+  e a **Pauta das lideranças (pesquisa)** (hipótese a validar) + dobradinhas ·
+  `3. Conjuntura` — tendência política, forças, riscos, dobradinhas, próximos
+  passos e a **frente de oposição** quando pesquisada (fatos com fonte) ·
+  `4. Demografia` — IBGE Censo 2022 do artefato + complemento pesquisado
+  (cor/raça e poder aquisitivo) · `5. Atividade econômica (pesquisa)` ·
+  `6. Transporte e conexões (pesquisa)` · `7. Notícias e imprensa local` ·
+  `8. Abordagem sugerida (pesquisa)` · `9. Fontes e limites` — lista as fontes
+  e, antes delas, a tabela **"Pesquisa — respostas integrais"** com o texto
+  completo de cada item do checklist (o que a página 1 capou).
+- **Numeração dinâmica:** o builder numera as seções depois de montá-las (o
+  `id` é estável; o número é posicional). Nunca referencie seção por número
+  fixo — use o nome/`id`.
 - **Links clicáveis / fonte inline:** todo URL no PDF é um link (`<a href>`):
-  células de tabela, fontes por linha e a seção de fontes. Nos textos de pesquisa
-  (oposição, dobradinhas, investimentos, pauta das lideranças, abordagem,
+  células de tabela, fontes por linha e a seção de fontes. Nos textos de
+  pesquisa (oposição, dobradinhas, pauta das lideranças, abordagem,
   demografia…), o `(fonte)` com hyperlink entra **inline no próprio texto, logo
   após o trecho que cita o fato verificado** — não numa coluna. Um mesmo texto
   pode citar mais de uma fonte: use `{{fonte}}` para a fonte principal
@@ -430,47 +351,33 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   companion `.md` vira `[(fonte)](url)`. Se o texto não tiver token, o builder
   acrescenta a(s) fonte(s) no fim do trecho. A coluna **Fonte** fica só com a
   data e o link completo continua listado abaixo da tabela (`> Fontes:`).
-- **Numeração dinâmica e omissão de seções vazias:** o builder numera as seções
-  depois de montá-las (o `id` é estável; o número é posicional). As seções
-  **Sinais recentes** e **Demandas e visitas** são **omitidas quando não há
-  dado na base** (mostrar um callout de "nada aqui" só gastaria página); as
-  seções de pesquisa (`opposition`, `alliances`, `investments`, demografia,
-  economia, transporte) mantêm a lacuna explícita quando o item falta. Nunca
-  referencie seção por número fixo — use o nome/`id`.
 - **Tabela de notícias com larguras fixas:** `Data 9 · Veículo 14 ·
   Título 49 · Link 28` (%). As larguras explícitas tornam a tabela `table-fixed`
   (a URL longa/crua quebra em vez de inflar a coluna) e dão ao **Título** — o
-  texto mais longo — a maior fatia. Sem largura, a URL sem espaços domina o
-  layout automático e espreme/estoura a tabela.
+  texto mais longo — a maior fatia.
 
 ## Guardrails de produto (não negociáveis)
 
 - **Sem fonte, não publica**: afirmação não trivial sem data+URL não entra.
-- **Empenho ≠ pagamento** (defeso/ano eleitoral): o bloco de emendas mostra a
-  fase (empenhada, liquidada, paga, restos) e a advertência de defeso acompanha o
-  painel "O que anunciar agora".
-- **Leitura relativa**: % do próprio voto, rank, LQ — nunca % estadual absoluto.
+- **2º turno é cenário, não promessa**: X₁/X₂ são votos em jogo (fórmula do
+  `/potencial`), nunca transferência garantida; a parte determinística vem do
+  TSE oficial no artefato e o PDF declara a incerteza. Não se infere
+  comportamento individual (falácia ecológica) nem se propõe persuasão onde a
+  evidência diz efeito ~0: o papel de Solla é **mobilizar, proteger e dar voz**.
+- **Leitura relativa**: delta e participação no recorte da unidade (nunca
+  número absoluto do estado apresentado como se fosse da cidade).
 - **PII mínima**: contatos completos (telefone/e-mail) nunca entram; nomes de
   lideranças entram porque o produto pede "quem é quem".
-- **Completo para o candidato**: estimativas e nível N0–N4 entram no PDF, sem
-  marca de restrição; o que não sai é para o palanque.
-- **Indício regional não é emenda da cidade**: emendas do município, da região
-  ou do polo entram rotuladas na evidência web e **nunca somadas**; a fonte
-  oficial ausente continua lacuna explícita.
-- **Abordagem é análise ancorada**: as sugestões das personas (governo do PT na
-  região, projetos futuros, prioridades locais) saem do `approach` com fonte por
-  item — sem fonte, não entra; o PDF deixa claro que é análise, não fato novo.
-- **Frente de oposição é fato, não ataque**: `opposition` só recebe fato publicado
-  com URL + data; o PDF **não** afirma culpa, **não** infere dolo e **não** orienta
-  ataque pessoal. Prioriza o local (operadores na região) sobre o líder estadual e
-  sinaliza temas de mão dupla; onde a marca do adversário domina, o insumo é para
-  contraste, não para confronto frontal.
-- **2º turno é cenário, não promessa**: X₁/X₂ são votos em jogo (fórmula do
-  `/potencial`), nunca transferência garantida; a seção é determinística (TSE
-  oficial no artefato) — o researcher pesquisa só o movimento local e o PDF
-  declara a incerteza. Não se infere comportamento individual (falácia
-  ecológica) nem se propõe persuasão onde a evidência diz efeito ~0: o papel de
-  Solla é mobilizar, proteger e dar voz.
+- **Completo para o candidato**: nível N0–N4 e a leitura da base entram no PDF,
+  sem marca de restrição; o que não sai é para o palanque.
+- **Abordagem é análise ancorada**: as sugestões das personas saem do
+  `approach` com fonte por item — sem fonte, não entra; o PDF deixa claro que é
+  análise, não fato novo.
+- **Frente de oposição é fato, não ataque**: `opposition` só recebe fato
+  publicado com URL + data; o PDF **não** afirma culpa, **não** infere dolo e
+  **não** orienta ataque pessoal. Prioriza o local e sinaliza temas de mão
+  dupla; onde a marca do adversário domina, o insumo é para contraste, não para
+  confronto frontal.
 - **Falha isolada no lote**: cidade que falha (token inválido/ambíguo, pesquisa
   sem fonte suficiente, snapshot×research mismatch) não cancela as demais; o
   summary final diz explicitamente o que saiu e o que falhou (sucesso parcial
@@ -489,17 +396,12 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
   com fonte datada.
 - **Página 1 estourou**: o builder aborta com `scrollHeight > útil` e o erro é
   açãoável. A página 1 já aplica tetos de conteúdo aos textos da pesquisa
-  (`PAGE_ONE_*_MAX` em `scripts/lib/cityReportBlocks.mjs`) e preserva o texto
-  integral no aprofundamento; se ainda estourar, **aperte o teto da pesquisa ou
-  corte copy do resumo — nunca mexa no layout para "espremer"**. O bloco 2º turno
-  vive na seção própria (nunca na página 1) justamente porque é determinístico e
-  não encolhe no fallback.
+  (`PAGE_ONE_*` em `scripts/lib/cityReportBlocks.mjs`) e preserva o texto
+  integral no aprofundamento; se ainda estourar, **encurte os `summary` da
+  pesquisa ou os itens de lista — nunca mexa no layout para "espremer"**. O
+  conteúdo determinístico (KPIs e papel do 2º turno) não encolhe no fallback de
+  texto.
 - **`tsx` ausente no homeserver**: `pnpm install --prod=false`.
-- **API de emendas 429/erro**: o builder degrada para lacuna com URL+motivo;
-  reexecute depois (o cache só é escrito com resultado utilizável).
-- **Emenda sem atribuição oficial**: é o comportamento esperado (a API não
-  expõe o município). Pesquise os indícios web (município/região/polo) no item
-  `emendas_web`; sem indício, a lacuna fica explícita — nunca zero silencioso.
 - **Chromium**: vem do `@playwright/test`; se faltar binário,
   `pnpm exec playwright install chromium`.
 - **Snapshot de outro município**: o builder recusa (`municipalitySlug` ≠
@@ -512,9 +414,10 @@ cacheado em `data/relatorios-cidade/<base>.emendas.json` para replay.
 
 ## Referências
 
-- Intenção: `docs/plans/relatorio-cidade-viagem.md`; impl:
-  `docs/plans/relatorio-cidade-viagem-impl.md`.
+- Intenção (histórica, pré-refactor): `docs/plans/relatorio-cidade-viagem.md`;
+  impl: `docs/plans/relatorio-cidade-viagem-impl.md`.
 - Lote + sub-agentes: `docs/plans/ops118-relatorio-cidade-lote-municipios-sub-agentes.md`
   e `-impl.md`.
+- Refactor de mobilização do 2º turno: `docs/changelog/2026-10-10-relatorio-cidade-mobilizacao-2turno.md`.
 - Precedente de PDF: `scripts/build-solla-ceuci-salvador-report.mjs` (C157).
 - Runbook: `docs/ops/teqo-1313-deploy.md` §C163.

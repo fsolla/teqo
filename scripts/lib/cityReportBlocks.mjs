@@ -1,15 +1,20 @@
 /**
- * Content model of the city report (C163). Pure: takes the snapshot (base Teqo,
- * read-only), the validated research JSON and the emendas result, and returns
- * the block tree both the PDF and the companion `.md` render.
+ * Content model of the city report (C163).
  *
- * The order of the blocks is the product contract (intention plan, "Estrutura
- * do relatório"): page 1 is the one-look summary; the numbered sections after it
- * are the deep dive. "Sem fonte, não publica": every claim carries its source;
- * what is missing becomes an explicit gap.
+ * Since the 2026-10-10 refocus the report serves the 2º turno (Lula × Flávio):
+ * page 1 is the mobilization summary (role of the unit, official numbers, who
+ * mobilizes, local movement, the ask) and the numbered sections are the deep
+ * dive (2º turno, network, conjuncture, demography, economy, transport, news,
+ * approach, sources). The mandate-era blocks of the pre-travel report (Solla's
+ * own electoral account and chair math, competitors, delivered emendas, Câmara
+ * speeches, region panorama, signals/demands) were retired; demography, economy
+ * and transport stay as visit context. Numbering is positional over the blocks
+ * actually built.
+ *
+ * "Sem fonte, não publica": every claim carries its source; what is missing
+ * becomes an explicit gap.
  */
 
-import { getMunicipalityFederalBaseline } from '../../src/lib/bahiaElectionAggregates.ts'
 import {
   BAHIA_SECOND_ROUND_GENERATED_AT,
   getBahiaSecondRoundUnit,
@@ -19,24 +24,11 @@ import {
   secondRoundSollaShareOfLula,
 } from '../../src/lib/bahiaSecondRound.ts'
 import { formatEngagementLevelLabel } from '../../src/lib/engagementLevel.ts'
-import { getMunicipalityVoteRank } from '../../src/lib/municipalityVoteRank.ts'
-import { activityStatusLabels } from '../../src/lib/schemas/activity.ts'
-import {
-  campaignDemandKindLabels,
-  campaignDemandStatusLabels,
-} from '../../src/lib/schemas/campaignDemand.ts'
-import { municipalityUpdatePolarityLabels } from '../../src/lib/schemas/municipalityUpdate.ts'
 import { secondRoundRoleGuidance, secondRoundRoleLabels } from '../../src/lib/secondRoundRole.ts'
-import { SPEECH_TOPICS } from '../../src/lib/speechFacets.ts'
-import {
-  formatVoteEstimateEndpointsLabel,
-  voteEstimateScenarioLabels,
-} from '../../src/lib/voteEstimate.ts'
 import { supportStatusLabels } from '../../src/utilities/leadership/leadershipLabels.ts'
 import {
   municipalityPriorityLabels,
   politicalTrendLabels,
-  territorialClassLabels,
 } from '../../src/utilities/municipality/municipalityLabels.ts'
 
 import {
@@ -44,31 +36,19 @@ import {
   formatDateTimeBr,
   formatFreshness,
   formatInteger,
-  formatMoneyCompact,
   formatPercent,
-  formatRank,
 } from './cityReportFormat.mjs'
 import { researchItemById } from './cityReportResearch.mjs'
-import { buildTerritoryPanorama } from './cityReportTerritory.mjs'
-import {
-  capList,
-  excerptDeepDive,
-  moreItemsLabel,
-  summaryListText,
-  summarySurfaceText,
-} from './reportText.mjs'
+import { capList, moreItemsLabel, summaryListText, summarySurfaceText } from './reportText.mjs'
 
-const REPORT_TITLE = 'Relatório de cidade — pré-viagem'
+const REPORT_TITLE = 'Relatório de cidade — 2º turno (Lula × Flávio)'
 
 const GAP_COPY = 'Lacuna explícita — não preencher por inferência.'
 
-const ADVERTENCIA_DEFESO =
-  'Ano eleitoral: empenho não é pagamento. O bloco de emendas mostra a fase (empenhada, liquidada, paga, restos).'
+const SECOND_ROUND_GUARDRAIL =
+  'X₁/X₂ são votos em jogo, não transferência garantida — o cenário de 2º turno é hipotético; persuasão em eleição geral tem efeito médio ~0.'
 
 const GAP_CALLOUT_LIMIT = 4
-const SIGNAL_EXCERPT_MAX = 180
-const SPEECH_SUMMARY_MAX = 220
-const SPEECH_MENTION_MAX = 220
 
 /**
  * Page-1 text budget (C188). Page 1 is a summary surface: it never cuts
@@ -79,29 +59,14 @@ const SPEECH_MENTION_MAX = 220
  * still apply — each one with a visible counter.
  */
 const PAGE_ONE_LIST_LIMIT = 2
+/** Joined name lists (Responsável, Dobradinhas) — one line in the strip/stat row. */
+const PAGE_ONE_NAMES_MAX = 20
 /**
  * Character ceiling for a joined list of free text (conjuncture risks) — the
  * joined `answer`s have no deep-dive copy, so a long line degrades to the
  * pointer when the page does not fit, instead of blowing the guard.
  */
 const PAGE_ONE_JOINED_MAX = 90
-/** Joined name lists (Responsável, Dobradinhas) — one line in the strip/stat row. */
-const PAGE_ONE_NAMES_MAX = 20
-/**
- * Page-1 emenda indications: the author/what/esfera rows shown before "e mais N".
- * Three rows (not four): a city-polo with many attributed indications overflowed
- * the one-page guard, and the full list lives in the deep dive anyway.
- */
-const PAGE_ONE_INDICATOR_LIMIT = 3
-
-const EMENDAS_EVIDENCE_TITLE = 'Emendas — indícios web (sem atribuição oficial ao município)'
-
-/** Where each indication points to; região/polo are never summed as the city's own emenda. */
-const EMENDA_SPHERE_LABELS = {
-  municipio: 'município',
-  regiao: 'região',
-  polo: 'polo',
-}
 
 const sourceTeqo = (label, date) => ({ kind: 'teqo', label, date: date ?? null })
 const sourceWeb = (label, url, date) => ({
@@ -184,15 +149,11 @@ const gapCallout = (gaps, title = 'Lacunas desta seção') => {
   }
 }
 
-const buildIdentificationItems = ({ municipality, goal, conjuncture, advisors }) => [
+const buildIdentificationItems = ({ municipality, conjuncture, advisors }) => [
   { label: 'Território', value: municipality.region },
   {
     label: 'Prioridade',
     value: conjuncture ? (municipalityPriorityLabels[conjuncture.priority] ?? '—') : '—',
-  },
-  {
-    label: 'Classe',
-    value: goal ? (territorialClassLabels[goal.territorialClass.class] ?? '—') : '—',
   },
   {
     label: 'Nível',
@@ -211,23 +172,63 @@ const buildIdentificationItems = ({ municipality, goal, conjuncture, advisors })
   },
 ]
 
-const buildElectoralKpis = ({ electoral, conjuncture }) => {
-  const expectedVotes = conjuncture?.expectedVotes ?? null
+/** The three official numbers of the unit — shared by page 1 and the section. */
+const secondRoundKpiItems = (unit, potential, shares, sollaRatio) => [
+  {
+    label: 'Lula em 2026',
+    value: formatPercent(shares.share26 / 100),
+    hint: `dos válidos · Δ ${signedPoints(shares.deltaPp)} vs 2022`,
+  },
+  {
+    label: 'Votos fora do 2º turno',
+    value: potential ? `X₂ = ${formatInteger(potential.x2)}` : '—',
+    hint: potential
+      ? `X₁ = ${formatInteger(potential.x1)} já no comparecimento; X₂ soma os ausentes`
+      : 'sem cenário para os números do recorte',
+  },
+  {
+    label: 'Solla 2026',
+    value: formatInteger(unit.solla26),
+    hint: `Δ ${signedInteger(unit.dSolla)} vs 2022${
+      sollaRatio !== null ? ` · ${formatPercent(sollaRatio / 100)} dos votos de Lula` : ''
+    }`,
+  },
+]
+
+/**
+ * Page-1 cell of the 2º turno: the official numbers plus the deterministic role
+ * of the unit. A unit outside the artifact degrades to an explicit gap instead
+ * of an empty cell.
+ */
+const buildSecondRoundPageBlocks = ({ snapshot }) => {
+  const unit = getBahiaSecondRoundUnit(snapshot.municipality.slug)
+  if (!unit) {
+    return [
+      gapCallout(
+        [
+          {
+            id: 'segundo_turno',
+            label: 'Artefato do 2º turno',
+            reason: 'Unidade fora do artefato TSE 2026 — regenere com `pnpm build:second-round`.',
+          },
+        ],
+        'Lacunas desta seção',
+      ),
+    ]
+  }
+  const potential = secondRoundPotentialOf(unit)
+  const shares = secondRoundLulaShares(unit)
+  const sollaRatio = secondRoundSollaShareOfLula(unit)
   return [
     {
-      label: 'Votos em 2022',
-      value: formatInteger(electoral.rank2022?.votes ?? null),
-      hint: electoral.rank2022
-        ? `% do próprio voto: ${formatPercent(electoral.rank2022.share)}`
-        : null,
+      kind: 'kpis',
+      items: secondRoundKpiItems(unit, potential, shares, sollaRatio),
     },
-    { label: 'Rank no estado', value: formatRank(electoral.rank2022) },
     {
-      label: 'Expectativa de votos',
-      value: formatInteger(expectedVotes?.central ?? null),
-      hint: expectedVotes
-        ? (formatVoteEstimateEndpointsLabel(expectedVotes) ?? 'Cenários da base')
-        : 'sem registro na base',
+      kind: 'callout',
+      tone: unit.role === 'defesa' ? 'risk' : 'decision',
+      title: `Papel no 2º turno: ${secondRoundRoleLabels[unit.role]}`,
+      body: [secondRoundRoleGuidance[unit.role]],
     },
   ]
 }
@@ -265,56 +266,55 @@ const buildWhoRows = ({ leaderships, advisors, conjuncture }, research, prefeito
   return rows
 }
 
-const buildDeliveredKpis = ({ speeches }, research, emendas) => {
-  const emendasOk = emendas?.status === 'ok'
-  return [
-    {
-      label: 'Emendas aportadas',
-      value: emendasOk ? formatMoneyCompact(emendas.totals.empenhado) : 'Sem fonte oficial',
-      hint: emendasOk
-        ? `Pago: ${formatMoneyCompact(emendas.totals.pago)} · ${emendas.rows.length} emenda(s)`
-        : emendas
-          ? 'sem emenda atribuível ao município'
-          : null,
-    },
-    {
-      label: 'Falas no acervo',
-      value: `${formatInteger(speeches.totalCount)} trecho(s)`,
-      hint: 'Busca por município no acervo (C153/C155)',
-    },
-    {
-      label: 'Notícias (≤90 dias)',
-      value: `${formatInteger(research.news.length)} matéria(s)`,
-      hint: 'Pesquisa web datada',
-    },
-  ]
+/**
+ * Local movement of the 2º turno (web): acts, palanques and positioning of
+ * local leaders in the Lula × Flávio race — what the source says, dated. A
+ * missing item is the explicit gap (page 1 and the section).
+ */
+const buildSecondRoundMovementBlock = (research, fallback) => {
+  const movement = researchAnswerItem(research, 'segundo_turno', fallback)
+  if (!movement) {
+    return gapCallout(
+      [
+        {
+          id: 'segundo_turno',
+          label: 'Movimento local do 2º turno',
+          reason: 'Não pesquisado.',
+        },
+      ],
+      'Movimento local do 2º turno (pesquisa)',
+    )
+  }
+  return {
+    kind: 'callout',
+    tone: 'info',
+    title: 'Movimento local do 2º turno (pesquisa)',
+    body: [`${movement.text} (fonte: pesquisa web · ${formatDateBr(movement.source.date)})`],
+  }
 }
 
-const buildAnnouncePanel = (research, fallback) => {
+/** The ask on the palanque: Lula 13, anchored in the confirmed local relation. */
+const buildAskPanel = (research, fallback) => {
   const relacao = researchAnswerItem(research, 'relacao_campo', fallback)
-  const items = []
+  const items = [
+    {
+      text: 'Pedido no palanque: Lula 13 — mobilizar, proteger e dar voz; sem prometer transferência de voto.',
+    },
+  ]
   if (relacao) {
-    // A fonte da relação local já aparece em "Quem é quem" na mesma página.
     items.push({ text: `Relação local confirmada: ${relacao.text}` })
   }
-  // Uma linha invariante em vez de três: a página 1 é "uma olhada" e o
-  // conteúdo fixo repetido não pode competir com os indícios da cidade.
-  items.push({
-    text: 'Pauta/entrega, agradecimento e compromisso novo — sempre com papel confirmado, fonte e data.',
-  })
   return {
     kind: 'panel',
     tone: 'decision',
-    title: 'O que anunciar agora',
+    title: 'O que pedir e falar',
     items,
-    note: ADVERTENCIA_DEFESO,
+    note: SECOND_ROUND_GUARDRAIL,
   }
 }
 
 const buildRiskCards = ({ leaderships, advisors, conjuncture }, research, fallback) => {
-  const opposition =
-    researchAnswerItem(research, 'disputa_local', fallback) ??
-    researchAnswerItem(research, 'quem_investe', fallback)
+  const opposition = researchAnswerItem(research, 'disputa_local', fallback)
   return [
     {
       title: 'Oposição local',
@@ -341,53 +341,16 @@ const buildRiskCards = ({ leaderships, advisors, conjuncture }, research, fallba
   ]
 }
 
-/**
- * Page-1 gaps: the emendas gap is not repeated here — it is carried by the
- * "O que Solla entregou" KPI and, when the agent researched it, by the web
- * evidence block ("nunca zero silencioso" stays explicit on those surfaces).
- */
-const collectPageOneGaps = ({ electoral, prefeito }) => {
+/** Page-1 gaps: a missing prefeito is the only research hole summarized here. */
+const collectPageOneGaps = ({ prefeito }) => {
   const gaps = []
   if (!prefeito) gaps.push({ id: 'prefeito', label: 'Prefeito(a)', reason: 'Não pesquisado.' })
-  if (!electoral.rank2022) gaps.push({ id: 'rank', label: 'Rank', reason: 'Fora do artefato TSE.' })
   return gaps
 }
 
-const buildEmendasEvidenceBlock = (research, emendas, fallback) => {
-  if (emendas?.status === 'ok') return null
-  const indicators = research.emendasIndicators ?? []
-  if (!indicators.length) {
-    const evidence = researchAnswerItem(research, 'emendas_web', fallback)
-    if (!evidence) return null
-    return {
-      kind: 'callout',
-      tone: 'decision',
-      title: EMENDAS_EVIDENCE_TITLE,
-      body: [evidence.text, 'Não somar região/polo como emenda da cidade; URLs nas fontes.'],
-    }
-  }
-  const { items: shown, remaining } = capList(indicators, PAGE_ONE_INDICATOR_LIMIT)
-  return {
-    kind: 'indicatorList',
-    title: EMENDAS_EVIDENCE_TITLE,
-    items: shown.map((indicator) => ({
-      author: indicator.author,
-      sphere: indicator.sphere,
-      sphereLabel: EMENDA_SPHERE_LABELS[indicator.sphere] ?? indicator.sphere,
-      detail: [indicator.purpose, indicator.value, indicator.year].filter(Boolean).join(' · '),
-      source: sourceWeb(indicator.author, indicator.sourceUrl, indicator.sourceDate),
-    })),
-    remaining,
-    note: 'Não somar região/polo como emenda da cidade; a atribuição oficial fica com o Portal da Transparência.',
-  }
-}
-
-const buildPageOne = ({ snapshot, research, emendas, generatedAt, textFallback }) => {
+const buildPageOne = ({ snapshot, research, generatedAt, textFallback }) => {
   const prefeito = researchAnswerItem(research, 'prefeito', textFallback)
-  const gapCalloutBlock = gapCallout(
-    collectPageOneGaps({ electoral: snapshot.electoral, prefeito }),
-    'Pontos sem leitura',
-  )
+  const gapCalloutBlock = gapCallout(collectPageOneGaps({ prefeito }), 'Pontos sem leitura')
 
   return {
     blocks: [
@@ -397,137 +360,38 @@ const buildPageOne = ({ snapshot, research, emendas, generatedAt, textFallback }
         columns: 2,
         cells: [
           {
-            title: 'Conta eleitoral 2022',
-            blocks: [{ kind: 'kpis', items: buildElectoralKpis(snapshot) }],
+            title: '2º turno — Lula × Flávio',
+            blocks: buildSecondRoundPageBlocks({ snapshot }),
           },
           {
-            title: 'Quem é quem',
+            title: 'Quem mobiliza',
             blocks: [
               { kind: 'stats', rows: buildWhoRows(snapshot, research, prefeito, textFallback) },
             ],
           },
         ],
         sources: [
+          sourceTeqo('lideranças, responsáveis e prioridade', snapshot.meta?.readAt),
+          sourceOfficial('TSE — 1º turno 2026 (presidente, por seção) e 2022', null, null),
           sourceTeqo(
-            'base Teqo — TSE 2022, expectativa de votos e lideranças',
-            snapshot.meta?.readAt,
+            'artefato do 2º turno (pnpm build:second-round)',
+            BAHIA_SECOND_ROUND_GENERATED_AT,
           ),
         ],
       },
-      {
-        kind: 'kpis',
-        title: 'O que Solla entregou',
-        items: buildDeliveredKpis(snapshot, research, emendas),
-        sources: [
-          sourceOfficial(
-            'Portal da Transparência — emendas',
-            emendas?.sourceUrl,
-            emendas?.consultedAt,
-          ),
-          sourceTeqo('base Teqo — acervo de falas', snapshot.meta?.readAt),
-          sourceWeb('pesquisa web — imprensa', null, research.researchedAt),
-        ],
-      },
-      buildEmendasEvidenceBlock(research, emendas, textFallback),
-      buildAnnouncePanel(research, textFallback),
+      buildSecondRoundMovementBlock(research, textFallback),
       {
         kind: 'cards',
         title: 'Riscos — oposição/disputa local',
         items: buildRiskCards(snapshot, research, textFallback),
       },
+      buildAskPanel(research, textFallback),
       gapCalloutBlock,
       {
         kind: 'footerNote',
         text: `Gerado em ${formatDateBr(generatedAt)} · snapshot do momento · fontes item a item nas seções de aprofundamento.`,
       },
     ].filter(Boolean),
-  }
-}
-
-const buildElectoralSection = ({ snapshot }) => {
-  const { municipality, electoral } = snapshot
-  const years = [2014, 2018, 2022]
-  const rows = years.map((year) => {
-    const votes = electoral.series.find((point) => point.year === year)?.votes ?? null
-    const rank = getMunicipalityVoteRank(municipality.slug, year)
-    const validVotes = getMunicipalityFederalBaseline(municipality.slug).validVotesByYear[
-      String(year)
-    ]
-    return {
-      year: String(year),
-      votes: votes === null ? '—' : formatInteger(votes),
-      share: rank ? formatPercent(rank.share) : '—',
-      rankLabel: formatRank(rank),
-      validVotes: validVotes ? formatInteger(validVotes) : '—',
-    }
-  })
-
-  const gap = electoral.series.length
-    ? null
-    : {
-        id: 'serie',
-        label: 'Série 2014/2018/2022',
-        reason: 'Sem série na base para este município.',
-      }
-
-  return [
-    {
-      kind: 'table',
-      title: 'Conta eleitoral completa',
-      columns: [
-        { key: 'year', label: 'Ano' },
-        { key: 'votes', label: 'Votos', numeric: true },
-        { key: 'share', label: '% do próprio voto', numeric: true },
-        { key: 'rankLabel', label: 'Rank', numeric: true },
-        { key: 'validVotes', label: 'Válidos do cargo', numeric: true },
-      ],
-      rows,
-      sources: [sourceTeqo('base Teqo — artefato TSE 2014/2018/2022', snapshot.meta?.readAt)],
-    },
-    gap ? gapCallout([gap], 'Lacunas desta seção') : null,
-  ].filter(Boolean)
-}
-
-/**
- * Local movement of the 2º turno (web): acts, palanques and positioning of
- * local leaders in the Lula × Flávio race. A missing item is the explicit gap.
- */
-const buildSecondRoundResearchBlock = (research) => {
-  const item = researchItemById(research, 'segundo_turno')
-  if (!item) {
-    return gapCallout(
-      [
-        {
-          id: 'segundo_turno',
-          label: 'Movimento local do 2º turno',
-          reason: 'Não pesquisado.',
-        },
-      ],
-      'Lacuna desta seção',
-    )
-  }
-  const sources = sourcesOf(item)
-  return {
-    kind: 'table',
-    title: '2º turno — movimento local e palanque (pesquisa)',
-    columns: [
-      { key: 'detail', label: 'O que a fonte diz', width: 72 },
-      { key: 'source', label: 'Fonte', width: 28 },
-    ],
-    rows: [
-      {
-        detail: withInlineSources(item.details ?? item.answer, sources),
-        source: formatDateBr(item.sourceDate),
-        sources,
-      },
-    ],
-    note: 'Atos, palanques e posicionamentos locais na disputa Lula × Flávio — fato publicado com fonte datada.',
-    sources: sources.map((url) => ({
-      kind: 'web',
-      label: 'Movimento local do 2º turno',
-      url,
-      date: item.sourceDate,
-    })),
   }
 }
 
@@ -551,7 +415,7 @@ const buildSecondRoundSection = ({ snapshot, research }) => {
         ],
         'Lacunas desta seção',
       ),
-      buildSecondRoundResearchBlock(research),
+      buildSecondRoundMovementTable(research),
     ].filter(Boolean)
   }
 
@@ -622,28 +486,6 @@ const buildSecondRoundSection = ({ snapshot, research }) => {
     )
   }
 
-  const kpis = [
-    {
-      label: 'Lula em 2026',
-      value: formatPercent(shares.share26 / 100),
-      hint: `dos válidos · Δ ${signedPoints(shares.deltaPp)} vs 2022`,
-    },
-    {
-      label: 'Votos fora do 2º turno',
-      value: potential ? `X₂ = ${formatInteger(potential.x2)}` : '—',
-      hint: potential
-        ? `X₁ = ${formatInteger(potential.x1)} já no comparecimento; X₂ soma os ausentes`
-        : 'sem cenário para os números do recorte',
-    },
-    {
-      label: 'Solla 2026',
-      value: formatInteger(unit.solla26),
-      hint: `Δ ${signedInteger(unit.dSolla)} vs 2022${
-        sollaRatio !== null ? ` · ${formatPercent(sollaRatio / 100)} dos votos de Lula` : ''
-      }`,
-    },
-  ]
-
   return [
     {
       kind: 'callout',
@@ -652,7 +494,11 @@ const buildSecondRoundSection = ({ snapshot, research }) => {
       body: calloutBody,
       sources,
     },
-    { kind: 'kpis', items: kpis, sources: [sources[0]] },
+    {
+      kind: 'kpis',
+      items: secondRoundKpiItems(unit, potential, shares, sollaRatio),
+      sources: [sources[0]],
+    },
     {
       kind: 'table',
       title: 'A conta 2022 → 1º turno 2026 (presidente e Solla 1313)',
@@ -676,48 +522,59 @@ const buildSecondRoundSection = ({ snapshot, research }) => {
       text: 'X₁ = votos já dentro do comparecimento de 2026 que não foram de Lula nem de Flávio (nulos, brancos e terceira via); X₂ = X₁ + ausentes. São votos em jogo, não transferência garantida: o cenário de 2º turno é hipotético. Persuasão em eleição geral tem efeito médio próximo de zero — o papel de Solla é mobilizar, proteger e dar voz, com contato na última semana.',
       sources,
     },
-    buildSecondRoundResearchBlock(research),
+    buildSecondRoundMovementTable(research),
   ].filter(Boolean)
 }
 
 /**
- * Page-1 one-liner of the 2º turno was intentionally left out: page 1 is a
- * measured, fail-closed surface that already sits at the budget for the
- * heaviest cities, and deterministic content cannot be shrunk by the text
- * fallback. The 2º turno lives in its own section (right after the electoral
- * account), with the full artifact numbers.
+ * The movement table of the deep dive: what the source says (with inline
+ * sources) + the date. The page-1 block prints the researched summary instead.
  */
-
-const COMPETITOR_SERIES_YEARS = ['2014', '2018', '2022']
-
-const buildCompetitorsTable = ({ title, rows, referenceYear, readAt }) => ({
-  kind: 'table',
-  title,
-  columns: [
-    { key: 'name', label: 'Candidato' },
-    { key: 'party', label: 'Partido' },
-    ...COMPETITOR_SERIES_YEARS.map((year) => ({ key: `y${year}`, label: year, numeric: true })),
-  ],
-  rows: rows.map((row) => ({
-    name: row.name,
-    party: row.party ?? '—',
-    ...Object.fromEntries(
-      COMPETITOR_SERIES_YEARS.map((year) => [
-        `y${year}`,
-        year in (row.votesByYear ?? {}) ? formatInteger(row.votesByYear[year]) : '—',
-      ]),
-    ),
-  })),
-  note: `Top 5 por votos de ${referenceYear} no município (TSE, 1º turno, votos nominais); “—” = sem votos na série.`,
-  sources: [sourceTeqo('base Teqo — TSE 2014/2018/2022', readAt)],
-})
+const buildSecondRoundMovementTable = (research) => {
+  const item = researchItemById(research, 'segundo_turno')
+  if (!item) {
+    return gapCallout(
+      [
+        {
+          id: 'segundo_turno',
+          label: 'Movimento local do 2º turno',
+          reason: 'Não pesquisado.',
+        },
+      ],
+      'Lacuna desta seção',
+    )
+  }
+  const sources = sourcesOf(item)
+  return {
+    kind: 'table',
+    title: '2º turno — movimento local e palanque (pesquisa)',
+    columns: [
+      { key: 'detail', label: 'O que a fonte diz', width: 72 },
+      { key: 'source', label: 'Fonte', width: 28 },
+    ],
+    rows: [
+      {
+        detail: withInlineSources(item.details ?? item.answer, sources),
+        source: formatDateBr(item.sourceDate),
+        sources,
+      },
+    ],
+    note: 'Atos, palanques e posicionamentos locais na disputa Lula × Flávio — fato publicado com fonte datada.',
+    sources: sources.map((url) => ({
+      kind: 'web',
+      label: 'Movimento local do 2º turno',
+      url,
+      date: item.sourceDate,
+    })),
+  }
+}
 
 const buildOppositionBlock = (research) => {
   const entries = research.opposition ?? []
   if (!entries.length) return null
   return {
     kind: 'table',
-    title: 'Oposição — o que usar com fonte (pesquisa)',
+    title: 'Frente de oposição — o que usar com fonte (pesquisa)',
     columns: [
       { key: 'topic', label: 'Tema', width: 22 },
       { key: 'detail', label: 'O que a fonte diz', width: 62 },
@@ -740,75 +597,6 @@ const buildOppositionBlock = (research) => {
       date: item.sourceDate,
     })),
   }
-}
-
-const buildCompetitorsSection = ({ snapshot, research }) => {
-  const competitors = snapshot.competitors ?? { referenceYear: 2022, federal: [], state: [] }
-  const offices = [
-    { key: 'federal', label: 'Deputado federal' },
-    { key: 'state', label: 'Deputado estadual' },
-  ]
-  const blocks = offices.map((office) => {
-    const rows = competitors[office.key] ?? []
-    return rows.length
-      ? buildCompetitorsTable({
-          title: `Concorrentes — ${office.label}`,
-          rows,
-          referenceYear: competitors.referenceYear ?? 2022,
-          readAt: snapshot.meta?.readAt,
-        })
-      : {
-          kind: 'callout',
-          tone: 'gap',
-          title: `Concorrentes — ${office.label}`,
-          body: ['Sem série de concorrentes na base para este município.', GAP_COPY],
-        }
-  })
-
-  const preCandidates = research.preCandidates ?? []
-  blocks.push(
-    preCandidates.length
-      ? {
-          kind: 'table',
-          title: 'Prováveis candidatos do campo do prefeito em 2026 (pesquisa)',
-          columns: [
-            { key: 'name', label: 'Nome' },
-            { key: 'office', label: 'Cargo' },
-            { key: 'party', label: 'Partido' },
-            { key: 'support', label: 'Apoio' },
-            { key: 'source', label: 'Fonte' },
-          ],
-          rows: preCandidates.map((item) => {
-            const sources = sourcesOf(item)
-            return {
-              name: item.name,
-              office: item.office,
-              party: item.party ?? '—',
-              support: withInlineSources(item.support ?? '—', sources),
-              source: formatDateBr(item.sourceDate),
-              sources,
-            }
-          }),
-          note: 'Nomes declarados em fontes datadas; o histórico de votos vem das tabelas acima quando o nome aparece na base.',
-          sources: preCandidates.map((item) => ({
-            kind: 'web',
-            label: `${item.name} — ${item.office}`,
-            url: item.sourceUrl,
-            date: item.sourceDate,
-          })),
-        }
-      : {
-          kind: 'callout',
-          tone: 'gap',
-          title: 'Prováveis candidatos do campo do prefeito em 2026',
-          body: ['Nenhum pré-candidato pesquisado com fonte.', GAP_COPY],
-        },
-  )
-
-  const opposition = buildOppositionBlock(research)
-  if (opposition) blocks.push(opposition)
-
-  return blocks
 }
 
 const buildNetworkSection = ({ snapshot, research }) => {
@@ -838,7 +626,7 @@ const buildNetworkSection = ({ snapshot, research }) => {
         leaderships.totalCount > rows.length
           ? `Mostrando ${rows.length} de ${leaderships.totalCount} lideranças (mesmo corte do dossiê).`
           : null,
-      sources: [sourceTeqo('base Teqo — lideranças e pledges', snapshot.meta?.readAt)],
+      sources: [sourceTeqo('lideranças e pledges', snapshot.meta?.readAt)],
     })
   } else {
     blocks.push({
@@ -867,7 +655,7 @@ const buildNetworkSection = ({ snapshot, research }) => {
           : 'sem registro',
       },
     ],
-    sources: [sourceTeqo('base Teqo — pledges', snapshot.meta?.readAt)],
+    sources: [sourceTeqo('pledges', snapshot.meta?.readAt)],
   })
 
   const cityLeaders = research?.leaders ?? []
@@ -912,7 +700,7 @@ const buildNetworkSection = ({ snapshot, research }) => {
   blocks.push(
     ...buildSourcedListBlocks({
       title: 'Dobradinhas (pesquisa)',
-      note: 'Com quem Solla soma na cidade em 2026 (estadual/federal, chapa e lideranças que transferem voto) — insumo direto da abordagem sugerida; cada item com URL.',
+      note: 'Com quem Solla soma na cidade (estadual/federal, chapa e lideranças que transferem voto) — insumo direto da abordagem sugerida; cada item com URL.',
       items: research?.alliances ?? [],
     }),
   )
@@ -980,18 +768,6 @@ const buildConjunctureSection = ({ snapshot, research }) => {
         : 'Sem nível',
       hint: conjuncture?.levelNote ?? null,
     },
-    {
-      label: 'Expectativa de votos',
-      value: conjuncture?.expectedVotes
-        ? ['pessimistic', 'central', 'optimistic']
-            .map(
-              (scenario) =>
-                `${voteEstimateScenarioLabels[scenario]} ${formatInteger(conjuncture.expectedVotes[scenario])}`,
-            )
-            .join(' · ')
-        : '—',
-      hint: 'Cenários da base',
-    },
   ]
 
   const blocks = [
@@ -999,7 +775,7 @@ const buildConjunctureSection = ({ snapshot, research }) => {
       kind: 'stats',
       title: 'Conjuntura',
       rows,
-      sources: [sourceTeqo('base Teqo — estratégia do município', snapshot.meta?.readAt)],
+      sources: [sourceTeqo('estratégia do município', snapshot.meta?.readAt)],
     },
   ]
 
@@ -1023,134 +799,9 @@ const buildConjunctureSection = ({ snapshot, research }) => {
   if (conjuncture?.nextSteps) {
     blocks.push({ kind: 'prose', title: 'Próximos passos', text: conjuncture.nextSteps })
   }
-  if (conjuncture?.budgetNotes) {
-    blocks.push({
-      kind: 'prose',
-      title: 'Emendas aportadas (nota da base)',
-      text: conjuncture.budgetNotes,
-      sources: [sourceTeqo('base Teqo — nota manual', snapshot.meta?.readAt)],
-    })
-  }
 
-  blocks.push(
-    ...buildSourcedListBlocks({
-      title: 'Investimentos e obras (pesquisa)',
-      note: 'O que Solla, o governo do estado e o federal entregaram, anunciaram ou têm em obra no município e na região — com fase/valor quando a fonte informar; cada item com URL. Empenho ≠ pagamento.',
-      items: research?.investments ?? [],
-    }),
-  )
-
-  return blocks
-}
-
-const buildSignalsSection = ({ snapshot }) => {
-  const { signals } = snapshot
-  if (!signals.rows.length) {
-    return [
-      {
-        kind: 'callout',
-        tone: 'gap',
-        title: 'Sinais recentes',
-        body: ['Nenhum sinal registrado para o município na base.', GAP_COPY],
-      },
-    ]
-  }
-  return [
-    {
-      kind: 'table',
-      title: 'Sinais recentes',
-      columns: [
-        { key: 'date', label: 'Data' },
-        { key: 'polarity', label: 'Polaridade' },
-        { key: 'flags', label: 'Sinal' },
-        { key: 'responsible', label: 'Responsável' },
-        { key: 'excerpt', label: 'Resumo' },
-      ],
-      rows: signals.rows.map((row) => ({
-        date: formatDateBr(row.createdAt),
-        polarity: municipalityUpdatePolarityLabels[row.polarity] ?? '—',
-        flags: [row.urgent ? 'Urgente' : null, row.adversarySignal ? 'Adversário' : null]
-          .filter(Boolean)
-          .join(' · '),
-        responsible: row.responsibleName ?? '—',
-        excerpt: row.body ? excerptDeepDive(row.body, SIGNAL_EXCERPT_MAX) : '—',
-      })),
-      note:
-        signals.totalCount > signals.rows.length
-          ? `Mostrando ${signals.rows.length} de ${signals.totalCount} sinais (mesmo corte do dossiê).`
-          : null,
-      sources: [sourceTeqo('base Teqo — sinais do município', snapshot.meta?.readAt)],
-    },
-  ]
-}
-
-const buildDemandsVisitsSection = ({ snapshot }) => {
-  const { demands, activities } = snapshot
-  const blocks = []
-
-  if (demands.rows.length) {
-    blocks.push({
-      kind: 'table',
-      title: 'Demandas',
-      columns: [
-        { key: 'title', label: 'Demanda' },
-        { key: 'kind', label: 'Tipo' },
-        { key: 'status', label: 'Status' },
-        { key: 'updatedAt', label: 'Última atualização' },
-      ],
-      rows: demands.rows.map((row) => ({
-        title: row.title,
-        kind: campaignDemandKindLabels[row.kind] ?? row.kind,
-        status: campaignDemandStatusLabels[row.status] ?? row.status,
-        updatedAt: formatDateBr(row.updatedAt),
-      })),
-      note:
-        demands.totalCount > demands.rows.length
-          ? `Mostrando ${demands.rows.length} de ${demands.totalCount} demandas.`
-          : null,
-      sources: [sourceTeqo('base Teqo — demandas', snapshot.meta?.readAt)],
-    })
-  } else {
-    blocks.push({
-      kind: 'callout',
-      tone: 'gap',
-      title: 'Demandas',
-      body: ['Nenhuma demanda vinculada ao município na base.', GAP_COPY],
-    })
-  }
-
-  const activityRows = [
-    ...activities.upcoming.map((activity) => ({ ...activity, bucket: 'Agendada' })),
-    ...activities.recent.map((activity) => ({ ...activity, bucket: 'Realizada' })),
-  ]
-  if (activityRows.length) {
-    blocks.push({
-      kind: 'table',
-      title: 'Visitas e agenda',
-      columns: [
-        { key: 'bucket', label: 'Situação' },
-        { key: 'date', label: 'Data' },
-        { key: 'title', label: 'Atividade' },
-        { key: 'locality', label: 'Local' },
-        { key: 'status', label: 'Status' },
-      ],
-      rows: activityRows.map((activity) => ({
-        bucket: activity.bucket,
-        date: activity.startAt ? formatDateTimeBr(activity.startAt) : '—',
-        title: activity.title,
-        locality: activity.locality ?? '—',
-        status: activityStatusLabels[activity.status] ?? activity.status,
-      })),
-      sources: [sourceTeqo('base Teqo — atividades', snapshot.meta?.readAt)],
-    })
-  } else {
-    blocks.push({
-      kind: 'callout',
-      tone: 'gap',
-      title: 'Visitas e agenda',
-      body: ['Nenhuma atividade vinculada ao município na base.', GAP_COPY],
-    })
-  }
+  const opposition = buildOppositionBlock(research)
+  if (opposition) blocks.push(opposition)
 
   return blocks
 }
@@ -1268,174 +919,42 @@ const buildTransportSection = ({ research }) =>
     items: research.transport ?? [],
   })
 
-/**
- * YouTube link starts at the Câmara excerpt of the speech (`excerptTMs` −
- * session start), calibrated by the live video: the 2018-03-13 session video
- * starts ~37s after `eventStartAt`, so the excerpt at 645s plays at 608s
- * (`youtube.com/live/2cX_gKkJH7Q?t=608`, checked in the browser). `speechAt` is
- * the API slot clock, not when the deputy speaks.
- */
-const YOUTUBE_VIDEO_OFFSET_SECONDS = 37
-
-const withYoutubeTimestamp = (url, offsetSeconds) => {
-  if (!url) return null
-  if (!Number.isFinite(offsetSeconds) || offsetSeconds <= 0) return url
-  const separator = url.includes('?') ? '&' : '?'
-  return `${url}${separator}t=${Math.floor(offsetSeconds)}s`
-}
-
-const youtubeStartSeconds = (row) =>
-  Number.isFinite(row.youtubeExcerptStartSeconds)
-    ? Math.max(0, Math.floor(row.youtubeExcerptStartSeconds) - YOUTUBE_VIDEO_OFFSET_SECONDS)
-    : null
-
-const speechTopicLabel = (value) =>
-  SPEECH_TOPICS.find((topic) => topic.value === value)?.label ?? value
-
-/**
- * Why the row is in the table decides the "mention" text: a city row is tagged
- * with the município in the acervo; a region row is tagged with another
- * município of the same Território; a theme row is selected by topic and was
- * NOT necessarily tagged with any of them — so it shows the theme, never a
- * false "menção ao município".
- */
-const speechMention = (row, variant) => {
-  if (row.mentionExcerpt) return excerptDeepDive(row.mentionExcerpt, SPEECH_MENTION_MAX)
-  const count = row.mentionedMunicipalityCount
-  if (variant === 'region') {
-    return count
-      ? `Marcada no acervo com município da região — o nome não aparece nos trechos (a fala cita ${formatInteger(count)} municípios).`
-      : 'Marcada no acervo com município da região — trecho não localizado.'
-  }
-  return count
-    ? `Marcada no acervo — nome não localizado nos trechos (a fala cita ${formatInteger(count)} municípios).`
-    : 'Marcada no acervo — trecho não localizado.'
-}
-
-const projectSpeechTableRow = (row, variant) => {
-  const base = {
-    date: formatDateBr(row.speechAt),
-    phase: row.phase ?? '—',
-    description: row.summary ? excerptDeepDive(row.summary, SPEECH_SUMMARY_MAX) : '—',
-    video: row.youtubeUrl
-      ? withYoutubeTimestamp(row.youtubeUrl, youtubeStartSeconds(row))
-      : (row.vodPlaybackUrl ?? '—'),
-    transcript: row.officialTextUrl ?? '—',
-  }
-  if (variant === 'theme') {
-    const labels = (row.topics ?? []).map(speechTopicLabel).join(' · ')
-    return { ...base, topics: labels || '—' }
-  }
-  return { ...base, mention: speechMention(row, variant) }
-}
-
-const buildSpeechTable = ({ title, rows, variant = 'city', cityLabel, note, readAt }) => {
-  const middle =
-    variant === 'theme'
-      ? { key: 'topics', label: 'Tema', width: 27 }
-      : {
-          key: 'mention',
-          label: variant === 'region' ? 'Município da região citado' : `Menção a ${cityLabel}`,
-          width: 27,
-        }
-  return {
-    kind: 'table',
-    title,
-    columns: [
-      { key: 'date', label: 'Data', width: 9 },
-      { key: 'phase', label: 'Fase', width: 10 },
-      { key: 'description', label: 'O que é', width: 32 },
-      middle,
-      { key: 'video', label: 'Vídeo', width: 11 },
-      { key: 'transcript', label: 'Transcrição', width: 11 },
-    ],
-    rows: rows.map((row) => projectSpeechTableRow(row, variant)),
-    note,
-    sources: [sourceTeqo('base Teqo — acervo C153/C155', readAt)],
-  }
-}
-
-const buildSpeechesSection = ({ snapshot }) => {
-  const { speeches, municipality } = snapshot
-  const cityLabel = municipality?.name ?? 'o município'
-  const cityRows = speeches.rows ?? []
-  const region = speeches.region ?? { label: null, rows: [] }
-  const topics = speeches.topics ?? { themes: [], rows: [] }
-  const regionRows = region.rows ?? []
-  const themeRows = topics.rows ?? []
-
-  if (!cityRows.length && !regionRows.length && !themeRows.length) {
-    return [
-      {
-        kind: 'callout',
-        tone: 'gap',
-        title: 'Acervo de falas',
-        body: [
-          `Busca por município no acervo: nenhum trecho encontrado (${formatInteger(speeches.totalCount)} no total) e nenhum recorte regional/temático.`,
-          GAP_COPY,
-        ],
-      },
-    ]
-  }
-
+const buildNewsSection = ({ research }) => {
   const blocks = []
-  if (cityRows.length) {
-    blocks.push(
-      buildSpeechTable({
-        title: 'Acervo de falas',
-        rows: cityRows,
-        variant: 'city',
-        cityLabel,
-        note: [
-          '“O que é” = sumário oficial da Câmara; “Menção” = passagem que cita o município ou, quando o nome não aparece nos trechos, a marcação do acervo (C153/C155) com o nº de municípios da fala; “Vídeo” e “Transcrição” = links oficiais da Câmara quando existem.',
-          speeches.totalCount > cityRows.length
-            ? `Mostrando ${cityRows.length} de ${speeches.totalCount} falas.`
-            : null,
-        ]
-          .filter(Boolean)
-          .join(' '),
-        readAt: snapshot.meta?.readAt,
-      }),
-    )
+  if (research.news.length) {
+    blocks.push({
+      kind: 'table',
+      title: 'Notícias e imprensa local',
+      // Título é o texto mais longo: larguras explícitas tornam a tabela
+      // `table-fixed` (URL quebra em vez de empurrar a coluna) e dão a ela a
+      // maior fatia — sem largura, a URL sem espaços infla a coluna Link.
+      columns: [
+        { key: 'date', label: 'Data', width: 9 },
+        { key: 'outlet', label: 'Veículo', width: 14 },
+        { key: 'title', label: 'Título', width: 49 },
+        { key: 'link', label: 'Link', width: 28 },
+      ],
+      rows: research.news.map((item) => ({
+        date: formatDateBr(item.publishedAt),
+        outlet: item.outlet ?? '—',
+        title: item.title,
+        link: item.url,
+      })),
+      note: 'Janela de 90 dias; cada item com URL.',
+      sources: [sourceWeb('pesquisa web datada', null, research.researchedAt)],
+    })
   } else {
     blocks.push({
       kind: 'callout',
-      tone: 'info',
-      title: 'Acervo de falas',
-      body: [
-        `Nenhuma fala cita ${cityLabel} diretamente; abaixo vão o recorte da região e os temas do mandato (não somar região/polo como fala da cidade).`,
-      ],
+      tone: 'gap',
+      title: 'Notícias e imprensa local',
+      body: ['Nenhuma matéria com fonte e data dentro da janela de 90 dias.', GAP_COPY],
     })
   }
 
-  if (regionRows.length) {
-    blocks.push(
-      buildSpeechTable({
-        title: `Acervo — menções à região (${region.label ?? 'Território de Identidade'})`,
-        rows: regionRows,
-        variant: 'region',
-        note: `Falas marcadas no acervo com municípios do mesmo Território de Identidade (${region.label ?? 'região'}) — a região NÃO é a cidade; use como contexto, nunca some à conta do município.`,
-        readAt: snapshot.meta?.readAt,
-      }),
-    )
-  }
-
-  if (themeRows.length) {
-    blocks.push(
-      buildSpeechTable({
-        title: 'Acervo — falas por tema regional',
-        rows: themeRows,
-        variant: 'theme',
-        note: `Falas do mandato **selecionadas por tema** (${(topics.themes ?? [])
-          .map(speechTopicLabel)
-          .join(
-            ', ',
-          )}) — o critério é o tema, não uma menção ao município ou à região; use como repertório do tema, sem somar à conta da cidade.`,
-        readAt: snapshot.meta?.readAt,
-      }),
-    )
-  }
-
+  const newsGaps = research.gaps.filter((gap) => gap.id.startsWith('noticia_'))
+  const callout = gapCallout(newsGaps, 'Notícias descartadas')
+  if (callout) blocks.push(callout)
   return blocks
 }
 
@@ -1480,87 +999,6 @@ const buildApproachSection = ({ research }) => {
   ]
 }
 
-const buildNewsSection = ({ research }) => {
-  const blocks = []
-  if (research.news.length) {
-    blocks.push({
-      kind: 'table',
-      title: 'Notícias internas e imprensa local',
-      // Título é o texto mais longo: larguras explícitas tornam a tabela
-      // `table-fixed` (URL quebra em vez de empurrar a coluna) e dão a ela a
-      // maior fatia — sem largura, a URL sem espaços infla a coluna Link.
-      columns: [
-        { key: 'date', label: 'Data', width: 9 },
-        { key: 'outlet', label: 'Veículo', width: 14 },
-        { key: 'title', label: 'Título', width: 49 },
-        { key: 'link', label: 'Link', width: 28 },
-      ],
-      rows: research.news.map((item) => ({
-        date: formatDateBr(item.publishedAt),
-        outlet: item.outlet ?? '—',
-        title: item.title,
-        link: item.url,
-      })),
-      note: 'Janela de 90 dias; cada item com URL.',
-      sources: [sourceWeb('pesquisa web datada', null, research.researchedAt)],
-    })
-  } else {
-    blocks.push({
-      kind: 'callout',
-      tone: 'gap',
-      title: 'Notícias internas e imprensa local',
-      body: [
-        'Nenhuma matéria com fonte e data dentro da janela de 90 dias.',
-        'Nenhum post interno relacionado ao município (a base não liga Post a município).',
-        GAP_COPY,
-      ],
-    })
-  }
-
-  const newsGaps = research.gaps.filter((gap) => gap.id.startsWith('noticia_'))
-  const callout = gapCallout(newsGaps, 'Notícias descartadas')
-  if (callout) blocks.push(callout)
-  return blocks
-}
-
-const buildRegionSection = ({ snapshot }) => {
-  const panorama = buildTerritoryPanorama(snapshot.municipality.slug)
-  if (!panorama) {
-    return [
-      {
-        kind: 'callout',
-        tone: 'gap',
-        title: 'Panorama regional',
-        body: ['Município fora do catálogo/artefato TSE.', GAP_COPY],
-      },
-    ]
-  }
-  return [
-    {
-      kind: 'stats',
-      title: 'Panorama regional (Território de Identidade)',
-      rows: [
-        { label: 'Território', value: panorama.region },
-        { label: 'Municípios no TI', value: formatInteger(panorama.municipalityCount) },
-        { label: `Votos do TI em ${panorama.year}`, value: formatInteger(panorama.regionVotes) },
-        {
-          label: '% do voto do candidato no estado',
-          value: formatPercent(panorama.regionShare),
-        },
-        {
-          label: 'Posição do município no TI',
-          value: `${formatInteger(panorama.municipalityRank)}º de ${formatInteger(panorama.municipalityTotalUnits)}`,
-        },
-        {
-          label: 'Votos do município no TI',
-          value: formatInteger(panorama.municipalityVotes),
-        },
-      ],
-      sources: [sourceTeqo('artefato TSE commitado — leitura relativa', null)],
-    },
-  ]
-}
-
 /**
  * Page 1 never cuts text (C188): it prints the item's `summary` or the full
  * `answer`, degrading to a pointer when the page does not fit. This table keeps
@@ -1589,11 +1027,11 @@ const buildResearchAnswersTable = (research) =>
       }
     : null
 
-const buildSourcesSection = ({ snapshot, research, emendas }) => {
+const buildSourcesSection = ({ snapshot, research }) => {
   const items = []
   items.push({
     kind: 'teqo',
-    label: `Base Teqo — leitura read-only em ${formatDateTimeBr(snapshot.meta?.readAt)} (${snapshot.meta?.database ?? 'produção'})`,
+    label: `Leitura read-only em ${formatDateTimeBr(snapshot.meta?.readAt)} (${snapshot.meta?.database ?? 'produção'})`,
     date: snapshot.meta?.readAt,
   })
   for (const item of research.items) {
@@ -1612,21 +1050,6 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
       })
     }
   }
-  if (emendas?.status === 'ok') {
-    items.push({
-      kind: 'official',
-      label: `Portal da Transparência — emendas de ${emendas.authorName ?? 'autor'} (${emendas.rows.length} registro(s))`,
-      url: emendas.sourceUrl,
-      date: emendas.consultedAt,
-    })
-  } else if (emendas) {
-    items.push({
-      kind: 'official',
-      label: `Portal da Transparência — sem resultado utilizável (${emendas.reason})`,
-      url: emendas.sourceUrl,
-      date: emendas.consultedAt,
-    })
-  }
   for (const item of research.news) {
     items.push({ kind: 'web', label: item.title, url: item.url, date: item.publishedAt })
   }
@@ -1644,7 +1067,6 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
     transport: 'Transporte',
     opposition: 'Oposição',
     alliances: 'Dobradinhas',
-    investments: 'Investimentos e obras',
   }
   for (const listKey of Object.keys(listLabels)) {
     for (const item of research[listKey] ?? []) {
@@ -1666,10 +1088,8 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
       limits: [
         `Base Teqo: leitura read-only em ${formatDateTimeBr(snapshot.meta?.readAt)} — o PDF é datado e o dado envelhece (snapshot do momento).`,
         'Web: cada item carrega data + URL; o que não veio com fonte virou lacuna.',
+        '2º turno: números oficiais do artefato TSE 2026 (presidente por seção, agregado à unidade); X₁/X₂ são votos em jogo, não transferência garantida — cenário hipotético.',
         'Não existe voto por bairro/seção — o relatório não inventa granularidade.',
-        'Efeito eleitoral de emenda é condicional ao crédito local — o PDF não promete voto.',
-        'Emendas são lidas da fonte oficial em tempo de geração e não são persistidas na base.',
-        'Quando a fonte oficial não atribui emenda ao município, indícios web (município, região ou polo) entram como evidência datada — nunca somados como emenda da cidade.',
         'Abordagem sugerida é análise das personas ancorada nas fontes listadas item a item, não fato verificado além delas.',
         'Oposição: cada linha é fato publicado com URL + data; o PDF não afirma culpa nem orienta ataque pessoal — use como contraste ancorado.',
       ],
@@ -1677,16 +1097,7 @@ const buildSourcesSection = ({ snapshot, research, emendas }) => {
   ].filter(Boolean)
 }
 
-const SNAPSHOT_REQUIRED_GROUPS = [
-  'electoral',
-  'pledges',
-  'leaderships',
-  'advisors',
-  'signals',
-  'activities',
-  'speeches',
-  'demands',
-]
+const SNAPSHOT_REQUIRED_GROUPS = ['pledges', 'leaderships', 'advisors']
 
 const assertSnapshotShape = (snapshot) => {
   if (!snapshot?.municipality?.slug || !snapshot?.municipality?.name) {
@@ -1699,32 +1110,11 @@ const assertSnapshotShape = (snapshot) => {
       )
     }
   }
-  if (!Array.isArray(snapshot.electoral?.series)) {
-    throw new Error('Snapshot inválido: electoral.series ausente — extraia de novo.')
-  }
-}
-
-/**
- * Sections whose only content would be an empty-state callout are omitted
- * (sinais/demandas) so the report does not spend a page saying "nothing here".
- * Research sections keep their explicit gap callout — a missing source is a
- * product lacuna, not noise.
- */
-const hasSectionData = (id, snapshot) => {
-  if (id === 'sinais') return (snapshot.signals?.rows?.length ?? 0) > 0
-  if (id === 'demandas') {
-    return (
-      (snapshot.demands?.rows?.length ?? 0) > 0 ||
-      (snapshot.activities?.upcoming?.length ?? 0) + (snapshot.activities?.recent?.length ?? 0) > 0
-    )
-  }
-  return true
 }
 
 export const buildCityReport = ({
   snapshot,
   research,
-  emendas,
   generatedAt = new Date(),
   textFallback = 'full',
 }) => {
@@ -1733,19 +1123,9 @@ export const buildCityReport = ({
 
   const sections = [
     {
-      id: 'conta-eleitoral',
-      title: 'Conta eleitoral completa (2014/2018/2022)',
-      blocks: buildElectoralSection({ snapshot }),
-    },
-    {
       id: 'segundo-turno',
       title: '2º turno no município (Lula × Flávio)',
       blocks: buildSecondRoundSection({ snapshot, research }),
-    },
-    {
-      id: 'concorrentes',
-      title: 'Concorrentes no município (federal e estadual)',
-      blocks: buildCompetitorsSection({ snapshot, research }),
     },
     {
       id: 'rede',
@@ -1756,12 +1136,6 @@ export const buildCityReport = ({
       id: 'conjuntura',
       title: 'Conjuntura',
       blocks: buildConjunctureSection({ snapshot, research }),
-    },
-    { id: 'sinais', title: 'Sinais recentes', blocks: buildSignalsSection({ snapshot }) },
-    {
-      id: 'demandas',
-      title: 'Demandas e visitas',
-      blocks: buildDemandsVisitsSection({ snapshot }),
     },
     {
       id: 'demografia',
@@ -1778,17 +1152,7 @@ export const buildCityReport = ({
       title: 'Transporte e conexões (pesquisa)',
       blocks: buildTransportSection({ research }),
     },
-    { id: 'falas', title: 'Acervo de falas', blocks: buildSpeechesSection({ snapshot }) },
-    {
-      id: 'noticias',
-      title: 'Notícias internas e imprensa local',
-      blocks: buildNewsSection({ research }),
-    },
-    {
-      id: 'regiao',
-      title: 'Panorama regional (Território de Identidade)',
-      blocks: buildRegionSection({ snapshot }),
-    },
+    { id: 'noticias', title: 'Notícias e imprensa local', blocks: buildNewsSection({ research }) },
     {
       id: 'abordagem',
       title: 'Abordagem sugerida (pesquisa)',
@@ -1797,11 +1161,9 @@ export const buildCityReport = ({
     {
       id: 'fontes',
       title: 'Fontes e limites',
-      blocks: buildSourcesSection({ snapshot, research, emendas }),
+      blocks: buildSourcesSection({ snapshot, research }),
     },
-  ]
-    .filter((section) => hasSectionData(section.id, snapshot))
-    .map((section, index) => ({ ...section, title: `${index + 1}. ${section.title}` }))
+  ].map((section, index) => ({ ...section, title: `${index + 1}. ${section.title}` }))
 
   return {
     meta: {
@@ -1818,7 +1180,7 @@ export const buildCityReport = ({
       actorRole: snapshot.meta?.actorRole ?? null,
       researchedAt: research.researchedAt,
     },
-    page1: buildPageOne({ snapshot, research, emendas, generatedAt: generatedAtIso, textFallback }),
+    page1: buildPageOne({ snapshot, research, generatedAt: generatedAtIso, textFallback }),
     sections,
   }
 }
