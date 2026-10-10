@@ -74,8 +74,7 @@ try {
   await writeFile(outPath, `${JSON.stringify(snapshot, null, 2)}\n`)
   console.log(
     `[${LABEL}] snapshot de ${snapshot.municipality.name} → ${out} ` +
-      `(lideranças=${snapshot.leaderships.totalCount} sinais=${snapshot.signals.totalCount} ` +
-      `falas=${snapshot.speeches.totalCount} demandas=${snapshot.demands.totalCount})`,
+      `(lideranças=${snapshot.leaderships.totalCount} assessores=${snapshot.advisors.length})`,
   )
 } catch (error) {
   die(error instanceof Error ? error.message : String(error))

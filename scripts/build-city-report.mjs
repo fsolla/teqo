@@ -1,9 +1,10 @@
 /**
- * City report builder (C163): snapshot + research (+ emendas) → PDF A4 + `.md`.
+ * City report builder (C163): snapshot + research → PDF A4 + `.md`.
  *
- * Runs on the workstation: no database access, no persistence. Emendas come
- * from the official API at generation time (or from `--emendas=<json>` for a
- * replay) and are never stored in the base.
+ * The report serves the 2º turno (Lula × Flávio): mobilization summary on page 1
+ * and the deep dive after it. Runs on the workstation: no database access, no
+ * persistence, no external API — the official 2º-turno numbers come from the
+ * committed artifact (`pnpm build:second-round`).
  *
  * Usage:
  *   NODE_OPTIONS="--no-deprecation --import=tsx/esm" node scripts/build-city-report.mjs \
@@ -22,11 +23,6 @@ import { buildCityReport } from './lib/cityReportBlocks.mjs'
 import { renderReportHtml, renderReportMd } from './lib/cityReportRender.mjs'
 import { normalizeResearchInput } from './lib/cityReportResearch.mjs'
 import { dieWithLabel, isTruthyEnv, loadCliEnv, parseEqualsFlags } from './lib/cli.mjs'
-import {
-  DEFAULT_AUTHOR_NAME,
-  EMENDAS_YEARS,
-  fetchAuthorEmendas,
-} from './lib/portalTransparenciaEmendas.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const LABEL = 'build-city-report'
@@ -49,16 +45,12 @@ loadCliEnv()
 const { flags } = parseEqualsFlags(process.argv.slice(2))
 const snapshotPath = typeof flags.snapshot === 'string' ? flags.snapshot : null
 const researchPath = typeof flags.research === 'string' ? flags.research : null
-const emendasPath = typeof flags.emendas === 'string' ? flags.emendas : null
 const outDir = typeof flags['out-dir'] === 'string' ? flags['out-dir'] : DEFAULT_OUT_DIR
-const authorName = typeof flags.author === 'string' ? flags.author : DEFAULT_AUTHOR_NAME
 const generatedAt =
   typeof flags['generated-at'] === 'string' ? new Date(flags['generated-at']) : new Date()
 
 if (!snapshotPath || !researchPath) {
-  die(
-    'Uso: --snapshot=<json> --research=<json> [--emendas=<json>] [--out-dir=<dir>] [--author=<nome>]',
-  )
+  die('Uso: --snapshot=<json> --research=<json> [--out-dir=<dir>]')
 }
 if (Number.isNaN(generatedAt.getTime())) die(`--generated-at inválida: ${flags['generated-at']}`)
 
@@ -98,38 +90,6 @@ if (snapshot.municipality?.slug !== research.municipalitySlug) {
 }
 
 const baseName = `${snapshot.municipality.slug}-${generatedAt.toISOString().slice(0, 10)}`
-const cachePath = join(CACHE_DIR, `${baseName}.emendas.json`)
-
-const resolveEmendas = async () => {
-  if (emendasPath) return readJson(emendasPath, 'emendas')
-  try {
-    const cached = JSON.parse(await readFile(resolve(ROOT, cachePath), 'utf8'))
-    console.log(`[${LABEL}] emendas: cache ${cachePath}`)
-    return cached
-  } catch (error) {
-    if (error?.code !== 'ENOENT') {
-      die(
-        `Cache de emendas ilegível (${cachePath}): ${error instanceof Error ? error.message : error}`,
-      )
-    }
-  }
-  const result = await fetchAuthorEmendas({
-    years: EMENDAS_YEARS,
-    municipalityCode: snapshot.municipality.ibgeCode,
-    municipalityName: snapshot.municipality.name,
-    authorName,
-    apiKey: process.env.PORTAL_TRANSPARENCIA_API_KEY ?? null,
-    consultedAt: generatedAt.toISOString(),
-  })
-  await mkdir(resolve(ROOT, CACHE_DIR), { recursive: true })
-  await writeFile(resolve(ROOT, cachePath), `${JSON.stringify(result, null, 2)}\n`)
-  console.log(
-    `[${LABEL}] emendas: ${result.status}${result.status === 'gap' ? ` (${result.reason})` : ` (${result.rows.length} registros)`} → ${cachePath}`,
-  )
-  return result
-}
-
-const emendas = await resolveEmendas()
 
 const pdfFile = join(outDir, `${baseName}.pdf`)
 
@@ -141,7 +101,7 @@ const pdfFile = join(outDir, `${baseName}.pdf`)
  * integral). The guard stays fail-closed if even the pointer does not fit.
  */
 const buildArtifacts = (textFallback) => {
-  const report = buildCityReport({ snapshot, research, emendas, generatedAt, textFallback })
+  const report = buildCityReport({ snapshot, research, generatedAt, textFallback })
   return { report, html: renderReportHtml(report), markdown: renderReportMd(report) }
 }
 let artifacts = buildArtifacts('full')
@@ -208,9 +168,7 @@ console.log(`[${LABEL}] companion → ${mdFile}`)
 
 console.log(`[${LABEL}] PDF → ${pdfFile}`)
 console.log(
-  `[${LABEL}] ${snapshot.municipality.name}: 2022=${snapshot.electoral.rank2022?.votes ?? 'sem dado'} ` +
-    `rank=${snapshot.electoral.rank2022?.rank ?? '—'} emendas=${emendas.status} ` +
-    `lacunas_pesquisa=${research.gaps.length} html_bytes=${Buffer.byteLength(html)}`,
+  `[${LABEL}] ${snapshot.municipality.name}: lacunas_pesquisa=${research.gaps.length} html_bytes=${Buffer.byteLength(html)}`,
 )
 
 if (isTruthyEnv(process.env.CITY_REPORT_STRICT) && research.gaps.length > 0) {

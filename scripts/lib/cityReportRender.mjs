@@ -5,7 +5,7 @@
  * companion cannot drift from the PDF.
  */
 
-import { formatDateBr, formatDateTimeBr, formatInteger } from './cityReportFormat.mjs'
+import { formatDateBr, formatDateTimeBr } from './cityReportFormat.mjs'
 import {
   htmlEscape,
   htmlWithLinks,
@@ -111,6 +111,7 @@ const PRINT_CSS = `
   .callout.gap { border-left-color: #71717a; background: #f4f4f5; }
   .callout.decision { border-left-color: #15803d; background: #f0fdf4; }
   .callout.risk { border-left-color: #b45309; background: #fffbeb; }
+  .callout.info { border-left-color: #1d4ed8; background: #eff6ff; }
   .callout h4 { margin: 0 0 1mm; font-size: 8.6pt; }
   .callout p { margin: 0 0 .8mm; }
   .panel { border: .8px solid #d4d4d8; border-radius: 1.6mm; padding: 2.4mm; }
@@ -120,11 +121,6 @@ const PRINT_CSS = `
   .panel ul, .bullets { margin: 0; padding-left: 4mm; }
   .panel li, .bullets li { margin-bottom: .8mm; }
   .panel-note { color: #92400e; font-size: 7.6pt; margin: 1.2mm 0 0; }
-  .indicators { margin: 0; padding-left: 4mm; }
-  .indicators li { margin-bottom: .8mm; }
-  .indicators .sphere { font-size: 6.6pt; text-transform: uppercase; letter-spacing: .06em; border: .6px solid #a1a1aa; border-radius: 1.2mm; padding: 0 1mm; color: #52525b; }
-  .indicators .sphere-regiao, .indicators .sphere-polo { border-color: #b45309; color: #92400e; background: #fffbeb; }
-  .indicators .indicator-source { color: #71717a; font-size: 7.2pt; }
   table { width: 100%; border-collapse: collapse; font-size: 8pt; }
   table.table-fixed { table-layout: fixed; }
   table.table-fixed td, table.table-fixed th { overflow-wrap: anywhere; }
@@ -223,31 +219,6 @@ const renderPanel = (block) => {
   }`
 }
 
-/**
- * Emenda indications (C163 page 1): one row per author/what/esfera, each with
- * its own source link and a date. The esfera badge is explicit — região/polo are
- * never summed as the município's own emenda.
- */
-const renderIndicatorList = (block) => {
-  const items = block.items
-    .map((item) => {
-      const detail = item.detail ? ` — ${htmlEscape(item.detail)}` : ''
-      const link = item.source?.url
-        ? `<a class="inline-source" href="${htmlEscape(item.source.url)}">(fonte)</a>`
-        : ''
-      const date = item.source?.date ? ` · ${htmlEscape(formatDateBr(item.source.date))}` : ''
-      return `<li><strong>${htmlEscape(item.author)}</strong>${detail} <span class="sphere sphere-${htmlEscape(item.sphere)}">${htmlEscape(item.sphereLabel)}</span> <span class="indicator-source">${link}${date}</span></li>`
-    })
-    .join('')
-  const more =
-    block.remaining > 0
-      ? `<li>e mais ${formatInteger(block.remaining)} indício(s) — texto integral nas fontes.</li>`
-      : ''
-  return `<ul class="indicators">${items}${more}</ul>${
-    block.note ? `<p class="table-note">${htmlEscape(block.note)}</p>` : ''
-  }`
-}
-
 const renderTable = (block) => {
   const fixed = block.columns.some((column) => column.width)
   const head = block.columns
@@ -331,9 +302,6 @@ const renderBlockHtml = (block, sectionTitle = null) => {
     case 'panel':
       body = renderPanel(block)
       break
-    case 'indicatorList':
-      body = renderIndicatorList(block)
-      break
     case 'table':
       body = renderTable(block)
       break
@@ -371,7 +339,7 @@ export const renderReportHtml = (report) => {
     <div>
       <p class="kicker">${htmlEscape(report.meta.title)}</p>
       <h1>${htmlEscape(report.meta.municipalityName)}</h1>
-      <p class="sub">${htmlEscape(report.meta.region)} · prioridade e classe na leitura da base</p>
+      <p class="sub">${htmlEscape(report.meta.region)} · leitura da base Teqo e do artefato TSE 2026</p>
     </div>
     <div class="meta">
       <p>Gerado em ${htmlEscape(report.meta.generatedAtLabel)}</p>
@@ -457,17 +425,6 @@ const mdBlock = (block) => {
       for (const item of block.items) {
         lines.push(`- ${item.text}${item.source ? ` _(fonte: ${sourceLabel(item.source)})_` : ''}`)
       }
-      if (block.note) lines.push(`\n> ${block.note}`)
-      break
-    case 'indicatorList':
-      lines.push(title)
-      for (const item of block.items) {
-        const detail = item.detail ? ` — ${item.detail}` : ''
-        const src = item.source?.url ? ` [(fonte)](${item.source.url})` : ''
-        const date = item.source?.date ? ` · ${formatDateBr(item.source.date)}` : ''
-        lines.push(`- **${item.author}**${detail} · _${item.sphereLabel}_${src}${date}`)
-      }
-      if (block.remaining > 0) lines.push(`- e mais ${block.remaining} indício(s).`)
       if (block.note) lines.push(`\n> ${block.note}`)
       break
     case 'table': {

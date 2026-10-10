@@ -198,7 +198,7 @@ describe('ciSkipInvariants', () => {
     // Self-check the walker sees real edges — direct and transitive — or the
     // equality below would fail for the wrong reason.
     expect(closure.has('scripts/lib/worktree-env.mjs')).toBe(true)
-    expect(closure.has('scripts/lib/cityReportTerritory.mjs')).toBe(true)
+    expect(closure.has('scripts/lib/cityReportRender.mjs')).toBe(true)
 
     const missing = [...closure].filter((path) => !SCRIPTS_SPEC_PINNED.includes(path)).sort()
     const stale = SCRIPTS_SPEC_PINNED.filter((path) => !closure.has(path)).sort()

@@ -20,23 +20,6 @@ const research = normalizeResearchInput(
       sourceDate: '2026-09-10',
     })),
     news: [],
-    emendasIndicators: [
-      {
-        author: 'Zé Neto',
-        sphere: 'municipio',
-        value: 'R$ 1 mi',
-        purpose: 'Ambulância do TFD',
-        sourceUrl: 'https://exemplo.test/indicio-municipio',
-        sourceDate: '2026-09-01',
-      },
-      {
-        author: 'Deputado do Polo',
-        sphere: 'polo',
-        value: 'R$ 500 mil',
-        sourceUrl: 'https://exemplo.test/indicio-polo',
-        sourceDate: '2026-09-01',
-      },
-    ],
     gaps: [],
   },
   { now: generatedAt },
@@ -57,44 +40,17 @@ const report = buildCityReport({
       city: 'Feira de Santana',
       region: 'Portal do Sertão',
       ibgeCode: '2910800',
-      tseCityCode: '31270',
-      zoneNumber: null,
-      tseZones: [12, 13],
-      lastUpdateAt: null,
     },
-    electoral: {
-      candidateName: 'Jorge Solla',
-      candidateParty: 'PT',
-      series: [],
-      tally2022: null,
-      ticket2022: { president: null, governor: null },
-      rank2022: null,
-    },
-    goal: null,
     pledges: {
       declaredTotal: 0,
-      effectiveByScenario: {},
-      pledgeCount: 0,
-      missingEstimateCount: 0,
       lastPledgeAt: null,
     },
     leaderships: { totalCount: 0, rows: [] },
     advisors: [],
-    signals: { totalCount: 0, rows: [] },
-    activities: { upcoming: [], recent: [] },
     conjuncture: null,
-    speeches: { totalCount: 0, rows: [] },
-    demands: { totalCount: 0, rows: [] },
     demographics: null,
   },
   research,
-  emendas: {
-    status: 'gap',
-    reason: 'Chave ausente',
-    detail: null,
-    sourceUrl: null,
-    consultedAt: null,
-  },
   generatedAt,
 })
 
@@ -116,7 +72,7 @@ describe('renderReportHtml', () => {
     expect(html).toContain(
       '<a href="https://exemplo.test/prefeito">https://exemplo.test/prefeito</a>',
     )
-    expect(html).toContain('href="https://exemplo.test/emendas_web"')
+    expect(html).toContain('href="https://exemplo.test/segundo_turno"')
   })
 
   it('prints the gaps as callouts and the limits list', () => {
@@ -124,18 +80,12 @@ describe('renderReportHtml', () => {
     expect(html).toContain('Limites')
   })
 
-  it('renders the emenda indications with the esfera badge and per-row source link', () => {
-    expect(html).toContain('<ul class="indicators">')
-    expect(html).toContain('sphere sphere-municipio')
-    expect(html).toContain('sphere sphere-polo')
-    expect(html).toContain('href="https://exemplo.test/indicio-municipio"')
-    expect(html).toContain('Não somar região/polo')
-  })
-
-  it('renders the announce panel without the fixed "O que NÃO anunciar" copy', () => {
+  it('renders the ask panel of the 2º turno (no mandate-era copy)', () => {
     expect(html).toContain('<div class="panel decision">')
-    expect(html).toContain('O que anunciar agora')
+    expect(html).toContain('O que pedir e falar')
+    expect(html).not.toContain('O que anunciar agora')
     expect(html).not.toContain('O que NÃO anunciar')
+    expect(html).not.toContain('indicators')
   })
 })
 
@@ -143,17 +93,12 @@ describe('renderReportMd', () => {
   const md = renderReportMd(report)
 
   it('carries the same sections as tables and headings', () => {
-    expect(md).toContain('## 1. Conta eleitoral completa')
-    expect(md).toContain('## 2. 2º turno no município (Lula × Flávio)')
+    expect(md).toContain('## 1. 2º turno no município (Lula × Flávio)')
     expect(md).toContain('> **Papel no 2º turno: Defesa e comparecimento**')
-    expect(md).toContain('## 3. Concorrentes no município (federal e estadual)')
-    expect(md).not.toContain('## 6. Sinais recentes')
-    expect(md).not.toContain('Demandas e visitas')
-    expect(md).toContain('## 7. Atividade econômica (pesquisa)')
-    expect(md).toContain('## 8. Transporte e conexões (pesquisa)')
-    expect(md).toContain('## 12. Abordagem sugerida (pesquisa)')
-    expect(md).toContain('## 13. Fontes e limites')
-    expect(md).toContain('| Ano | Votos |')
+    expect(md).toContain('## 2. Rede e lideranças')
+    expect(md).toContain('## 9. Fontes e limites')
+    expect(md).not.toContain('Conta eleitoral')
+    expect(md).not.toContain('Concorrentes')
   })
 
   it('lists sources with URLs', () => {
@@ -163,11 +108,5 @@ describe('renderReportMd', () => {
 
   it('states the base read date (dated snapshot)', () => {
     expect(md).toContain('Base Teqo (read-only) lida em')
-  })
-
-  it('renders the emenda indications in the companion with the (fonte) link', () => {
-    expect(md).toContain('**Zé Neto** — Ambulância do TFD · R$ 1 mi · _município_')
-    expect(md).toContain('[(fonte)](https://exemplo.test/indicio-municipio)')
-    expect(md).not.toContain('O que NÃO anunciar')
   })
 })

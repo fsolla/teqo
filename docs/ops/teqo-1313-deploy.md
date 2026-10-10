@@ -1243,7 +1243,7 @@ anterior de cada fala está em `updates[].previousUrl` no JSON do run. O import
 (`pnpm camara:import --date <dia>`) reconstrói o link a partir da API (a fonte
 é a URL legada devolvida pela Câmara); reexecutar o reparo é idempotente.
 
-## C163 — relatório de cidade pré-viagem (leitura read-only)
+## C163 — relatório de cidade — mobilização do 2º turno (leitura read-only)
 
 O gerador de PDF por cidade (`/work-issue` C163) extrai um snapshot da **base
 de produção** sem escrever nada: a sessão Postgres é aberta com
@@ -1279,8 +1279,8 @@ carrega `readAt` + SHA do código — o PDF é datado por construção.
 
 Guardas: sem `CITY_REPORT_CONFIRM=1` o extrator recusa; a URL com `options`
 read-only é aplicada antes do Payload subir (qualquer write estoura no servidor);
-`PORTAL_TRANSPARENCIA_API_KEY` é opcional (sem chave, emendas viram lacuna
-explícita, nunca zero). Nunca aponte o extrator para o banco local esperando
+o builder local não chama API externa (os números oficiais do 2º turno vêm do
+artefato commitado). Nunca aponte o extrator para o banco local esperando
 dados de produção — o caminho é o proxy do homeserver.
 
 ## C195 — ingestão do pacote do reel na biblioteca privada

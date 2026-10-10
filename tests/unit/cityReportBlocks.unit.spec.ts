@@ -22,7 +22,7 @@ const research = normalizeResearchInput(
     municipalitySlug: 'feira-de-santana',
     researchedAt: '2026-09-14T10:00:00.000Z',
     items: RESEARCH_CHECKLIST_IDS.map((id) =>
-      id === 'emendas_web'
+      id === 'prefeito'
         ? validItem(id, {
             extraSources: [
               {
@@ -51,16 +51,6 @@ const research = normalizeResearchInput(
         sourceDate: '2026-09-10',
       },
     ],
-    preCandidates: [
-      {
-        name: 'Deputado do Prefeito',
-        office: 'Deputado federal',
-        party: 'PSDB',
-        support: 'Prefeito Jorge Almeida',
-        sourceUrl: 'https://exemplo.test/pre-candidato',
-        sourceDate: '2026-04-18',
-      },
-    ],
     leaders: [
       {
         name: 'Ex-Prefeito',
@@ -69,6 +59,15 @@ const research = normalizeResearchInput(
         period: '2017–2024',
         sourceUrl: 'https://exemplo.test/lideranca',
         sourceDate: '2026-03-05',
+      },
+    ],
+    leaderAgenda: [
+      {
+        name: 'Ex-Prefeito',
+        field: 'Mesmo campo',
+        topics: 'Saúde (hospital municipal)',
+        sourceUrl: 'https://exemplo.test/pauta',
+        sourceDate: '2026-09-01',
       },
     ],
     demography: [
@@ -97,8 +96,8 @@ const research = normalizeResearchInput(
     ],
     opposition: [
       {
-        topic: 'Emenda sob investigação (PF)',
-        detail: 'Operação apura desvio em emendas do campo adversário.',
+        topic: 'Obra parada no campo adversário',
+        detail: 'Anúncio sem entrega na região.',
         sourceUrl: 'https://exemplo.test/oposicao',
         sourceDate: '2026-09-10',
       },
@@ -111,61 +110,10 @@ const research = normalizeResearchInput(
         sourceDate: '2026-09-10',
       },
     ],
-    investments: [
-      {
-        topic: 'Obra federal no município',
-        detail: 'Investimento do governo federal em saúde; em execução.',
-        sourceUrl: 'https://exemplo.test/investimento',
-        sourceDate: '2026-09-10',
-      },
-    ],
-    emendasIndicators: [
-      {
-        author: 'Zé Neto',
-        sphere: 'municipio',
-        value: 'R$ 1 mi',
-        purpose: 'Ambulância do TFD',
-        year: '2026',
-        sourceUrl: 'https://exemplo.test/ze-neto',
-        sourceDate: '2026-09-01',
-      },
-      {
-        author: 'Deputado do Polo',
-        sphere: 'polo',
-        value: 'R$ 500 mil',
-        sourceUrl: 'https://exemplo.test/polo-emenda',
-        sourceDate: '2026-09-01',
-      },
-    ],
     gaps: [],
   },
   { now: generatedAt },
 )
-
-const emendas = {
-  status: 'ok',
-  reason: null,
-  detail: null,
-  sourceUrl: 'https://api.portaldatransparencia.gov.br/api-de-dados/emendas?nomeAutor=JORGE+SOLLA',
-  consultedAt: '2026-09-15T11:00:00.000Z',
-  requestCount: 4,
-  years: [2023, 2024, 2025, 2026],
-  authorName: 'JORGE SOLLA',
-  authorCode: '1234',
-  rows: [
-    {
-      code: '202312340001',
-      year: 2023,
-      type: 'Individual',
-      authorCode: '1234',
-      empenhado: 1_000_000,
-      liquidado: 500_000,
-      pago: 250_000,
-      restoPago: 10_000,
-    },
-  ],
-  totals: { empenhado: 1_000_000, liquidado: 500_000, pago: 250_000, restoPago: 10_000 },
-}
 
 const snapshot = {
   meta: {
@@ -187,41 +135,9 @@ const snapshot = {
     city: 'Feira de Santana',
     region: 'Portal do Sertão',
     ibgeCode: '2910800',
-    tseCityCode: '31270',
-    zoneNumber: null,
-    tseZones: [12, 13],
-    lastUpdateAt: '2026-09-01T10:00:00.000Z',
-  },
-  electoral: {
-    candidateName: 'Jorge Solla',
-    candidateParty: 'PT',
-    series: [
-      { year: 2014, votes: 30_000 },
-      { year: 2018, votes: 40_000 },
-      { year: 2022, votes: 50_000 },
-    ],
-    tally2022: { aptos: 400_000, comparecimento: 300_000, votosValidos: 280_000 },
-    ticket2022: { president: 100_000, governor: 90_000 },
-    rank2022: { rank: 3, votes: 50_000, share: 0.05, totalUnits: 435 },
-  },
-  goal: {
-    suggestedGoal: 60_000,
-    goalCoverage: { goal: 60_000, committed: 15_000, coverageRatio: 0.25, deficit: 45_000 },
-    territorialClass: {
-      class: 'expansao',
-      factors: [],
-      lq: 1.2,
-      ownShare: 0.05,
-      inCoreBlock: true,
-    },
-    potential: {},
-    territoryCaptureBenchmark: {},
   },
   pledges: {
     declaredTotal: 15_000,
-    effectiveByScenario: { pessimistic: 10_000, central: 15_000, optimistic: 20_000 },
-    pledgeCount: 7,
-    missingEstimateCount: 1,
     lastPledgeAt: '2026-08-30T10:00:00.000Z',
   },
   leaderships: {
@@ -231,50 +147,15 @@ const snapshot = {
         id: 1,
         name: 'Liderança Um',
         supportStatus: 'engajado',
-        exclusive: true,
         organizationNames: ['Associação X'],
-        stateDeputies: [{ name: 'Deputada Estadual' }],
         hasAppAccess: true,
         updatedAt: '2026-09-10T10:00:00.000Z',
       },
     ],
   },
   advisors: [{ id: 2, name: 'Seed Assessor' }],
-  signals: {
-    totalCount: 1,
-    rows: [
-      {
-        id: 10,
-        createdAt: '2026-09-12T10:00:00.000Z',
-        body: 'Sinal recente sobre a cidade',
-        polarity: 'boa',
-        urgent: false,
-        adversarySignal: false,
-        responsibleName: 'Seed Assessor',
-        activeVolunteers: 10,
-        newSupports: 2,
-        resolvedAt: null,
-      },
-    ],
-  },
-  activities: {
-    upcoming: [
-      {
-        id: 20,
-        title: 'Visita ao centro',
-        status: 'confirmado',
-        startAt: '2026-09-20T13:00:00.000Z',
-        endAt: null,
-        locality: 'Centro',
-        deputyPresent: true,
-        taskProgress: { done: 1, total: 2 },
-      },
-    ],
-    recent: [],
-  },
   conjuncture: {
     priority: 'alta',
-    expectedVotes: { pessimistic: 40_000, central: 50_000, optimistic: 70_000 },
     politicalTrend: {
       status: 'favoravel',
       note: 'Prefeito sinaliza apoio',
@@ -283,74 +164,11 @@ const snapshot = {
     },
     engagementLevel: 'n3',
     levelNote: 'Rede ativa',
-    levelChangedAt: '2026-08-01T10:00:00.000Z',
     strengths: ['Rede de saúde forte'],
     risks: ['Oposição com rádio local'],
     dobradinhaNotes: 'Dobradinha com a deputada estadual',
     nextSteps: 'Agendar reunião com o prefeito',
-    budgetNotes: 'Emenda de custeio aportada em 2025',
     stateDeputies: [{ id: 5, name: 'Deputada Estadual', party: 'PT' }],
-  },
-  competitors: {
-    referenceYear: 2022,
-    federal: [
-      {
-        candidateNumber: 1313,
-        name: 'Solla',
-        party: 'PT',
-        votesByYear: { '2018': 40_000, '2022': 50_000 },
-      },
-      {
-        candidateNumber: 4545,
-        name: 'Concorrente A',
-        party: 'PSDB',
-        votesByYear: { '2018': 20_000, '2022': 30_000 },
-      },
-    ],
-    state: [],
-  },
-  speeches: {
-    totalCount: 2,
-    rows: [
-      {
-        id: 30,
-        speechAt: '2026-07-01T10:00:00.000Z',
-        year: 2026,
-        phase: 'Discurso em plenário',
-        summary: 'Resumo da fala',
-        officialTextUrl: 'https://camara.test/discurso',
-        youtubeUrl: 'https://youtube.test/video',
-        vodPlaybackUrl: 'https://vod.test/video.mp4',
-        youtubeExcerptStartSeconds: 645,
-        mentionExcerpt: 'Trecho da fala que cita Feira de Santana',
-        mentionedMunicipalityCount: 3,
-      },
-      {
-        id: 31,
-        speechAt: '2026-06-01T10:00:00.000Z',
-        year: 2026,
-        phase: 'Pequeno Expediente',
-        summary: 'Saúde indígena na Bahia',
-        officialTextUrl: 'https://camara.test/discurso-2',
-        youtubeUrl: null,
-        vodPlaybackUrl: null,
-        mentionExcerpt: null,
-        mentionedMunicipalityCount: 25,
-      },
-    ],
-  },
-  demands: {
-    totalCount: 1,
-    rows: [
-      {
-        id: 40,
-        title: 'Demanda de saúde',
-        kind: 'saude',
-        status: 'recebida',
-        createdAt: '2026-09-01T10:00:00.000Z',
-        updatedAt: '2026-09-05T10:00:00.000Z',
-      },
-    ],
   },
   demographics: {
     population: 600_000,
@@ -366,10 +184,6 @@ type ReportItem = {
   value?: string
   hint?: string | null
   url?: string | null
-  author?: string
-  detail?: string
-  sphere?: string
-  sphereLabel?: string
   title?: string
   body?: string
   source?: { url?: string | null; date?: string | null }
@@ -400,23 +214,56 @@ type ReportShape = {
 
 const asReport = (value: unknown) => value as ReportShape
 
-describe('buildCityReport', () => {
-  const report = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
+const byId = (report: ReportShape, id: string) =>
+  report.sections.find((section) => section.id === id)!
 
-  it('builds the 15 deepening sections in the product order', () => {
-    expect(report.sections).toHaveLength(15)
-    expect(report.sections[0].title).toMatch(/Conta eleitoral completa/)
-    expect(report.sections[1].title).toMatch(/2º turno no município/)
-    expect(report.sections[2].title).toMatch(/Concorrentes no município/)
-    expect(report.sections[8].title).toMatch(/Atividade econômica/)
-    expect(report.sections[9].title).toMatch(/Transporte e conexões/)
-    expect(report.sections[13].title).toMatch(/Abordagem sugerida/)
-    expect(report.sections[14].title).toMatch(/Fontes e limites/)
+describe('buildCityReport', () => {
+  const report = asReport(buildCityReport({ snapshot, research, generatedAt }))
+
+  it('builds the nine 2º-turno sections in the product order', () => {
+    expect(report.sections).toHaveLength(9)
+    expect(report.sections.map((section) => section.id)).toEqual([
+      'segundo-turno',
+      'rede',
+      'conjuntura',
+      'demografia',
+      'economia',
+      'transporte',
+      'noticias',
+      'abordagem',
+      'fontes',
+    ])
+    expect(report.sections[0].title).toBe('1. 2º turno no município (Lula × Flávio)')
+    expect(report.sections[1].title).toBe('2. Rede e lideranças')
+    expect(report.sections[8].title).toBe('9. Fontes e limites')
+  })
+
+  it('retires the mandate-era sections from the report', () => {
+    const ids = report.sections.map((section) => section.id)
+    for (const retired of [
+      'conta-eleitoral',
+      'concorrentes',
+      'falas',
+      'regiao',
+      'sinais',
+      'demandas',
+    ]) {
+      expect(ids).not.toContain(retired)
+    }
+    const serialized = JSON.stringify(report)
+    for (const copy of [
+      'Concorrentes',
+      'O que Solla entregou',
+      'Acervo de falas',
+      'Panorama regional',
+      'Emendas',
+    ]) {
+      expect(serialized).not.toContain(copy)
+    }
   })
 
   it('brings the 2º turno artifact to the dedicated section', () => {
-    const section = report.sections.find((entry) => entry.id === 'segundo-turno')!
-    expect(section.title).toBe('2. 2º turno no município (Lula × Flávio)')
+    const section = byId(report, 'segundo-turno')
     const callout = section.blocks.find((block) => block.kind === 'callout')!
     expect(callout.title).toContain('Defesa e comparecimento')
     expect(callout.body!.join(' ')).toContain('Captura do adversário')
@@ -447,15 +294,88 @@ describe('buildCityReport', () => {
       { now: generatedAt },
     )
     const withoutReport = asReport(
-      buildCityReport({ snapshot, research: researchWithout, emendas, generatedAt }),
+      buildCityReport({ snapshot, research: researchWithout, generatedAt }),
     )
-    const section = withoutReport.sections.find((entry) => entry.id === 'segundo-turno')!
+    const section = byId(withoutReport, 'segundo-turno')
     const gap = section.blocks.find((block) => block.kind === 'callout' && block.tone === 'gap')!
     expect(gap.body!.join(' ')).toContain('Não pesquisado.')
+    const pageMovement = withoutReport.page1.blocks.find(
+      (block) => block.title === 'Movimento local do 2º turno (pesquisa)',
+    )!
+    expect(pageMovement.tone).toBe('gap')
+  })
+
+  it('keeps page 1 in the contract order — mobilization only', () => {
+    const kinds = report.page1.blocks.map((block) => block.kind)
+    expect(kinds).toEqual(['strip', 'grid', 'callout', 'cards', 'panel', 'footerNote'])
+    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
+    expect(grid.cells!.map((cell) => cell.title)).toEqual([
+      '2º turno — Lula × Flávio',
+      'Quem mobiliza',
+    ])
+    const ask = report.page1.blocks.find((block) => block.kind === 'panel')!
+    expect(ask.title).toBe('O que pedir e falar')
+    expect(ask.tone).toBe('decision')
+    expect(ask.note).toContain('votos em jogo')
+    expect(ask.items!.some((item) => item.text!.includes('Lula 13'))).toBe(true)
+  })
+
+  it('shows the official 2º-turno KPIs and the deterministic role on page 1', () => {
+    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
+    const cell = grid.cells![0]
+    const kpis = cell.blocks.find((block) => block.kind === 'kpis')!
+    expect(kpis.items!.map((item) => item.label)).toEqual([
+      'Lula em 2026',
+      'Votos fora do 2º turno',
+      'Solla 2026',
+    ])
+    expect(kpis.items![0].hint).toContain('Δ')
+    expect(kpis.items![1].value).toMatch(/^X₂ = /)
+    expect(kpis.items![1].hint).toContain('X₁ = ')
+    const role = cell.blocks.find((block) => block.kind === 'callout')!
+    expect(role.title).toContain('Papel no 2º turno')
+  })
+
+  it('reads the relative lens (share and delta), never the statewide absolute', () => {
+    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
+    const kpis = grid.cells![0].blocks.find((block) => block.kind === 'kpis')!
+    expect(kpis.items![0].value).toMatch(/%$/)
+    expect(kpis.items![0].hint).toContain('dos válidos')
+  })
+
+  it('puts research answers in Quem mobiliza with compact sources and URLs in the sources section', () => {
+    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
+    const who = grid.cells![1].blocks[0]
+    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
+    expect(prefeito.value).toBe('Resposta de prefeito')
+    expect(prefeito.source!.url).toBeNull()
+    expect(prefeito.source!.date).toBe('2026-09-10')
+    const labels = who.rows!.map((row) => row.label)
+    for (const label of [
+      'Vice',
+      'Relação com o campo',
+      'Lideranças',
+      'Dobradinhas',
+      'Vereadores/dobradas',
+    ]) {
+      expect(labels).toContain(label)
+    }
+    const fontes = byId(report, 'fontes').blocks.find((block) => block.kind === 'sources')!
+    expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/prefeito')).toBe(true)
+    expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/polo')).toBe(true)
+  })
+
+  it('describes the local movement from the research with its date', () => {
+    const movement = report.page1.blocks.find(
+      (block) => block.title === 'Movimento local do 2º turno (pesquisa)',
+    )!
+    expect(movement.kind).toBe('callout')
+    expect(movement.body!.join(' ')).toContain('Resposta de segundo_turno')
+    expect(movement.body!.join(' ')).toContain('10/09/2026')
   })
 
   it('adds the researched demography, economy and transport data', () => {
-    const demografia = report.sections.find((section) => section.id === 'demografia')!.blocks[0]
+    const demografia = byId(report, 'demografia').blocks[0]
     const rows = demografia.rows as unknown as TableRow[]
     expect(rows[0].indicator).toBe('População')
     expect(rows[0].source).toBe('base Teqo')
@@ -465,330 +385,53 @@ describe('buildCityReport', () => {
     expect(
       demografia.sources!.some((source) => source.url === 'https://exemplo.test/cor-raca'),
     ).toBe(true)
-    const economia = report.sections.find((section) => section.id === 'economia')!.blocks[0]
+    const economia = byId(report, 'economia').blocks[0]
     expect((economia.rows as unknown as TableRow[])[0].detail).toContain('Serviços')
-    const transporte = report.sections.find((section) => section.id === 'transporte')!.blocks[0]
+    const transporte = byId(report, 'transporte').blocks[0]
     expect((transporte.rows as unknown as TableRow[])[0].detail).toContain('BR-101')
     expect(transporte.sources![0]).toEqual(
       expect.objectContaining({ url: 'https://exemplo.test/br101' }),
     )
   })
 
-  it('lists the main competitors with their vote series and the pre-candidates', () => {
-    const concorrentes = report.sections.find((section) => section.id === 'concorrentes')!
-    const federal = concorrentes.blocks[0]
-    const rows = federal.rows as unknown as TableRow[]
-    expect(federal.title).toContain('Deputado federal')
-    expect(rows.map((row) => row.name)).toEqual(['Solla', 'Concorrente A'])
-    expect(rows[1].y2022).toBe('30.000')
-    expect(rows[1].y2014).toBe('—')
-    const preCandidates = concorrentes.blocks[2]
-    const preRows = preCandidates.rows as unknown as TableRow[]
-    expect(preRows[0].name).toBe('Deputado do Prefeito')
-    expect(preCandidates.sources![0]).toEqual(
-      expect.objectContaining({ url: 'https://exemplo.test/pre-candidato' }),
-    )
-  })
-
-  it('renders the opposition front as sourced contrast, when researched', () => {
-    const concorrentes = report.sections.find((section) => section.id === 'concorrentes')!
-    const opposition = concorrentes.blocks.find(
-      (block) => block.title === 'Oposição — o que usar com fonte (pesquisa)',
+  it('renders the opposition front inside the conjuncture section, when researched', () => {
+    const conjuntura = byId(report, 'conjuntura')
+    const opposition = conjuntura.blocks.find(
+      (block) => block.title === 'Frente de oposição — o que usar com fonte (pesquisa)',
     )!
     const rows = opposition.rows as unknown as TableRow[]
-    expect(rows[0].topic).toBe('Emenda sob investigação (PF)')
-    expect(rows[0].detail).toContain('desvio em emendas')
+    expect(rows[0].topic).toBe('Obra parada no campo adversário')
+    expect(rows[0].detail).toContain('Anúncio sem entrega')
     expect(opposition.sources![0]).toEqual(
       expect.objectContaining({ url: 'https://exemplo.test/oposicao' }),
     )
   })
 
-  it('renders the dobradinhas research in the network section', () => {
-    const rede = report.sections.find((section) => section.id === 'rede')!
-    const dobradinhas = rede.blocks.find((block) => block.title === 'Dobradinhas (pesquisa)')!
-    const rows = dobradinhas.rows as unknown as TableRow[]
-    expect(rows[0].topic).toContain('Deputada Estadual')
-    expect(dobradinhas.sources![0]).toEqual(
-      expect.objectContaining({ url: 'https://exemplo.test/dobradinha' }),
-    )
-  })
-
-  it('renders the investments research in the conjuncture section', () => {
-    const conjuntura = report.sections.find((section) => section.id === 'conjuntura')!
-    const investments = conjuntura.blocks.find(
-      (block) => block.title === 'Investimentos e obras (pesquisa)',
-    )!
-    const rows = investments.rows as unknown as TableRow[]
-    expect(rows[0].detail).toContain('governo federal')
-    expect(investments.sources![0]).toEqual(
-      expect.objectContaining({ url: 'https://exemplo.test/investimento' }),
-    )
-  })
-
-  it('omits the empty signals/demands sections and renumbers the rest', () => {
-    const emptyReport = asReport(
-      buildCityReport({
-        snapshot: {
-          ...snapshot,
-          signals: { totalCount: 0, rows: [] },
-          demands: { totalCount: 0, rows: [] },
-          activities: { upcoming: [], recent: [] },
-        },
-        research,
-        emendas,
-        generatedAt,
-      }),
-    )
-    expect(emptyReport.sections.some((section) => section.id === 'sinais')).toBe(false)
-    expect(emptyReport.sections.some((section) => section.id === 'demandas')).toBe(false)
-    expect(
-      emptyReport.sections.every((section, index) => section.title.startsWith(`${index + 1}. `)),
-    ).toBe(true)
-    expect(emptyReport.sections.find((section) => section.id === 'demografia')!.title).toMatch(
-      /^6\. /,
-    )
-  })
-
-  it('lists the researched city leaders in the network section', () => {
-    const rede = report.sections.find((section) => section.id === 'rede')!
+  it('lists the researched city leaders, their agenda and the dobradinhas in the network section', () => {
+    const rede = byId(report, 'rede')
     const leadersBlock = rede.blocks.find(
       (block) => block.title === 'Lideranças da cidade (pesquisa)',
     )!
     const rows = leadersBlock.rows as unknown as TableRow[]
     expect(rows[0].name).toBe('Ex-Prefeito')
     expect(rows[0].party).toBe('PSDB')
-    expect(rows[0].period).toBe('2017–2024')
     expect(leadersBlock.sources![0]).toEqual(
       expect.objectContaining({ url: 'https://exemplo.test/lideranca' }),
     )
-  })
-
-  it('shows expected votes on page 1 instead of the goal/pledge coverage', () => {
-    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
-    const kpis = grid.cells![0].blocks.find((block) => block.kind === 'kpis')!
-    expect(kpis.items!.map((item) => item.label)).toEqual([
-      'Votos em 2022',
-      'Rank no estado',
-      'Expectativa de votos',
-    ])
-    expect(kpis.items![2].value).toBe('50.000')
-    expect(kpis.items![2].hint).toContain('Pessimista 40.000')
-    expect(kpis.items![2].hint).toContain('Otimista 70.000')
-    const leftLabels = grid.cells![0].blocks.flatMap((block) =>
-      (block.rows ?? []).map((row) => row.label),
-    )
-    expect(leftLabels).not.toContain('Cobertura de pledges')
-    expect(JSON.stringify(report.page1)).not.toContain('Meta 2026')
-  })
-
-  it('describes what each speech is and how the município is mentioned', () => {
-    const falas = report.sections.find((section) => section.id === 'falas')!.blocks[0]
-    const rows = falas.rows as unknown as TableRow[]
-    expect(falas.columns!.map((column) => column.label)).toEqual([
-      'Data',
-      'Fase',
-      'O que é',
-      `Menção a ${snapshot.municipality.name}`,
-      'Vídeo',
-      'Transcrição',
-    ])
-    expect(falas.columns!.find((column) => column.key === 'description')!.width).toBe(32)
-    expect(falas.columns!.find((column) => column.key === 'mention')!.width).toBe(27)
-    expect(rows[0].description).toBe('Resumo da fala')
-    expect(rows[0].mention).toContain('cita Feira de Santana')
-    expect(rows[0].video).toBe('https://youtube.test/video?t=608s')
-    expect(rows[0].transcript).toBe('https://camara.test/discurso')
-    expect(rows[1].description).toBe('Saúde indígena na Bahia')
-    expect(rows[1].mention).toContain('nome não localizado nos trechos')
-    expect(rows[1].mention).toContain('25 municípios')
-    expect(rows[1].video).toBe('—')
+    const agenda = rede.blocks.find((block) => block.title === 'Pauta das lideranças (pesquisa)')!
+    expect((agenda.rows as unknown as TableRow[])[0].topics).toContain('hospital')
+    const dobradinhas = rede.blocks.find((block) => block.title === 'Dobradinhas (pesquisa)')!
+    expect((dobradinhas.rows as unknown as TableRow[])[0].topic).toContain('Deputada Estadual')
   })
 
   it('renders the persona approach section and its sources', () => {
-    const abordagem = report.sections.find((section) => section.id === 'abordagem')!.blocks[0]
+    const abordagem = byId(report, 'abordagem').blocks[0]
     const rows = abordagem.rows as unknown as TableRow[]
     expect(rows[0].topic).toContain('Ciência política')
     expect(rows[0].suggestion).toContain('SAMU')
     expect(abordagem.sources![0]).toEqual(
       expect.objectContaining({ url: 'https://exemplo.test/abordagem' }),
     )
-  })
-
-  it('keeps page 1 in the contract order (blocks + footer)', () => {
-    const kinds = report.page1.blocks.map((block) => block.kind)
-    expect(kinds).toEqual(['strip', 'grid', 'kpis', 'panel', 'cards', 'footerNote'])
-    const titles = report.page1.blocks.map((block) => block.title).filter(Boolean)
-    expect(titles).toEqual(
-      expect.arrayContaining(['O que Solla entregou', 'Riscos — oposição/disputa local']),
-    )
-    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
-    expect(grid.cells!.map((cell) => cell.title)).toEqual(['Conta eleitoral 2022', 'Quem é quem'])
-    const announce = report.page1.blocks.find((block) => block.kind === 'panel')!
-    expect(announce.title).toBe('O que anunciar agora')
-    expect(announce.tone).toBe('decision')
-    expect(announce.note).toContain('empenho não é pagamento')
-  })
-
-  it('reads the relative lens (share/rank), never the statewide absolute', () => {
-    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
-    const kpis = grid.cells![0].blocks.find((block) => block.kind === 'kpis')!
-    expect(kpis.items![0].value).toBe('50.000')
-    expect(kpis.items![0].hint).toContain('5,0%')
-    expect(kpis.items![1].value).toBe('3º de 435')
-  })
-
-  it('shows emendas with phase and the official source', () => {
-    const delivered = report.page1.blocks.find(
-      (block) => block.kind === 'kpis' && block.title === 'O que Solla entregou',
-    )!
-    expect(delivered.items![0].value).toBe('R$ 1,0 mi')
-    expect(delivered.items![0].hint).toContain('Pago: R$ 250 mil')
-    expect(delivered.sources![0]).toEqual(
-      expect.objectContaining({
-        kind: 'official',
-        url: expect.stringContaining('portaldatransparencia'),
-      }),
-    )
-  })
-
-  it('degrades missing emendas into an explicit gap, never a zero', () => {
-    const gapReport = asReport(
-      buildCityReport({
-        snapshot,
-        research,
-        emendas: {
-          status: 'gap',
-          reason: 'Chave ausente',
-          detail: null,
-          sourceUrl: null,
-          consultedAt: null,
-        },
-        generatedAt,
-      }),
-    )
-    const delivered = gapReport.page1.blocks.find(
-      (block) => block.kind === 'kpis' && block.title === 'O que Solla entregou',
-    )!
-    expect(delivered.items![0].value).toBe('Sem fonte oficial')
-    expect(delivered.items![0].hint).toContain('sem emenda atribuível')
-  })
-
-  it('shows the structured emenda indications when the official source is a gap', () => {
-    const gapReport = asReport(
-      buildCityReport({
-        snapshot,
-        research,
-        emendas: {
-          status: 'gap',
-          reason: 'Sem emenda do autor com localidade Feira de Santana na janela.',
-          detail: 'API não expõe o município da emenda.',
-          sourceUrl: 'https://api.portaldatransparencia.gov.br/api-de-dados/emendas',
-          consultedAt: '2026-09-15T11:00:00.000Z',
-        },
-        generatedAt,
-      }),
-    )
-    const evidence = gapReport.page1.blocks.find(
-      (block) =>
-        block.kind === 'indicatorList' &&
-        block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
-    )
-    expect(evidence).toBeTruthy()
-    expect(evidence!.items!.map((item) => item.author)).toEqual(['Zé Neto', 'Deputado do Polo'])
-    expect(evidence!.items![0].sphereLabel).toBe('município')
-    expect(evidence!.items![0].detail).toBe('Ambulância do TFD · R$ 1 mi · 2026')
-    expect(evidence!.items![0].source!.url).toBe('https://exemplo.test/ze-neto')
-    expect(evidence!.items!.map((item) => item.sphereLabel)).toContain('polo')
-    expect(evidence!.note).toContain('Não somar região/polo')
-    const evidenceOk = asReport(buildCityReport({ snapshot, research, emendas, generatedAt }))
-    expect(
-      evidenceOk.page1.blocks.some(
-        (block) => block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
-      ),
-    ).toBe(false)
-  })
-
-  it('falls back to the emendas_web answer when the research has no structured indications', () => {
-    const legacyResearch = normalizeResearchInput(
-      {
-        municipalitySlug: 'feira-de-santana',
-        researchedAt: '2026-09-14T10:00:00.000Z',
-        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id)),
-        gaps: [],
-      },
-      { now: generatedAt },
-    )
-    const legacy = asReport(
-      buildCityReport({
-        snapshot,
-        research: legacyResearch,
-        emendas: {
-          status: 'gap',
-          reason: 'Sem emenda do autor com localidade Feira de Santana na janela.',
-          detail: null,
-          sourceUrl: null,
-          consultedAt: null,
-        },
-        generatedAt,
-      }),
-    )
-    const evidence = legacy.page1.blocks.find(
-      (block) =>
-        block.kind === 'callout' &&
-        block.title === 'Emendas — indícios web (sem atribuição oficial ao município)',
-    )
-    expect(evidence).toBeTruthy()
-    expect(evidence!.body!.join(' ')).toContain('Resposta de emendas_web')
-  })
-
-  it('caps the emenda indications and shows the remainder', () => {
-    const manyIndicators = normalizeResearchInput(
-      {
-        municipalitySlug: 'feira-de-santana',
-        researchedAt: '2026-09-14T10:00:00.000Z',
-        items: RESEARCH_CHECKLIST_IDS.map((id) => validItem(id)),
-        emendasIndicators: Array.from({ length: 6 }, (_, index) => ({
-          author: `Autor ${index + 1}`,
-          sphere: 'municipio',
-          value: `R$ ${index + 1} mi`,
-          sourceUrl: `https://exemplo.test/indicio-${index + 1}`,
-          sourceDate: '2026-09-01',
-        })),
-        gaps: [],
-      },
-      { now: generatedAt },
-    )
-    const capped = asReport(
-      buildCityReport({
-        snapshot,
-        research: manyIndicators,
-        emendas: {
-          status: 'gap',
-          reason: 'Sem emenda do autor com localidade Feira de Santana na janela.',
-          detail: null,
-          sourceUrl: null,
-          consultedAt: null,
-        },
-        generatedAt,
-      }),
-    )
-    const evidence = capped.page1.blocks.find((block) => block.kind === 'indicatorList')!
-    expect(evidence.items).toHaveLength(3)
-    expect(evidence.remaining).toBe(3)
-  })
-
-  it('puts research answers in Quem é quem with compact sources and URLs in the sources section', () => {
-    const grid = report.page1.blocks.find((block) => block.kind === 'grid')!
-    const who = grid.cells![1].blocks[0]
-    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
-    expect(prefeito.value).toBe('Resposta de prefeito')
-    expect(prefeito.source!.url).toBeNull()
-    expect(prefeito.source!.date).toBe('2026-09-10')
-    const fontes = report.sections
-      .find((section) => section.id === 'fontes')!
-      .blocks.find((block) => block.kind === 'sources')!
-    expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/prefeito')).toBe(true)
-    expect(fontes.items!.some((item) => item.url === 'https://exemplo.test/polo')).toBe(true)
   })
 
   it('keeps the full page-1 answer (no "…") and preserves the integral in the deep dive (C188)', () => {
@@ -802,18 +445,16 @@ describe('buildCityReport', () => {
       },
       { now: generatedAt },
     )
-    const capped = asReport(
-      buildCityReport({ snapshot, research: longResearch, emendas, generatedAt }),
-    )
+    const capped = asReport(buildCityReport({ snapshot, research: longResearch, generatedAt }))
 
     const who = capped.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
     const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
     expect(prefeito.value).toBe(longAnswer)
     expect(prefeito.value!.includes('…')).toBe(false)
 
-    const appendix = capped.sections
-      .find((section) => section.id === 'fontes')!
-      .blocks.find((block) => block.title === 'Pesquisa — respostas integrais (texto completo)')!
+    const appendix = byId(capped, 'fontes').blocks.find(
+      (block) => block.title === 'Pesquisa — respostas integrais (texto completo)',
+    )!
     const rows = appendix.rows as unknown as TableRow[]
     expect(rows).toHaveLength(RESEARCH_CHECKLIST_IDS.length)
     expect(rows[0].answer).toContain(longAnswer)
@@ -831,9 +472,7 @@ describe('buildCityReport', () => {
       },
       { now: generatedAt },
     )
-    const capped = asReport(
-      buildCityReport({ snapshot, research: summarized, emendas, generatedAt }),
-    )
+    const capped = asReport(buildCityReport({ snapshot, research: summarized, generatedAt }))
 
     const who = capped.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
     const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
@@ -855,7 +494,6 @@ describe('buildCityReport', () => {
       buildCityReport({
         snapshot,
         research: longResearch,
-        emendas,
         generatedAt,
         textFallback: 'pointer',
       }),
@@ -865,19 +503,9 @@ describe('buildCityReport', () => {
     const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
     expect(prefeito.value).toBe(SUMMARY_POINTER_COPY)
     expect(prefeito.value!.includes('…')).toBe(false)
-
-    const appendix = pointer.sections
-      .find((section) => section.id === 'fontes')!
-      .blocks.find((block) => block.title === 'Pesquisa — respostas integrais (texto completo)')!
-    const rows = appendix.rows as unknown as TableRow[]
-    expect(rows[0].answer).toContain(longAnswer)
   })
 
-  it('keeps short research answers untouched on page 1 and shows the list remainder', () => {
-    const who = report.page1.blocks.find((block) => block.kind === 'grid')!.cells![1].blocks[0]
-    const prefeito = who.rows!.find((row) => row.label === 'Prefeito(a)')!
-    expect(prefeito.value).toBe('Resposta de prefeito')
-
+  it('shows the dobradinhas remainder when the list is capped', () => {
     const manyDeputies = asReport(
       buildCityReport({
         snapshot: {
@@ -892,7 +520,6 @@ describe('buildCityReport', () => {
           },
         },
         research,
-        emendas,
         generatedAt,
       }),
     )
@@ -903,12 +530,49 @@ describe('buildCityReport', () => {
     expect(dobradinhas.value).not.toContain('Deputado Três')
   })
 
-  it('builds the region panorama from the committed artifact', () => {
-    const region = report.sections.find((section) => section.id === 'regiao')!.blocks[0]
-    const rowByLabel = (label: string) => region.rows!.find((row) => row.label === label)!
-    expect(rowByLabel('Território').value).toBe('Portal do Sertão')
-    expect(rowByLabel('Municípios no TI').value).toBe('17')
-    const position = Number(rowByLabel('Posição do município no TI').value.split('º')[0])
-    expect(position).toBeGreaterThan(0)
+  it('tolerates snapshots from the pre-refactor shape (extra groups ignored)', () => {
+    const legacySnapshot = {
+      ...snapshot,
+      electoral: {
+        series: [{ year: 2022, votes: 1 }],
+        rank2022: { rank: 1, votes: 1, share: 1, totalUnits: 435 },
+      },
+      goal: { suggestedGoal: 1, goalCoverage: {}, territorialClass: { class: 'expansao' } },
+      signals: { totalCount: 1, rows: [] },
+      activities: { upcoming: [], recent: [] },
+      speeches: { totalCount: 0, rows: [] },
+      demands: { totalCount: 0, rows: [] },
+      competitors: { referenceYear: 2022, federal: [], state: [] },
+    }
+    const legacy = asReport(buildCityReport({ snapshot: legacySnapshot, research, generatedAt }))
+    expect(legacy.sections).toHaveLength(9)
+    expect(legacy.page1.blocks.map((block) => block.kind)).toEqual([
+      'strip',
+      'grid',
+      'callout',
+      'cards',
+      'panel',
+      'footerNote',
+    ])
+  })
+
+  it('shows a gap instead of an empty 2º-turno cell when the unit is outside the artifact', () => {
+    const outside = asReport(
+      buildCityReport({
+        snapshot: {
+          ...snapshot,
+          municipality: { ...snapshot.municipality, slug: 'nao-existe-no-artefato' },
+        },
+        research,
+        generatedAt,
+      }),
+    )
+    const cell = outside.page1.blocks.find((block) => block.kind === 'grid')!.cells![0]
+    const gap = cell.blocks.find((block) => block.kind === 'callout' && block.tone === 'gap')!
+    expect(gap.body!.join(' ')).toContain('build:second-round')
+    const section = byId(outside, 'segundo-turno')
+    expect(section.blocks.some((block) => block.kind === 'callout' && block.tone === 'gap')).toBe(
+      true,
+    )
   })
 })

@@ -25,13 +25,32 @@ const baseResearch = (overrides: Record<string, unknown> = {}) => ({
 })
 
 describe('normalizeResearchInput', () => {
-  it('includes the 2º turno local movement in the checklist', () => {
+  it('pins the 2º-turno mobilization checklist (no mandate-era items)', () => {
     expect(RESEARCH_CHECKLIST_IDS).toContain('segundo_turno')
+    expect(RESEARCH_CHECKLIST_IDS).toContain('relacao_campo')
+    expect(RESEARCH_CHECKLIST_IDS).not.toContain('emendas_web')
+    expect(RESEARCH_CHECKLIST_IDS).not.toContain('quem_investe')
+    expect(RESEARCH_CHECKLIST_IDS).toHaveLength(8)
   })
 
   it('keeps fully sourced items', () => {
     const research = normalizeResearchInput(baseResearch(), { now })
     expect(research.items).toHaveLength(RESEARCH_CHECKLIST_IDS.length)
+    expect(research.gaps).toEqual([])
+  })
+
+  it('ignores retired top-level lists from old research files (replay compat)', () => {
+    const research = normalizeResearchInput(
+      baseResearch({
+        preCandidates: [{ name: 'X', office: 'Deputado federal' }],
+        investments: [{ topic: 'Obra', detail: 'sem fonte' }],
+        emendasIndicators: [{ author: 'Y', sphere: 'municipio' }],
+      }),
+      { now },
+    )
+    expect('preCandidates' in research).toBe(false)
+    expect('investments' in research).toBe(false)
+    expect('emendasIndicators' in research).toBe(false)
     expect(research.gaps).toEqual([])
   })
 
@@ -96,16 +115,16 @@ describe('normalizeResearchInput', () => {
   it('treats an explicit gap as researched, without a duplicate "Não pesquisado"', () => {
     const research = normalizeResearchInput(
       baseResearch({
-        items: RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'emendas_web').map((id) =>
+        items: RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'imprensa_local').map((id) =>
           validItem(id),
         ),
-        gaps: [{ id: 'emendas_web', label: 'Emendas na web', reason: 'Fonte oficial respondeu.' }],
+        gaps: [{ id: 'imprensa_local', label: 'Imprensa local', reason: 'Sem veículo ativo.' }],
       }),
       { now },
     )
-    const emendasGaps = research.gaps.filter((gap) => gap.id === 'emendas_web')
-    expect(emendasGaps).toHaveLength(1)
-    expect(emendasGaps[0].reason).toBe('Fonte oficial respondeu.')
+    const pressGaps = research.gaps.filter((gap) => gap.id === 'imprensa_local')
+    expect(pressGaps).toHaveLength(1)
+    expect(pressGaps[0].reason).toBe('Sem veículo ativo.')
     expect(research.gaps.filter((gap) => gap.reason === 'Não pesquisado.')).toHaveLength(0)
   })
 
@@ -113,66 +132,22 @@ describe('normalizeResearchInput', () => {
     const research = normalizeResearchInput(
       baseResearch({
         items: [
-          validItem('emendas_web', {
+          validItem('prefeito', {
             extraSources: [
               { label: 'Polo regional', url: 'https://exemplo.test/polo', date: '2026-09-01' },
               { label: 'Sem data', url: 'https://exemplo.test/sem-data' },
             ],
           }),
-          ...RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'emendas_web').map((id) => validItem(id)),
+          ...RESEARCH_CHECKLIST_IDS.filter((id) => id !== 'prefeito').map((id) => validItem(id)),
         ],
       }),
       { now },
     )
-    const item = research.items.find((entry) => entry.id === 'emendas_web')!
+    const item = research.items.find((entry) => entry.id === 'prefeito')!
     expect(item.extraSources).toHaveLength(1)
     expect(item.extraSources[0].url).toBe('https://exemplo.test/polo')
     expect(research.gaps).toContainEqual(
       expect.objectContaining({ id: 'fonte_extra', reason: expect.stringMatching(/URL ou data/) }),
-    )
-  })
-
-  it('keeps sourced emenda indications and gaps those without author, esfera or source', () => {
-    const research = normalizeResearchInput(
-      baseResearch({
-        emendasIndicators: [
-          {
-            author: 'Zé Neto',
-            sphere: 'municipio',
-            value: 'R$ 1 mi',
-            purpose: 'Ambulância do TFD',
-            year: '2026',
-            sourceUrl: 'https://exemplo.test/ze-neto',
-            sourceDate: '2026-09-01',
-          },
-          {
-            author: 'Sem esfera',
-            sphere: 'capital',
-            sourceUrl: 'https://exemplo.test/capital',
-            sourceDate: '2026-09-01',
-          },
-          { author: 'Sem fonte', sphere: 'regiao' },
-        ],
-      }),
-      { now },
-    )
-    expect(research.emendasIndicators).toHaveLength(1)
-    expect(research.emendasIndicators[0]).toEqual(
-      expect.objectContaining({
-        author: 'Zé Neto',
-        sphere: 'municipio',
-        value: 'R$ 1 mi',
-        purpose: 'Ambulância do TFD',
-      }),
-    )
-    expect(research.gaps).toContainEqual(
-      expect.objectContaining({ id: 'emenda_indicio_incompleto' }),
-    )
-    expect(research.gaps).toContainEqual(
-      expect.objectContaining({
-        id: 'emenda_indicio_sem_fonte',
-        reason: expect.stringMatching(/URL e data/),
-      }),
     )
   })
 
@@ -252,8 +227,8 @@ describe('normalizeResearchInput', () => {
       baseResearch({
         opposition: [
           {
-            topic: 'Emenda sob investigação (PF)',
-            detail: 'Operação apura desvio em emendas.',
+            topic: 'Obra parada no campo adversário',
+            detail: 'Anúncio sem entrega.',
             sourceUrl: 'https://exemplo.test/oposicao',
             sourceDate: '2026-09-10',
           },
@@ -264,7 +239,7 @@ describe('normalizeResearchInput', () => {
     )
     expect(research.opposition).toHaveLength(1)
     const [firstOpposition] = research.opposition as unknown as Array<{ topic: string }>
-    expect(firstOpposition.topic).toBe('Emenda sob investigação (PF)')
+    expect(firstOpposition.topic).toBe('Obra parada no campo adversário')
     expect(research.gaps).toContainEqual(
       expect.objectContaining({
         id: 'opposition_sem_fonte',
@@ -273,7 +248,7 @@ describe('normalizeResearchInput', () => {
     )
   })
 
-  it('keeps sourced dobradinhas and investments, gapping those without source', () => {
+  it('keeps sourced dobradinhas and gaps those without source', () => {
     const research = normalizeResearchInput(
       baseResearch({
         alliances: [
@@ -283,13 +258,12 @@ describe('normalizeResearchInput', () => {
             sourceUrl: 'https://exemplo.test/dobradinha',
             sourceDate: '2026-09-10',
           },
+          { topic: 'Sem fonte', detail: 'Não entra.' },
         ],
-        investments: [{ topic: 'Sem fonte', detail: 'Não entra.' }],
       }),
       { now },
     )
     expect(research.alliances).toHaveLength(1)
-    expect(research.investments).toHaveLength(0)
-    expect(research.gaps).toContainEqual(expect.objectContaining({ id: 'investments_sem_fonte' }))
+    expect(research.gaps).toContainEqual(expect.objectContaining({ id: 'alliances_sem_fonte' }))
   })
 })

@@ -9,7 +9,7 @@
 
 const EMENDAS_API_URL = 'https://api.portaldatransparencia.gov.br/api-de-dados/emendas'
 export const DEFAULT_AUTHOR_NAME = 'JORGE SOLLA'
-export const EMENDAS_YEARS = [2023, 2024, 2025, 2026]
+const EMENDAS_YEARS = [2023, 2024, 2025, 2026]
 
 const normalizeAuthorName = (value) =>
   String(value ?? '')
