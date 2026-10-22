@@ -1839,10 +1839,15 @@ test.describe('communication vertical (C154/C162)', () => {
       )
       expect(ficha).toContain('Apagar')
 
+      // S47 — the public Central routes are retired: the slug and its media
+      // answer the permanent redirect regardless of the piece state.
       const publicBefore = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
       try {
-        expect((await publicBefore.get(`/conteudos/${slug}`)).status()).toBe(200)
-        expect((await publicBefore.get(`/conteudos/${slug}/midia`)).status()).toBe(200)
+        for (const path of [`/conteudos/${slug}`, `/conteudos/${slug}/midia`]) {
+          const response = await publicBefore.get(path, { maxRedirects: 0 })
+          expect(response.status()).toBe(308)
+          expect(new URL(response.headers().location, campaign.baseURL).pathname).toBe('/artigos')
+        }
       } finally {
         await publicBefore.dispose()
       }
@@ -1874,8 +1879,10 @@ test.describe('communication vertical (C154/C162)', () => {
 
       const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
       try {
-        expect((await anonymous.get(`/conteudos/${slug}`)).status()).toBe(404)
-        expect((await anonymous.get(`/conteudos/${slug}/midia`)).status()).toBe(404)
+        expect((await anonymous.get(`/conteudos/${slug}`, { maxRedirects: 0 })).status()).toBe(308)
+        expect(
+          (await anonymous.get(`/conteudos/${slug}/midia`, { maxRedirects: 0 })).status(),
+        ).toBe(308)
       } finally {
         await anonymous.dispose()
       }
@@ -1950,7 +1957,7 @@ test.describe('communication vertical (C154/C162)', () => {
 
       const anonymous = await playwrightRequest.newContext({ baseURL: campaign.baseURL })
       try {
-        expect((await anonymous.get(`/conteudos/${slug}`)).status()).toBe(404)
+        expect((await anonymous.get(`/conteudos/${slug}`, { maxRedirects: 0 })).status()).toBe(308)
       } finally {
         await anonymous.dispose()
       }
