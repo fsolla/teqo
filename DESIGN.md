@@ -296,6 +296,8 @@ This file is the living owner of Teqo's visual decisions — a working document,
 
 **Public light-surface focus separation (C243, 2026-10-01).** When the campaign-yellow focus outline sits on a cream, white, or yellow-tinted public surface, keep the 3px yellow signal but add a dark blue outer separator. Yellow alone does not separate reliably from these backgrounds; the second edge preserves the archive's established focus identity while making keyboard location unmistakable without turning blue into a competing action color.
 
+**Post-election mandate home (S47, 2026-10-21).** Once an election closes, the public home uses the name-only Jorge Solla lockup and reframes campaign red as a single, sober field of gratitude; cream carries the editorial chapters and yellow is limited to the one hero action plus focus/accent signals. The verified vote total may dominate the thank-you hero, but it must read as entrusted confidence rather than as a results dashboard: no ranking stack, electoral number, campaign CTA, or competing primary action. Content boards become flat editorial compositions with hairline divisions, and mandate themes use one continuous grid rather than a floating-card catalogue. This preserves recognition from the campaign identity while clearly changing the site's register from persuasion to institutional continuity.
+
 How rules change:
 
 - **Decide, then update the owner.** When a better pattern wins — anti-slop review (`design-taste-frontend` / `gpt-taste`), a reference study (`awesome-design-md`), a redesign pass (`redesign-existing-projects`), or implementation judgment — update this file in the **same change** and say why. A pattern that only lives in code or in an agent's head is drift, not design.
