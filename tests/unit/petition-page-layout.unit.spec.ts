@@ -42,6 +42,17 @@ describe('petition page layout', () => {
     expect(formSource).not.toContain('convertLexicalToHTML')
   })
 
+  it('uses the generic mobilization copy instead of campaign/trabalhadores', () => {
+    const normalizedPage = pageSource.replace(/\s+/g, ' ')
+
+    expect(normalizedPage).toContain('Sua assinatura fortalece esta mobilização.')
+    expect(normalizedPage).toContain(
+      'Os dados serão usados apenas para registrar sua participação e a comunicação de conteúdos relacionados.',
+    )
+    expect(normalizedPage).not.toContain('fortalece a luta dos trabalhadores')
+    expect(normalizedPage).not.toContain('participação nesta campanha')
+  })
+
   it('uses semantic field color variables for shared form controls', () => {
     for (const source of [inputSource, textareaSource, nativeSelectSource]) {
       expect(source).toContain('--field-background')

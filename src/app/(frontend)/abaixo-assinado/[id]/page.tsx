@@ -204,12 +204,11 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               Participe da mobilização
             </span>
             <h2 className="border-none text-left text-3xl font-bold leading-tight text-foreground sm:text-4xl">
-              Sua assinatura fortalece a luta dos trabalhadores.
+              Sua assinatura fortalece esta mobilização.
             </h2>
             <p className="text-base leading-7 text-muted-foreground">
               Preencha o formulário para somar apoio público à proposta. Os dados serão usados
-              apenas para registrar sua participação nesta campanha, e comunicação de conteúdos
-              relacionados.
+              apenas para registrar sua participação e a comunicação de conteúdos relacionados.
             </p>
             <SignatureCounter
               petitionId={petition.id}
