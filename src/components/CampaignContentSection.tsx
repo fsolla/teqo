@@ -1,5 +1,6 @@
 import { CampaignContentCard, type CampaignContentCardData } from '@/components/CampaignContentCard'
-import { CampaignContentCarousel } from '@/components/CampaignContentCarousel'
+import { PUBLIC_FOCUS, PUBLIC_PATHS, PUBLIC_SOCIAL_LINKS } from '@/lib/publicSite'
+import { cn } from '@/lib/utils'
 import type { Post } from '@/payload-types'
 import {
   formatRelativePostDate,
@@ -16,10 +17,10 @@ import {
 } from '@/utilities/socialFeed/youtubeFeed'
 import Link from 'next/link'
 
-const CONTENT_SECTION_LIMIT = 5
+const CONTENT_SECTION_LIMIT = 4
 
 const sectionHeaderLinkClassName =
-  'text-sm font-bold text-(--pt-red) underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none'
+  'rounded-sm text-sm font-bold text-(--pt-red) underline decoration-(--pt-red) underline-offset-[5px] hover:text-(--pt-red-dark)'
 
 type DatedCard = {
   card: CampaignContentCardData
@@ -81,7 +82,6 @@ const toInstagramCardData = (post: InstagramPost): DatedCard => ({
     title: post.caption ?? 'Publicação no Instagram',
     shareKind: 'instagram' as const,
     meta: formatRelativePostDate(post.timestamp) ?? '',
-    coverAspect: 'square',
     ...(post.thumbnailUrl
       ? { coverUrl: post.thumbnailUrl, coverAlt: post.caption ?? 'Publicação no Instagram' }
       : {}),
@@ -90,14 +90,41 @@ const toInstagramCardData = (post: InstagramPost): DatedCard => ({
   date: dateTimeOf(post.timestamp),
 })
 
+const youtubeHref = PUBLIC_SOCIAL_LINKS.youtube.href
+const instagramHref = PUBLIC_SOCIAL_LINKS.instagram.href
+
+const BoardLinks = () => (
+  <>
+    <Link href={PUBLIC_PATHS.artigos} className={cn(sectionHeaderLinkClassName, PUBLIC_FOCUS)}>
+      Todos os artigos
+    </Link>
+    <a
+      href={youtubeHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(sectionHeaderLinkClassName, PUBLIC_FOCUS)}
+    >
+      YouTube
+    </a>
+    <a
+      href={instagramHref}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={cn(sectionHeaderLinkClassName, PUBLIC_FOCUS)}
+    >
+      Instagram
+    </a>
+  </>
+)
+
 /**
- * Campaign home content board: the 5 most recent items across the visible
- * posts (S1), the eligible YouTube feed (S2) and the eligible Instagram feed
- * (S3), newest first, as a 1+4 bento on desktop and a one-per-screen carousel
- * on mobile. Hides entirely when nothing is visible (`isPostVisible`
- * fail-closed — hidden electoral tags never leak) and never breaks when a
- * feed API is down (snapshot or no cards). With the feeds unconfigured it
- * degrades to the S1 articles-only behavior.
+ * S47 — the editorial home board (design scene 01/02): the 4 most recent items
+ * across the visible posts (S1), the eligible YouTube feed (S2) and the
+ * eligible Instagram feed (S3), newest first, as 1 featured story + 3 compact
+ * rows. The previous mobile carousel is gone — the side column simply stacks.
+ * With nothing visible the section renders the approved empty state instead of
+ * leaving a silent hole (`isPostVisible` fail-closed — hidden electoral tags
+ * never leak), and a feed outage degrades to the articles-only board.
  */
 export const CampaignContentSection = async () => {
   const [visiblePosts, youtubeFeed, instagramFeed] = await Promise.all([
@@ -116,71 +143,78 @@ export const CampaignContentSection = async () => {
     .slice(0, CONTENT_SECTION_LIMIT)
     .map(({ card }) => card)
 
-  if (!cards.length) return null
-
   const [featured, ...rest] = cards
 
   return (
     <section
       aria-labelledby="contents-title"
       data-home-section="contents"
-      className="border-y border-(--campaign-line) bg-(--campaign-band)"
+      className="bg-(--campaign-cream)"
     >
-      <div className="mx-auto w-full max-w-[1160px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-        <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="mx-auto w-full max-w-[1280px] px-5 py-16 sm:px-8 lg:px-16 lg:py-24">
+        <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <p className="campaign-section-eyebrow m-0 font-black tracking-[0.1em] text-(--pt-red) uppercase">
+            <p className="m-0 font-[family-name:var(--font-exo2)] text-sm font-extrabold text-(--pt-red)">
               Acompanhe de perto
             </p>
             <h2
               id="contents-title"
-              className="campaign-section-title m-0 mt-1 border-0 p-0 font-black tracking-[-0.02em] text-balance"
+              className="mt-2 max-w-2xl border-0 p-0 font-[family-name:var(--font-exo2)] text-[34px] leading-[1.03] font-black tracking-[-0.04em] text-balance lg:text-[44px] lg:leading-[1.02] lg:tracking-[-0.045em]"
             >
-              A caminhada, em tempo real
+              O mandato, onde a Bahia acontece
             </h2>
-            <p className="campaign-section-copy m-0 mt-1 text-(--campaign-muted)">
-              Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.
+            <p className="mt-4 max-w-xl text-[15px] leading-6 text-(--campaign-muted) lg:text-base lg:leading-7">
+              Notícias, vídeos e registros do trabalho em Brasília e nos municípios.
             </p>
           </div>
-          <div className="flex flex-wrap gap-4">
-            <Link href="/artigos" className={sectionHeaderLinkClassName}>
-              Ver artigos →
-            </Link>
-            {instagramFeed?.username ? (
-              <a
-                href={`https://www.instagram.com/${instagramFeed.username}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={sectionHeaderLinkClassName}
-              >
-                Seguir no Instagram →
-              </a>
-            ) : null}
-            {youtubeFeed ? (
-              <a
-                href={`https://www.youtube.com/channel/${youtubeFeed.channelId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={sectionHeaderLinkClassName}
-              >
-                YouTube →
-              </a>
-            ) : null}
+          <div className="mb-1 hidden flex-wrap gap-x-6 gap-y-3 text-sm font-bold text-(--pt-red) lg:flex">
+            <BoardLinks />
           </div>
         </div>
 
-        <div className="mt-6 hidden grid-cols-4 gap-4 md:grid">
-          <div className="col-span-2 row-span-2">
-            <CampaignContentCard card={featured} featured />
+        {featured ? (
+          <div className="mt-8 grid border-y border-(--campaign-line) lg:mt-10 lg:grid-cols-12">
+            <article className="border-b border-(--campaign-line) py-7 lg:col-span-7 lg:border-r lg:border-b-0 lg:pr-8">
+              <CampaignContentCard card={featured} variant="featured" />
+            </article>
+            <div className="divide-y divide-(--campaign-line) lg:col-span-5 lg:pl-8">
+              {rest.map((card) => (
+                <article key={card.id}>
+                  <CampaignContentCard card={card} variant="compact" />
+                </article>
+              ))}
+            </div>
           </div>
-          {rest.map((card) => (
-            <CampaignContentCard key={card.id} card={card} />
-          ))}
-        </div>
+        ) : (
+          <div className="mt-8 flex min-h-[290px] flex-col items-center justify-center border-y border-(--campaign-line) px-8 text-center lg:mt-10">
+            <svg
+              aria-hidden="true"
+              width="34"
+              height="34"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="var(--pt-red)"
+              strokeWidth="1.7"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+            </svg>
+            <h3 className="mt-5 font-[family-name:var(--font-exo2)] text-2xl font-extrabold">
+              Ainda não há publicações
+            </h3>
+            <p className="mt-3 max-w-sm text-sm leading-6 text-(--campaign-muted)">
+              As notícias do mandato aparecerão aqui assim que forem publicadas.
+            </p>
+          </div>
+        )}
 
-        <div className="mt-5 md:hidden">
-          <CampaignContentCarousel ariaLabel="Conteúdos recentes" items={cards} />
-        </div>
+        {featured ? (
+          <div className="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm font-bold text-(--pt-red) lg:hidden">
+            <BoardLinks />
+          </div>
+        ) : null}
       </div>
     </section>
   )

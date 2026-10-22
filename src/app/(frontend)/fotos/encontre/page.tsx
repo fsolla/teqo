@@ -5,8 +5,9 @@ import { notFound } from 'next/navigation'
 import { getPayload } from 'payload'
 
 import { ConsentText } from '@/components/campaign/shared/ConsentText'
+import { CampaignInternalPageIntro } from '@/components/CampaignInternalPageIntro'
+import { CampaignPageHeader } from '@/components/CampaignPageHeader'
 import { ARCHIVE_PHOTO_FOCUS } from '@/components/fotos/archivePhotoClasses'
-import { ArchivePhotoPageHeader } from '@/components/fotos/ArchivePhotoPageHeader'
 import { SelfieSearchClosed } from '@/components/fotos/SelfieSearchClosed'
 import { SelfieSearchFlow } from '@/components/fotos/SelfieSearchFlow'
 import { isArchivePhotoRemovalChannelUrl } from '@/lib/archivePhotoCatalog'
@@ -16,13 +17,12 @@ import {
 } from '@/lib/archivePhotoPublicCatalog'
 import { FACE_INDEX_CONSENT_KEY, FACE_SEARCH_CONSENT_KEY } from '@/lib/campaignConsentKeys'
 import { getConsentByKey } from '@/utilities/campaignConsent'
-import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
 import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 
 export const dynamic = 'force-dynamic'
 
-const ENTRY_TITLE = 'Encontre você nas fotos — Jorge Solla 1313'
+const ENTRY_TITLE = 'Encontre você nas fotos'
 const ENTRY_DESCRIPTION =
   'Busque por uma selfie sua as fotos públicas aprovadas em que você aparece. A imagem não sai do seu dispositivo.'
 
@@ -72,10 +72,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function FotosEncontrePage() {
-  const [album, showConteudos] = await Promise.all([
-    getCachedPhotoAlbum(),
-    hasPublishedContentPieces(),
-  ])
+  const album = await getCachedPhotoAlbum()
   if (album.published === false || album.selfieSearchEnabled !== true) notFound()
 
   const payload = await getPayload({ config })
@@ -89,7 +86,8 @@ export default async function FotosEncontrePage() {
 
   return (
     <>
-      <ArchivePhotoPageHeader showConteudos={showConteudos} />
+      <CampaignPageHeader current="fotos" />
+      <CampaignInternalPageIntro eyebrow="Memória do mandato" title="Encontre você nas fotos" />
       <main className="w-full">
         <div className="mx-auto w-full max-w-6xl px-5 pt-5 sm:px-8 sm:pt-7">
           <nav className="text-sm text-(--campaign-muted)">

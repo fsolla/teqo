@@ -57,7 +57,7 @@ describe('buildGoogleCalendarEventUrl', () => {
     const parsed = new URL(url as string)
     expect(`${parsed.origin}${parsed.pathname}`).toBe('https://calendar.google.com/calendar/render')
     expect(parsed.searchParams.get('action')).toBe('TEMPLATE')
-    expect(parsed.searchParams.get('text')).toBe('Plenária da saúde - Jorge Solla 1313')
+    expect(parsed.searchParams.get('text')).toBe('Plenária da saúde - Jorge Solla')
     expect(parsed.searchParams.get('dates')).toBe('20261003T190000/20261003T210000')
     expect(parsed.searchParams.get('ctz')).toBe('America/Bahia')
     expect(parsed.searchParams.get('details')).toBe(
@@ -68,12 +68,12 @@ describe('buildGoogleCalendarEventUrl', () => {
 
   it('does not duplicate the signature or emit a relative link', () => {
     const url = buildGoogleCalendarEventUrl({
-      title: 'Plenária - Jorge Solla 1313',
+      title: 'Plenária - Jorge Solla',
       url: '/plenaria-saude',
       startsAt: STARTS_AT,
     })
     const parsed = new URL(url as string)
-    expect(parsed.searchParams.get('text')).toBe('Plenária - Jorge Solla 1313')
+    expect(parsed.searchParams.get('text')).toBe('Plenária - Jorge Solla')
     expect(parsed.searchParams.get('details')).toBeNull()
   })
 
@@ -128,7 +128,7 @@ describe('buildCalendarEventIcs', () => {
     expect(body).toContain('TZOFFSETTO:-0300\r\n')
     expect(body).toContain('DTSTART;TZID=America/Bahia:20261003T190000\r\n')
     expect(body).toContain('DTEND;TZID=America/Bahia:20261003T210000\r\n')
-    expect(body).toContain('SUMMARY:Plenária\\, saúde - Jorge Solla 1313\r\n')
+    expect(body).toContain('SUMMARY:Plenária\\, saúde - Jorge Solla\r\n')
     expect(body.replace(/\r\n /g, '')).toContain(
       'DESCRIPTION:Linha 1\\nLinha 2\\n\\nPágina do evento: https://jorgesolla1313.com.br/plenaria-saude\r\n',
     )
@@ -146,7 +146,7 @@ describe('buildCalendarEventIcs', () => {
 
     expect(body).toContain('DTSTAMP:20261003T220000Z\r\n')
     expect(body).toContain('DTSTART;TZID=America/Bahia:20261003T190000\r\n')
-    expect(body).toContain('SUMMARY:Plenária - Jorge Solla 1313\r\n')
+    expect(body).toContain('SUMMARY:Plenária - Jorge Solla\r\n')
     expect(body).not.toContain('DESCRIPTION:')
     expect(body).not.toContain('URL:')
     expect(body).not.toMatch(/(?:^|\r\n)LOCATION:/)

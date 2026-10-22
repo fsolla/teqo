@@ -28,7 +28,6 @@ export const E2E_CURATED_SPECS = [
   'campaignDemandVisibility',
   'campaignAiTranscribe',
   'campaignAgendaFeed',
-  'campaignNewsletter',
   // C167 — deliberate: the cut public page/route gates are the only e2e
   // covering the new URL contract, and a migration always classifies the PR
   // as high-risk (curated only).
@@ -40,13 +39,6 @@ export const E2E_CURATED_SPECS = [
   // S19 — deliberate: the share-link OG/redirect contract is new and the
   // migration makes every PR of this delivery high-risk (curated only).
   'frontendShareLink',
-  // S21 — deliberate: the jingles page/player/download contract is new and the
-  // migration makes every PR of this delivery high-risk (curated only).
-  'frontendJingles',
-  // S27 — deliberate: the Central catalogue/piece page, the public media route
-  // and the vote share sheet are new contracts over the C211 collection
-  // (curated only).
-  'frontendConteudos',
   // C219 — deliberate: the recordings acervo gained its own search/facet
   // contract and the migration makes every PR of this delivery high-risk
   // (curated only).
@@ -97,9 +89,9 @@ export const E2E_AFFECTED_MANIFEST = [
     // The Payload live-preview bridge mounts on every `(frontend)` page and
     // owns when a soft refresh may run; a diff there (or in the layout that
     // mounts it) can silently drop the in-page anchors, so it wakes the hero
-    // owner (`frontend`) and the novidades anchor spec (`campaignNewsletter`).
+    // owner (`frontend`).
     prefixes: ['src/components/RefreshRouteOnSave.tsx', 'src/app/(frontend)/layout.tsx'],
-    specs: ['frontend', 'campaignNewsletter'],
+    specs: ['frontend'],
   },
   {
     // S46 — the public `/potencial` surface: the section query endpoints over
@@ -145,10 +137,32 @@ export const E2E_AFFECTED_MANIFEST = [
     specs: ['frontendShareLink'],
   },
   {
-    // S29 — the campaign-site header extracted from `/jingles` is shared by the
-    // announcement page; a diff there must wake both public specs.
-    prefixes: ['src/components/CampaignPageHeader.tsx'],
-    specs: ['frontendShareLink', 'frontendJingles'],
+    // S47 — the public chrome (header, mobile menu, name lockup and the shared
+    // path/social vocabulary) is rendered by the home, `/artigos`, `/fotos`
+    // and the announcement page; a diff there wakes every public spec.
+    prefixes: [
+      'src/components/CampaignPageHeader.tsx',
+      'src/components/CampaignMobileMenu.tsx',
+      'src/components/CampaignLogoLink.tsx',
+      'src/components/CampaignInternalPageIntro.tsx',
+      'src/lib/publicSite.ts',
+    ],
+    specs: ['frontend', 'frontendShareLink', 'frontendFotos'],
+  },
+  {
+    // S47 — the mandate home sections (hero, board/card, story, flags and the
+    // photo gallery) are owned by the `frontend` spec; the photo gallery also
+    // feeds the album contract pinned by `frontendFotos`.
+    prefixes: [
+      'src/components/CampaignHero.tsx',
+      'src/components/CampaignContentSection.tsx',
+      'src/components/CampaignContentCard.tsx',
+      'src/components/ContentShareButton.tsx',
+      'src/components/CampaignStorySection.tsx',
+      'src/components/CampaignFlagsSection.tsx',
+      'src/components/CampaignPhotoSection.tsx',
+    ],
+    specs: ['frontend', 'frontendFotos'],
   },
   {
     // S29 — the iCal primitives extracted from the agenda feed also render the
@@ -167,71 +181,6 @@ export const E2E_AFFECTED_MANIFEST = [
     // here (the spec imports the formatter), so a diff must wake it.
     prefixes: ['src/lib/campaignTime.ts'],
     specs: ['frontendShareLink'],
-  },
-  {
-    // S21 — the public jingles page: ordered published cards, the lazy
-    // in-page player (one at a time), the slug-based download name and the
-    // fail-closed publish contract of the collection.
-    // S25 — the same spec owns the home sound section, now with the own radio
-    // player (`lib/radio` holds the stream/share contract).
-    prefixes: [
-      'src/app/(frontend)/jingles',
-      'src/lib/jingle',
-      'src/lib/radio',
-      'src/utilities/jingleReads.ts',
-      // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
-      'src/utilities/ogImageReads.ts',
-      // The tag/revalidation vocabulary owner for the jingles listing.
-      'src/utilities/documents.ts',
-      'src/collections/Jingle.ts',
-      'src/components/jingles',
-    ],
-    // S29 — `hasPublishedJingles` also decides the footer of the announcement
-    // page, so the share-link spec wakes on the same owners.
-    specs: ['frontendJingles', 'frontendShareLink'],
-  },
-  {
-    // S27 — the public Central de Conteúdos: the facet/term catalogue, the
-    // on-demand play, the private-media public route, the vote share sheet and
-    // the kill-switch contract over the C211 listing tag. C213 adds the
-    // anonymous beacon endpoint, its vocabulary and the event collection the
-    // public page (and the public download) write to. S38 adds the card models
-    // as catalogue items (the copy/aliases live in the model catalog) and the
-    // card-opening variant of the beacon schema. S39 adds the home sample,
-    // wired by the home page and the pure selection module (the section
-    // components live under `components/conteudos`).
-    prefixes: [
-      'src/app/(frontend)/conteudos',
-      'src/app/(frontend)/(home)',
-      'src/app/(frontend)/api/content-events',
-      'src/components/conteudos',
-      'src/lib/contentPieceCatalog',
-      // C226 — the still of a video piece: the public route, the generation job
-      // and these pure rules. (`src/lib/contentPiece` below is a campaign prefix
-      // that also matches this file, so the public entry names it explicitly.)
-      'src/lib/contentPieceFrame',
-      'src/utilities/content/contentPieceFrameJob.ts',
-      'src/lib/contentPieceHomeSelection.ts',
-      'src/lib/contentPieceShare',
-      // S37 — the catalog behind the public "Lideranças" names.
-      'src/lib/publicFigureCatalog.ts',
-      'src/lib/contentEvents.ts',
-      'src/lib/cardModels.ts',
-      'src/lib/schemas/contentEvent.ts',
-      'src/utilities/content/contentPieceReads.ts',
-      // S27-FOLLOWUP-DRY — the owner of the page's og:image fallback.
-      'src/utilities/ogImageReads.ts',
-      // S28 — the theme-mode loader of the same public surface.
-      'src/utilities/content/contentPieceThemeSearch.ts',
-      // The tag/revalidation vocabulary owner for the content pieces listing.
-      'src/utilities/documents.ts',
-      'src/collections/ContentPiece.ts',
-      'src/collections/ContentMedia.ts',
-      'src/collections/ContentEvent.ts',
-      // The private-media response rules the public route reuses.
-      'src/lib/privateMedia',
-    ],
-    specs: ['frontendConteudos'],
   },
   {
     // C233 — the public photo album: the `/fotos` catalogue, the overlay, the
@@ -285,22 +234,13 @@ export const E2E_AFFECTED_MANIFEST = [
     // C234 — the bounded streaming body reader extracted from the beacon: both
     // anonymous JSON routes consume it, so a diff there wakes both specs.
     prefixes: ['src/utilities/boundedRequestBody.ts'],
-    specs: ['frontendConteudos', 'frontendFotosSelfie'],
+    specs: ['frontendFotosSelfie'],
   },
   {
-    // S21 — the campaign footer owns the conditional "Jingles" discovery link
-    // (it renders on the home, the cards page, `/jingles` and the S29
-    // announcement page).
-    // S27 — and the conditional "Conteúdos" link.
-    // C233 — and the conditional "Fotos" link.
+    // S47 — the institutional footer is shared by the home, `/artigos`,
+    // `/fotos` and the announcement page.
     prefixes: ['src/components/CampaignFooter.tsx'],
-    specs: [
-      'frontend',
-      'frontendJingles',
-      'frontendConteudos',
-      'frontendShareLink',
-      'frontendFotos',
-    ],
+    specs: ['frontend', 'frontendShareLink', 'frontendFotos'],
   },
   {
     // S13/S30 — the personalized-cards studio lives in shared cards components
@@ -508,7 +448,7 @@ export const E2E_AFFECTED_MANIFEST = [
     // S28 — the same owner now generalizes the expansion for the public
     // Central, so a diff there must wake the public spec too.
     prefixes: ['src/utilities/ai'],
-    specs: ['campaignAiTranscribe', 'campaignSpeechAcervo', 'frontendConteudos'],
+    specs: ['campaignAiTranscribe', 'campaignSpeechAcervo'],
   },
   {
     // Zod input schemas surface in the browser through form flows; the
@@ -523,7 +463,6 @@ export const E2E_AFFECTED_MANIFEST = [
     ],
     specs: [
       'frontend',
-      'campaignNewsletter',
       'campaignSpeechCut',
       'campaignReel',
       'frontendFotosSelfie',

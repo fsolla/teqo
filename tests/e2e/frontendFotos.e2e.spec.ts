@@ -334,6 +334,13 @@ test.describe('Frontend Álbum de Fotos (C233)', () => {
     expect(response?.status()).toBe(200)
     await waitForSettledPage(page)
 
+    await expect(page.getByRole('heading', { level: 1, name: 'Fotos' })).toBeVisible()
+    await expect(page.getByText('Memória do mandato')).toBeVisible()
+    await expect(
+      page.getByRole('banner').getByRole('link', { name: 'Início — Jorge Solla' }),
+    ).toBeVisible()
+    await expect(page.locator('header').getByText('1313')).toHaveCount(0)
+
     const feiraCard = page.locator(`a[data-photo-id="${approvedFeira}"]`)
     const camacariCard = page.locator(`a[data-photo-id="${approvedCamacari}"]`)
 
@@ -438,13 +445,30 @@ test.describe('Frontend Álbum de Fotos (C233)', () => {
     expect(download.status()).toBe(200)
     expect(download.headers()['content-disposition']).toContain('attachment')
     expect(download.headers()['content-disposition']).toContain(
-      `jorge-solla-1313-foto-${approvedFeira}.jpg`,
+      `jorge-solla-foto-${approvedFeira}.jpg`,
     )
 
     await page.getByRole('link', { name: /Voltar ao álbum/ }).click()
     await waitForSettledPage(page)
     await expect(page).toHaveURL(new RegExp(`/fotos\\?municipio=${feiraSlug}$`))
     await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('carries the approved photos into the home gallery', async ({ page }) => {
+    await page.goto('/')
+    await waitForSettledPage(page)
+
+    const section = page.locator('[data-home-section="photos"]')
+    await expect(section).toBeVisible()
+    await expect(section.getByRole('heading', { name: 'O mandato em fotos' })).toBeVisible()
+    const photoLinks = section.locator('a[href*="?foto="]')
+    await expect(photoLinks).toHaveCount(2)
+    await expect(photoLinks.first()).toHaveAttribute('href', new RegExp(`^/fotos\\?foto=\\d+$`))
+    await expect(section.getByText('Trabalho presente, memória viva.')).toBeVisible()
+    await expect(section.getByRole('link', { name: 'Ver o álbum' })).toHaveAttribute(
+      'href',
+      '/fotos',
+    )
   })
 
   test('pulls a removed photo down immediately, without a deploy', async ({ page, request }) => {

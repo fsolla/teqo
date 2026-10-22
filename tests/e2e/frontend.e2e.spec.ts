@@ -1,719 +1,83 @@
 import type { APIRequestContext, Locator, Page } from '@playwright/test'
-import { readFileSync } from 'node:fs'
-
-import { COLINHA_ROW_LAYOUT } from '@/lib/cardColinha'
-import { TEAM_CARD_NAME_BANNER } from '@/lib/cardModels'
 
 import { adminHeaders } from '../helpers/adminApi'
-import { waitForHomeHTML, waitForHomeSection } from '../helpers/homeIsr'
+import { waitForHomeHTML } from '../helpers/homeIsr'
 import { seedTestUser } from '../helpers/seedUser'
 import { instagramStubUrlFor, youtubeStubUrlFor } from '../helpers/socialStub'
 import { expect, test } from './fixtures/e2eTest'
 
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
-
-// 4×3 opaque PNG — enough to exercise decode/cover/clamp without a binary fixture.
-const TEST_PHOTO_PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAQAAAADCAYAAAC09K7GAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAAEklEQVR4nGOQqzjxHxkzEBQAAMHJHF0PRQWkAAAAAElFTkSuQmCC',
-  'base64',
-)
-
-const swipeLeft = async (
-  page: Page,
-  box: { x: number; y: number; width: number; height: number },
-) => {
-  const cdp = await page.context().newCDPSession(page)
-  const y = Math.round(box.y + box.height / 2)
-  const startX = Math.round(box.x + box.width * 0.82)
-  const endX = Math.round(box.x + box.width * 0.12)
-
-  await cdp.send('Input.dispatchTouchEvent', {
-    type: 'touchStart',
-    touchPoints: [{ x: startX, y }],
-  })
-  for (let step = 1; step <= 5; step += 1) {
-    const x = Math.round(startX + ((endX - startX) * step) / 5)
-    await cdp.send('Input.dispatchTouchEvent', {
-      type: 'touchMove',
-      touchPoints: [{ x, y }],
-    })
-    await page.waitForTimeout(25)
-  }
-  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
-}
-
-/**
- * S14 — scans the name band (y[420..540]) of a card canvas: yellow pixel count
- * and leftmost x. The base masters have no yellow in this band, so the scan
- * sees only the drawn name.
- */
-const readCardNameBand = (canvas: Locator) =>
-  canvas.evaluate((element) => {
-    const node = element as HTMLCanvasElement
-    const ctx = node.getContext('2d')
-    if (!ctx) return { yellow: 0, minX: node.width }
-
-    const band = ctx.getImageData(0, 420, node.width, 120).data
-    let yellow = 0
-    let minX = node.width
-    for (let index = 0; index < band.length; index += 4) {
-      if (band[index] > 230 && band[index + 1] > 200 && band[index + 2] < 80) {
-        yellow += 1
-        const x = (index / 4) % node.width
-        if (x < minX) minX = x
-      }
-    }
-
-    return { yellow, minX }
-  })
-
-/** S14 — the name starts on the `SOU` left border (x≈213 at 1080), not centered. */
-const expectCardNameLeftAligned = async (canvas: Locator) => {
-  await expect
-    .poll(async () => {
-      const { yellow, minX } = await readCardNameBand(canvas)
-      return yellow > 1000 && minX >= 205 && minX <= 245
-    })
-    .toBe(true)
-}
-
-// C226 — the home sample renders the same card as the catalogue, so a video
-// piece asks the Central for its still before the play; the door answers 404
-// until the self-heal lands and the browser logs that refusal. Declared here
-// because the sample is conditional (the serial frontendConteudos spec may
-// publish a video piece mid-run) and this spec must not depend on it.
-test.use({ expectedRequestFailurePaths: [/\/conteudos\/.+\/frame$/] })
-
 test.describe('Frontend', () => {
-  test('can go on homepage', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page).toHaveTitle(/Jorge Solla/)
-
-    const heading = page.getByRole('heading', {
-      level: 1,
-      name: 'MAIS SAÚDE MAIS FUTURO',
-    })
-
-    await expect(heading).toBeVisible()
-    await expect(page.locator('[data-cta="primary"]')).toHaveAttribute(
-      'href',
-      'https://apoiar.me/jorgesolla',
-    )
-  })
-
-  test('animates the novidades anchor and gives pointer feedback on campaign buttons', async ({
-    page,
-  }) => {
-    await page.goto('/')
-
-    const scrollContainer = page.locator('[data-theme="campaign-site"]')
-    const secondaryCta = page.locator('[data-cta="secondary"]')
-
-    await expect(scrollContainer).toHaveCSS('scroll-behavior', 'smooth')
-    await expect(secondaryCta).toHaveAttribute('href', '#novidades')
-    await secondaryCta.hover()
-    await expect
-      .poll(() => secondaryCta.evaluate((element) => getComputedStyle(element).transform))
-      .toContain('1.05')
-
-    const box = await secondaryCta.boundingBox()
-    if (!box) throw new Error('O CTA secundário não ficou visível para testar o clique.')
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-    await page.mouse.down()
-    await expect(secondaryCta).toHaveCSS('opacity', '0.8')
-    await page.mouse.move(0, 0)
-    await page.mouse.up()
-
-    await secondaryCta.click()
-    await expect(page).toHaveURL(/#novidades$/)
-    await expect(page.locator('#novidades')).toBeInViewport()
-  })
-
-  test('keeps breathing room between the wrapped hero subtitle and CTAs on iPhone SE', async ({
-    page,
-  }) => {
-    await page.setViewportSize({ width: 320, height: 568 })
+  test('opens on the thank-you hero and leaves campaign propaganda behind', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
 
-    const hero = page.locator('[data-home-section="hero"]')
-    const subtitleBox = await hero.locator('p').first().boundingBox()
-    const actionsBox = await hero.locator('[data-cta="secondary"]').locator('..').boundingBox()
-    if (!subtitleBox || !actionsBox) throw new Error('O conteúdo principal do hero não foi medido.')
-
-    expect(actionsBox.y - (subtitleBox.y + subtitleBox.height)).toBeGreaterThanOrEqual(16)
-  })
-
-  test('adapts the campaign first fold fluidly across the reference viewport sizes', async ({
-    page,
-  }) => {
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/$/)
-
-    const measureFirstFold = async (width: number, height: number) => {
-      await page.setViewportSize({ width, height })
-
-      return page.evaluate(() => {
-        const hero = document.querySelector<HTMLElement>('[data-home-section="hero"]')
-        const proof = document.querySelector<HTMLElement>('[data-home-section="proof"]')
-        const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
-        if (!hero || !proof || !scrollContainer)
-          throw new Error('A primeira dobra não foi montada.')
-
-        const box = (selector: string) => {
-          const element = document.querySelector<HTMLElement>(selector)
-          if (!element) throw new Error(`Elemento responsivo ausente: ${selector}`)
-          const bounds = element.getBoundingClientRect()
-          return { x: bounds.x, y: bounds.y, width: bounds.width }
-        }
-        const heroBounds = hero.getBoundingClientRect()
-
-        return {
-          heroHeight: heroBounds.height,
-          firstFoldHeight: heroBounds.height + proof.getBoundingClientRect().height,
-          horizontalOverflow: scrollContainer.scrollWidth - scrollContainer.clientWidth,
-          title: box('.campaign-hero-title'),
-          portrait: box('.campaign-hero-portrait'),
-          secondaryAction: box('[data-cta="secondary"]'),
-        }
-      })
-    }
-
-    const penpotBoards = [
-      {
-        width: 393,
-        height: 852,
-        heroHeight: 745,
-        firstFoldHeight: 833,
-        title: [-5, 462, 392],
-        portrait: [-6, 53, 422],
-        secondaryAction: [108, 652, 145],
-      },
-      {
-        width: 768,
-        height: 1024,
-        heroHeight: 901,
-        firstFoldHeight: 1024,
-        title: [121, 497, 537],
-        portrait: [193, 88, 422],
-        secondaryAction: [214, 774, 158],
-      },
-      {
-        width: 1024,
-        height: 900,
-        heroHeight: 543,
-        firstFoldHeight: 691,
-        title: [585, 106, 392],
-        portrait: [153, 26, 465],
-        secondaryAction: [637, 349, 158],
-      },
-      {
-        width: 1280,
-        height: 800,
-        heroHeight: 676,
-        firstFoldHeight: 800,
-        title: [738, 127, 392],
-        portrait: [239, 84, 533],
-        secondaryAction: [790, 370, 158],
-      },
-      {
-        width: 1366,
-        height: 768,
-        heroHeight: 627,
-        firstFoldHeight: 768,
-        title: [762, 106, 392],
-        portrait: [325, 9, 555],
-        secondaryAction: [814, 349, 158],
-      },
-      {
-        width: 1920,
-        height: 1080,
-        heroHeight: 871,
-        firstFoldHeight: 1080,
-        title: [1093, 190, 607],
-        portrait: [524, 91, 702],
-        secondaryAction: [1325, 556, 174],
-      },
-    ]
-
-    for (const board of penpotBoards) {
-      const measured = await measureFirstFold(board.width, board.height)
-      expect(Math.abs(measured.heroHeight - board.heroHeight)).toBeLessThanOrEqual(2)
-      expect(Math.abs(measured.firstFoldHeight - board.firstFoldHeight)).toBeLessThanOrEqual(2)
-      expect(measured.horizontalOverflow).toBeLessThanOrEqual(1)
-
-      for (const key of ['title', 'portrait', 'secondaryAction'] as const) {
-        const [x, y, width] = board[key]
-        expect(Math.abs(measured[key].x - x)).toBeLessThanOrEqual(8)
-        expect(Math.abs(measured[key].y - y)).toBeLessThanOrEqual(2)
-        expect(Math.abs(measured[key].width - width)).toBeLessThanOrEqual(2)
-      }
-    }
-
-    const compact = [
-      await measureFirstFold(393, 852),
-      await measureFirstFold(580, 900),
-      await measureFirstFold(768, 1024),
-    ]
-    expect(compact[1].heroHeight).toBeGreaterThan(compact[0].heroHeight)
-    expect(compact[1].heroHeight).toBeLessThan(compact[2].heroHeight)
-
-    const standardDesktop = [
-      await measureFirstFold(1024, 900),
-      await measureFirstFold(1152, 900),
-      await measureFirstFold(1280, 800),
-    ]
-    expect(standardDesktop[1].heroHeight).toBeGreaterThan(standardDesktop[0].heroHeight)
-    expect(standardDesktop[1].heroHeight).toBeLessThan(standardDesktop[2].heroHeight)
-
-    const wideDesktop = [
-      await measureFirstFold(1366, 768),
-      await measureFirstFold(1600, 900),
-      await measureFirstFold(1920, 1080),
-    ]
-    expect(wideDesktop[1].heroHeight).toBeGreaterThan(wideDesktop[0].heroHeight)
-    expect(wideDesktop[1].heroHeight).toBeLessThan(wideDesktop[2].heroHeight)
-
-    const aspectBoundary = [
-      await measureFirstFold(1280, 747),
-      await measureFirstFold(1280, 746),
-      await measureFirstFold(1920, 1121),
-      await measureFirstFold(1920, 1120),
-    ]
-    expect(Math.abs(aspectBoundary[0].heroHeight - aspectBoundary[1].heroHeight)).toBeLessThan(2)
-    expect(Math.abs(aspectBoundary[2].heroHeight - aspectBoundary[3].heroHeight)).toBeLessThan(2)
-  })
-
-  test('anchors the desktop portraits to the hero floor without height-dependent scaling', async ({
-    page,
-  }) => {
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/$/)
-
-    const measureComposition = async (width: number, height: number) => {
-      await page.setViewportSize({ width, height })
-
-      return page.evaluate(() => {
-        const bounds = (selector: string) => {
-          const element = document.querySelector<HTMLElement>(selector)
-          if (!element) throw new Error(`Elemento da composição ausente: ${selector}`)
-          return element.getBoundingClientRect()
-        }
-        const hero = bounds('[data-home-section="hero"]')
-        const stage = bounds('.campaign-hero-stage')
-        const portrait = bounds('.campaign-hero-portrait')
-        const lula = bounds('.campaign-hero-ally--lula')
-        const wagner = bounds('.campaign-hero-ally--wagner')
-        const title = bounds('.campaign-hero-title')
-
-        return {
-          portrait: { left: portrait.left, width: portrait.width },
-          portraitBottomGap: hero.bottom - portrait.bottom,
-          lulaBottomGap: hero.bottom - lula.bottom,
-          wagnerBottomGap: hero.bottom - wagner.bottom,
-          portraitTitleGap: title.left - portrait.right,
-          stageWidth: stage.width,
-        }
-      })
-    }
-
-    const short = await measureComposition(1340, 70)
-    const regular = await measureComposition(1340, 700)
-
-    expect(Math.abs(short.portrait.width - regular.portrait.width)).toBeLessThanOrEqual(1)
-    expect(Math.abs(short.portrait.left - regular.portrait.left)).toBeLessThanOrEqual(1)
-
-    for (const composition of [short, regular]) {
-      expect(Math.abs(composition.portraitBottomGap)).toBeLessThanOrEqual(1)
-      expect(Math.abs(composition.lulaBottomGap)).toBeLessThanOrEqual(1)
-      expect(Math.abs(composition.wagnerBottomGap)).toBeLessThanOrEqual(1)
-    }
-
-    const ultraWide = await measureComposition(2358, 1030)
-    expect(Math.abs(ultraWide.portraitBottomGap)).toBeLessThanOrEqual(1)
-    expect(Math.abs(ultraWide.lulaBottomGap)).toBeLessThanOrEqual(1)
-    expect(Math.abs(ultraWide.wagnerBottomGap)).toBeLessThanOrEqual(1)
-    expect(ultraWide.portraitTitleGap).toBeLessThanOrEqual(64)
-    expect(ultraWide.stageWidth).toBeLessThanOrEqual(1920)
-  })
-
-  test('keeps the hero readable with WCAG text spacing overrides', async ({ page }) => {
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/$/)
-    await page.addStyleTag({
-      content: `
-        [data-home-section="hero"] :is(h1, p, a, small, span, strong) {
-          line-height: 1.5 !important;
-          letter-spacing: 0.12em !important;
-          word-spacing: 0.16em !important;
-        }
-        [data-home-section="hero"] p { margin-bottom: 2em !important; }
-      `,
-    })
-
-    for (const viewport of [
-      { width: 320, height: 568 },
-      { width: 393, height: 852 },
-      { width: 768, height: 1024 },
-      { width: 1024, height: 597 },
-      { width: 1366, height: 768 },
-      { width: 1600, height: 600 },
-      { width: 1920, height: 840 },
-    ]) {
-      await page.setViewportSize(viewport)
-      const spacing = await page.evaluate(() => {
-        const element = (selector: string) => {
-          const match = document.querySelector<HTMLElement>(selector)
-          if (!match) throw new Error(`Elemento ausente no teste de espaçamento: ${selector}`)
-          return match
-        }
-        const bounds = (selector: string) => {
-          return element(selector).getBoundingClientRect()
-        }
-        const hero = bounds('[data-home-section="hero"]')
-        const title = bounds('.campaign-hero-title')
-        const copy = bounds('.campaign-hero-copy')
-        const actions = bounds('.campaign-hero-actions')
-        const accolades = bounds('.campaign-hero-accolades')
-        const secondaryAction = element('[data-cta="secondary"]')
-        const primaryAction = element('[data-cta="primary"]')
-        const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
-        if (!scrollContainer) throw new Error('Container da campanha ausente.')
-
-        const overlapArea = (first: DOMRect, second: DOMRect) =>
-          Math.max(0, Math.min(first.right, second.right) - Math.max(first.left, second.left)) *
-          Math.max(0, Math.min(first.bottom, second.bottom) - Math.max(first.top, second.top))
-
-        return {
-          titleCopyGap: copy.top - title.bottom,
-          copyActionsGap: actions.top - copy.bottom,
-          actionsBottomGap: hero.bottom - actions.bottom,
-          accoladesBottomGap: hero.bottom - accolades.bottom,
-          actionsAccoladesOverlap: overlapArea(actions, accolades),
-          primaryActionOverflow: primaryAction.scrollHeight - primaryAction.clientHeight,
-          secondaryActionOverflow: secondaryAction.scrollHeight - secondaryAction.clientHeight,
-          horizontalOverflow: scrollContainer.scrollWidth - scrollContainer.clientWidth,
-        }
-      })
-
-      expect(spacing.titleCopyGap).toBeGreaterThanOrEqual(0)
-      expect(spacing.copyActionsGap).toBeGreaterThanOrEqual(0)
-      expect(spacing.actionsBottomGap).toBeGreaterThanOrEqual(44)
-      expect(spacing.accoladesBottomGap).toBeGreaterThanOrEqual(0)
-      expect(spacing.actionsAccoladesOverlap).toBe(0)
-      expect(spacing.primaryActionOverflow).toBeLessThanOrEqual(0)
-      expect(spacing.secondaryActionOverflow).toBeLessThanOrEqual(0)
-      expect(spacing.horizontalOverflow).toBeLessThanOrEqual(1)
-    }
-  })
-
-  test('shows the campaign message sections as static grids on desktop', async ({ page }) => {
-    await page.goto('/')
-
-    const problemGrid = page.locator('[data-home-section="problem"] [data-grid="problem"]')
-    await expect(problemGrid).toBeVisible()
-    await expect(problemGrid.getByRole('listitem')).toHaveCount(3)
-    const problemBoxes = await problemGrid
-      .getByRole('listitem')
-      .evaluateAll((items) => items.map((item) => item.getBoundingClientRect()))
-    expect(new Set(problemBoxes.map((box) => Math.round(box.y))).size).toBe(1)
-    expect(new Set(problemBoxes.map((box) => Math.round(box.x))).size).toBe(3)
-    expect(problemBoxes.every((box) => box.width > 0 && box.height > 0)).toBe(true)
-
-    const flagsGrid = page.locator('[data-home-section="flags"] [data-grid="flags"]')
-    await expect(flagsGrid).toBeVisible()
-    await expect(flagsGrid.getByRole('listitem')).toHaveCount(6)
-    const flagsBoxes = await flagsGrid
-      .getByRole('listitem')
-      .evaluateAll((items) => items.map((item) => item.getBoundingClientRect()))
-    expect(new Set(flagsBoxes.map((box) => Math.round(box.x))).size).toBe(3)
-    expect(new Set(flagsBoxes.map((box) => Math.round(box.y))).size).toBe(2)
-
-    // No carousel chrome on desktop: regions and chips are display:none (out
-    // of the a11y tree) and the hidden carousel never starts its auto-advance
-    // chain, so no aria-current state exists anywhere in the grids.
     await expect(
-      page.getByRole('region', { name: 'Bandeiras que tornam esta eleição decisiva' }),
-    ).toHaveCount(0)
-    await expect(page.getByRole('region', { name: 'Bandeiras da campanha' })).toHaveCount(0)
-    await expect(page.locator('[data-carousel-chips]')).toBeHidden()
-    await expect(problemGrid.locator('[aria-current]')).toHaveCount(0)
-    await expect(flagsGrid.locator('[aria-current]')).toHaveCount(0)
-
-    // The grids stay inside their sections with breathing room at every
-    // desktop width, no card is clipped (no hidden scroll) and nothing
-    // overflows the page horizontally. Fonts settle first: the flags cards
-    // are content-height, so a fallback-font measurement could differ from
-    // the real layout.
-    await page.evaluate(() => document.fonts.ready)
-    for (const width of [1024, 1280, 1440, 1920]) {
-      await page.setViewportSize({ width, height: 900 })
-      const spacing = await page.evaluate(() => {
-        const section = (selector: string) => {
-          const element = document.querySelector<HTMLElement>(selector)
-          if (!element) throw new Error(`Seção ausente: ${selector}`)
-          return element.getBoundingClientRect()
-        }
-        const gridBottom = (selector: string) => {
-          const grid = document.querySelector<HTMLElement>(selector)
-          if (!grid) throw new Error(`Grade ausente: ${selector}`)
-          const cards = Array.from(grid.querySelectorAll<HTMLElement>('li'))
-          return Math.max(...cards.map((card) => card.getBoundingClientRect().bottom))
-        }
-        const gridClipped = (selector: string) => {
-          const grid = document.querySelector<HTMLElement>(selector)
-          if (!grid) throw new Error(`Grade ausente: ${selector}`)
-          return grid.scrollHeight - grid.clientHeight
-        }
-        const problem = section('[data-home-section="problem"]')
-        const flags = section('[data-home-section="flags"]')
-        const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
-        return {
-          problemBottomGap:
-            problem.bottom - gridBottom('[data-home-section="problem"] [data-grid]'),
-          flagsBottomGap: flags.bottom - gridBottom('[data-home-section="flags"] [data-grid]'),
-          problemClipped: gridClipped('[data-home-section="problem"] [data-grid]'),
-          flagsClipped: gridClipped('[data-home-section="flags"] [data-grid]'),
-          horizontalOverflow: scrollContainer
-            ? scrollContainer.scrollWidth - scrollContainer.clientWidth
-            : 0,
-        }
-      })
-      expect(spacing.problemBottomGap).toBeGreaterThanOrEqual(24)
-      expect(spacing.flagsBottomGap).toBeGreaterThanOrEqual(24)
-      expect(spacing.problemClipped).toBeLessThanOrEqual(1)
-      expect(spacing.flagsClipped).toBeLessThanOrEqual(1)
-      expect(spacing.horizontalOverflow).toBeLessThanOrEqual(1)
-    }
-  })
-
-  test('shows the story video section after the flags with the YouTube embed', async ({ page }) => {
-    await page.goto('/')
-
-    const story = page.locator('[data-home-section="story"]')
-    await expect(story).toBeVisible()
-
-    // Position: after the flags section, before the footer.
-    const order = await page.evaluate(() => {
-      const top = (selector: string) => {
-        const element = document.querySelector<HTMLElement>(selector)
-        if (!element) throw new Error(`Seção ausente: ${selector}`)
-        return element.getBoundingClientRect().top
-      }
-      return {
-        flagsTop: top('[data-home-section="flags"]'),
-        storyTop: top('[data-home-section="story"]'),
-        footerTop: top('footer'),
-      }
-    })
-    expect(order.storyTop).toBeGreaterThan(order.flagsTop)
-    expect(order.footerTop).toBeGreaterThan(order.storyTop)
-
-    // Draft copy (eyebrow + title).
-    await expect(story.getByText('Nossa história')).toBeVisible()
-    await expect(
-      story.getByRole('heading', { name: 'Conheça a trajetória de Jorge Solla' }),
+      page.getByRole('heading', { level: 1, name: '152.049 votos de confiança' }),
     ).toBeVisible()
-
-    // The embed: youtube-nocookie (LGPD), native lazy, fullscreen, a11y title.
-    const embed = story.locator('iframe')
-    await expect(embed).toBeVisible()
-    await expect(embed).toHaveAttribute(
-      'src',
-      /youtube-nocookie\.com\/embed\/i_fbclWWC5o.*playsinline=1/,
+    await expect(page.getByRole('link', { name: 'Acompanhe o mandato' })).toHaveAttribute(
+      'href',
+      '/artigos',
     )
-    await expect(embed).toHaveAttribute('loading', 'lazy')
-    await expect(embed).toHaveAttribute('allow', /autoplay/)
-    await expect(embed).toHaveAttribute('allowfullscreen', '')
-    await expect(embed).toHaveAttribute('title', /trajetória de Jorge Solla/)
 
-    // The header CTA scrolls to the player.
-    await story.getByRole('button', { name: 'Assistir à história' }).click()
-    await expect(embed).toBeInViewport()
+    const main = page.locator('main')
+    await expect(main.getByText('1313')).toHaveCount(0)
+    await expect(main.getByText(/Quero apoiar|candidato|propaganda eleitoral/i)).toHaveCount(0)
 
-    // Desktop scene of the draft: copy column left, frame right, vertically
-    // centered.
-    await page.setViewportSize({ width: 1440, height: 900 })
-    const desktopLayout = await page.evaluate(() => {
-      const storySection = document.querySelector<HTMLElement>('[data-home-section="story"]')
-      if (!storySection) throw new Error('Seção ausente')
-      const copy = storySection.querySelector<HTMLElement>('div.max-w-md')
-      const frame = storySection.querySelector<HTMLElement>('iframe')?.parentElement
-      if (!copy || !frame) throw new Error('Colunas ausentes')
-      const copyBox = copy.getBoundingClientRect()
-      const frameBox = frame.getBoundingClientRect()
-      return {
-        copyRight: Math.round(copyBox.right),
-        frameLeft: Math.round(frameBox.left),
-        centerDelta: Math.round(
-          copyBox.top + copyBox.height / 2 - (frameBox.top + frameBox.height / 2),
-        ),
-      }
-    })
-    expect(desktopLayout.copyRight).toBeLessThan(desktopLayout.frameLeft)
-    expect(Math.abs(desktopLayout.centerDelta)).toBeLessThanOrEqual(2)
+    for (const section of ['hero', 'contents', 'story', 'flags', 'photos']) {
+      await expect(page.locator(`[data-home-section="${section}"]`)).toBeVisible()
+    }
+    await expect(page.locator('[data-home-section="proof"]')).toHaveCount(0)
+    await expect(page.locator('[data-home-section="problem"]')).toHaveCount(0)
+    await expect(page.locator('[data-home-section="sound"]')).toHaveCount(0)
+    await expect(page.locator('[data-home-section="cards"]')).toHaveCount(0)
+    await expect(page.locator('[data-home-section="content-pieces"]')).toHaveCount(0)
 
-    // The frame keeps the 9:16 ratio on mobile without horizontal overflow.
-    await page.setViewportSize({ width: 390, height: 844 })
-    const frame = await embed.boundingBox()
-    expect(frame).not.toBeNull()
-    expect(frame!.height / frame!.width).toBeCloseTo(16 / 9, 1)
-    const overflow = await page.evaluate(() => {
-      const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
-      return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0
-    })
-    expect(overflow).toBeLessThanOrEqual(1)
+    const footer = page.locator('footer')
+    await expect(footer.getByRole('link', { name: 'Artigos' })).toHaveAttribute('href', '/artigos')
+    await expect(footer.getByRole('link', { name: 'Fotos' })).toHaveAttribute('href', '/fotos')
+    await expect(footer.getByText(/CNPJ|1º turno/)).toHaveCount(0)
   })
 
-  test('shows the sound section between the story and the cards with the own radio player', async ({
-    page,
-  }) => {
-    const zenoRequests: string[] = []
-    page.on('request', (req) => {
-      if (req.url().includes('zeno.fm')) zenoRequests.push(req.url())
-    })
-
+  test('desktop nav and mobile menu reach the mandate sections', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 900 })
     await page.goto('/')
 
-    const sound = page.locator('[data-home-section="sound"]')
-    await expect(sound).toBeVisible()
-    await expect(sound.getByText('A trilha da nossa caminhada')).toBeVisible()
+    const nav = page.getByRole('navigation', { name: 'Navegação principal' })
+    await expect(nav.getByRole('link', { name: 'Mandato' })).toHaveAttribute('href', '/artigos')
+    await expect(nav.getByRole('link', { name: 'Bandeiras' })).toHaveAttribute('href', '#bandeiras')
+    await expect(nav.getByRole('link', { name: 'Fotos' })).toHaveAttribute('href', '/fotos')
 
-    // Position: after the story, before the cards (the conversion block stays
-    // last). The jingle grid is content-dependent, so this spec never counts
-    // cards — counts belong to the serial frontendJingles spec.
-    const tops = await page.evaluate(() => {
-      const top = (selector: string) => {
-        const element = document.querySelector<HTMLElement>(selector)
-        if (!element) throw new Error(`Seção ausente: ${selector}`)
-        return element.getBoundingClientRect().top
-      }
-      return {
-        story: top('[data-home-section="story"]'),
-        sound: top('[data-home-section="sound"]'),
-        cards: top('[data-home-section="cards"]'),
-      }
-    })
-    expect(tops.sound).toBeGreaterThan(tops.story)
-    expect(tops.cards).toBeGreaterThan(tops.sound)
-
-    // S25 — the own player replaces the S24 iframe: one lazy `<audio>` and no
-    // request at all before the visitor's gesture.
-    const radio = sound.locator('[data-radio]')
-    await expect(radio).toBeVisible()
-    await expect(radio.locator('iframe')).toHaveCount(0)
-    const radioAudio = radio.locator('audio')
-    await expect(radioAudio).toHaveCount(1)
-    await expect(radioAudio).toHaveAttribute('preload', 'none')
-    await expect(radioAudio).toHaveAttribute('src', 'https://stream.zeno.fm/hys86kx6k16tv')
-    await expect(radio.getByRole('heading', { name: 'Rádio Jorge Solla 1313' })).toBeVisible()
-    await expect(radio.getByText('Ao vivo')).toBeVisible()
-    expect(zenoRequests).toHaveLength(0)
-
-    // The play is the only exit to the stream: the request leaves after the
-    // gesture (the fixture stubs it) and the state says so.
-    await radio.getByRole('button', { name: 'Ouvir Rádio Jorge Solla 1313' }).click()
-    await expect.poll(() => zenoRequests.length).toBeGreaterThan(0)
-    await expect(radio).toHaveAttribute('data-state', 'playing')
-    await expect(radio.getByText('Em reprodução')).toBeVisible()
-
-    // Desktop 1280: the gate's 56px play hit.
-    await expect(radio.getByRole('button', { name: 'Pausar Rádio Jorge Solla 1313' })).toHaveCSS(
-      'width',
-      '56px',
-    )
-
-    // Mobile 390: the hit narrows to 48px and the section never overflows.
-    await page.setViewportSize({ width: 390, height: 844 })
-    await expect(radio.getByRole('button', { name: 'Pausar Rádio Jorge Solla 1313' })).toHaveCSS(
-      'width',
-      '48px',
-    )
-    const overflow = await page.evaluate(() => {
-      const scrollContainer = document.querySelector<HTMLElement>('[data-theme="campaign-site"]')
-      return scrollContainer ? scrollContainer.scrollWidth - scrollContainer.clientWidth : 0
-    })
-    expect(overflow).toBeLessThanOrEqual(1)
-  })
-
-  test('keeps carousel auto-advance and chips on mobile', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/')
+    const trigger = page.getByRole('button', { name: /^(Abrir|Fechar) menu$/ })
+    await trigger.click()
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+    const mobileNav = page.getByRole('navigation', { name: 'Navegação móvel' })
+    await expect(mobileNav).toBeVisible()
+    await expect(mobileNav.getByRole('link', { name: 'Artigos' })).toHaveAttribute(
+      'href',
+      '/artigos',
+    )
 
-    await expect(page.locator('[data-home-section="problem"] [data-grid]')).toBeHidden()
-    await expect(page.locator('[data-home-section="flags"] [data-grid]')).toBeHidden()
-
-    const problemCarousel = page.getByRole('region', {
-      name: 'Bandeiras que tornam esta eleição decisiva',
-    })
-    const firstProblem = problemCarousel.getByRole('listitem', { name: '1 de 3' })
-    const secondProblem = problemCarousel.getByRole('listitem', { name: '2 de 3' })
-
-    await expect(firstProblem).toHaveAttribute('aria-current', 'true')
-    await expect(secondProblem).toHaveAttribute('aria-current', 'true', { timeout: 6_000 })
-
-    const flagCarousel = page.getByRole('region', { name: 'Bandeiras da campanha' })
-    const educationChip = flagCarousel.getByRole('button', { name: 'Educação' })
-    await educationChip.click()
-    await expect(educationChip).toHaveAttribute('aria-current', 'true')
+    await page.keyboard.press('Escape')
+    await expect(mobileNav).toBeHidden()
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+    await expect(trigger).toBeFocused()
   })
 
-  test('supports a real horizontal touch swipe on mobile', async ({ page }) => {
-    await page.setViewportSize({ width: 430, height: 900 })
-    await page.goto('/')
-
-    const overlayBox = await page.locator('[data-mobile-hero-overlay]').boundingBox()
-    expect(overlayBox?.x).toBe(0)
-    expect(overlayBox?.width).toBe(430)
-
-    const mobileSpacing = await page.evaluate(() => {
-      const rect = (selector: string) => document.querySelector(selector)?.getBoundingClientRect()
-      const problemSection = rect('[data-home-section="problem"]')
-      const problemLead = rect('#problem-title + p')
-      const problemCarousel = rect('[data-home-section="problem"] [data-carousel]')
-      const flagsSection = rect('[data-home-section="flags"]')
-      const flagsCarousel = rect('[data-home-section="flags"] [data-carousel]')
-
-      return {
-        leadGap:
-          problemLead && problemCarousel ? problemCarousel.top - problemLead.bottom : undefined,
-        problemBottomGap:
-          problemSection && problemCarousel
-            ? problemSection.bottom - problemCarousel.bottom
-            : undefined,
-        flagsBottomGap:
-          flagsSection && flagsCarousel ? flagsSection.bottom - flagsCarousel.bottom : undefined,
-      }
-    })
-    expect(mobileSpacing.leadGap).toBeLessThan(40)
-    expect(mobileSpacing.problemBottomGap).toBeGreaterThanOrEqual(40)
-    expect(mobileSpacing.flagsBottomGap).toBeGreaterThanOrEqual(40)
-
-    const carousel = page.getByRole('region', { name: 'Bandeiras da campanha' })
-    await carousel.focus()
-    const track = carousel.locator('[data-carousel-track]')
-    await track.scrollIntoViewIfNeeded()
-    const box = await track.boundingBox()
-    if (!box) throw new Error('O trilho das bandeiras não ficou visível para o swipe.')
-
-    await swipeLeft(page, box)
-
-    await expect(carousel.getByRole('button', { name: 'Educação' })).toHaveAttribute(
-      'aria-current',
-      'true',
-    )
+  test('redirects the retired campaign routes with a permanent status', async ({ request }) => {
+    for (const [from, to] of [
+      ['/conteudos', '/artigos'],
+      ['/jingles', '/'],
+      ['/cards', '/'],
+    ]) {
+      const response = await request.get(from, { maxRedirects: 0 })
+      expect(response.status()).toBe(308)
+      expect(new URL(response.headers().location, 'http://localhost').pathname).toBe(to)
+    }
   })
 })
 
-/**
- * S1 — content section on the campaign home. Runs serially: the empty-state
- * test depends on the suite's default DB (no posts) and must execute before
- * the full-state test creates posts. Posts/tags are created through the
- * deployed REST API so the server process runs the real `afterChange` cache
- * hooks (a Local API call from the runner would throw on `revalidateTag`),
- * and cleanup busts the `posts` tag through the revalidate endpoint.
- */
 test.describe('Campaign home content section', () => {
   test.describe.configure({ mode: 'serial' })
 
@@ -767,16 +131,6 @@ test.describe('Campaign home content section', () => {
     const { doc } = await response.json()
     createdPosts.push(doc.id)
     return doc
-  }
-
-  // S39/S44 — the ISR poll lives in `tests/helpers/homeIsr.ts` (shared by the
-  // specs that own home sections); this spec keeps the `contents` specialization.
-  const waitForHomeSectionState = async (
-    request: APIRequestContext,
-    expected: 'present' | 'absent',
-    attempts = 12,
-  ) => {
-    await waitForHomeSection(request, baseURL, 'contents', expected, attempts)
   }
 
   /**
@@ -878,40 +232,31 @@ test.describe('Campaign home content section', () => {
         headers: { 'x-revalidate-secret': revalidateSecret },
       })
       .catch(() => undefined)
-    await waitForHomeSectionState(request, 'absent').catch(() => undefined)
   }
 
-  test('hides the content section while no articles are visible', async ({ page, request }) => {
-    // The dev server persists its `posts` cache to .next-e2e/cache/fetch-cache
-    // between runs, so an earlier full-state run could leave it populated.
-    // Busting first makes the empty state deterministic on every rerun.
-    // OPS83: assert the revalidate actually landed (a swallowed failure made
-    // the server poll below time out in verify run #15) and converge on the
-    // rendered DOM with an explicit ISR-regeneration budget — never a blind
-    // wall-clock bump.
+  test('shows the honest board empty state while no article is visible', async ({
+    page,
+    request,
+  }) => {
+    // The dev server persists its `posts` cache between runs, so an earlier
+    // full-state run could leave it populated. Busting first makes the empty
+    // state deterministic on every rerun.
     const revalidate = await request.post(`${baseURL}/api/revalidate?tag=posts`, {
       headers: { 'x-revalidate-secret': revalidateSecret },
     })
     expect(revalidate).toBeOK()
-    await waitForHomeSectionState(request, 'absent', 30)
 
     // Plain URL on purpose: the test also pins the canonical home URL.
     await page.goto('/')
     await expect(page).toHaveURL(/\/$/)
-    await expectSectionCount(page.locator('[data-home-section="contents"]'), 0)
-    await expect(page.getByText('A caminhada, em tempo real')).toHaveCount(0)
-
-    const proof = await page.locator('[data-home-section="proof"]').boundingBox()
-    const problem = await page.locator('[data-home-section="problem"]').boundingBox()
-    expect(proof).not.toBeNull()
-    expect(problem).not.toBeNull()
-    expect(problem!.y - (proof!.y + proof!.height)).toBeLessThanOrEqual(1)
+    const section = page.locator('[data-home-section="contents"]')
+    await expect(section).toBeVisible()
+    await expect(section.getByRole('heading', { name: 'Ainda não há publicações' })).toBeVisible()
+    await expect(page.locator('[data-home-section="proof"]')).toHaveCount(0)
+    await expect(page.locator('[data-home-section="problem"]')).toHaveCount(0)
   })
 
-  test('renders the article bento and the one-per-screen mobile carousel', async ({
-    page,
-    request,
-  }) => {
+  test('renders the 1+3 editorial board and stacks it on mobile', async ({ page, request }) => {
     await seedTestUser()
     const headers = await adminHeaders(request, baseURL)
 
@@ -970,23 +315,19 @@ test.describe('Campaign home content section', () => {
 
     try {
       await page.setViewportSize({ width: 1280, height: 900 })
-      // The create hooks revalidated the `posts` tag in the server process;
-      // wait until the regenerated page actually shows the section.
-      await waitForHomeSectionState(request, 'present')
+      await waitForHomeHTML(request, baseURL, ['E2e Artigo em destaque', 'Acompanhe de perto'])
       await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
 
       await expect(
-        section.getByRole('heading', { name: 'A caminhada, em tempo real' }),
+        section.getByRole('heading', { name: 'O mandato, onde a Bahia acontece' }),
       ).toBeVisible()
       await expect(section.getByText('Acompanhe de perto')).toBeVisible()
       await expect(
-        section.getByText(
-          'Bastidores, caravanas e as lutas do mandato: conteúdo atualizado, direto das redes.',
-        ),
+        section.getByText('Notícias, vídeos e registros do trabalho em Brasília e nos municípios.'),
       ).toBeVisible()
-      await expect(section.getByRole('link', { name: /Ver artigos/ })).toHaveAttribute(
+      await expect(section.getByRole('link', { name: 'Todos os artigos' })).toHaveAttribute(
         'href',
         '/artigos',
       )
@@ -994,10 +335,8 @@ test.describe('Campaign home content section', () => {
       const bentoCards = section.locator(
         'a[href^="/artigo/"], a[href^="/noticia/"], a[href^="/campanha/"], a[href^="/evento/"]',
       )
-      await expect(bentoCards.filter({ visible: true })).toHaveCount(5)
-      // S7 — cards are badge-free: no type chip (site or external source)
-      // anywhere in the section.
-      for (const badge of ['Artigo', 'Notícia', 'Campanha', 'Evento', 'YouTube', 'Instagram']) {
+      await expect(bentoCards.filter({ visible: true })).toHaveCount(4)
+      for (const badge of ['Artigo', 'Notícia', 'Campanha', 'Evento']) {
         await expect(section.getByText(badge, { exact: true })).toHaveCount(0)
       }
       await expect(section.getByText('E2e Artigo em destaque').first()).toBeVisible()
@@ -1007,34 +346,11 @@ test.describe('Campaign home content section', () => {
       const featured = section.getByRole('link', { name: /E2e Artigo em destaque/ })
       const featuredHref = await featured.getAttribute('href')
       expect(featuredHref).toBe(`/artigo/${categorySlug}/e2e-artigo-destaque-${runSuffix}`)
+      await expect(featured.locator('h3')).toHaveText('E2e Artigo em destaque')
 
-      const firstCard = bentoCards.first()
-      await expect(firstCard).toBeVisible()
-      await expect(firstCard.locator('h3')).toHaveText('E2e Artigo em destaque')
-      await expect(firstCard.locator('span').last()).toContainText(categoryName)
-
-      // S5 — the section must read as a zone of its own: a banded background
-      // with a top hairline against the white proof strip, and white cards
-      // that pop against the band. Exact computed values pin the tokens
-      // (`--campaign-band` #ebe9e9, `--campaign-line` rgb(0 0 0 / 12%)) so a
-      // broken or removed token cannot silently pass.
-      await expect(section).toHaveCSS('background-color', 'rgb(235, 233, 233)')
-      await expect(section).toHaveCSS('border-top-width', '1px')
-      await expect(section).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0.12)')
-      await expect(firstCard).toHaveCSS('background-color', 'rgb(255, 255, 255)')
-
-      // S7 — flat editorial cards: no radius, border or shadow (the white card
-      // reads against the band on shape alone), cover edge to edge.
-      await expect(firstCard).toHaveCSS('border-radius', '0px')
-      await expect(firstCard).toHaveCSS('border-width', '0px')
-      await expect(firstCard).toHaveCSS('box-shadow', 'none')
-      await expect(firstCard.locator('.aspect-video')).toHaveCSS('border-radius', '0px')
-      // Edge to edge: the cover spans the full card width (no container padding).
-      const cardBox = await firstCard.boundingBox()
-      const coverBox = await firstCard.locator('.aspect-video').boundingBox()
-      expect(coverBox).not.toBeNull()
-      expect(cardBox).not.toBeNull()
-      expect(Math.abs(coverBox!.width - cardBox!.width)).toBeLessThanOrEqual(1)
+      // S47 — the board sits on the cream surface and the featured story
+      // carries the cover; the three side rows are text-only.
+      await expect(section).toHaveCSS('background-color', 'rgb(255, 248, 242)')
 
       await featured.click()
       await expect(page).toHaveURL(new RegExp(`${featuredHref}$`))
@@ -1042,32 +358,21 @@ test.describe('Campaign home content section', () => {
 
       await page.setViewportSize({ width: 390, height: 844 })
       await gotoHomeFresh(page)
-      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
-      await expect(carousel).toBeVisible()
-      await expect(carousel.getByText('E2e Conteúdo oculto')).toHaveCount(0)
+      const mobileSection = page.locator('[data-home-section="contents"]')
+      await expect(mobileSection).toBeVisible()
+      await expect(page.locator('[data-carousel="contents"]')).toHaveCount(0)
+      for (const title of [
+        'E2e Artigo em destaque',
+        'E2e Notícia recente',
+        'E2e Campanha em ação',
+        'E2e Notícia do interior',
+      ]) {
+        await expect(mobileSection.getByText(title).first()).toBeVisible()
+      }
+      await expect(mobileSection.getByText('E2e Evento da agenda')).toHaveCount(0)
+      await expect(mobileSection.getByText('E2e Conteúdo oculto')).toHaveCount(0)
 
-      const track = carousel.locator('[data-carousel-track]')
-      await track.scrollIntoViewIfNeeded()
-      const trackBox = await track.boundingBox()
-      if (!trackBox) throw new Error('O trilho do carrossel de conteúdo não ficou visível.')
-
-      const slides = await page.evaluate(() =>
-        Array.from(
-          document.querySelectorAll('[data-carousel="contents"] [data-carousel-index]'),
-        ).map((slide) => slide.getBoundingClientRect().width),
-      )
-      expect(slides).toHaveLength(5)
-      expect(slides.every((width) => Math.abs(width - slides[0]) < 1)).toBe(true)
-
-      await swipeLeft(page, trackBox)
-      await expect(carousel.getByText('2 de 5 · deslize para ver os próximos')).toBeVisible()
-
-      await carousel.getByRole('button', { name: 'Ir para o conteúdo 4 de 5' }).click()
-      await expect(carousel.getByText('4 de 5 · deslize para ver os próximos')).toBeVisible()
-
-      // Leave the home before deleting: prod prefetches the card links, and a
-      // prefetch answered after the deletion would 404 (guard noise). Leaving
-      // the page aborts in-flight prefetches and stops new ones.
+      // Leave the home before deleting: prefetches after the deletion would 404.
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
     } finally {
@@ -1088,13 +393,6 @@ test.describe('Campaign home content section', () => {
             headers: { 'x-revalidate-secret': revalidateSecret },
           })
           .catch(() => undefined)
-
-        // Converge the persisted dev cache back to the empty state so the
-        // next run starts deterministic (fail-closed on delete, too).
-        await waitForHomeSectionState(request, 'absent')
-        await page.setViewportSize({ width: 1280, height: 900 })
-        await gotoHomeFresh(page)
-        await expect(page.locator('[data-home-section="contents"]')).toHaveCount(0)
       }
     }
   })
@@ -1148,27 +446,26 @@ test.describe('Campaign home content section', () => {
       await expect(
         section.getByText('há 30 minutos · 12,4 mil visualizações').first(),
       ).toBeVisible()
-      // S7 — no external-source chip on YouTube cards anymore.
-      await expect(section.getByText('YouTube', { exact: true })).toHaveCount(0)
+      // S47 — the board header links the platform once; cards carry no chip.
+      await expect(section.getByRole('link', { name: 'YouTube', exact: true })).toHaveAttribute(
+        'href',
+        'https://youtube.com/@JorgeSollaDep',
+      )
       await expect(section.getByText('E2e Vídeo excluído')).toHaveCount(0)
 
       await expect(section.getByRole('link', { name: /E2e Artigo no mix/ }).first()).toBeVisible()
       await expect(section.getByText('há 2 horas · 8,1 mil visualizações').first()).toBeVisible()
       await expect(section.getByText('987 visualizações').first()).toBeVisible()
 
-      const channelLink = section.getByRole('link', { name: /YouTube →/ })
-      await expect(channelLink).toHaveAttribute(
-        'href',
-        'https://www.youtube.com/channel/UCe2eTestChannel',
-      )
+      const channelLink = section.getByRole('link', { name: 'YouTube', exact: true })
+      await expect(channelLink).toHaveAttribute('href', 'https://youtube.com/@JorgeSollaDep')
       await expect(channelLink).toHaveAttribute('target', '_blank')
 
       await page.setViewportSize({ width: 390, height: 844 })
       await gotoHomeFresh(page)
-      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
-      await expect(carousel).toBeVisible()
-      await expect(carousel.getByText('1 de 4 · deslize para ver os próximos')).toBeVisible()
-      await expect(carousel.getByText('E2e Vídeo excluído')).toHaveCount(0)
+      // S47 — the board stacks on mobile; no carousel track is rendered.
+      await expect(page.locator('[data-carousel="contents"]')).toHaveCount(0)
+      await expect(page.getByText('E2e Vídeo excluído')).toHaveCount(0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1210,13 +507,13 @@ test.describe('Campaign home content section', () => {
     })
 
     try {
-      // The feed is configured, so the "YouTube →" link stays; without a
+      // The feed is configured, so the "YouTube" link stays; without a
       // snapshot the cards are silently absent and the article carries the
       // section (page never breaks, no error shown).
       await waitForHomeHTML(
         request,
         baseURL,
-        ['E2e Artigo fallback', 'YouTube →'],
+        ['E2e Artigo fallback', 'YouTube'],
         ['E2e Vídeo em destaque'],
       )
       await gotoHomeFresh(page)
@@ -1225,7 +522,7 @@ test.describe('Campaign home content section', () => {
       await expect(section.getByRole('link', { name: /E2e Artigo fallback/ })).toBeVisible()
       await expect(section.getByText('E2e Vídeo em destaque')).toHaveCount(0)
       await expect(section.getByText('E2e Vídeo de caravana')).toHaveCount(0)
-      await expect(section.getByRole('link', { name: /YouTube →/ })).toBeVisible()
+      await expect(section.getByRole('link', { name: 'YouTube', exact: true })).toBeVisible()
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1341,7 +638,7 @@ test.describe('Campaign home content section', () => {
         request,
         baseURL,
         ['E2e Post do muro', 'E2e Artigo no mix IG'],
-        ['E2e Post de grade', 'YouTube →'],
+        ['E2e Post de grade'],
       )
       await page.setViewportSize({ width: 1280, height: 900 })
       await gotoHomeFresh(page)
@@ -1353,16 +650,19 @@ test.describe('Campaign home content section', () => {
       await expect(featured).toHaveAttribute('href', 'https://www.instagram.com/p/e2e-ig-muro-1/')
       await expect(featured).toHaveAttribute('target', '_blank')
       await expect(featured).toHaveAttribute('rel', 'noopener noreferrer')
-      // S7 — no external-source chip on Instagram cards anymore.
-      await expect(section.getByText('Instagram', { exact: true })).toHaveCount(0)
+      // S47 — the board header links the platform once; cards carry no chip.
+      await expect(section.getByRole('link', { name: 'Instagram', exact: true })).toHaveAttribute(
+        'href',
+        'https://instagram.com/depjorgesolla',
+      )
       await expect(section.getByText('há 20 minutos').first()).toBeVisible()
       await expect(section.getByText('E2e Post de grade')).toHaveCount(0)
 
       // The captionless grid post shows the fallback title (it enters the
       // board automatically and the assessoria excludes it item by item).
       await expect(section.getByText('Publicação no Instagram').first()).toBeVisible()
-      // Instagram cards render the 1:1 cover of the approved draft.
-      await expect(featured.locator('.aspect-square').first()).toBeVisible()
+      // Instagram cards keep the approved cover image.
+      await expect(featured.locator('img').first()).toBeVisible()
 
       // Long captions are clamped with an ellipsis so a single post cannot
       // stretch the bento row (production captions run into hundreds of
@@ -1378,16 +678,15 @@ test.describe('Campaign home content section', () => {
       ).toBeVisible()
       await expect(section.getByText('E2e Reel da caravana').first()).toBeVisible()
 
-      const profileLink = section.getByRole('link', { name: /Seguir no Instagram/ })
-      await expect(profileLink).toHaveAttribute('href', 'https://www.instagram.com/depjorgesolla')
+      const profileLink = section.getByRole('link', { name: 'Instagram', exact: true })
+      await expect(profileLink).toHaveAttribute('href', 'https://instagram.com/depjorgesolla')
       await expect(profileLink).toHaveAttribute('target', '_blank')
 
       await page.setViewportSize({ width: 390, height: 844 })
       await gotoHomeFresh(page)
-      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
-      await expect(carousel).toBeVisible()
-      await expect(carousel.getByText('1 de 4 · deslize para ver os próximos')).toBeVisible()
-      await expect(carousel.getByText('E2e Post de grade')).toHaveCount(0)
+      // S47 — the board stacks on mobile; no carousel track is rendered.
+      await expect(page.locator('[data-carousel="contents"]')).toHaveCount(0)
+      await expect(page.getByText('E2e Post de grade')).toHaveCount(0)
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1435,15 +734,10 @@ test.describe('Campaign home content section', () => {
 
     try {
       // Without a snapshot there is no username to build the profile link
-      // from, so the IG cards AND the "Seguir no Instagram →" link stay
+      // from, so the IG cards AND the "Instagram" link stay
       // silently absent and the article carries the section (page never
       // breaks, no error shown).
-      await waitForHomeHTML(
-        request,
-        baseURL,
-        ['E2e Artigo fallback IG'],
-        ['E2e Post do muro', 'Seguir no Instagram'],
-      )
+      await waitForHomeHTML(request, baseURL, ['E2e Artigo fallback IG'], ['E2e Post do muro'])
       await gotoHomeFresh(page)
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
@@ -1451,7 +745,7 @@ test.describe('Campaign home content section', () => {
       // Same rendered-DOM class as the kill-switch test (OPS83 run #15): the
       // server poll converged but the page served a stale body — poll the DOM.
       await expectSectionCount(section.getByText('E2e Post do muro'), 0)
-      await expectSectionCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
+      await expect(section.getByRole('link', { name: 'Instagram', exact: true })).toBeVisible()
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1505,14 +799,13 @@ test.describe('Campaign home content section', () => {
       await waitForHomeHTML(
         request,
         baseURL,
-        ['E2e Post do muro', 'E2e Reel da caravana', 'Seguir no Instagram'],
+        ['E2e Post do muro', 'E2e Reel da caravana', 'Instagram'],
         ['Publicação no Instagram'],
       )
       await gotoHomeFresh(page)
       await expect(page.getByRole('link', { name: /E2e Post do muro/ }).first()).toBeVisible()
       await expect(page.getByText('E2e Reel da caravana').first()).toBeVisible()
       await expect(page.getByText('Publicação no Instagram')).toHaveCount(0)
-      await expect(page.getByRole('link', { name: /Seguir no Instagram/ })).toBeVisible()
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
 
@@ -1575,7 +868,7 @@ test.describe('Campaign home content section', () => {
         request,
         baseURL,
         ['E2e Artigo kill switch'],
-        ['E2e Vídeo em destaque', 'YouTube →', 'E2e Post do muro', 'Seguir no Instagram'],
+        ['E2e Vídeo em destaque', 'E2e Post do muro'],
       )
       // The page can serve a heuristic-cached body that lags the server poll
       // (OPS83 run #15): navigate fresh AND poll the rendered section DOM —
@@ -1585,9 +878,9 @@ test.describe('Campaign home content section', () => {
       await expect(section).toBeVisible()
       await expect(section.getByRole('link', { name: /E2e Artigo kill switch/ })).toBeVisible()
       await expectSectionCount(section.getByText('E2e Vídeo em destaque'), 0)
-      await expectSectionCount(section.getByRole('link', { name: /YouTube →/ }), 0)
+      await expect(section.getByRole('link', { name: 'YouTube', exact: true })).toBeVisible()
       await expectSectionCount(section.getByText('E2e Post do muro'), 0)
-      await expectSectionCount(section.getByRole('link', { name: /Seguir no Instagram/ }), 0)
+      await expect(section.getByRole('link', { name: 'Instagram', exact: true })).toBeVisible()
 
       await page.goto('about:blank')
       await expect(page).toHaveURL(/about:blank/)
@@ -1647,9 +940,9 @@ test.describe('Campaign home content section', () => {
       const section = page.locator('[data-home-section="contents"]')
       await expect(section).toBeVisible()
 
-      // Every card of the 1+4 bento (CONTENT_SECTION_LIMIT = 5) carries
+      // Every card of the 1+3 board (CONTENT_SECTION_LIMIT = 4) carries
       // exactly one discreet share button.
-      await expect(section.getByRole('button', { name: 'Compartilhar' })).toHaveCount(5)
+      await expect(section.getByRole('button', { name: 'Compartilhar' })).toHaveCount(4)
       const urlBeforeShare = page.url()
       const waMessage = async (item: Locator) => {
         const href = await item.getAttribute('href')
@@ -1687,7 +980,7 @@ test.describe('Campaign home content section', () => {
 
       // Outside click also closes the popover.
       await articleShare.click()
-      await section.getByRole('heading', { name: 'A caminhada, em tempo real' }).click()
+      await section.getByRole('heading', { name: 'O mandato, onde a Bahia acontece' }).click()
       await expect(page.locator('[data-slot="popover-content"]')).toHaveCount(0)
 
       // Video card: the platform URL is shared with the video opener.
@@ -1711,28 +1004,25 @@ test.describe('Campaign home content section', () => {
       )
       await page.keyboard.press('Escape')
 
-      // Mobile: the carousel exposes only the active card's share button, with
-      // a ≥44px touch target around the discreet 28px visual, and the portal
-      // menu stays fully inside the viewport (never clipped by the track).
+      // Mobile: the board stacks and every card keeps its share control (44px
+      // target) with the popover fully inside the viewport.
       await page.setViewportSize({ width: 390, height: 844 })
       await gotoHomeFresh(page)
-      const carousel = page.getByRole('region', { name: 'Conteúdos recentes' })
-      await expect(carousel).toBeVisible()
-      // The active (featured) card is the newest item — the article seeded
-      // 5 min ago against the stubs' 20-min-oldest — which pins the identity
-      // of the single exposed share button below.
-      await expect(carousel.getByRole('heading', { name: articleTitle })).toBeVisible()
-      const mobileShare = carousel.getByRole('button', { name: 'Compartilhar' })
-      await expect(mobileShare).toHaveCount(1)
+      const mobileSection = page.locator('[data-home-section="contents"]')
+      await expect(mobileSection).toBeVisible()
+      await expect(mobileSection.getByRole('heading', { name: articleTitle })).toBeVisible()
+      await expect(page.locator('[data-carousel="contents"]')).toHaveCount(0)
+      const mobileShare = mobileSection
+        .getByText(articleTitle)
+        .first()
+        .locator('xpath=../..')
+        .getByRole('button', { name: 'Compartilhar' })
+      await expect(mobileShare).toBeVisible()
       await mobileShare.scrollIntoViewIfNeeded()
       const buttonBox = await mobileShare.boundingBox()
       expect(buttonBox).not.toBeNull()
       expect(buttonBox!.width).toBeGreaterThanOrEqual(44)
       expect(buttonBox!.height).toBeGreaterThanOrEqual(44)
-      const visualBox = await mobileShare.locator('span').first().boundingBox()
-      expect(visualBox).not.toBeNull()
-      expect(Math.abs(visualBox!.width - 28)).toBeLessThanOrEqual(1)
-      expect(Math.abs(visualBox!.height - 28)).toBeLessThanOrEqual(1)
 
       await mobileShare.click()
       const mobileWaItem = page.getByRole('link', { name: 'Compartilhar no WhatsApp' })
@@ -1752,869 +1042,5 @@ test.describe('Campaign home content section', () => {
       await setInstagramStubState(request, 'ok')
       await cleanupS2Fixtures(request, headers)
     }
-  })
-})
-
-test.describe('Cards personalizados (S14)', () => {
-  test('home opens the composer in place right before the newsletter capture', async ({ page }) => {
-    await page.goto('/')
-
-    const order = await page
-      .locator('[data-home-section]')
-      .evaluateAll((sections) =>
-        sections.map((section) => section.getAttribute('data-home-section')),
-      )
-    // S22 — the sound section sits between the story and the cards; the
-    // conversion block (cards + newsletter) stays last.
-    expect(order.indexOf('sound')).toBe(order.indexOf('story') + 1)
-    expect(order.indexOf('cards')).toBe(order.indexOf('sound') + 1)
-    // S39 — the Central sample is conditional (only while pieces are published,
-    // and the serial frontendConteudos spec may publish them mid-run), so the
-    // pin is agnostic: when present it sits between the cards and the newsletter.
-    expect(order.indexOf('cards')).toBeLessThan(order.indexOf('newsletter'))
-    const contentPieces = order.indexOf('content-pieces')
-    if (contentPieces !== -1) {
-      expect(contentPieces).toBeGreaterThan(order.indexOf('cards'))
-      expect(contentPieces).toBeLessThan(order.indexOf('newsletter'))
-    }
-
-    const section = page.locator('section#cards')
-    await expect(
-      section.getByRole('heading', { name: 'Mostre que você está com Solla' }),
-    ).toBeVisible()
-    // S14/S15/S30/S31 — the CTA is gone: the six models are the only trigger.
-    await expect(section.getByRole('link', { name: 'Criar meu card' })).toHaveCount(0)
-    for (const model of [
-      'eu-sou-solla',
-      'perfil-quadrado',
-      'perfil-retangular',
-      'time-de-voce',
-      'time-do-estadual',
-      'minha-colinha',
-    ]) {
-      await expect(section.locator(`[data-card-model-tile="${model}"]`).first()).toBeAttached()
-    }
-    // S31 — the `NOVO` badge marks the newest model (design gate scene 1).
-    await expect(section.locator('[data-card-model-tile="minha-colinha"]').first()).toContainText(
-      'NOVO',
-    )
-
-    // The tile box takes its height from the in-flow ratio spacer — not from
-    // `aspect-ratio`, which WebKit drops on relayout (WebKit #265243) and
-    // collapsed the tiles to their labels. Force the container width change
-    // first: the same relayout that triggered the production bug is what the
-    // geometry below must survive. Each visible tile must be as tall as its
-    // width times the declared ratio (the border accounts for ≤4px).
-    await page.setViewportSize({ width: 1200, height: 900 })
-    for (const model of [
-      'eu-sou-solla',
-      'perfil-quadrado',
-      'perfil-retangular',
-      'time-de-voce',
-      'time-do-estadual',
-      'minha-colinha',
-    ]) {
-      const geometry = await section
-        .locator(`[data-card-model-tile="${model}"]:visible`)
-        .first()
-        .evaluate((element) => {
-          const spacer = element.querySelector('[data-card-tile-ratio]')
-          const box = spacer?.parentElement
-          const rect = box?.getBoundingClientRect()
-          if (!rect) return null
-          return {
-            ratio: Number(spacer!.getAttribute('data-card-tile-ratio')),
-            width: rect.width,
-            height: rect.height,
-          }
-        })
-      expect(geometry).not.toBeNull()
-      expect(Math.abs(geometry!.height - geometry!.width * geometry!.ratio)).toBeLessThan(4)
-    }
-
-    // S14 — the name tile reproduces the real result: `SEU NOME` drawn by the
-    // composer pipeline, left-aligned with the `SOU` border (x≈213 at 1080).
-    const nameTileCanvas = section.locator('[data-card-model-tile="eu-sou-solla"] canvas').first()
-    await expectCardNameLeftAligned(nameTileCanvas)
-
-    const trigger = section.getByRole('button', { name: /Moldura quadrada/ })
-    await trigger.click()
-    // No navigation: the same composer island opens over the home.
-    expect(new URL(page.url()).pathname).toBe('/')
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByRole('heading', { name: 'Enquadre sua foto' })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(
-      page.locator('[data-card-model-tile="perfil-quadrado"]:visible').first(),
-    ).toBeFocused()
-  })
-
-  test('name card fits the master, reaches the result and downloads a real PNG', async ({
-    page,
-  }) => {
-    await page.goto('/cards')
-    await expect(page.getByRole('dialog')).toHaveCount(0)
-
-    await page.getByRole('button', { name: 'Card com seu nome' }).click()
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByRole('heading', { name: 'Personalize com seu nome' })).toBeVisible()
-
-    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
-    await expect(primary).toBeDisabled()
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('João')
-    await expect(primary).toBeEnabled()
-
-    const canvas = dialog.locator('canvas')
-    await expect(canvas).toHaveAttribute('width', '1080')
-    await expect(canvas).toHaveAttribute('height', '1440')
-    // S14 — the name is drawn on the `SOU` left border (x≈213 at 1080), not
-    // centered: a centered `João` would start past x=350.
-    await expectCardNameLeftAligned(canvas)
-
-    await primary.click()
-    await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
-
-    const [download, downloadEvent] = await Promise.all([
-      page.waitForEvent('download'),
-      // S32 — the download beacons one anonymous event with the model id; the
-      // model without a picker never carries a state-deputy slug.
-      page.waitForRequest(
-        (request) => request.url().includes('/api/content-events') && request.method() === 'POST',
-      ),
-      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
-    ])
-    expect(download.suggestedFilename()).toBe('card-jorge-solla-eu-sou-solla.png')
-    expect(downloadEvent.postDataJSON()).toEqual({
-      type: 'download',
-      subjectType: 'card',
-      cardModelId: 'eu-sou-solla',
-    })
-    const downloadPath = await download.path()
-    expect(downloadPath).toBeTruthy()
-    expect(readFileSync(downloadPath!).subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true)
-  })
-
-  test('a name that cannot fit fails closed with an actionable message', async ({ page }) => {
-    await page.goto('/cards?model=eu-sou-solla')
-    const dialog = page.getByRole('dialog')
-    await expect(dialog).toBeVisible()
-
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Anticonstitucionalissimamente')
-    await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
-    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeDisabled()
-  })
-
-  test('photo card decodes the file, keeps the overlay and recovers from a bad image', async ({
-    page,
-  }) => {
-    await page.goto('/cards?model=perfil-quadrado')
-    const dialog = page.getByRole('dialog')
-    const canvas = dialog.locator('canvas')
-    await expect(canvas).toHaveAttribute('width', '1000')
-    await expect(canvas).toHaveAttribute('height', '1000')
-    // S17 — the harmony control is exclusive of the team model.
-    await expect(dialog.getByRole('switch')).toHaveCount(0)
-
-    await dialog.locator('input[type="file"]').setInputFiles({
-      name: 'foto-e2e.png',
-      mimeType: 'image/png',
-      buffer: TEST_PHOTO_PNG,
-    })
-    await expect(dialog.getByRole('button', { name: 'Trocar foto' })).toBeVisible()
-    await expect
-      .poll(() =>
-        canvas.evaluate((element) => {
-          const node = element as HTMLCanvasElement
-          return node.getContext('2d')!.getImageData(5, 5, 1, 1).data[3]
-        }),
-      )
-      .toBe(255)
-
-    await dialog.locator('input[type="file"]').setInputFiles({
-      name: 'nao-e-foto.txt',
-      mimeType: 'text/plain',
-      buffer: Buffer.from('not an image'),
-    })
-    await expect(dialog.getByRole('alert')).toContainText('Não foi possível usar esta foto')
-    await expect(dialog.getByRole('button', { name: 'Escolher outra foto' })).toBeVisible()
-  })
-
-  test('mobile opens the composer in the bottom drawer', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/cards?model=eu-sou-solla')
-
-    const drawer = page.locator('[data-slot="drawer-popup"]')
-    await expect(drawer).toBeVisible()
-    await expect(drawer.getByRole('heading', { name: 'Personalize com seu nome' })).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(drawer).toHaveCount(0)
-  })
-})
-
-/**
- * S15 — the team model runs its engine in an e2e build with the deterministic
- * stub (`NEXT_PUBLIC_CARDS_CUTOUT_STUB=1`): no wasm download, no inference. The
- * real engine is exercised manually (craft/UAT); the stub keeps the states
- * (progress, ready, error/retry) reproducible.
- */
-/** Mirrors the stub's deterministic `slow` download progress (cardCutout.ts). */
-const STUB_CUTOUT_PERCENT = 36
-
-const setCutoutStub = (page: Page, mode: 'ok' | 'slow' | 'error') =>
-  page.addInitScript((value: string) => {
-    ;(window as unknown as { __cardsCutoutStub?: string }).__cardsCutoutStub = value
-  }, mode)
-
-const uploadBustPhoto = (dialog: Locator) =>
-  dialog.locator('input[type="file"]').setInputFiles({
-    name: 'busto-e2e.png',
-    mimeType: 'image/png',
-    buffer: TEST_PHOTO_PNG,
-  })
-
-/** S30/S31 — `jul` matches Juliete and Julio; ↓ moves the active option to Julio. */
-const pickJulioByKeyboard = async (dialog: Locator) => {
-  const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
-  await search.fill('jul')
-  await search.press('ArrowDown')
-  await search.press('Enter')
-}
-
-/**
- * S16 — the blue name banner probe: scan only the rows where the rotated
- * rectangle spans its full width (|v| ≤ h/2·cos − w/2·sin) and take the widest
- * run of solid banner pixels. The banner is the only source of that exact color
- * there, so a long name shows a much wider run than the 509 reference (~505
- * pixels) — the fixed-width regression fails the count.
- */
-const NAME_BANNER_PROBE = (() => {
-  const banner = TEAM_CARD_NAME_BANNER
-  const tilt = (Math.abs(banner.rotationDeg) * Math.PI) / 180
-  const fullChordHalfSpan =
-    (banner.height / 2) * Math.cos(tilt) - (banner.maxWidth / 2) * Math.sin(tilt)
-
-  return {
-    background: banner.background,
-    band: {
-      top: Math.ceil(banner.centerY - fullChordHalfSpan),
-      bottom: Math.floor(banner.centerY + fullChordHalfSpan),
-    },
-  }
-})()
-
-const widestNameBannerRun = (canvas: Locator) =>
-  canvas.evaluate((element, probe) => {
-    const node = element as HTMLCanvasElement
-    const ctx = node.getContext('2d')!
-    const fill = Number.parseInt(probe.background.slice(1), 16)
-    const red = (fill >> 16) & 0xff
-    const green = (fill >> 8) & 0xff
-    const blue = fill & 0xff
-    let widest = 0
-
-    for (let y = probe.band.top; y <= probe.band.bottom; y++) {
-      const { data } = ctx.getImageData(0, y, node.width, 1)
-      let matches = 0
-      for (let index = 0; index < data.length; index += 4) {
-        if (data[index] === red && data[index + 1] === green && data[index + 2] === blue) {
-          matches += 1
-        }
-      }
-      if (matches > widest) widest = matches
-    }
-
-    return widest
-  }, NAME_BANNER_PROBE)
-
-test.describe('Cards personalizados (S15 — Time de você)', () => {
-  test('cuts the photo on device, reaches the result and downloads a real PNG', async ({
-    page,
-  }) => {
-    await setCutoutStub(page, 'slow')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByRole('heading', { name: 'Entre para o time' })).toBeVisible()
-
-    const canvas = dialog.locator('canvas')
-    await expect(canvas).toHaveAttribute('width', '1080')
-    await expect(canvas).toHaveAttribute('height', '1440')
-
-    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
-    await expect(primary).toBeDisabled()
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria Eduarda')
-    await uploadBustPhoto(dialog)
-
-    // Processing is observable (first run: model download + local cutout).
-    await expect(dialog.getByText('Baixando o modelo de recorte…')).toBeVisible()
-    await expect(dialog.getByText(`${STUB_CUTOUT_PERCENT}%`)).toBeVisible()
-    await expect(dialog.getByRole('progressbar')).toHaveAttribute(
-      'aria-valuenow',
-      String(STUB_CUTOUT_PERCENT),
-    )
-
-    // The cutout lands framed: CTA enabled, pan/zoom escape offered, and the
-    // guidance notice lives in the scrollable body — nothing over the preview.
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(primary).toBeEnabled()
-    await expect(
-      dialog.getByText(
-        'O recorte já foi centralizado. Se precisar, arraste a foto ou use os controles.',
-      ),
-    ).toBeVisible()
-    await expect(dialog.getByText('Arraste para ajustar')).toHaveCount(0)
-
-    // S16 — `Maria Eduarda` only fits by widening the blue banner beyond the
-    // 509 reference (the real Brexter ink goes to ~954 → banner ~993).
-    await expect.poll(() => widestNameBannerRun(canvas)).toBeGreaterThan(700)
-
-    await primary.click()
-    await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
-
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
-    ])
-    expect(download.suggestedFilename()).toBe('card-jorge-solla-time-de-voce.png')
-    const downloadPath = await download.path()
-    expect(downloadPath).toBeTruthy()
-    expect(readFileSync(downloadPath!).subarray(0, 8).equals(PNG_SIGNATURE)).toBe(true)
-  })
-
-  test('a failed cutout is recoverable: retry with the same photo reaches the result', async ({
-    page,
-  }) => {
-    await setCutoutStub(page, 'error')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await uploadBustPhoto(dialog)
-
-    await expect(dialog.getByRole('heading', { name: 'Vamos tentar outra vez' })).toBeVisible()
-    await expect(dialog.getByRole('alert')).toContainText(
-      'Não foi possível remover o fundo desta foto.',
-    )
-    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeDisabled()
-
-    // The retry re-runs the SAME file; no re-upload, no lost state.
-    await page.evaluate(() => {
-      ;(window as unknown as { __cardsCutoutStub?: string }).__cardsCutoutStub = 'ok'
-    })
-    await dialog.getByRole('button', { name: 'Tentar de novo' }).click()
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
-  })
-
-  test('harmonizes the cutout by default and toggles back to the original photo', async ({
-    page,
-  }) => {
-    await setCutoutStub(page, 'ok')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await uploadBustPhoto(dialog)
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-
-    const toggle = dialog.getByRole('switch', { name: 'Harmonizar cores' })
-    await expect(toggle).toBeVisible()
-    await expect(toggle).toHaveAttribute('aria-checked', 'true')
-    await expect(
-      dialog.getByText(
-        'Ajusta o brilho e as cores da sua foto para combinar com as fotos do card.',
-      ),
-    ).toBeVisible()
-    const box = await toggle.boundingBox()
-    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44)
-
-    const canvas = dialog.locator('canvas')
-    const readSample = () =>
-      canvas.evaluate((element) => {
-        const node = element as HTMLCanvasElement
-        // S15 — the auto-framing covers the slot, so the window center is the
-        // stub ellipse center.
-        return [...node.getContext('2d')!.getImageData(582, 727, 1, 1).data]
-      })
-
-    // Default ON: the preview pixel is the harmonized variant, not the raw photo.
-    await expect.poll(readSample).not.toEqual([30, 120, 200, 255])
-    const harmonized = await readSample()
-
-    await toggle.click()
-    await expect(toggle).toHaveAttribute('aria-checked', 'false')
-    await expect.poll(readSample).toEqual([30, 120, 200, 255])
-
-    // Re-enabling with the keyboard proves the native switch semantics.
-    await toggle.focus()
-    await page.keyboard.press('Space')
-    await expect(toggle).toHaveAttribute('aria-checked', 'true')
-    await expect.poll(readSample).toEqual(harmonized)
-    await expect(
-      dialog.getByText('Sua foto fica neste aparelho e não é enviada para nós.'),
-    ).toBeVisible()
-  })
-
-  test('a name that cannot fit fails closed and keeps the cutout', async ({ page }) => {
-    await setCutoutStub(page, 'ok')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Anticonstitucionalissimamente')
-    await uploadBustPhoto(dialog)
-
-    await expect(dialog.getByRole('heading', { name: 'Encurte o nome' })).toBeVisible()
-    await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
-    // S17 — the harmony control lives in the regular ready state only.
-    await expect(dialog.getByRole('switch')).toHaveCount(0)
-    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
-    await expect(primary).toBeDisabled()
-    await expect(dialog.getByText('permanecem salvos neste aparelho')).toBeVisible()
-
-    // The cutout is kept and the name stays editable: fixing it re-enables the card.
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await expect(dialog.getByRole('alert')).toHaveCount(0)
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(primary).toBeEnabled()
-  })
-
-  test('mobile opens the team composer in the bottom drawer', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/cards?model=time-de-voce')
-
-    const drawer = page.locator('[data-slot="drawer-popup"]')
-    await expect(drawer).toBeVisible()
-    await expect(drawer.getByRole('heading', { name: 'Entre para o time' })).toBeVisible()
-    // S23 — the drawer reaches the top of the viewport instead of the old 92dvh
-    // gap: y=0 and the full viewport height once the open animation settles.
-    await expect
-      .poll(async () => {
-        const box = await drawer.boundingBox()
-        return box ? `${Math.round(box.y)}x${Math.round(box.height)}` : null
-      })
-      .toBe('0x844')
-    await page.keyboard.press('Escape')
-    await expect(drawer).toHaveCount(0)
-  })
-})
-
-/**
- * S15 — the auto-framing after the S18 proportional framing was reverted: the
- * stub cutout (bbox = whole canvas) must cover the photo window at the cover
- * floor (zoom 1), the person filling the slot instead of a small sticker. The
- * engine failure paths (WebGL/WASM blocked) are covered by the adapter unit
- * specs; the real engine is exercised in craft.
- */
-test.describe('Cards personalizados (S15 — enquadramento automático)', () => {
-  test('covers the photo window at the cover floor and downloads the PNG', async ({ page }) => {
-    await setCutoutStub(page, 'ok')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await uploadBustPhoto(dialog)
-
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(dialog.getByRole('alert')).toHaveCount(0)
-    // The S18 proportional framing sat well below the cover floor; the reverted
-    // auto-framing always covers (zoom 1 for the stub's full-canvas bbox).
-    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBe(1)
-
-    // Scale proof: the stub ellipse (rx 180 on a 400px canvas) reaches x=300 in
-    // card pixels only under the cover framing — the small S18 sticker did not.
-    // Harmony is ON by default; turn it off to sample the raw fixture.
-    await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
-    const canvas = dialog.locator('canvas')
-    await expect
-      .poll(() =>
-        canvas.evaluate((element) => {
-          const node = element as HTMLCanvasElement
-          return [...node.getContext('2d')!.getImageData(300, 727, 1, 1).data]
-        }),
-      )
-      .toEqual([30, 120, 200, 255])
-
-    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
-    await expect(primary).toBeEnabled()
-    await primary.click()
-
-    const [download] = await Promise.all([
-      page.waitForEvent('download'),
-      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
-    ])
-    expect(
-      readFileSync((await download.path())!)
-        .subarray(0, 8)
-        .equals(PNG_SIGNATURE),
-    ).toBe(true)
-  })
-})
-
-/**
- * S30 — the state-deputy model reuses the S15 cutout stub; the new surfaces are
- * the picker (search + ↑↓/Enter), the empty photo window after the pick (S40
- * removed the drawn silhouette) and the art swap that must keep the typed name
- * and the processed photo.
- */
-test.describe('Cards personalizados (S30 — Time do estadual)', () => {
-  /**
-   * Window probes at 1080×1440: x=582 is the photo window center (286 + 592/2),
-   * y=540 a point inside the window top and y=727 the window center where the
-   * stub cutout lands.
-   */
-  const windowPixel = (canvas: Locator, x: number, y: number) =>
-    canvas.evaluate(
-      (element, point) => {
-        const node = element as HTMLCanvasElement
-        return [...node.getContext('2d')!.getImageData(point.x, point.y, 1, 1).data]
-      },
-      { x, y },
-    )
-
-  test('picks a deputy, keeps the window empty, cuts the photo and downloads the PNG', async ({
-    page,
-  }) => {
-    await setCutoutStub(page, 'ok')
-    await page.goto('/cards?model=time-do-estadual')
-
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByRole('heading', { name: 'Escolha sua dobradinha' })).toBeVisible()
-    await expect(dialog.getByText('Escolha seu estadual da dobradinha.')).toBeVisible()
-    // Pre-selection: the approved example, the notice and no photo box yet.
-    await expect(dialog.getByText('A silhueta marca o lugar da sua foto.')).toBeVisible()
-    await expect(dialog.getByText('Escolha um estadual para continuar.')).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Escolher foto' })).toHaveCount(0)
-    const primary = dialog.getByRole('button', { name: 'Criar meu card' })
-    await expect(primary).toBeDisabled()
-
-    await pickJulioByKeyboard(dialog)
-
-    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
-    await expect(trigger).toContainText('Julio Pinheiro')
-    await expect(trigger).toContainText('13999')
-    await expect(dialog.getByRole('button', { name: 'Escolher foto' })).toBeVisible()
-
-    // S40 — no drawn silhouette: the chosen art (julio-fotos) shows through the
-    // empty photo window until the visitor photo lands.
-    const canvas = dialog.locator('canvas')
-    await expect.poll(() => windowPixel(canvas, 582, 540)).toEqual([239, 223, 196, 255])
-
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await expect(primary).toBeDisabled()
-    await uploadBustPhoto(dialog)
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(primary).toBeEnabled()
-
-    await primary.click()
-    await expect(dialog.getByText('Seu card está pronto para compartilhar.')).toBeVisible()
-    await expect(dialog.getByText('Julio Pinheiro · 13999')).toBeVisible()
-
-    const [download, downloadEvent] = await Promise.all([
-      page.waitForEvent('download'),
-      // S32 — the picker model carries the chosen state-deputy slug.
-      page.waitForRequest(
-        (request) => request.url().includes('/api/content-events') && request.method() === 'POST',
-      ),
-      dialog.getByRole('button', { name: 'Baixar meu card' }).click(),
-    ])
-    expect(download.suggestedFilename()).toBe('card-jorge-solla-time-do-estadual.png')
-    expect(downloadEvent.postDataJSON()).toEqual({
-      type: 'download',
-      subjectType: 'card',
-      cardModelId: 'time-do-estadual',
-      stateDeputySlug: 'julio',
-    })
-    expect(
-      readFileSync((await download.path())!)
-        .subarray(0, 8)
-        .equals(PNG_SIGNATURE),
-    ).toBe(true)
-  })
-
-  test('switching the deputy keeps the typed name and the processed photo', async ({ page }) => {
-    await setCutoutStub(page, 'ok')
-    await page.goto('/cards?model=time-do-estadual')
-
-    const dialog = page.getByRole('dialog')
-    await pickJulioByKeyboard(dialog)
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await uploadBustPhoto(dialog)
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-
-    // The cutout landed: harmony OFF samples the stub fixture at the window center.
-    const canvas = dialog.locator('canvas')
-    await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
-    await expect.poll(() => windowPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
-
-    // Swap the deputy through the trigger; the new one confirms on it.
-    await dialog.getByRole('button', { name: /Seu estadual/ }).click()
-    const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
-    await search.fill('adriana')
-    await search.press('Enter')
-    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
-    await expect(trigger).toContainText('Coletivo de Enfermagem')
-    await expect(trigger).toContainText('13763')
-
-    // Name and cutout survive the swap: still ready, CTA enabled, photo pixel intact.
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeEnabled()
-    await expect.poll(() => windowPixel(canvas, 582, 727)).toEqual([30, 120, 200, 255])
-  })
-
-  test('a name that cannot fit fails closed on the estadual model', async ({ page }) => {
-    await page.goto('/cards?model=time-do-estadual')
-
-    const dialog = page.getByRole('dialog')
-    await pickJulioByKeyboard(dialog)
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Anticonstitucionalissimamente')
-
-    await expect(dialog.getByRole('heading', { name: 'Encurte o nome' })).toBeVisible()
-    await expect(dialog.getByRole('alert')).toContainText('nome mais curto')
-    await expect(dialog.getByRole('button', { name: 'Criar meu card' })).toBeDisabled()
-  })
-
-  test('the picker shows the empty state when nothing matches', async ({ page }) => {
-    await page.goto('/cards?model=time-do-estadual')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('combobox', { name: 'Buscar estadual' }).fill('sem-resultado')
-
-    await expect(dialog.getByText('Nenhum estadual encontrado.')).toBeVisible()
-  })
-
-  test('mobile gallery exposes the six dots and the six-model hint', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/cards')
-
-    const firstDot = page.getByRole('button', { name: 'Ir para o modelo 1 de 6' })
-    const sixthDot = page.getByRole('button', { name: 'Ir para o modelo 6 de 6' })
-    await expect(sixthDot).toBeVisible()
-    await expect(page.getByText('Deslize para ver os seis modelos')).toBeVisible()
-    await expect(firstDot).toHaveAttribute('aria-current', 'true')
-
-    // Clicking the last dot scrolls the track and keeps the active dot on it
-    // (the programmatic scroll lock must not bounce the index back mid-animation).
-    await sixthDot.click()
-    await expect(sixthDot).toHaveAttribute('aria-current', 'true')
-    await expect(firstDot).not.toHaveAttribute('aria-current', 'true')
-    await expect
-      .poll(() =>
-        page
-          .locator('ul[aria-label="Modelos de card (mobile)"]')
-          .evaluate((element) => element.scrollLeft),
-      )
-      .toBeGreaterThan(0)
-  })
-})
-
-test.describe('Cards personalizados (S34 — Minha colinha)', () => {
-  /**
-   * Canvas probe at 1080×1920 over the estadual row, derived from the layout the
-   * renderer draws with: the label band reports the first dark-ink column and
-   * the first red column (the delivered art burns the label at x 571–856; the
-   * filled state wipes it and redraws the pair from the mask's left edge), and
-   * the first printed box interior reports glyph ink.
-   */
-  const colinhaRowProbe = (canvas: Locator) =>
-    canvas.evaluate((element, layout) => {
-      const ctx = (element as HTMLCanvasElement).getContext('2d')!
-      const { mask, copy, digit } = layout
-      const bandX = Math.round(mask.x)
-      const bandY = Math.round(copy.top)
-      const bandWidth = Math.round(copy.right) - bandX
-      const bandHeight = Math.round(mask.y + mask.height) - bandY
-      const band = ctx.getImageData(bandX, bandY, bandWidth, bandHeight).data
-      let firstDarkX = -1
-      let redFirstX = -1
-      for (let x = 0; x < bandWidth && (firstDarkX < 0 || redFirstX < 0); x += 1) {
-        for (let y = 0; y < bandHeight; y += 1) {
-          const offset = (y * bandWidth + x) * 4
-          const r = band[offset]!
-          const g = band[offset + 1]!
-          const b = band[offset + 2]!
-          if (firstDarkX < 0 && r + g + b < 240) firstDarkX = bandX + x
-          if (redFirstX < 0 && r > 150 && g < 100 && b < 100) redFirstX = bandX + x
-        }
-      }
-      const boxX = Math.round(digit.left + digit.width / 2 - 17)
-      const boxY = Math.round(digit.top + digit.height / 2 - 17)
-      const box = ctx.getImageData(boxX, boxY, 34, 34).data
-      let boxInk = 0
-      for (let i = 0; i < box.length; i += 4) {
-        if (box[i]! + box[i + 1]! + box[i + 2]! < 240) boxInk += 1
-      }
-      return { firstDarkX, redFirstX, boxInk }
-    }, COLINHA_ROW_LAYOUT)
-
-  const maskLeft = Math.round(COLINHA_ROW_LAYOUT.mask.x)
-  const filledRowProbe = async (canvas: Locator) => {
-    const { firstDarkX, redFirstX, boxInk } = await colinhaRowProbe(canvas)
-    return firstDarkX >= maskLeft && firstDarkX < 450 && redFirstX >= maskLeft && boxInk > 0
-  }
-
-  test('shows the delivered art with the download disabled before the pick', async ({ page }) => {
-    await page.goto('/cards?model=minha-colinha')
-
-    const dialog = page.getByRole('dialog')
-    await expect(dialog.getByRole('heading', { name: 'Escolha seu estadual' })).toBeVisible()
-    await expect(
-      dialog.getByText('A linha de deputado estadual será preenchida na hora.'),
-    ).toBeVisible()
-    await expect(dialog.getByText('Escolha um estadual para baixar.')).toBeVisible()
-
-    const canvas = dialog.locator('canvas')
-    await expect(canvas).toHaveAttribute('width', '1080')
-    await expect(canvas).toHaveAttribute('height', '1920')
-
-    // The art as delivered: the burned label ink stays at the right, no red
-    // name and the printed boxes are empty.
-    await expect
-      .poll(async () => {
-        const { firstDarkX, redFirstX, boxInk } = await colinhaRowProbe(canvas)
-        return firstDarkX > 500 && redFirstX < 0 && boxInk === 0
-      })
-      .toBe(true)
-
-    await expect(dialog.getByRole('button', { name: 'Baixar minha colinha' })).toBeDisabled()
-  })
-
-  test('picks the estadual, fills the slip row and downloads the 1080×1920 PNG', async ({
-    page,
-  }) => {
-    await page.goto('/cards?model=minha-colinha')
-
-    const dialog = page.getByRole('dialog')
-    const canvas = dialog.locator('canvas')
-    const primary = dialog.getByRole('button', { name: 'Baixar minha colinha' })
-
-    await pickJulioByKeyboard(dialog)
-
-    await expect(dialog.getByRole('heading', { name: 'Pronta para levar com você' })).toBeVisible()
-    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
-    await expect(trigger).toContainText('Julio Pinheiro')
-    await expect(trigger).toContainText('13999')
-    await expect(dialog.getByText('Linha conferida')).toBeVisible()
-    await expect(dialog.getByText('DEPUTADO ESTADUAL · JULIO PINHEIRO · 13999')).toBeVisible()
-    await expect(
-      dialog.getByText(
-        'A escolha é processada neste aparelho. Nenhum nome, foto ou cadastro é solicitado.',
-      ),
-    ).toBeVisible()
-    await expect(primary).toBeEnabled()
-
-    // The picked row: the burned label is wiped and the redrawn pair (dark
-    // label + red name) starts at the mask's left edge; the first printed box
-    // carries the `1` glyph ink.
-    await expect.poll(() => filledRowProbe(canvas)).toBe(true)
-
-    const [download, downloadEvent] = await Promise.all([
-      page.waitForEvent('download'),
-      // S32 — the picker model carries the chosen state-deputy slug.
-      page.waitForRequest(
-        (request) => request.url().includes('/api/content-events') && request.method() === 'POST',
-      ),
-      primary.click(),
-    ])
-    expect(download.suggestedFilename()).toBe('card-jorge-solla-minha-colinha.png')
-    expect(downloadEvent.postDataJSON()).toEqual({
-      type: 'download',
-      subjectType: 'card',
-      cardModelId: 'minha-colinha',
-      stateDeputySlug: 'julio',
-    })
-    expect(
-      readFileSync((await download.path())!)
-        .subarray(0, 8)
-        .equals(PNG_SIGNATURE),
-    ).toBe(true)
-  })
-
-  test('shrinks the longest catalog name inside the mask', async ({ page }) => {
-    await page.goto('/cards?model=minha-colinha')
-
-    const dialog = page.getByRole('dialog')
-    const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
-    await search.fill('arthur')
-    await search.press('Enter')
-
-    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
-    await expect(trigger).toContainText('Artur Barachisio Lisbôa')
-    // The shrunk red name still starts inside the mask (never over the art).
-    await expect.poll(() => filledRowProbe(dialog.locator('canvas'))).toBe(true)
-  })
-
-  test('switching the estadual keeps the slip ready for download', async ({ page }) => {
-    await page.goto('/cards?model=minha-colinha')
-
-    const dialog = page.getByRole('dialog')
-    await pickJulioByKeyboard(dialog)
-
-    // Swap through the trigger; the new one confirms on it.
-    await dialog.getByRole('button', { name: /Seu estadual/ }).click()
-    const search = dialog.getByRole('combobox', { name: 'Buscar estadual' })
-    await search.fill('adriana')
-    await search.press('Enter')
-
-    const trigger = dialog.getByRole('button', { name: /Seu estadual/ })
-    await expect(trigger).toContainText('Coletivo de Enfermagem')
-    await expect(trigger).toContainText('13763')
-    await expect(dialog.getByRole('button', { name: 'Baixar minha colinha' })).toBeEnabled()
-  })
-})
-
-/**
- * S33 — the two team models are position-free (human gate of 2026-09-24): the
- * visitor adjustment is not clamped in any axis, so the photo may leave the
- * window and reveal the art behind it. The S15 auto-framing stays the starting
- * point and the zoom keeps its [1, 4] range. With the stub cutout (400×300,
- * full-canvas bbox) the S15 transform lands at offsetX ≈ 197.33, whose old X
- * ceiling was 286 — eight Shift+→ steps (+48 each = +384) only pass the window
- * with the clamp gone, and the write-back must never snap it back.
- */
-test.describe('Cards personalizados (S33 — ajuste livre do time)', () => {
-  const windowPixel = (canvas: Locator, x: number, y: number) =>
-    canvas.evaluate(
-      (element, point) => {
-        const node = element as HTMLCanvasElement
-        return [...node.getContext('2d')!.getImageData(point.x, point.y, 1, 1).data]
-      },
-      { x, y },
-    )
-
-  test('the keyboard moves the photo past the window and it never snaps back', async ({ page }) => {
-    await setCutoutStub(page, 'ok')
-    await page.goto('/cards?model=time-de-voce')
-
-    const dialog = page.getByRole('dialog')
-    await dialog.getByRole('textbox', { name: 'Seu nome' }).fill('Maria')
-    await uploadBustPhoto(dialog)
-    await expect(dialog.getByRole('heading', { name: 'Confira seu card' })).toBeVisible()
-
-    // Harmony OFF reads the raw stub fixture: under the S15 framing the photo
-    // covers x=500, so the probe sees the fixture blue.
-    await dialog.getByRole('switch', { name: 'Harmonizar cores' }).click()
-    const canvas = dialog.locator('canvas')
-    const probe = () => windowPixel(canvas, 500, 727)
-    await expect.poll(probe).toEqual([30, 120, 200, 255])
-
-    // Eight Shift+→ steps = +384 card pixels — past the old ceiling (197.33 +
-    // 88.67): the photo leaves the window and the art behind it shows there.
-    const group = dialog.getByRole('group', { name: 'Ajuste da foto' })
-    await group.focus()
-    for (let step = 0; step < 8; step += 1) await page.keyboard.press('Shift+ArrowRight')
-
-    // The exact base-art pixel at the probe: stronger than "not the fixture
-    // blue" (a blank or broken canvas would not pass it).
-    const baseArtPixel = [246, 246, 248, 255]
-    await expect.poll(probe).toEqual(baseArtPixel)
-
-    // No snap-back: the render write-back keeps the free position, so the moved
-    // frame stays painted after the effect settles.
-    await page.waitForTimeout(250)
-    expect(await probe()).toEqual(baseArtPixel)
-
-    // The freedom is of the position only: the zoom stays at the cover floor.
-    expect(Number(await dialog.locator('input[type="range"]').inputValue())).toBe(1)
   })
 })

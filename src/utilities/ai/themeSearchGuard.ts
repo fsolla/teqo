@@ -159,10 +159,3 @@ export const createThemeSearchGuard = (options: ThemeSearchGuardOptions = {}): T
 
   return { resolve }
 }
-
-/**
- * The process-wide guard: one in-memory limiter and cache, reset on deploy. The
- * cache key is the normalized public query (no PII, no user id); a `null`
- * expansion is never stored, so a later request can retry.
- */
-export const resolveGuardedThemeExpansion = createThemeSearchGuard().resolve

@@ -8,8 +8,8 @@ import React, { useEffect, useState } from 'react'
  * opens (an iframe in the edit view, or the popup variant). The package fires
  * `router.refresh()` as soon as it mounts to pick up the saved data, and the
  * App Router answers a refresh by rewriting the canonical URL — which drops
- * any `#hash` applied between the click and the refresh (the hero CTA →
- * `#novidades` deploy-verify race). A standalone public load must not pay that
+ * any `#hash` applied between the click and the refresh (the section nav →
+ * `#bandeiras` deploy-verify race). A standalone public load must not pay that
  * refresh, so the bridge mounts only when there is a preview parent
  * (`window.parent` for the iframe, `window.opener` for the popup); the render
  * stays `null` on every other page view.

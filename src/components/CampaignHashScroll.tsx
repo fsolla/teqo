@@ -10,7 +10,7 @@ const SCROLL_KEYS = new Set(['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', ' '])
  * S12 — the campaign home owns its scroll container (`h-dvh overflow-y-auto`
  * on the (home) layout; the body is `overflow-hidden`), so the browser's
  * native fragment navigation — which scrolls the document — never lands on a
- * hash target. On a direct `/#novidades` load the mobile layout settles only
+ * hash target. On a direct `/#bandeiras` load the mobile layout settles only
  * after the `h-dvh` reflow and the hero's eager images, kicking the page back
  * to the top. (`[type]`/`artigos` share the same scroll-container model; if
  * they ever gain in-page anchors they inherit this mechanism.)

@@ -1,9 +1,9 @@
 import { CampaignFooter } from '@/components/CampaignFooter'
+import { CampaignInternalPageIntro } from '@/components/CampaignInternalPageIntro'
+import { CampaignPageHeader } from '@/components/CampaignPageHeader'
 import { ArchivePhotoFilters } from '@/components/fotos/ArchivePhotoFilters'
 import { ArchivePhotoGrid } from '@/components/fotos/ArchivePhotoGrid'
-import { ArchivePhotoHero } from '@/components/fotos/ArchivePhotoHero'
 import { ArchivePhotoLightbox } from '@/components/fotos/ArchivePhotoLightbox'
-import { ArchivePhotoPageHeader } from '@/components/fotos/ArchivePhotoPageHeader'
 import { ArchivePhotoRemovalBand } from '@/components/fotos/ArchivePhotoRemovalBand'
 import {
   ArchivePhotoEmptyState,
@@ -26,14 +26,12 @@ import {
   getApprovedArchivePhotoAlbumItems,
   hasPublishedArchivePhotos,
 } from '@/utilities/archivePhotos/archivePhotoReads'
-import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
-import { hasPublishedJingles } from '@/utilities/jingleReads'
 import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
-const ALBUM_TITLE = 'Fotos do mandato — Jorge Solla 1313'
+const ALBUM_TITLE = 'Fotos do mandato'
 const ALBUM_DESCRIPTION =
   'Procure as fotos do mandato por data, município, atividade ou pessoa pública — só registros aprovados, com o contexto de cada momento.'
 
@@ -91,12 +89,7 @@ export default async function FotosPage({
 }: {
   searchParams: Promise<ArchivePhotoAlbumSearchParams>
 }) {
-  const [rawSearchParams, album, showJingles, showConteudos] = await Promise.all([
-    searchParams,
-    getCachedPhotoAlbum(),
-    hasPublishedJingles(),
-    hasPublishedContentPieces(),
-  ])
+  const [rawSearchParams, album] = await Promise.all([searchParams, getCachedPhotoAlbum()])
 
   if (album.published === false) notFound()
 
@@ -119,8 +112,8 @@ export default async function FotosPage({
 
   return (
     <>
-      <ArchivePhotoPageHeader showConteudos={showConteudos} />
-      <ArchivePhotoHero />
+      <CampaignPageHeader current="fotos" />
+      <CampaignInternalPageIntro eyebrow="Memória do mandato" title="Fotos" />
       <main className="w-full bg-white">
         <div className="mx-auto w-full max-w-6xl px-5 py-8 sm:px-8">
           {isEmptyAlbum ? (
@@ -166,12 +159,7 @@ export default async function FotosPage({
 
         {removalChannelUrl ? <ArchivePhotoRemovalBand href={removalChannelUrl} /> : null}
       </main>
-      <CampaignFooter
-        showJingles={showJingles}
-        showConteudos={showConteudos}
-        showFotos
-        current="fotos"
-      />
+      <CampaignFooter current="fotos" />
       {selected ? (
         <ArchivePhotoLightbox
           item={selected}

@@ -10,10 +10,7 @@ import {
   POTENTIAL_INTRO,
   POTENTIAL_PATH,
 } from '@/components/potencial/sectionPotentialCopy'
-import { hasPublishedArchivePhotos } from '@/utilities/archivePhotos/archivePhotoReads'
-import { hasPublishedContentPieces } from '@/utilities/content/contentPieceReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
-import { hasPublishedJingles } from '@/utilities/jingleReads'
 import { resolveOgImage } from '@/utilities/ogImageReads'
 import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
 
@@ -56,12 +53,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function PotencialPage() {
-  const [showJingles, showConteudos, showFotos] = await Promise.all([
-    hasPublishedJingles(),
-    hasPublishedContentPieces(),
-    hasPublishedArchivePhotos(),
-  ])
-
   return (
     <>
       <CampaignPageHeader />
@@ -79,11 +70,7 @@ export default async function PotencialPage() {
       <main className="w-full bg-white text-black">
         <SectionPotentialStudio fontFamily={campaignTextFont.style.fontFamily} />
       </main>
-      <CampaignFooter
-        showJingles={showJingles}
-        showConteudos={showConteudos}
-        showFotos={showFotos}
-      />
+      <CampaignFooter />
     </>
   )
 }

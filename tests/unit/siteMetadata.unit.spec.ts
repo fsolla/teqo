@@ -20,6 +20,12 @@ afterEach(() => {
 })
 
 describe('resolveSiteMetadata', () => {
+  it('keeps the fallback description on the mandate (no campaign number)', () => {
+    expect(SITE_METADATA_DEFAULTS.description).not.toContain('1313')
+    expect(SITE_METADATA_DEFAULTS.description).not.toMatch(/campanha/i)
+    expect(SITE_METADATA_DEFAULTS.description).toMatch(/mandato/i)
+  })
+
   it('returns defaults and null siteUrl when the global is empty and env is unset', () => {
     delete process.env.NEXT_PUBLIC_SITE_URL
 

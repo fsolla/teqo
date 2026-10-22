@@ -260,10 +260,10 @@ const archivePhotoPeopleLabel = (people: readonly string[]): string | null => {
   return `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}`
 }
 
-const DOWNLOAD_PREFIX = 'jorge-solla-1313-foto'
+const DOWNLOAD_PREFIX = 'jorge-solla-foto'
 const FALLBACK_EXTENSION = 'jpg'
 
-/** Legible download name (`jorge-solla-1313-foto-<id>.<ext>`), never the stored key. */
+/** Legible download name (`jorge-solla-foto-<id>.<ext>`), never the stored key. */
 const archivePhotoDownloadFilename = (id: number, filename?: string | null): string => {
   const lastDot = filename?.lastIndexOf('.') ?? -1
   const extension = lastDot > 0 ? filename?.slice(lastDot + 1).toLowerCase() : null

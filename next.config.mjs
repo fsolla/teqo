@@ -6,6 +6,19 @@ const allowedImageHost = process.env.NEXT_PUBLIC_SITE_URL || 'https://jorgesolla
 const nextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   ...(process.env.NEXT_OUTPUT_STANDALONE === '1' ? { output: 'standalone' } : {}),
+  // S47 — the campaign surfaces left the air after the election. The pages are
+  // gone from the tree; the permanent redirects keep the links that already
+  // circulated (and any index entry) pointing at the mandate instead of a 404.
+  async redirects() {
+    return [
+      { source: '/conteudos', destination: '/artigos', permanent: true },
+      { source: '/conteudos/:path*', destination: '/artigos', permanent: true },
+      { source: '/jingles', destination: '/', permanent: true },
+      { source: '/jingles/:path*', destination: '/', permanent: true },
+      { source: '/cards', destination: '/', permanent: true },
+      { source: '/cards/:path*', destination: '/', permanent: true },
+    ]
+  },
   images: {
     minimumCacheTTL: 14400,
     remotePatterns: [

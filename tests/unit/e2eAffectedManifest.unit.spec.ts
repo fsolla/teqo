@@ -58,7 +58,6 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       'campaignDemandVisibility',
       'campaignAiTranscribe',
       'campaignAgendaFeed',
-      'campaignNewsletter',
       // C167 — deliberate: the cut public page/route contract is new and the
       // migration makes every PR of this delivery high-risk (curated only).
       'campaignSpeechCut',
@@ -68,13 +67,6 @@ describe('E2E_AFFECTED_MANIFEST (OPS5)', () => {
       // S19 — deliberate: the share-link OG/redirect contract is new and the
       // migration makes every PR of this delivery high-risk (curated only).
       'frontendShareLink',
-      // S21 — deliberate: the jingles page/player/download contract is new and
-      // the migration makes every PR of this delivery high-risk (curated only).
-      'frontendJingles',
-      // S27 — deliberate: the Central catalogue/piece page, the public media
-      // route and the vote share sheet are new contracts over the C211
-      // collection (curated only).
-      'frontendConteudos',
       // C219 — deliberate: the recordings acervo gained its own search/facet
       // contract and the migration makes every PR of this delivery high-risk
       // (curated only).

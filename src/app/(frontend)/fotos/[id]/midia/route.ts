@@ -24,7 +24,7 @@ export const dynamic = 'force-dynamic'
  * public read (`archivePhotoIsPublic`), so a draft, a removed photo, an unknown
  * id and a delete all answer the same silent 404 — the route never leaks which
  * photos exist. `?tamanho=grade` serves the grade thumbnail, `?download=1`
- * forces the legible `jorge-solla-1313-foto-<id>.<ext>` name; the object itself
+ * forces the legible `jorge-solla-foto-<id>.<ext>` name; the object itself
  * stays in the private bucket (the C193/C199 streaming helper is the single
  * owner of that I/O). `X-Robots-Tag` keeps the derivative out of the index: the
  * canonical surface is the album, never the file.

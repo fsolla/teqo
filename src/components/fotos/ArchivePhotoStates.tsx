@@ -19,7 +19,7 @@ export const ArchivePhotoEmptyState = () => (
     <div className="mx-auto grid size-12 place-items-center rounded-full border border-(--campaign-line) bg-white text-(--campaign-muted)">
       <ImageIcon aria-hidden="true" className="size-6" strokeWidth={2} />
     </div>
-    <h2 className="mt-4 font-[family-name:var(--font-exo2)] text-2xl font-black">
+    <h2 className="mt-4 border-0 pb-0 font-[family-name:var(--font-exo2)] text-2xl font-black">
       O álbum ainda está sendo preparado
     </h2>
     <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-(--campaign-muted)">
@@ -50,7 +50,7 @@ export const ArchivePhotoNoResults = ({
       >
         <SearchIcon className="size-5 sm:size-6" strokeWidth={2} />
       </div>
-      <h2 className="mt-4 font-[family-name:var(--font-exo2)] text-xl font-black sm:text-2xl">
+      <h2 className="mt-4 border-0 pb-0 font-[family-name:var(--font-exo2)] text-xl font-black sm:text-2xl">
         Nada encontrado com esses filtros
       </h2>
       <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-(--campaign-muted)">

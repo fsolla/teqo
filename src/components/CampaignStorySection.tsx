@@ -2,12 +2,15 @@
 
 import { useRef } from 'react'
 
+import { PUBLIC_FOCUS } from '@/lib/publicSite'
+
 /**
- * S8 — campaign home "Nossa história" section: the story video of Jorge
- * Solla's trajectory embedded from the campaign's YouTube channel (the video
- * lives there as a Short; every embed play counts as a channel view).
+ * S8/S47 — the "Nossa história" section of the mandate home: the story video
+ * of Jorge Solla's trajectory embedded from the official YouTube channel (the
+ * video lives there as a Short; every embed play counts as a channel view).
  * `youtube-nocookie` keeps the embed LGPD-friendly; `loading="lazy"` defers
- * the fetch until the frame nears the viewport.
+ * the fetch until the frame nears the viewport. S47 brought the editorial copy
+ * and the two-column composition of the approved design.
  */
 export const CampaignStorySection = () => {
   const frameRef = useRef<HTMLDivElement>(null)
@@ -22,44 +25,42 @@ export const CampaignStorySection = () => {
       data-home-section="story"
       className="border-y border-(--campaign-line) bg-white"
     >
-      <div className="mx-auto w-full max-w-[1160px] px-5 py-12 sm:px-8 lg:px-10 lg:py-16">
-        <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-center lg:justify-between lg:gap-12">
-          <div className="max-w-md">
-            <p className="campaign-section-eyebrow m-0 font-black tracking-[0.1em] text-(--pt-red) uppercase">
-              Nossa história
-            </p>
-            <h2
-              id="story-title"
-              className="campaign-section-title m-0 mt-1 border-0 p-0 font-black tracking-[-0.02em] text-balance"
-            >
-              Conheça a trajetória de Jorge Solla
-            </h2>
-            <p className="campaign-section-copy m-0 mt-2 text-(--campaign-muted)">
-              A história de quem já fez saúde pública na Bahia e no Brasil, em um minuto e meio: da
-              gestão no SUS ao mandato na Câmara.
-            </p>
-            <button
-              type="button"
-              onClick={handleCtaPlay}
-              className="mt-6 text-sm font-bold text-(--pt-red) underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:ring-(--pt-red) focus-visible:outline-none"
-            >
-              Assistir à história
-            </button>
-          </div>
-
-          <div
-            ref={frameRef}
-            className="relative aspect-[9/16] w-full max-w-[420px] shrink-0 self-center overflow-hidden rounded-2xl bg-(--campaign-band) lg:max-w-[300px] lg:self-auto"
+      <div className="mx-auto grid w-full max-w-[1280px] items-center gap-10 px-5 py-16 sm:px-8 lg:grid-cols-[0.83fr_1.17fr] lg:gap-20 lg:px-16 lg:py-24">
+        <div>
+          <p className="m-0 font-[family-name:var(--font-exo2)] text-sm font-extrabold text-(--pt-red)">
+            Nossa história
+          </p>
+          <h2
+            id="story-title"
+            className="mt-3 border-0 p-0 font-[family-name:var(--font-exo2)] text-[34px] leading-[1.03] font-black tracking-[-0.04em] text-balance lg:text-[46px] lg:leading-[1.02] lg:tracking-[-0.045em]"
           >
-            <iframe
-              src="https://www.youtube-nocookie.com/embed/i_fbclWWC5o?playsinline=1&rel=0"
-              title="Vídeo: Conheça a trajetória de Jorge Solla"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure"
-              allowFullScreen
-              className="absolute inset-0 h-full w-full border-0"
-            />
-          </div>
+            Saúde pública como escolha de vida
+          </h2>
+          <p className="mt-4 text-[15px] leading-6 text-(--campaign-muted) lg:mt-6 lg:text-[17px] lg:leading-7">
+            Da gestão do SUS ao Congresso Nacional, uma trajetória feita ao lado de quem defende
+            saúde, democracia e direitos para todos.
+          </p>
+          <button
+            type="button"
+            onClick={handleCtaPlay}
+            className={`mt-5 rounded-sm text-sm font-bold text-(--pt-red) underline decoration-(--pt-red) underline-offset-[5px] hover:text-(--pt-red-dark) lg:mt-7 ${PUBLIC_FOCUS}`}
+          >
+            Assistir à trajetória
+          </button>
+        </div>
+
+        <div
+          ref={frameRef}
+          className="relative aspect-[9/16] w-full max-w-[360px] justify-self-center overflow-hidden rounded-xl bg-(--pt-red-dark) lg:max-w-[380px] lg:justify-self-end"
+        >
+          <iframe
+            src="https://www.youtube-nocookie.com/embed/i_fbclWWC5o?playsinline=1&rel=0"
+            title="Vídeo: Saúde pública como escolha de vida — a trajetória de Jorge Solla"
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; compute-pressure"
+            allowFullScreen
+            className="absolute inset-0 h-full w-full border-0"
+          />
         </div>
       </div>
     </section>

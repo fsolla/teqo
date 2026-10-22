@@ -16,9 +16,9 @@ const contactGenders = personGenders
 
 /**
  * Full-name rule for people records (required across the public and staff
- * flows). Exported so sibling schemas reuse it instead of re-declaring.
+ * flows); shared by the sibling schemas in this module.
  */
-export const contactNameSchema = z
+const contactNameSchema = z
   .string()
   .trim()
   .min(2, 'Nome deve ter pelo menos 2 caracteres')
@@ -39,15 +39,6 @@ export const contactStateSchema = z.custom<StateKey>(
 )
 
 /**
- * Optional-state variant: the public combobox clears to '' (FormCombobox
- * `onValueChange`), so the union accepts it and collapses ''/undefined.
- */
-export const optionalContactStateSchema = z
-  .union([contactStateSchema, z.literal('')])
-  .optional()
-  .transform((value) => (value === '' || value === undefined ? undefined : value))
-
-/**
  * Required free-text city rule (trim + min/max with the same messages the ficha
  * schemas already used). Exported so the ficha schemas and the optional variant
  * below share one definition (Fase 3 of the S9+ DRY pass).
@@ -60,10 +51,9 @@ export const contactCitySchema = z
 
 /**
  * Optional free-text city (''/undefined collapse). Composed over `contactCitySchema`
- * so it inherits the same min/max messages, and exported so sibling schemas reuse
- * the same optional-city rule as the ficha's mobile sheet.
+ * so it inherits the same min/max messages; shared by the ficha schemas below.
  */
-export const contactCityFieldSchema = z
+const contactCityFieldSchema = z
   .union([contactCitySchema, z.literal('')])
   .optional()
   .transform((value) => (value === '' || value === undefined ? undefined : value))

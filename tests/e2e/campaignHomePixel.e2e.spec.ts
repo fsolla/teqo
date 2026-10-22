@@ -10,11 +10,9 @@ import { expect, test } from './fixtures/e2eTest'
  * base code (inline `next/script` + `fbq` init) and nothing at all without a
  * configured ID (fail-closed). The external `fbevents.js` fetch is fulfilled
  * locally by the shared e2e guard (fixtures/e2eTest.ts), so no spec ever
- * depends on the Meta CDN; the base code itself is inline. The `Lead` wiring
- * (successful S9 capture → exactly one queued `fbq` Lead) is pinned by the
- * unit spec `campaignNewsletterLead.unit.spec.tsx` — a real submission here
- * would share the `campanha-novidades` consent key with the parallel
- * `campaignNewsletter` spec's purge/create lifecycle. Serial mode (precedent
+ * depends on the Meta CDN; the base code itself is inline. S47 removed the
+ * campaign newsletter capture, so the old capture→Lead assertion is gone; the
+ * pixel stays a page-level PageView. Serial mode (precedent
  * `campaignNearestMunicipality`): the tests share one worker — a parallel
  * split would race two `seedTestUser` beforeAlls.
  */

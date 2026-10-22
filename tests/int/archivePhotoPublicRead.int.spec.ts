@@ -338,9 +338,7 @@ describe('public photo album reads (C233)', () => {
     )
     expect(download.status).toBe(200)
     expect(download.headers.get('Content-Disposition')).toContain('attachment')
-    expect(download.headers.get('Content-Disposition')).toContain(
-      `jorge-solla-1313-foto-${approved.id}`,
-    )
+    expect(download.headers.get('Content-Disposition')).toContain(`jorge-solla-foto-${approved.id}`)
 
     for (const id of [draft.id, 999_999_999]) {
       const response = await getArchivePhotoMedia(

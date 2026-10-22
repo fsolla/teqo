@@ -1,57 +1,67 @@
+import { CampaignInternalPageIntro } from '@/components/CampaignInternalPageIntro'
 import { PostCard } from '@/components/PostCard'
-import { Media } from '@/payload-types'
-import { getCachedDocumentById } from '@/utilities/documentReads'
 import { getCachedGlobal } from '@/utilities/globalReads'
+import { resolveOgImage } from '@/utilities/ogImageReads'
 import { getTypePath, getVisiblePosts } from '@/utilities/posts'
-import Image from 'next/image'
+import { absoluteSitePath, resolveSiteMetadata } from '@/utilities/seo'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 
 const LATEST_NEWS_LIMIT = 6
 
-export default async function ArtigosPage() {
-  const home = await getCachedGlobal('home', 2)()
+const ARTIGOS_DESCRIPTION = 'Notícias, artigos e a atuação do deputado Jorge Solla pela Bahia.'
 
-  let heroImage: Media | null = null
-  if (typeof home.image === 'number') {
-    heroImage = await getCachedDocumentById('media', `${home.image}`)()
-  } else {
-    heroImage = home.image ?? null
+export async function generateMetadata(): Promise<Metadata> {
+  const [home, globalMetadata] = await Promise.all([
+    getCachedGlobal('home', 2)(),
+    getCachedGlobal('metadata')(),
+  ])
+  const { siteUrl, siteName, twitterCreator } = resolveSiteMetadata(globalMetadata)
+  const canonicalUrl = absoluteSitePath(siteUrl, '/artigos')
+  const { url: imageUrl, media } = await resolveOgImage(home.image)
+  const images = imageUrl
+    ? [
+        {
+          url: imageUrl,
+          width: media?.width ?? undefined,
+          height: media?.height ?? undefined,
+          alt: media?.alt ?? 'Jorge Solla',
+        },
+      ]
+    : []
+  const title = `Artigos e notícias | ${siteName}`
+
+  return {
+    title,
+    description: ARTIGOS_DESCRIPTION,
+    ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
+    openGraph: {
+      type: 'website',
+      locale: 'pt-BR',
+      ...(canonicalUrl ? { url: canonicalUrl } : {}),
+      siteName,
+      title,
+      description: ARTIGOS_DESCRIPTION,
+      images,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description: ARTIGOS_DESCRIPTION,
+      creator: twitterCreator,
+      images: images.map((image) => image.url),
+    },
   }
+}
 
+export default async function ArtigosPage() {
   const latestNews = (await getVisiblePosts())
     .filter((post) => post.type === 'noticia')
     .slice(0, LATEST_NEWS_LIMIT)
 
   return (
     <main className="w-full">
-      <section className="relative flex min-h-[68vh] w-full flex-col items-center justify-center gap-8 px-4 pt-24 pb-16 text-center text-(--site-header-foreground) sm:px-6 sm:pt-28 lg:px-8">
-        <div className="flex max-w-4xl flex-col items-center gap-5">
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-balance sm:text-5xl lg:text-6xl">
-            O mandato do tamanho da Bahia
-          </h1>
-          <p className="max-w-2xl text-lg leading-relaxed text-(--site-header-muted) sm:text-xl">
-            Notícias, campanhas e a atuação do deputado Jorge Solla por uma Bahia mais justa.
-          </p>
-          <Link
-            href={getTypePath('noticia')}
-            className="inline-flex items-center justify-center rounded-md bg-white/15 px-5 py-2.5 text-sm font-semibold text-(--site-header-foreground) ring-1 ring-white/25 backdrop-blur transition-colors hover:bg-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-          >
-            Ver notícias
-          </Link>
-        </div>
-        {heroImage?.url ? (
-          <div className="w-full max-w-3xl overflow-hidden rounded-2xl shadow-2xl ring-1 ring-white/15">
-            <Image
-              className="h-auto w-full object-cover"
-              src={heroImage.url}
-              alt={heroImage.alt}
-              width={heroImage.width ?? 1200}
-              height={heroImage.height ?? 675}
-              priority
-            />
-          </div>
-        ) : null}
-      </section>
+      <CampaignInternalPageIntro eyebrow="Mandato em movimento" title="Artigos e notícias" />
 
       <section data-theme="editorial" className="w-full bg-background text-foreground">
         <div className="mx-auto w-full max-w-5xl px-4 py-14 sm:px-6 lg:px-8 lg:py-16">

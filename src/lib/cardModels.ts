@@ -180,7 +180,7 @@ export type CardNameBlockSlot = CardNameSlotBase & {
 }
 
 /** Rotated rectangle + background the renderer draws for a banner. */
-export type CardBanner = {
+type CardBanner = {
   centerX: number
   centerY: number
   width: number
@@ -197,8 +197,6 @@ export type CardNameBannerSlot = CardNameSlotBase & {
   maxLines: 1
   banner: CardBanner
 }
-
-export type CardNameSlot = CardNameBlockSlot | CardNameBannerSlot
 
 /**
  * Name model slot, pixel-measured from the filled master (`FULANO` example):
@@ -275,8 +273,6 @@ export const TEAM_CARD_NAME_SLOT = {
   fill: TEAM_CARD_NAME_BANNER.fill,
   maxLines: 1,
 } as const satisfies CardNameBannerSlot
-
-export const BRAND_FALLBACK_FONT = 'sans-serif'
 
 export const isCardModelId = (value: unknown): value is CardModelId =>
   typeof value === 'string' && (CARD_MODEL_IDS as readonly string[]).includes(value)

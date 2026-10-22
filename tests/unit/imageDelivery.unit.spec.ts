@@ -45,7 +45,7 @@ const collectSourceImageRefs = (pattern: RegExp) => {
 
 describe('entrega das imagens do hero (perf do /_next/image)', () => {
   it('usa masters no tamanho máximo de exibição, sem forçar decode de 3840px', async () => {
-    expect(localHeroAssets.length).toBeGreaterThanOrEqual(5)
+    expect(localHeroAssets.length).toBeGreaterThanOrEqual(1)
 
     for (const src of localHeroAssets) {
       const { width, height } = await sharp(publicFile(src)).metadata()

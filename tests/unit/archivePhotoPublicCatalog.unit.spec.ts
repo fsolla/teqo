@@ -163,7 +163,7 @@ describe('toArchivePhotoPublicItem', () => {
     expect(photo.thumbnailPath).toBe('/fotos/9/midia?tamanho=grade')
     expect(photo.mediaPath).toBe('/fotos/9/midia')
     expect(photo.downloadPath).toBe('/fotos/9/midia?download=1')
-    expect(photo.downloadFilename).toBe('jorge-solla-1313-foto-9.jpg')
+    expect(photo.downloadFilename).toBe('jorge-solla-foto-9.jpg')
   })
 
   it('derives people only from the curated figures (never the text catalog) and dedupes by slug', () => {

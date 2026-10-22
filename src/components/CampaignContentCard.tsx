@@ -1,5 +1,6 @@
 import { ContentShareButton } from '@/components/ContentShareButton'
 import type { ContentShareKind } from '@/lib/contentShare'
+import { PUBLIC_FOCUS } from '@/lib/publicSite'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -13,73 +14,88 @@ export type CampaignContentCardData = {
   coverUrl?: string
   coverAlt?: string
   subtitle?: string
-  /** Cover ratio: 16:9 for articles/videos, 1:1 for Instagram posts. */
-  coverAspect?: 'video' | 'square'
   /** External target (e.g. a YouTube video): opens in a new tab with noopener. */
   external?: boolean
 }
 
 type CampaignContentCardProps = {
   card: CampaignContentCardData
-  featured?: boolean
+  /** S47 — the editorial board is 1 featured + 3 compact text rows. */
+  variant?: 'featured' | 'compact'
 }
 
-const cardClassName =
-  'flex h-full flex-col bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--pt-red)'
+const ACTION_LABELS: Record<ContentShareKind, string> = {
+  article: 'Ler notícia',
+  video: 'Assistir no YouTube',
+  instagram: 'Ver no Instagram',
+  event: 'Ver',
+}
+
+const CARD_LINK = `block rounded-sm text-(--campaign-ink) no-underline ${PUBLIC_FOCUS}`
 
 /**
- * Presentational content card for the campaign home content bento/carousel —
- * one spelling for every source (article, YouTube, Instagram in S3). Internal
- * targets use `Link`; external ones open on the platform in a new tab with
- * `noopener` (no inline player, per the approved wireframe). The card body is
- * one anchor; the S4 share control lives as an absolutely positioned sibling
- * (a button inside the anchor would be invalid interactive nesting), on a
- * wrapper that also owns the hover `group` so the cover zoom keeps working.
+ * S47 — one item of the editorial home board (design scene 01/02): the
+ * `featured` variant carries the cover of the lead story; the `compact`
+ * variant is the text-only row of the side column. Both keep the S4 share
+ * control as a sibling of the anchor (never nested inside it) and derive the
+ * action label from the content source.
  */
-export const CampaignContentCard = ({ card, featured = false }: CampaignContentCardProps) => {
-  const inner = (
+export const CampaignContentCard = ({ card, variant = 'compact' }: CampaignContentCardProps) => {
+  const featured = variant === 'featured'
+  const actionLabel = ACTION_LABELS[card.shareKind]
+
+  const inner = featured ? (
     <>
-      <div
-        className={`relative w-full shrink-0 overflow-hidden bg-(--campaign-band) ${
-          card.coverAspect === 'square' ? 'aspect-square' : 'aspect-video'
-        }`}
-      >
+      <div className="h-[220px] w-full overflow-hidden bg-[#d7d0cb] lg:h-[338px]">
         {card.coverUrl ? (
           <Image
             src={card.coverUrl}
             alt={card.coverAlt ?? card.title}
-            fill
-            sizes={featured ? '(min-width: 768px) 44vw, 92vw' : '(min-width: 768px) 22vw, 92vw'}
-            className="object-cover transition-transform duration-300 group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+            width={720}
+            height={405}
+            sizes="(min-width: 1024px) 650px, 100vw"
+            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.025] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
           />
         ) : null}
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-3">
-        <h3
-          className={`line-clamp-3 leading-snug font-bold text-(--campaign-ink) group-hover:underline ${
-            featured ? 'text-base' : 'text-sm'
-          }`}
-        >
-          {card.title}
-        </h3>
-        {featured && card.subtitle ? (
-          <p className="line-clamp-2 text-xs leading-relaxed text-(--campaign-muted)">
-            {card.subtitle}
-          </p>
-        ) : null}
-        <span className="mt-auto text-xs text-(--campaign-muted)">{card.meta}</span>
-      </div>
+      <p className="mt-4 text-xs font-bold text-(--pt-red) lg:mt-5">{card.meta}</p>
+      <h3 className="mt-2 max-w-[690px] font-[family-name:var(--font-exo2)] text-[25px] leading-[1.12] font-extrabold tracking-[-0.02em] text-balance lg:text-[31px] lg:leading-[1.1] lg:tracking-[-0.025em]">
+        {card.title}
+      </h3>
+      {card.subtitle ? (
+        <p className="mt-2 line-clamp-2 text-sm leading-6 text-(--campaign-muted)">
+          {card.subtitle}
+        </p>
+      ) : null}
+      <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-(--pt-red)">
+        {actionLabel} <span aria-hidden="true">→</span>
+      </span>
+    </>
+  ) : (
+    <>
+      <p className="text-xs font-bold text-(--pt-red)">{card.meta}</p>
+      <h3 className="mt-3 line-clamp-3 font-[family-name:var(--font-exo2)] text-xl leading-[1.18] font-extrabold tracking-[-0.02em] text-balance lg:text-[23px] lg:leading-[1.16]">
+        {card.title}
+      </h3>
+      <p className="mt-4 text-sm font-bold text-(--pt-red)">
+        {actionLabel} <span aria-hidden="true">→</span>
+      </p>
     </>
   )
 
   return (
     <div className="group relative h-full">
       {card.external ? (
-        <a href={card.href} target="_blank" rel="noopener noreferrer" className={cardClassName}>
+        <a
+          href={card.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`${CARD_LINK} ${featured ? '' : 'py-6 pr-12 lg:py-7'}`}
+        >
           {inner}
         </a>
       ) : (
-        <Link href={card.href} className={cardClassName}>
+        <Link href={card.href} className={`${CARD_LINK} ${featured ? '' : 'py-6 pr-12 lg:py-7'}`}>
           {inner}
         </Link>
       )}
