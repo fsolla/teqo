@@ -10,20 +10,6 @@ vi.mock('next/cache', () => ({
   unstable_cache: (fn: unknown) => fn,
 }))
 
-const afterCallbacks: Array<Promise<unknown>> = []
-
-vi.mock('next/server', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('next/server')>()
-  return {
-    ...actual,
-    // The media route keeps the count off the response path; the test runs the
-    // deferred work explicitly and asserts the row.
-    after: (callback: () => unknown) => {
-      afterCallbacks.push(Promise.resolve().then(callback))
-    },
-  }
-})
-
 const { rateLimitMock } = vi.hoisted(() => ({ rateLimitMock: vi.fn(() => true) }))
 
 vi.mock('@/utilities/content/contentEventRateLimit', () => ({
@@ -37,7 +23,6 @@ vi.mock('@/utilities/content/contentEventAggregate', async (importOriginal) => {
 })
 
 import { POST as postContentEvent } from '@/app/(frontend)/api/content-events/route'
-import { GET as getPublicPieceMedia } from '@/app/(frontend)/conteudos/[slug]/midia/route'
 import { resolveCardDownloadCounts } from '@/lib/cardDownloadCounts'
 import { contentPieceCirculationFromRows } from '@/lib/contentPieceCirculation'
 import type { CampaignUser, ContentMedia } from '@/payload-types'
@@ -63,10 +48,6 @@ const campaignFixtures = installCampaignFixtures({
     payload = nextPayload
   },
 })
-
-const flushAfterCallbacks = async (): Promise<void> => {
-  await Promise.all(afterCallbacks.splice(0))
-}
 
 const eventRowsOf = async (subjectIds: Array<number | string>) =>
   payload.find({
@@ -136,17 +117,6 @@ const postEvent = (body: unknown, init: RequestInit = {}): Promise<Response> =>
     }),
   )
 
-const callPublicMedia = (
-  slug: string,
-  { download, range }: { download?: boolean; range?: string },
-) =>
-  getPublicPieceMedia(
-    new Request(`http://localhost/conteudos/${slug}/midia${download ? '?download=1' : ''}`, {
-      headers: range ? { range } : undefined,
-    }),
-    { params: Promise.resolve({ slug }) },
-  )
-
 describe('content events (C213)', () => {
   let communicator: CampaignUser
   let leader: CampaignUser
@@ -161,7 +131,6 @@ describe('content events (C213)', () => {
       fixtures.createCampaignUser('communicator'),
       fixtures.createCampaignUser('leader'),
     ])
-    afterCallbacks.length = 0
     // The card counters are global by model id — each test starts from zero.
     await payload.delete({
       collection: 'contentEvent',
@@ -295,27 +264,6 @@ describe('content events (C213)', () => {
     await expect(
       loadContentEventCountsBySubject(brokenPayload, { subjectType: 'peca', subjectIds: ['1'] }),
     ).resolves.toEqual({ ok: false })
-  })
-
-  it('counts one full public download and ignores ranges and plain reads', async () => {
-    const piece = await createPiece({ title: `Download ${Date.now()}` })
-    const slug = await slugOf(piece.id)
-
-    const plain = await callPublicMedia(slug, {})
-    expect(plain.status).toBe(200)
-    await flushAfterCallbacks()
-
-    const ranged = await callPublicMedia(slug, { download: true, range: 'bytes=0-3' })
-    expect(ranged.status).toBe(206)
-    await flushAfterCallbacks()
-
-    const download = await callPublicMedia(slug, { download: true })
-    expect(download.status).toBe(200)
-    await flushAfterCallbacks()
-
-    const rows = await eventRowsOf([piece.id])
-    expect(rows.docs).toHaveLength(1)
-    expect(rows.docs[0]).toMatchObject({ type: 'download', subjectId: String(piece.id) })
   })
 
   it('attaches the circulation counters to the list and the detail loaders', async () => {

@@ -15,54 +15,44 @@ vi.mock('next/image', () => ({
 afterEach(cleanup)
 
 describe('CampaignHero', () => {
-  it('apresenta a candidatura e mantém um único CTA primário', () => {
+  it('agradece os 152.049 votos e mantém um único CTA primário', () => {
     render(<CampaignHero />)
 
-    expect(screen.getByRole('heading', { level: 1, name: 'MAIS SAÚDE MAIS FUTURO' })).toBeTruthy()
+    expect(
+      screen.getByRole('heading', { level: 1, name: '152.049 votos de confiança' }),
+    ).toBeTruthy()
+    expect(screen.getByText('Obrigado, Bahia')).toBeTruthy()
+    expect(
+      screen.getByText(
+        /Obrigado a quem votou, a quem caminhou, a quem compartilhou e a quem acreditou\./,
+      ),
+    ).toBeTruthy()
 
-    const supportLink = screen.getByRole('link', { name: /Quero apoiar/i })
-    expect(supportLink.getAttribute('href')).toBe('https://apoiar.me/jorgesolla')
-    expect(supportLink.getAttribute('data-cta')).toBe('primary')
-
-    // S9 — the secondary CTA is the shortcut to the novidades capture; the
-    // bandeiras stay reachable through the footer link and the success card.
-    const novidadesLink = screen.getByRole('link', { name: /Receba novidades da campanha/i })
-    expect(novidadesLink.getAttribute('href')).toBe('#novidades')
-    expect(novidadesLink.getAttribute('data-cta')).toBe('secondary')
+    const cta = screen.getByRole('link', { name: 'Acompanhe o mandato' })
+    expect(cta.getAttribute('href')).toBe('/artigos')
+    expect(screen.getAllByRole('link')).toHaveLength(1)
   })
 
-  it('não percent-encoda os caminhos das imagens', () => {
+  it('não exibe número eleitoral, pedido de voto nem a candidatura', () => {
     const { container } = render(<CampaignHero />)
 
-    const sources = Array.from(container.querySelectorAll('img')).map((image) =>
-      image.getAttribute('src'),
-    )
-    expect(sources.length).toBeGreaterThan(0)
-
-    for (const source of sources) {
-      expect(source).not.toContain('%')
-    }
+    expect(container.textContent).not.toContain('1313')
+    expect(container.textContent).not.toMatch(/Quero apoiar|candidato|propaganda eleitoral/i)
+    expect(screen.queryByRole('link', { name: /Quero apoiar/i })).toBeNull()
   })
 
-  it('serve masters WebP — AVIF fica fora do otimizador (libheif)', () => {
+  it('serve o retrato oficial com alt contextual e WebP', () => {
     const { container } = render(<CampaignHero />)
 
-    const sources = Array.from(container.querySelectorAll('img')).map(
-      (image) => image.getAttribute('src') ?? '',
-    )
-    expect(sources.length).toBeGreaterThan(0)
+    const portrait = screen.getByAltText('Jorge Solla sorrindo, com blazer azul e camisa do PT')
+    expect(portrait.getAttribute('src')).toBe('/JOA00162.webp')
 
+    const sources = Array.from(container.querySelectorAll('img'))
+      .map((image) => image.getAttribute('src'))
+      .filter((source): source is string => source !== null)
+    expect(sources.length).toBeGreaterThan(0)
     for (const source of sources) {
       expect(source.endsWith('.webp'), source).toBe(true)
     }
-  })
-
-  it('expõe as provas e as fotos com nomes acessíveis', () => {
-    render(<CampaignHero />)
-
-    expect(screen.getByLabelText('DIAP entre os 40 melhores da Câmara')).toBeTruthy()
-    expect(screen.getByLabelText('Mais votado do PT-BA em 2022')).toBeTruthy()
-    expect(screen.getByRole('img', { name: /Jorge Solla 1313/i })).toBeTruthy()
-    expect(screen.getByAltText('Jorge Solla, candidato a deputado federal pela Bahia')).toBeTruthy()
   })
 })

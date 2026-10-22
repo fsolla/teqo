@@ -357,7 +357,7 @@ test.describe('Frontend share-link announcement (S29)', () => {
       const localStart = formatBahiaCalendarDateTime(startsAt)
       const localEnd = formatBahiaCalendarDateTime(endsAt)
 
-      expect(googleParams.get('text')).toBe('Plenária da saúde - Jorge Solla 1313')
+      expect(googleParams.get('text')).toBe('Plenária da saúde - Jorge Solla')
       expect(googleParams.get('dates')).toBe(`${localStart}/${localEnd}`)
       expect(googleParams.get('ctz')).toBe('America/Bahia')
       expect(googleParams.get('details')).toBe(
@@ -373,7 +373,7 @@ test.describe('Frontend share-link announcement (S29)', () => {
       expect(body).toContain('TZID:America/Bahia')
       expect(body).toContain(`DTSTART;TZID=America/Bahia:${localStart}`)
       expect(body).toContain(`DTEND;TZID=America/Bahia:${localEnd}`)
-      expect(body).toContain('SUMMARY:Plenária da saúde - Jorge Solla 1313')
+      expect(body).toContain('SUMMARY:Plenária da saúde - Jorge Solla')
       expect(body).toContain(
         `DESCRIPTION:Encontro online da campanha.\\n\\nPágina do evento: ${canonicalUrl}`,
       )
@@ -570,12 +570,12 @@ test.describe('Frontend home Plenária section (S44)', () => {
     const section = page.locator('[data-home-section="plenaria"]')
     await expect(section).toBeVisible()
 
-    // S44 — immediately after the hero, before the proof strip.
+    // S44 — immediately after the hero, before the editorial board.
     const order = await page
       .locator('[data-home-section]')
       .evaluateAll((sections) => sections.map((s) => s.getAttribute('data-home-section')))
     expect(order.indexOf('plenaria')).toBe(order.indexOf('hero') + 1)
-    expect(order.indexOf('plenaria')).toBeLessThan(order.indexOf('proof'))
+    expect(order.indexOf('plenaria')).toBeLessThan(order.indexOf('contents'))
 
     // Pré-live: the invitation with the S29 agenda and no entry button.
     await expect(section.getByRole('heading', { name: 'Plenária da Vitória' })).toBeVisible()

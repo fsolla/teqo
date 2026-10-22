@@ -32,15 +32,7 @@ const PRIMARY_ACTION_DISABLED = cn(
  * the page open. The link itself keeps redirecting after a reload; this page
  * only exists while nothing is on air.
  */
-export const ShareLinkAnnouncement = ({
-  view,
-  showJingles = false,
-  showFotos = false,
-}: {
-  view: ShareLinkAnnouncementView
-  showJingles?: boolean
-  showFotos?: boolean
-}) => {
+export const ShareLinkAnnouncement = ({ view }: { view: ShareLinkAnnouncementView }) => {
   const live = useShareLinkLiveTarget(view.slug)
   const isLive = live !== null
   const hasEventDetails = Boolean(view.eventLabel || view.location)
@@ -197,7 +189,7 @@ export const ShareLinkAnnouncement = ({
         </article>
       </main>
 
-      <CampaignFooter showJingles={showJingles} showFotos={showFotos} />
+      <CampaignFooter />
     </div>
   )
 }

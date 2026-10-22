@@ -9,7 +9,7 @@ import { normalizeAbsoluteHttpUrl } from '@/lib/shareLink'
  */
 
 export const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000
-const EVENT_TITLE_SUFFIX = ' - Jorge Solla 1313'
+const EVENT_TITLE_SUFFIX = ' - Jorge Solla'
 
 export type CalendarEventInput = {
   title: string

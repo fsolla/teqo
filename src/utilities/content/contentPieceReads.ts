@@ -15,7 +15,7 @@ import { getPayload } from 'payload'
  * access (`canReadContentPiece` is campaign-only), so the anonymous read is the
  * Local API without `user` — the bypass default — and the gate is the query
  * plus the `contentPieceIsPublic` predicate: only `publicado` with an archived
- * file or the platform link ever leaves here. Same precedent as `jingleReads`.
+ * file or the platform link ever leaves here.
  *
  * The listing is cached under the collection listing tag (`contentPieces`,
  * busted by the ContentPiece afterChange on every publish/unpublish/edit), and
@@ -69,13 +69,13 @@ const getCachedPublishedContentPieces = () =>
  * (`transcript`/`description` included, for the S28 theme provenance). The
  * caller maps them into view models — with or without theme terms.
  */
-export const getPublishedContentPieceRecords = async (): Promise<ContentPiecePublicSource[]> => {
+const getPublishedContentPieceRecords = async (): Promise<ContentPiecePublicSource[]> => {
   const { docs } = await getCachedPublishedContentPieces()()
   return docs
 }
 
 /** Published pieces as serializable public view models, newest first. */
-export const getPublishedContentPieceItems = async (): Promise<ContentPiecePublicItem[]> =>
+const getPublishedContentPieceItems = async (): Promise<ContentPiecePublicItem[]> =>
   (await getPublishedContentPieceRecords())
     .map((piece) => toContentPiecePublicItem(piece))
     .filter((item): item is ContentPiecePublicItem => item !== null)
@@ -89,11 +89,3 @@ export const getPublishedContentPieceBySlug = async (
   slug: string,
 ): Promise<ContentPiecePublicItem | null> =>
   (await getPublishedContentPieceItems()).find((item) => item.slug === slug) ?? null
-
-/**
- * Discovery flag for the footer link and the header badge: derived from the
- * SAME resolved list the page renders, so a piece that cannot render never
- * advertises a link to an empty Central.
- */
-export const hasPublishedContentPieces = async (): Promise<boolean> =>
-  (await getPublishedContentPieceItems()).length > 0

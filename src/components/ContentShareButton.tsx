@@ -34,12 +34,11 @@ type ContentShareButtonProps = {
 
 /**
  * Discreet per-card WhatsApp share control for the home content section (S4):
- * a small round button in the card corner opening a two-item popover — share
- * on WhatsApp with a pre-configured message (`wa.me` of the sender's own
- * WhatsApp, new tab with `noopener`) or copy the absolute link. It lives as a
- * sibling of the card anchor (never inside it — interactive inside an anchor
- * is invalid HTML), and the Popover portals its content so the mobile
- * carousel's `overflow-x-auto` track never clips it.
+ * a small round button opening a two-item popover — share on WhatsApp with a
+ * pre-configured message (`wa.me` of the sender's own WhatsApp, new tab with
+ * `noopener`) or copy the absolute link. It lives as a sibling of the card
+ * anchor (never inside it — interactive inside an anchor is invalid HTML), and
+ * the Popover portals its content so no overflow track clips it.
  */
 export const ContentShareButton = ({ kind, title, href }: ContentShareButtonProps) => {
   const [open, setOpen] = useState(false)

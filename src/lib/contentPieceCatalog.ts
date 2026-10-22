@@ -35,7 +35,7 @@ import { SPEECH_TOPICS, type SpeechTopic } from '@/lib/speechFacets'
 import { buildHighlightedExcerpt, type SpeechHighlightPart } from '@/lib/speechHighlight'
 import { normalizeForSearch, uniqueByNormalizedForm } from '@/lib/speechSearch'
 
-export const CONTENT_PIECE_CATALOG_PATH = '/conteudos'
+const CONTENT_PIECE_CATALOG_PATH = '/conteudos'
 
 export const contentPiecePublicPath = (slug: string): string =>
   `${CONTENT_PIECE_CATALOG_PATH}/${slug}`
@@ -52,7 +52,7 @@ export const contentPieceMediaPath = (slug: string): string =>
 export const contentPieceFramePath = (slug: string): string =>
   `${contentPiecePublicPath(slug)}/frame`
 
-export const CONTENT_PIECE_CATALOG_FACETS = [
+const CONTENT_PIECE_CATALOG_FACETS = [
   'tipo',
   'cidade',
   'regiao',
@@ -61,9 +61,9 @@ export const CONTENT_PIECE_CATALOG_FACETS = [
   'lideranca',
 ] as const
 
-export type ContentPieceCatalogFacet = (typeof CONTENT_PIECE_CATALOG_FACETS)[number]
+type ContentPieceCatalogFacet = (typeof CONTENT_PIECE_CATALOG_FACETS)[number]
 
-export const contentPieceCatalogFacetLabels: Record<ContentPieceCatalogFacet, string> = {
+const contentPieceCatalogFacetLabels: Record<ContentPieceCatalogFacet, string> = {
   tipo: 'Tipo',
   cidade: 'Cidade',
   regiao: 'Região',
@@ -77,7 +77,7 @@ export const contentPieceCatalogFacetLabels: Record<ContentPieceCatalogFacet, st
  * for related terms; the literal search is the default and is never serialized
  * (existing deep links stay byte-identical). Only meaningful alongside `q`.
  */
-export type ContentPieceCatalogMode = 'tema'
+type ContentPieceCatalogMode = 'tema'
 
 export type ContentPieceCatalogParams = {
   tipo: ContentPieceType | null

@@ -39,7 +39,7 @@ export type SiteMetadataSource = {
 export const SITE_METADATA_DEFAULTS = {
   title: 'Jorge Solla',
   siteName: 'Jorge Solla',
-  description: 'Notícias, campanhas e a atuação do deputado Jorge Solla pela Bahia.',
+  description: 'Notícias, o mandato e a atuação do deputado Jorge Solla pela Bahia.',
   twitterCreator: '@jorgesolla',
 } as const
 

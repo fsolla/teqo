@@ -59,9 +59,6 @@ export type CardAlphaBbox = {
   height: number
 }
 
-export const cardPhotoTransformsEqual = (a: CardPhotoTransform, b: CardPhotoTransform): boolean =>
-  a.zoom === b.zoom && a.offsetX === b.offsetX && a.offsetY === b.offsetY
-
 const clamp = (value: number, min: number, max: number): number =>
   Math.min(Math.max(value, min), max)
 
