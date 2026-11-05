@@ -59,7 +59,7 @@ export const CampaignContentCard = ({ card, variant = 'compact' }: CampaignConte
         ) : null}
       </div>
       <p className="mt-4 text-xs font-bold text-(--pt-red) lg:mt-5">{card.meta}</p>
-      <h3 className="mt-2 max-w-[690px] font-[family-name:var(--font-exo2)] text-[25px] leading-[1.12] font-extrabold tracking-[-0.02em] text-balance lg:text-[31px] lg:leading-[1.1] lg:tracking-[-0.025em]">
+      <h3 className="mt-2 line-clamp-3 max-w-[690px] font-[family-name:var(--font-exo2)] text-[25px] leading-[1.12] font-extrabold tracking-[-0.02em] break-words lg:text-[31px] lg:leading-[1.1] lg:tracking-[-0.025em]">
         {card.title}
       </h3>
       {card.subtitle ? (
@@ -74,7 +74,7 @@ export const CampaignContentCard = ({ card, variant = 'compact' }: CampaignConte
   ) : (
     <>
       <p className="text-xs font-bold text-(--pt-red)">{card.meta}</p>
-      <h3 className="mt-3 line-clamp-3 font-[family-name:var(--font-exo2)] text-xl leading-[1.18] font-extrabold tracking-[-0.02em] text-balance lg:text-[23px] lg:leading-[1.16]">
+      <h3 className="mt-3 line-clamp-3 font-[family-name:var(--font-exo2)] text-xl leading-[1.18] font-extrabold tracking-[-0.02em] break-words lg:text-[23px] lg:leading-[1.16]">
         {card.title}
       </h3>
       <p className="mt-4 text-sm font-bold text-(--pt-red)">
@@ -84,7 +84,7 @@ export const CampaignContentCard = ({ card, variant = 'compact' }: CampaignConte
   )
 
   return (
-    <div className="group relative h-full">
+    <div className="group relative h-full min-w-0">
       {card.external ? (
         <a
           href={card.href}

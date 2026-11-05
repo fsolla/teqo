@@ -174,10 +174,10 @@ export const CampaignContentSection = async () => {
 
         {featured ? (
           <div className="mt-8 grid border-y border-(--campaign-line) lg:mt-10 lg:grid-cols-12">
-            <article className="border-b border-(--campaign-line) py-7 lg:col-span-7 lg:border-r lg:border-b-0 lg:pr-8">
+            <article className="min-w-0 border-b border-(--campaign-line) py-7 lg:col-span-7 lg:border-r lg:border-b-0 lg:pr-8">
               <CampaignContentCard card={featured} variant="featured" />
             </article>
-            <div className="divide-y divide-(--campaign-line) lg:col-span-5 lg:pl-8">
+            <div className="min-w-0 divide-y divide-(--campaign-line) lg:col-span-5 lg:pl-8">
               {rest.map((card) => (
                 <article key={card.id}>
                   <CampaignContentCard card={card} variant="compact" />
