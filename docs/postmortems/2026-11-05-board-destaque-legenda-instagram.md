@@ -10,7 +10,7 @@
 | Severidade          | média (regressão visual na home; sem indisponibilidade, perda de dados ou erro funcional) |
 | Ambiente            | prod                                                                                      |
 | Issue(s)            | sem Issue                                                                                 |
-| PR do fix           | a preencher após a abertura do PR                                                         |
+| PR do fix           | [#1450](https://github.com/fsolla/teqo/pull/1450)                                         |
 | Detectado por       | humano (relato na sessão: “fontes super grandes e o texto não quebra” no board da home)   |
 
 ## Timeline
