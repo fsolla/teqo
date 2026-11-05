@@ -101,7 +101,9 @@ jobs:
   verify:
     needs: [preflight]
     if: needs.preflight.outputs.should_deploy == 'true'
-    runs-on: ubuntu-latest
+    # Same pin as ci-pr: Playwright 1.58.2 has no ubuntu26.04 build and
+    # `ubuntu-latest` migrated to 26.04 in Oct 2026.
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     services:
       # OPS71 — GitHub hosted: jobs run on the runner VM, so services are
