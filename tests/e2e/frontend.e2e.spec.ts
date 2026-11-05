@@ -666,7 +666,11 @@ test.describe('Campaign home content section', () => {
 
       // Long captions are clamped with an ellipsis so a single post cannot
       // stretch the bento row (production captions run into hundreds of
-      // characters; the stub's reel caption is deliberately long).
+      // characters; the stub's reel caption is deliberately long). The
+      // featured title must clamp too — it is the lead of the board and the
+      // one that renders at the largest type size.
+      await expect(featured.locator('h3')).toHaveCSS('-webkit-line-clamp', '3')
+      await expect(featured.locator('h3')).toHaveCSS('overflow', 'hidden')
       const longCaptionTitle = section
         .getByRole('link', { name: /E2e Reel da caravana/ })
         .locator('h3')
