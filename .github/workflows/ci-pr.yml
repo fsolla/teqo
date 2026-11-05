@@ -62,7 +62,10 @@ env:
 jobs:
   checks:
     if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    # Playwright 1.58.2 has no ubuntu26.04 build and `ubuntu-latest` migrated
+    # to 26.04 in Oct 2026 (run 42095564329). Pin 24.04 until the Playwright
+    # bump lands; `ubuntu-latest` here breaks every PR at browser install.
+    runs-on: ubuntu-24.04
     timeout-minutes: 50
     services:
       postgres-int:
