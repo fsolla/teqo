@@ -76,6 +76,24 @@ test.describe('Frontend', () => {
       expect(new URL(response.headers().location, 'http://localhost').pathname).toBe(to)
     }
   })
+
+  test('redirects the legacy WordPress permalinks and archive routes', async ({ request }) => {
+    for (const [from, to] of [
+      [
+        '/2026/08/17/bruno-reis-foi-covarde-detonou-solla-ao-rebater-o-prefeito-sobre-saude-de-salvador',
+        '/noticia/politica/bruno-reis-foi-covarde-detonou-solla-ao-rebater-o-prefeito-sobre-saude-de-salvador',
+      ],
+      ['/category/noticias', '/artigos'],
+      ['/tag/lula', '/artigos'],
+      ['/2026/08', '/artigos'],
+      ['/2024/07/22/qualquer-post-antigo', '/artigos'],
+      ['/home', '/'],
+    ]) {
+      const response = await request.get(from, { maxRedirects: 0 })
+      expect(response.status()).toBe(308)
+      expect(new URL(response.headers().location, 'http://localhost').pathname).toBe(to)
+    }
+  })
 })
 
 test.describe('Campaign home content section', () => {
