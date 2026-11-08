@@ -1,6 +1,6 @@
 # OPS131 — Cutover do domínio jorgesolla.com.br para o Teqo e desativação do WordPress
 
-Status: rascunho
+Status: em andamento — decisão A assinada; redirects do legado implementados; janela de DNS pendente
 Atualizado em: 2026-10-21
 Issue: #1445
 Priority: P1
@@ -78,7 +78,7 @@ O site do mandato ainda vive em duas casas: o Teqo em `jorgesolla1313.com.br` (c
 
 ## Questões em aberto (produto)
 
-- **Passkeys:** **Opções:** A) cutover total + reenrollment dos usuários de campanha; B) manter `/campanha` em `jorgesolla1313.com.br` e só o site público no novo domínio; C) adiar o cutover até um mecanismo de migração. **Recomendação:** A — a eleição acabou e a equipe é pequena; reenrollment assistido é aceitável, com aviso prévio. _(assumido — decisão humana obrigatória)_
+- **Passkeys:** **Decidido em 2026-11-08: A** — cutover total + reenrollment assistido dos 4 usuários com passkey (7 credenciais); o login por senha segue disponível durante e depois da troca.
 - **Janela do WordPress:** **Opções:** A) desligar após a verificação, com backup/arquivo; B) manter read-only por 30 dias. **Recomendação:** B — janela curta de rollback, sem escritas. _(assumido)_
 - **Redirect de `jorgesolla1313.com.br`:** **Opções:** A) 301 permanente; B) 302 por 90 dias. **Recomendação:** A — o 1313 não volta; 301 preserva o SEO. _(assumido)_
 - **Escopo dos redirects antigos:** **Opções:** A) posts + páginas conhecidas; B) todas as URLs do sitemap do WP. **Recomendação:** B — inventariar o sitemap e mapear; o que não tiver equivalente vai para `/`. _(assumido)_
@@ -89,3 +89,22 @@ O site do mandato ainda vive em duas casas: o Teqo em `jorgesolla1313.com.br` (c
 - `docs/ops/teqo-1313-deploy.md` (homeserver, tunnel, envs, staging); `AGENTS-infra.md`
 - `src/utilities/seo.ts`, `src/utilities/campaignInviteOrigin.ts`, `src/utilities/webauthn/campaignWebAuthnConfig.ts`, `next.config.mjs`
 - OPS80/OPS81 (`pt.jorgesolla.com.br`), OPS130 (sync), S47 (site pós-eleição)
+
+## Progresso (2026-11-08)
+
+- **Decisão A assinada:** o site público e `/campanha` vão juntos para
+  `jorgesolla.com.br`; as 4 contas com passkey (7 credenciais) re-registram uma
+  vez no domínio novo. Login por senha permanece disponível.
+- **Redirects do legado implementados:** os 43 permalinks
+  `/YYYY/MM/DD/<slug>/` estão em
+  `scripts/lib/legacyWordPressRedirects.mjs` (destino canônico Teqo); categoria,
+  tag, author, feeds, paginação e arquivos de data vão para `/artigos`; `/home`
+  para `/`; `wp-admin`/`wp-login.php` para `/` (`next.config.mjs`).
+- **Evidência OPS130:** WordPress com 43 posts (último 2026-08-17) e Teqo com 43
+  posts (último 2026-08-18) — paridade 43/43; o REST do WordPress não responde
+  do homeserver/workstation, mas o inventário foi lido pela API pública via
+  proxy externo.
+- **Runbook de cutover/rollback:** `docs/ops/teqo-1313-deploy.md` §OPS131.
+- **Pendente:** janela de DNS/Cloudflare (ingress + apex/www + 301 do 1313),
+  `NEXT_PUBLIC_SITE_URL` de produção + rebuild, reenrollment das passkeys,
+  verificação e desligamento do WordPress após a janela read-only.
