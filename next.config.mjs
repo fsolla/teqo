@@ -1,5 +1,7 @@
 import { withPayload } from '@payloadcms/next/withPayload'
 
+import { legacyWordPressPostRedirects } from './scripts/lib/legacyWordPressRedirects.mjs'
+
 /** @type {import('next').NextConfig} */
 const allowedImageHost = process.env.NEXT_PUBLIC_SITE_URL || 'https://jorgesolla.com.br'
 
@@ -11,6 +13,35 @@ const nextConfig = {
   // circulated (and any index entry) pointing at the mandate instead of a 404.
   async redirects() {
     return [
+      // OPS131 — the old WordPress site (jorgesolla.com.br) becomes this app.
+      // The 43 post permalinks are enumerated (date → canonical Teqo path);
+      // the archive/category/tag/author routes below catch the remaining
+      // indexed URLs from the WordPress sitemap, plus the date archives.
+      ...legacyWordPressPostRedirects.map((entry) => ({ ...entry, permanent: true })),
+      { source: '/category/:path*', destination: '/artigos', permanent: true },
+      { source: '/tag/:path*', destination: '/artigos', permanent: true },
+      { source: '/author/:path*', destination: '/artigos', permanent: true },
+      { source: '/feed', destination: '/artigos', permanent: true },
+      { source: '/comments/feed', destination: '/artigos', permanent: true },
+      { source: '/page/:path*', destination: '/artigos', permanent: true },
+      { source: '/home', destination: '/', permanent: true },
+      {
+        source: '/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})/:slug',
+        destination: '/artigos',
+        permanent: true,
+      },
+      {
+        source: '/:year(\\d{4})/:month(\\d{2})/:day(\\d{2})',
+        destination: '/artigos',
+        permanent: true,
+      },
+      { source: '/:year(\\d{4})/:month(\\d{2})', destination: '/artigos', permanent: true },
+      { source: '/:year(\\d{4})', destination: '/artigos', permanent: true },
+      { source: '/wp-admin/:path*', destination: '/', permanent: true },
+      { source: '/wp-login.php', destination: '/', permanent: true },
+      // S47 — the campaign surfaces left the air after the election. The pages are
+      // gone from the tree; the permanent redirects keep the links that already
+      // circulated (and any index entry) pointing at the mandate instead of a 404.
       { source: '/conteudos', destination: '/artigos', permanent: true },
       { source: '/conteudos/:path*', destination: '/artigos', permanent: true },
       { source: '/jingles', destination: '/', permanent: true },

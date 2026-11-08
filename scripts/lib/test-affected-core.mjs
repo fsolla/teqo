@@ -98,6 +98,7 @@ export const SCRIPTS_SPEC_PINNED = [
   'scripts/lib/imageResize.mjs',
   'scripts/lib/instagramContentPlan.mjs',
   'scripts/lib/issues-panel.mjs',
+  'scripts/lib/legacyWordPressRedirects.mjs',
   'scripts/lib/markdown-ansi.mjs',
   'scripts/lib/mediaBinaries.mjs',
   'scripts/lib/mediaEndpoint.mjs',
