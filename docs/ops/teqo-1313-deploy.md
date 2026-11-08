@@ -1953,6 +1953,76 @@ pula o que já entrou).
 Rollback: nada de schema. O kill switch é despublicar/apagar as peças no admin
 (a Central pública atualiza na hora pelo tag `contentPieces`).
 
+## OPS131 — cutover do domínio jorgesolla.com.br
+
+Decisão de produto: **A — cutover total**. O site público e `/campanha` passam a
+viver em `https://jorgesolla.com.br`; as passkeys são re-registradas uma vez no
+domínio novo (o RP ID do WebAuthn é o hostname de `NEXT_PUBLIC_SITE_URL`). O
+login por senha continua funcionando durante e depois da troca.
+
+### Pré-flight (evidência de 2026-11-08)
+
+- **WordPress:** sitemap com **43 posts** publicados (último em 2026-08-17),
+  2 categorias (`noticias`, `uncategorized`), tags e author; o page sitemap só
+  tem `home`. O REST do WordPress não responde a partir do homeserver/workstation
+  (timeout/WAF), mas o inventário foi lido pela API pública via proxy externo.
+- **Teqo:** **43 posts** publicados (último em 2026-08-18) — paridade 43/43, sem
+  conteúdo novo a importar. O `pnpm db:seed:posts` não roda a partir do
+  homeserver enquanto o REST do WordPress estiver bloqueado; o registro desta
+  paridade é a evidência do OPS130.
+- **Redirects:** os 43 permalinks `/YYYY/MM/DD/<slug>/` estão em
+  `scripts/lib/legacyWordPressRedirects.mjs` (destino = caminho canônico Teqo).
+  Categorias, tags, author, feeds, paginação e arquivos de data vão para
+  `/artigos`; `/home` vai para `/`; `wp-admin`/`wp-login.php` para `/`.
+- **Passkeys:** 4 usuários / 7 credenciais no RP ID atual
+  (`jorgesolla1313.com.br`); serão re-registradas no domínio novo.
+- **Metadados:** `metadata.URL` já é `https://jorgesolla.com.br`;
+  `NEXT_PUBLIC_SITE_URL` de produção ainda é `https://jorgesolla1313.com.br`.
+
+### Janela de cutover
+
+1. **Congelar o WordPress (read-only)** e guardar o backup final. Confirmar que
+   o sitemap continua com os 43 posts; se houver post novo, regenerar o mapa e
+   rodar o teste unitário antes de seguir.
+2. **Env de produção:** editar `~/stack/teqo-1313.env` com
+   `NEXT_PUBLIC_SITE_URL=https://jorgesolla.com.br` (backup do arquivo antes).
+   Como o valor é inlined no build, o deploy precisa rebuildar.
+3. **Cloudflare:** no túnel remotely-managed, adicionar o ingress
+   `jorgesolla.com.br` → `http://localhost:1313`; criar o DNS proxied do apex
+   para o túnel e o `www` (CNAME para o apex ou para o túnel). Na zona
+   `jorgesolla1313.com.br`, criar uma Redirect Rule 301 de
+   `https://jorgesolla1313.com.br/*` para `https://jorgesolla.com.br` preservando
+   `http.request.uri.path`. No `www`, 301 para o apex. **Não tocar em MX, TXT,
+   SPF, DKIM ou DMARC** — o e-mail `@jorgesolla.com.br` continua no mesmo lugar.
+4. **Deploy:** rodar o workflow de deploy (push em `main` ou `workflow_dispatch`)
+   e aprovar produção. O build novo inlina o domínio novo.
+5. **Passkeys:** avisar os 4 usuários para re-registrar a passkey em
+   `https://jorgesolla.com.br/campanha` depois do switch. Quem usa senha não
+   precisa fazer nada; as credenciais antigas ficam no banco, mas o browser não
+   as oferece no domínio novo.
+6. **Verificação (read-only):**
+   - `https://jorgesolla.com.br/` e `https://www.jorgesolla.com.br/` → 200
+     (www 301 para o apex), canonical/OG no domínio novo;
+   - `https://jorgesolla1313.com.br/artigos` → 301 para
+     `https://jorgesolla.com.br/artigos` (Redirect Rule do Cloudflare);
+   - amostras do WordPress: `/2026/08/17/bruno-reis-.../` → caminho canônico,
+     `/category/noticias/`, `/tag/lula/`, `/2026/08/` → `/artigos` (o Next
+     responde **308 permanente** para os redirects in-app; o Cloudflare usa 301
+     no domínio 1313);
+   - `/api/media/file/...` e a imagem OG respondem 200 no domínio novo;
+   - `/campanha` autentica por senha; uma passkey nova é registrada e usada.
+7. **WordPress:** manter read-only por ~30 dias (janela de rollback), depois
+   desligar o host antigo. O backup/dump fica arquivado; as uploads antigas não
+   são proxiadas (não há imagem do WordPress no corpo dos 43 posts do Teqo).
+
+### Rollback
+
+- Reverter `NEXT_PUBLIC_SITE_URL` para `https://jorgesolla1313.com.br` e
+  redeployar; as passkeys antigas voltam a valer.
+- Remover o ingress/DNS de `jorgesolla.com.br` do túnel e restaurar o A record
+  do WordPress (`128.201.75.110`) enquanto a janela de rollback estiver aberta.
+- O WordPress fica read-only, então o rollback não perde conteúdo novo.
+
 ## Referências
 
 - `scripts/deploy-homeserver.sh` — o script (fonte da verdade do fluxo; parametrizado por `TEQO_ENV`)
